@@ -225,6 +225,44 @@ hero
 gradient
 ```
 
+### Saved Items
+
+Saved items are the user's explicit bookmarks inside the library.
+
+Saving an item sets `savedAt` to the current timestamp.
+
+Unsaving an item clears `savedAt`.
+
+Saving does not change the item's collection, folder, tags, or source.
+
+The Saved view lists every non-deleted item with a non-null `savedAt` value.
+
+New items created through an import or website-save flow start as saved.
+
+The save action is idempotent.
+
+The first release does not expose an Unsorted view.
+
+The first release does not expose workspace names or workspace controls.
+
+The application uses one internal personal workspace until workspace features become user-facing.
+
+### Deleted Items
+
+Deleted items use the existing `deletedAt` field.
+
+Deleted items remain excluded from All and Saved views.
+
+A future release may add a Deleted tab.
+
+The future Deleted tab should list deleted items during a target 30-day retention period.
+
+The future release should support restoring an item before retention expires.
+
+After retention expires, a scheduled purge may remove metadata and media permanently.
+
+The first release does not provide the Deleted tab, restore actions, or purge jobs.
+
 ### Search
 
 Search should eventually support:
@@ -237,6 +275,7 @@ Search should eventually support:
 - Item type
 - Collection
 - Folder
+- Saved status
 
 Possible future search:
 
@@ -896,6 +935,13 @@ createItem("image", {
 });
 ```
 
+Example:
+
+```ts
+saveItem(itemId);
+unsaveItem(itemId);
+```
+
 ### createCollection
 
 Example:
@@ -1157,6 +1203,8 @@ DELETE /api/v1/items/:itemId
 POST   /api/v1/items/:itemId/move
 POST   /api/v1/items/:itemId/duplicate
 POST   /api/v1/items/reorder
+POST   /api/v1/items/:itemId/save
+DELETE /api/v1/items/:itemId/save
 ```
 
 Example filters:
@@ -1168,6 +1216,7 @@ GET /api/v1/items
   &folderId=folder_123
   &type=image
   &tagId=tag_123
+  &saved=true
   &cursor=...
   &limit=50
 ```
@@ -2135,6 +2184,8 @@ CREATE TABLE items (
   title TEXT,
   description TEXT,
 
+  saved_at TIMESTAMPTZ,
+
   thumbnail_media_source_id UUID REFERENCES media_sources(source_id),
 
   position TEXT,
@@ -2161,6 +2212,9 @@ ON items(source_id);
 
 CREATE INDEX idx_items_type
 ON items(type);
+
+CREATE INDEX idx_items_saved_at
+ON items(saved_at);
 ```
 
 For a site item, `thumbnail_media_source_id` can point to the Open Graph image or the hero screenshot.
@@ -2481,6 +2535,8 @@ changeLog
 syncStates
 preferences
 ```
+
+The `items` store must index `savedAt` for the Saved view.
 
 The actual file bytes stay in OPFS.
 

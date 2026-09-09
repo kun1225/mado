@@ -27,9 +27,14 @@ The SwiftUI client begins after the remote API is stable.
 
 - [ ] Define the first release around one personal workspace.
 - [ ] Support collections, nested folders, tags, and items.
+- [ ] Support changing the item title, urls, tags, note.
+- [ ] Keep the personal workspace internal and hide workspace concepts from the interface.
+- [ ] Add Saved as the first cross-library item view.
 - [ ] Support image uploads as the first complete media path.
 - [ ] Support browser-compatible video uploads after images are stable.
-- [ ] Support manually entered website URLs without remote capture.
+- [ ] Support manually entered website URLs without remote capture. 
+- [ ] Support enter `ctrl+v` directly to save a website item.
+- [ ] Add the Deleted tab, restore actions, and target 30-day retention policy.
 - [ ] Defer billing, sharing, collaboration, semantic search, and automatic website capture.
 - [ ] Defer cloud synchronization until the cloud persistence path works.
 - [ ] Define supported browsers for IndexedDB and OPFS.
@@ -50,6 +55,7 @@ Exit criteria:
 - [ ] Define media location providers as `opfs`, `r2`, and `cloudflare_stream`.
 - [ ] Define processing and location status unions.
 - [ ] Define timestamps, soft deletion fields, positions, and entity versions.
+- [ ] Add nullable `savedAt` to `Item`.
 - [ ] Use `crypto.randomUUID()` for client-generated identifiers.
 - [ ] Define constructors or validation schemas for every persisted entity.
 - [ ] Reject a folder whose parent belongs to another collection.
@@ -71,6 +77,8 @@ Exit criteria:
 - [ ] Define application services for item creation, editing, movement, and deletion.
 - [ ] Define application services for tags and item-tag assignments.
 - [ ] Define queries for library navigation, filtering, and item details.
+- [ ] Define `saveItem` and `unsaveItem` application operations.
+- [ ] Define a Saved query for non-deleted items with `savedAt`.
 - [ ] Return domain results and typed errors from application services.
 - [ ] Prevent UI components from calling storage adapters directly.
 
@@ -98,8 +106,9 @@ Exit criteria:
 ### 1.5 Build the application shell
 
 - [ ] Build the library route as the main product surface.
-- [ ] Add a collapsible sidebar for workspace, collection, and folder navigation.
+- [ ] Add a collapsible sidebar for collection and folder navigation.
 - [ ] Add a top bar with search, view controls, storage status, and account actions.
+- [ ] Add All and Saved views without exposing workspace controls.
 - [ ] Add a responsive mobile navigation pattern.
 - [ ] Add breadcrumbs for collection and folder context.
 - [ ] Add grid and list presentation modes.
@@ -119,6 +128,8 @@ Exit criteria:
 - [ ] Require confirmation when deletion affects child content.
 - [ ] Add tag creation, editing, assignment, and removal flows.
 - [ ] Add item movement between collections and folders.
+- [ ] Add save and unsave actions to item cards and item details.
+- [ ] Keep deleted items outside the current interface until the Deleted tab is planned.
 - [ ] Add multi-select for batch movement, tagging, and deletion.
 - [ ] Add optimistic UI only where rollback behavior is clear.
 - [ ] Announce mutation results to assistive technologies.
@@ -151,6 +162,7 @@ Exit criteria:
 - [ ] Create stores for every local domain entity.
 - [ ] Create stores for `itemTags`, `preferences`, `changeLog`, and `syncStates`.
 - [ ] Add indexes for workspace, collection, folder, type, tag, and updated time.
+- [ ] Add an index for item saved time.
 - [ ] Add an explicit schema version and migration runner.
 - [ ] Seed one personal workspace during first use.
 - [ ] Implement local metadata repositories.
