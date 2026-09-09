@@ -26,7 +26,7 @@ The SwiftUI client begins after the remote API is stable.
 ### 1.1 Define the first release
 
 - [ ] Define the first release around one personal workspace.
-- [ ] Support categories, nested folders, tags, and items.
+- [ ] Support collections, nested folders, tags, and items.
 - [ ] Support image uploads as the first complete media path.
 - [ ] Support browser-compatible video uploads after images are stable.
 - [ ] Support manually entered website URLs without remote capture.
@@ -43,7 +43,7 @@ Exit criteria:
 ### 1.2 Create the domain package
 
 - [ ] Add a framework-independent domain package under `packages/domain`.
-- [ ] Define `Workspace`, `Category`, `Folder`, `Item`, `Source`, and `Tag` types.
+- [ ] Define `Workspace`, `Collection`, `Folder`, `Item`, `Source`, and `Tag` types.
 - [ ] Define `SiteSource`, `MediaSource`, `MediaVariant`, and `MediaLocation` types.
 - [ ] Define `ItemType` as `image`, `video`, or `site`.
 - [ ] Define `PersistenceMode` as `local`, `cloud`, or `both`.
@@ -52,7 +52,7 @@ Exit criteria:
 - [ ] Define timestamps, soft deletion fields, positions, and entity versions.
 - [ ] Use `crypto.randomUUID()` for client-generated identifiers.
 - [ ] Define constructors or validation schemas for every persisted entity.
-- [ ] Reject a folder whose parent belongs to another category.
+- [ ] Reject a folder whose parent belongs to another collection.
 - [ ] Reject circular folder ancestry.
 - [ ] Keep domain types independent from React and persistence libraries.
 - [ ] Export domain types for the web and API applications.
@@ -64,10 +64,10 @@ Exit criteria:
 
 ### 1.3 Define repository and application interfaces
 
-- [ ] Define metadata repositories for workspaces, categories, folders, items, sources, and tags.
+- [ ] Define metadata repositories for workspaces, collections, folders, items, sources, and tags.
 - [ ] Define a media repository for binary creation, reading, and deletion.
 - [ ] Define transaction boundaries for related metadata writes.
-- [ ] Define application services for category and folder operations.
+- [ ] Define application services for collection and folder operations.
 - [ ] Define application services for item creation, editing, movement, and deletion.
 - [ ] Define application services for tags and item-tag assignments.
 - [ ] Define queries for library navigation, filtering, and item details.
@@ -98,10 +98,10 @@ Exit criteria:
 ### 1.5 Build the application shell
 
 - [ ] Build the library route as the main product surface.
-- [ ] Add a collapsible sidebar for workspace, category, and folder navigation.
+- [ ] Add a collapsible sidebar for workspace, collection, and folder navigation.
 - [ ] Add a top bar with search, view controls, storage status, and account actions.
 - [ ] Add a responsive mobile navigation pattern.
-- [ ] Add breadcrumbs for category and folder context.
+- [ ] Add breadcrumbs for collection and folder context.
 - [ ] Add grid and list presentation modes.
 - [ ] Persist display preferences locally.
 - [ ] Add loading, empty, unsupported, and failure states.
@@ -114,11 +114,11 @@ Exit criteria:
 
 ### 1.6 Build organization workflows
 
-- [ ] Add category creation, rename, reorder, and deletion flows.
+- [ ] Add collection creation, rename, reorder, and deletion flows.
 - [ ] Add folder creation, rename, movement, nesting, and deletion flows.
 - [ ] Require confirmation when deletion affects child content.
 - [ ] Add tag creation, editing, assignment, and removal flows.
-- [ ] Add item movement between categories and folders.
+- [ ] Add item movement between collections and folders.
 - [ ] Add multi-select for batch movement, tagging, and deletion.
 - [ ] Add optimistic UI only where rollback behavior is clear.
 - [ ] Announce mutation results to assistive technologies.
@@ -133,7 +133,7 @@ Exit criteria:
 - [ ] Build image, video, and website cards with consistent metadata areas.
 - [ ] Add selected, loading, broken-media, and processing card states.
 - [ ] Build the item detail route at `/items/:itemId`.
-- [ ] Add title, description, category, folder, tags, dates, and source details.
+- [ ] Add title, description, collection, folder, tags, dates, and source details.
 - [ ] Add image preview with contained and actual-size modes.
 - [ ] Add native video playback for supported local formats.
 - [ ] Add website URL, domain, manual metadata, and external navigation.
@@ -150,7 +150,7 @@ Exit criteria:
 - [ ] Select a small IndexedDB wrapper with migration support.
 - [ ] Create stores for every local domain entity.
 - [ ] Create stores for `itemTags`, `preferences`, `changeLog`, and `syncStates`.
-- [ ] Add indexes for workspace, category, folder, type, tag, and updated time.
+- [ ] Add indexes for workspace, collection, folder, type, tag, and updated time.
 - [ ] Add an explicit schema version and migration runner.
 - [ ] Seed one personal workspace during first use.
 - [ ] Implement local metadata repositories.
@@ -225,8 +225,8 @@ Exit criteria:
 
 ### 1.12 Add local search, sorting, and filtering
 
-- [ ] Search titles, descriptions, domains, category names, folder names, and tag names.
-- [ ] Filter by item type, category, folder, and tag.
+- [ ] Search titles, descriptions, domains, collection names, folder names, and tag names.
+- [ ] Filter by item type, collection, folder, and tag.
 - [ ] Sort by creation time, update time, title, and manual position.
 - [ ] Keep search and filter state in the route query.
 - [ ] Debounce only operations that have measurable cost.
@@ -346,7 +346,7 @@ Phase exit criteria:
 
 - [ ] Select the database client and migration tool.
 - [ ] Add validated database configuration to the API application.
-- [ ] Create migrations for users, workspaces, members, categories, and folders.
+- [ ] Create migrations for users, workspaces, members, collections, and folders.
 - [ ] Create migrations for sources, media sources, items, and site sources.
 - [ ] Create migrations for media variants, media locations, tags, and item tags.
 - [ ] Create migrations for uploads and future sync changes.
@@ -364,7 +364,7 @@ Exit criteria:
 
 - [ ] Implement PostgreSQL repositories behind existing application interfaces.
 - [ ] Require workspace authorization for every record query.
-- [ ] Implement category and folder mutations.
+- [ ] Implement collection and folder mutations.
 - [ ] Implement item, source, variant, location, and tag mutations.
 - [ ] Implement cursor pagination for item lists.
 - [ ] Implement server-side filters matching the local query model.
@@ -418,7 +418,7 @@ Exit criteria:
 
 ### 3.5 Add cloud organization and retrieval
 
-- [ ] Add workspace category, folder, tag, and item endpoints.
+- [ ] Add workspace collection, folder, tag, and item endpoints.
 - [ ] Add item detail responses with resolved media URLs.
 - [ ] Add item movement, duplication, reorder, and deletion endpoints.
 - [ ] Add cloud search and filtering.
@@ -554,7 +554,7 @@ Exit criteria:
 ### 4.4 Build the SwiftUI library experience
 
 - [ ] Build adaptive navigation for compact and regular layouts.
-- [ ] Build category and folder navigation.
+- [ ] Build collection and folder navigation.
 - [ ] Build item grids, lists, filters, and search.
 - [ ] Build image, video, and website item cards.
 - [ ] Build item detail and editing screens.

@@ -12,7 +12,7 @@ The core product model is:
 
 ```text
 Workspace
-└── Category
+└── Collection
     └── Folder
         └── Item
             └── Source
@@ -65,7 +65,7 @@ Example:
 
 ```ts
 createItem("image", {
-  categoryId,
+  collectionId,
   file,
   persistence: "local",
 });
@@ -75,7 +75,7 @@ or:
 
 ```ts
 createItem("image", {
-  categoryId,
+  collectionId,
   file,
   persistence: "cloud",
 });
@@ -85,7 +85,7 @@ or:
 
 ```ts
 createItem("image", {
-  categoryId,
+  collectionId,
   file,
   persistence: "both",
 });
@@ -102,7 +102,7 @@ The backend must never trust the persistence choice as authorization. Cloud perm
 Users can organize inspiration with:
 
 - Workspaces
-- Categories
+- Collections
 - Folders
 - Nested folders
 - Items
@@ -113,12 +113,12 @@ Example:
 ```text
 Workspace: Personal
 
-Category: Sites
+Collection: Sites
 ├── SaaS
 ├── E-commerce
 └── Portfolio
 
-Category: Typography
+Collection: Typography
 ├── Serif
 ├── Sans Serif
 └── Display
@@ -158,7 +158,7 @@ Users can:
 - Keep both local and cloud copies
 - Generate thumbnails
 - Attach tags
-- Move images between categories/folders
+- Move images between collections/folders
 
 ### Video Items
 
@@ -212,7 +212,7 @@ Example:
 Item
 Stripe homepage
 
-Category
+Collection
 Sites
 
 Folder
@@ -235,7 +235,7 @@ Search should eventually support:
 - Website domain
 - Website title
 - Item type
-- Category
+- Collection
 - Folder
 
 Possible future search:
@@ -251,7 +251,7 @@ Free users can store media locally.
 
 ```text
 IndexedDB
-├── categories
+├── collections
 ├── folders
 ├── items
 ├── sources
@@ -332,7 +332,7 @@ New visitor
     ▼
 Use app locally
     │
-    ├── create categories
+    ├── create collections
     ├── create folders
     ├── save images
     ├── save videos
@@ -497,7 +497,7 @@ Examples:
 
 ```ts
 createItem("image", {
-  categoryId,
+  collectionId,
   file,
   persistence: "local",
 });
@@ -505,7 +505,7 @@ createItem("image", {
 
 ```ts
 createItem("image", {
-  categoryId,
+  collectionId,
   file,
   persistence: "cloud",
 });
@@ -513,7 +513,7 @@ createItem("image", {
 
 ```ts
 createItem("image", {
-  categoryId,
+  collectionId,
   file,
   persistence: "both",
 });
@@ -614,7 +614,7 @@ Example local record:
 
 ```ts
 interface SyncState {
-  entityType: "item" | "category" | "folder" | "tag";
+  entityType: "item" | "collection" | "folder" | "tag";
   entityId: string;
   status: SyncStatus;
   lastSyncedAt?: string;
@@ -630,7 +630,7 @@ Example:
 ```ts
 interface Change {
   id: string;
-  entityType: "item" | "category" | "folder" | "tag";
+  entityType: "item" | "collection" | "folder" | "tag";
   entityId: string;
 
   operation:
@@ -826,7 +826,7 @@ Suggested folder structure:
 ```text
 src/
 ├── domain/
-│   ├── category.ts
+│   ├── collection.ts
 │   ├── folder.ts
 │   ├── item.ts
 │   ├── source.ts
@@ -834,7 +834,7 @@ src/
 │   └── tag.ts
 │
 ├── application/
-│   ├── createCategory.ts
+│   ├── createCollection.ts
 │   ├── createFolder.ts
 │   ├── createItem.ts
 │   ├── updateItem.ts
@@ -863,7 +863,7 @@ src/
 │   └── StorageResolver.ts
 │
 └── ui/
-    ├── categories/
+    ├── collections/
     ├── folders/
     ├── items/
     ├── tags/
@@ -878,7 +878,7 @@ The UI should call high-level functions.
 Example:
 
 ```ts
-createCategory({
+createCollection({
   name: "Typography",
   persistence: "local",
 });
@@ -888,7 +888,7 @@ Example:
 
 ```ts
 createItem("image", {
-  categoryId,
+  collectionId,
   folderId,
   file,
   title: "Editorial typography",
@@ -896,16 +896,16 @@ createItem("image", {
 });
 ```
 
-### createCategory
+### createCollection
 
 Example:
 
 ```ts
-async function createCategory(input: {
+async function createCollection(input: {
   name: string;
   persistence: PersistenceMode;
 }) {
-  const category = {
+  const collection = {
     id: createId(),
     name: input.name,
     createdAt: new Date().toISOString(),
@@ -915,17 +915,17 @@ async function createCategory(input: {
     input.persistence === "local" ||
     input.persistence === "both"
   ) {
-    await localMetadata.categories.put(category);
+    await localMetadata.collections.put(collection);
   }
 
   if (
     input.persistence === "cloud" ||
     input.persistence === "both"
   ) {
-    await remoteMetadata.categories.create(category);
+    await remoteMetadata.collections.create(collection);
   }
 
-  return category;
+  return collection;
 }
 ```
 
@@ -939,7 +939,7 @@ Example:
 async function createItem(
   type: "image",
   input: {
-    categoryId: string;
+    collectionId: string;
     folderId?: string;
     file: File;
     title?: string;
@@ -952,7 +952,7 @@ async function createItem(
   const item = {
     id: itemId,
     sourceId,
-    categoryId: input.categoryId,
+    collectionId: input.collectionId,
     folderId: input.folderId ?? null,
     type,
     title: input.title ?? null,
@@ -1003,7 +1003,7 @@ IndexedDB stores structured metadata.
 Suggested stores:
 
 ```text
-categories
+collections
 folders
 items
 sources
@@ -1112,15 +1112,15 @@ PATCH  /api/v1/workspaces/:workspaceId
 DELETE /api/v1/workspaces/:workspaceId
 ```
 
-### Categories
+### Collections
 
 ```http
-GET    /api/v1/workspaces/:workspaceId/categories
-POST   /api/v1/workspaces/:workspaceId/categories
+GET    /api/v1/workspaces/:workspaceId/collections
+POST   /api/v1/workspaces/:workspaceId/collections
 
-GET    /api/v1/categories/:categoryId
-PATCH  /api/v1/categories/:categoryId
-DELETE /api/v1/categories/:categoryId
+GET    /api/v1/collections/:collectionId
+PATCH  /api/v1/collections/:collectionId
+DELETE /api/v1/collections/:collectionId
 ```
 
 ### Folders
@@ -1139,7 +1139,7 @@ Possible folder payload:
 ```json
 {
   "name": "Serif",
-  "categoryId": "cat_123",
+  "collectionId": "collection_123",
   "parentId": null
 }
 ```
@@ -1164,7 +1164,7 @@ Example filters:
 ```http
 GET /api/v1/items
   ?workspaceId=ws_123
-  &categoryId=cat_123
+  &collectionId=collection_123
   &folderId=folder_123
   &type=image
   &tagId=tag_123
@@ -1186,7 +1186,7 @@ Example request:
 {
   "id": "item_123",
   "workspaceId": "ws_123",
-  "categoryId": "cat_123",
+  "collectionId": "collection_123",
   "folderId": "folder_123",
   "type": "image",
   "title": "Typography reference",
@@ -1640,7 +1640,7 @@ The page should show at least:
 - Domain
 - Description
 - Tags
-- Category
+- Collection
 - Folder
 - Selected thumbnail
 - Open Graph image
@@ -1930,7 +1930,7 @@ User
  └── Workspace
       │
       ├── WorkspaceMember
-      ├── Category
+      ├── Collection
       │    └── Folder
       ├── Tag
       │
@@ -2012,10 +2012,10 @@ editor
 viewer
 ```
 
-### categories
+### collections
 
 ```sql
-CREATE TABLE categories (
+CREATE TABLE collections (
   id UUID PRIMARY KEY,
   workspace_id UUID NOT NULL REFERENCES workspaces(id),
 
@@ -2027,8 +2027,8 @@ CREATE TABLE categories (
   deleted_at TIMESTAMPTZ
 );
 
-CREATE INDEX idx_categories_workspace
-ON categories(workspace_id);
+CREATE INDEX idx_collections_workspace
+ON collections(workspace_id);
 ```
 
 ### folders
@@ -2037,7 +2037,7 @@ ON categories(workspace_id);
 CREATE TABLE folders (
   id UUID PRIMARY KEY,
   workspace_id UUID NOT NULL REFERENCES workspaces(id),
-  category_id UUID REFERENCES categories(id),
+  collection_id UUID REFERENCES collections(id),
   parent_id UUID REFERENCES folders(id),
 
   name TEXT NOT NULL,
@@ -2051,8 +2051,8 @@ CREATE TABLE folders (
 CREATE INDEX idx_folders_workspace
 ON folders(workspace_id);
 
-CREATE INDEX idx_folders_category
-ON folders(category_id);
+CREATE INDEX idx_folders_collection
+ON folders(collection_id);
 
 CREATE INDEX idx_folders_parent
 ON folders(parent_id);
@@ -2126,7 +2126,7 @@ CREATE TABLE items (
   id UUID PRIMARY KEY,
   workspace_id UUID NOT NULL REFERENCES workspaces(id),
 
-  category_id UUID REFERENCES categories(id),
+  collection_id UUID REFERENCES collections(id),
   folder_id UUID REFERENCES folders(id),
   source_id UUID REFERENCES sources(id),
 
@@ -2150,8 +2150,8 @@ CREATE TABLE items (
 CREATE INDEX idx_items_workspace
 ON items(workspace_id);
 
-CREATE INDEX idx_items_category
-ON items(category_id);
+CREATE INDEX idx_items_collection
+ON items(collection_id);
 
 CREATE INDEX idx_items_folder
 ON items(folder_id);
@@ -2467,7 +2467,7 @@ The local browser database should mirror the logical entities where practical.
 Recommended IndexedDB object stores:
 
 ```text
-categories
+collections
 folders
 items
 sources
@@ -2648,7 +2648,7 @@ Example request:
 {
   "id": "item_123",
   "workspaceId": "ws_123",
-  "categoryId": "cat_123",
+  "collectionId": "collection_123",
   "folderId": "folder_123",
   "type": "site",
   "source": {
@@ -2715,7 +2715,7 @@ A site detail response should contain enough data for the page without requiring
   "description": "...",
   "thumbnailMediaSourceId": "media_hero_123",
   "tags": [],
-  "category": {},
+  "collection": {},
   "folder": {},
   "source": {
     "kind": "site",
@@ -2741,7 +2741,7 @@ Example request:
 {
   "id": "item_video_123",
   "workspaceId": "ws_123",
-  "categoryId": "cat_123",
+  "collectionId": "collection_123",
   "folderId": "folder_123",
   "type": "video",
   "source": {
