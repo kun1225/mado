@@ -10,43 +10,51 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as LibraryRouteImport } from './routes/library'
+import { Route as LibraryRouteRouteImport } from './routes/library/route'
+import { Route as LibraryIndexRouteImport } from './routes/library/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LibraryRoute = LibraryRouteImport.update({
+const LibraryRouteRoute = LibraryRouteRouteImport.update({
   id: '/library',
   path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LibraryIndexRoute = LibraryIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LibraryRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/library': typeof LibraryRoute
+  '/library': typeof LibraryRouteRouteWithChildren
+  '/library/': typeof LibraryIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/library': typeof LibraryRoute
+  '/library': typeof LibraryIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/library': typeof LibraryRoute
+  '/library': typeof LibraryRouteRouteWithChildren
+  '/library/': typeof LibraryIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/library'
+  fullPaths: '/' | '/library' | '/library/'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/library'
-  id: '__root__' | '/' | '/library'
+  id: '__root__' | '/' | '/library' | '/library/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  LibraryRoute: typeof LibraryRoute
+  LibraryRouteRoute: typeof LibraryRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -62,15 +70,34 @@ declare module '@tanstack/react-router' {
       id: '/library'
       path: '/library'
       fullPath: '/library'
-      preLoaderRoute: typeof LibraryRouteImport
+      preLoaderRoute: typeof LibraryRouteRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/library/': {
+      id: '/library/'
+      path: '/'
+      fullPath: '/library/'
+      preLoaderRoute: typeof LibraryIndexRouteImport
+      parentRoute: typeof LibraryRouteRoute
     }
   }
 }
 
+interface LibraryRouteRouteChildren {
+  LibraryIndexRoute: typeof LibraryIndexRoute
+}
+
+const LibraryRouteRouteChildren: LibraryRouteRouteChildren = {
+  LibraryIndexRoute: LibraryIndexRoute,
+}
+
+const LibraryRouteRouteWithChildren = LibraryRouteRoute._addFileChildren(
+  LibraryRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  LibraryRoute: LibraryRoute,
+  LibraryRouteRoute: LibraryRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

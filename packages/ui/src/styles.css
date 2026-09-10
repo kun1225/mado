@@ -1,0 +1,104 @@
+:root {
+  /* Neutrals are Tailwind's `neutral` scale verbatim - chroma 0, no hue cast. */
+  --poise-color-bg: oklch(1 0 0);
+  --poise-color-fg: oklch(0.205 0 0);
+  --poise-color-muted: oklch(0.97 0 0);
+  --poise-color-muted-fg: oklch(0.556 0 0);
+  --poise-color-border: oklch(0.922 0 0);
+
+  --poise-color-accent: oklch(0.305 0 0);
+  --poise-color-accent-fg: oklch(0.985 0 0);
+  --poise-color-danger: oklch(0.52 0.09 30);
+  --poise-color-danger-fg: oklch(0.985 0 0);
+  --poise-color-ring: oklch(0.305 0 0);
+
+  --poise-radius-sm: 0.375rem;
+  --poise-radius-md: 0.5rem;
+  --poise-radius-lg: 0.75rem;
+
+  --poise-duration-instant: 80ms;
+  --poise-duration-fast: 120ms;
+  --poise-duration-base: 180ms;
+  --poise-duration-middle: 240ms;
+  --poise-duration-slow: 300ms;
+  --poise-duration-slower: 420ms;
+
+  --poise-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --poise-ease-out-sine: cubic-bezier(0.61, 1, 0.87, 1);
+  --poise-ease-in-out-sine: cubic-bezier(0.36, 0, 0.64, 1);
+  --poise-ease-out-quad: cubic-bezier(0.5, 1, 0.89, 1);
+  --poise-ease-in-out-quad: cubic-bezier(0.44, 0, 0.56, 1);
+  --poise-ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
+  --poise-ease-in-out-cubic: cubic-bezier(0.66, 0, 0.34, 1);
+  --poise-ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --poise-ease-in-out-quart: cubic-bezier(0.78, 0, 0.22, 1);
+  --poise-ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --poise-ease-in-out-quint: cubic-bezier(0.86, 0, 0.14, 1);
+  --poise-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --poise-ease-in-out-expo: cubic-bezier(0.9, 0, 0.1, 1);
+  --poise-ease-out-circ: cubic-bezier(0, 0.55, 0.45, 1);
+  --poise-ease-in-out-circ: cubic-bezier(0.85, 0.09, 0.15, 0.91);
+  --poise-ease-in-out-jump: cubic-bezier(1, 0, 0, 1);
+  --poise-ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --poise-ease-in-out-back: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+  --poise-ease-in-out-anticipate: cubic-bezier(0.8, -0.4, 0.5, 1);
+}
+
+.dark {
+  --poise-color-bg: oklch(0.145 0 0);
+  --poise-color-fg: oklch(0.985 0 0);
+  --poise-color-muted: oklch(0.269 0 0);
+  --poise-color-muted-fg: oklch(0.708 0 0);
+  --poise-color-border: oklch(0.269 0 0);
+  /* Lifted for contrast on the dark ground; the dark foreground keeps it readable. */
+  --poise-color-accent: oklch(0.72 0.05 245);
+  --poise-color-accent-fg: oklch(0.145 0 0);
+  --poise-color-danger: oklch(0.7 0.08 30);
+  --poise-color-danger-fg: oklch(0.145 0 0);
+  --poise-color-ring: oklch(0.72 0.05 245);
+}
+
+@theme inline {
+  --color-bg: var(--poise-color-bg);
+  --color-fg: var(--poise-color-fg);
+  --color-muted: var(--poise-color-muted);
+  --color-muted-fg: var(--poise-color-muted-fg);
+  --color-border: var(--poise-color-border);
+  --color-accent: var(--poise-color-accent);
+  --color-accent-fg: var(--poise-color-accent-fg);
+  --color-danger: var(--poise-color-danger);
+  --color-danger-fg: var(--poise-color-danger-fg);
+  --color-ring: var(--poise-color-ring);
+
+  --radius-sm: var(--poise-radius-sm);
+  --radius-md: var(--poise-radius-md);
+  --radius-lg: var(--poise-radius-lg);
+
+  /* The namespace is `--transition-duration-*`; `--duration-*` emits no utility. */
+  --transition-duration-instant: var(--poise-duration-instant);
+  --transition-duration-fast: var(--poise-duration-fast);
+  --transition-duration-base: var(--poise-duration-base);
+  --transition-duration-middle: var(--poise-duration-middle);
+  --transition-duration-slow: var(--poise-duration-slow);
+  --transition-duration-slower: var(--poise-duration-slower);
+
+  --ease-standard: var(--poise-ease-standard);
+  --ease-out-sine: var(--poise-ease-out-sine);
+  --ease-in-out-sine: var(--poise-ease-in-out-sine);
+  --ease-out-quad: var(--poise-ease-out-quad);
+  --ease-in-out-quad: var(--poise-ease-in-out-quad);
+  --ease-out-cubic: var(--poise-ease-out-cubic);
+  --ease-in-out-cubic: var(--poise-ease-in-out-cubic);
+  --ease-out-quart: var(--poise-ease-out-quart);
+  --ease-in-out-quart: var(--poise-ease-in-out-quart);
+  --ease-out-quint: var(--poise-ease-out-quint);
+  --ease-in-out-quint: var(--poise-ease-in-out-quint);
+  --ease-out-expo: var(--poise-ease-out-expo);
+  --ease-in-out-expo: var(--poise-ease-in-out-expo);
+  --ease-out-circ: var(--poise-ease-out-circ);
+  --ease-in-out-circ: var(--poise-ease-in-out-circ);
+  --ease-in-out-jump: var(--poise-ease-in-out-jump);
+  --ease-out-back: var(--poise-ease-out-back);
+  --ease-in-out-back: var(--poise-ease-in-out-back);
+  --ease-in-out-anticipate: var(--poise-ease-in-out-anticipate);
+}
