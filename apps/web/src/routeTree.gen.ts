@@ -10,51 +10,51 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as LibraryRouteRouteImport } from './routes/library/route'
-import { Route as LibraryIndexRouteImport } from './routes/library/index'
+import { Route as appLibraryRouteRouteImport } from './routes/(app)/library/route'
+import { Route as appLibraryIndexRouteImport } from './routes/(app)/library/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LibraryRouteRoute = LibraryRouteRouteImport.update({
-  id: '/library',
+const appLibraryRouteRoute = appLibraryRouteRouteImport.update({
+  id: '/(app)/library',
   path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LibraryIndexRoute = LibraryIndexRouteImport.update({
+const appLibraryIndexRoute = appLibraryIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => LibraryRouteRoute,
+  getParentRoute: () => appLibraryRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/library': typeof LibraryRouteRouteWithChildren
-  '/library/': typeof LibraryIndexRoute
+  '/library': typeof appLibraryRouteRouteWithChildren
+  '/library/': typeof appLibraryIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/library': typeof LibraryIndexRoute
+  '/library': typeof appLibraryIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/library': typeof LibraryRouteRouteWithChildren
-  '/library/': typeof LibraryIndexRoute
+  '/(app)/library': typeof appLibraryRouteRouteWithChildren
+  '/(app)/library/': typeof appLibraryIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths: '/' | '/library' | '/library/'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/library'
-  id: '__root__' | '/' | '/library' | '/library/'
+  id: '__root__' | '/' | '/(app)/library' | '/(app)/library/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  LibraryRouteRoute: typeof LibraryRouteRouteWithChildren
+  appLibraryRouteRoute: typeof appLibraryRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -66,38 +66,38 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/library': {
-      id: '/library'
+    '/(app)/library': {
+      id: '/(app)/library'
       path: '/library'
       fullPath: '/library'
-      preLoaderRoute: typeof LibraryRouteRouteImport
+      preLoaderRoute: typeof appLibraryRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/library/': {
-      id: '/library/'
+    '/(app)/library/': {
+      id: '/(app)/library/'
       path: '/'
       fullPath: '/library/'
-      preLoaderRoute: typeof LibraryIndexRouteImport
-      parentRoute: typeof LibraryRouteRoute
+      preLoaderRoute: typeof appLibraryIndexRouteImport
+      parentRoute: typeof appLibraryRouteRoute
     }
   }
 }
 
-interface LibraryRouteRouteChildren {
-  LibraryIndexRoute: typeof LibraryIndexRoute
+interface appLibraryRouteRouteChildren {
+  appLibraryIndexRoute: typeof appLibraryIndexRoute
 }
 
-const LibraryRouteRouteChildren: LibraryRouteRouteChildren = {
-  LibraryIndexRoute: LibraryIndexRoute,
+const appLibraryRouteRouteChildren: appLibraryRouteRouteChildren = {
+  appLibraryIndexRoute: appLibraryIndexRoute,
 }
 
-const LibraryRouteRouteWithChildren = LibraryRouteRoute._addFileChildren(
-  LibraryRouteRouteChildren,
+const appLibraryRouteRouteWithChildren = appLibraryRouteRoute._addFileChildren(
+  appLibraryRouteRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  LibraryRouteRoute: LibraryRouteRouteWithChildren,
+  appLibraryRouteRoute: appLibraryRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

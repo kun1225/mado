@@ -1,6 +1,7 @@
 "use client";
 
 import { Tabs as Primitive } from "@base-ui/react/tabs";
+import { eases, springs } from "./motion";
 import { cn } from "cn";
 import {
   animate,
@@ -24,18 +25,29 @@ import {
   type Ref,
 } from "react";
 
-/**
- * The edge moving into open space, and the one dragged after it. The distance
- * between them during the crossing is the whole effect, so they are a pair -
- * closing the gap between these two numbers flattens it back to a slide.
- */
 const LEAD = { type: "spring", visualDuration: 0.2, bounce: 0.16 } as const;
-const TRAIL = { type: "spring", visualDuration: 0.4, bounce: 0.28 } as const;
+const TRAIL = { type: "spring", visualDuration: 0.4, bounce: 0.32 } as const;
+
+const ICON_SIZE = 16;
+const ICON_GAP = 6;
+const LABEL_SHIFT = (ICON_SIZE + ICON_GAP) / 2;
+
+const ICON_MOTION = {
+  ...springs.snappy,
+  opacity: eases.standard,
+  filter: eases.standard,
+} as const;
+const NO_MOTION = { duration: 0 } as const;
+
+export type LiquidTabsIcons = "active" | "all";
+export type LiquidTabsIconPosition = "start" | "end";
 
 type LiquidRootContextValue = {
   reportActive: (element: HTMLElement, active: boolean) => void;
   left: MotionValue<number>;
   right: MotionValue<number>;
+  icons: LiquidTabsIcons;
+  iconPosition: LiquidTabsIconPosition;
 };
 
 const LiquidRootContext = createContext<LiquidRootContextValue | null>(null);
@@ -55,16 +67,18 @@ const clamp = (value: number, max: number) =>
 export type LiquidTabsProps = Omit<
   Primitive.Root.Props,
   "render" | "orientation"
->;
+> & {
+  icons?: LiquidTabsIcons;
+  iconPosition?: LiquidTabsIconPosition;
+};
 
-/**
- * Base UI can name the active tab but not place it among its siblings, so the
- * active tab reports its own element here and the pill measures against it.
- * The two edges stay motion values so the labels can clip against them per
- * frame without re-rendering.
- */
-function LiquidTabs({ className, ...props }: LiquidTabsProps) {
-  const [activeElement, setActiveElement] = useState<HTMLElement | null>(null);
+function LiquidTabs({
+  className,
+  icons = "active",
+  iconPosition = "start",
+  ...props
+}: LiquidTabsProps) {
+  const [activeElement, setActiveElement] = useState<HTMLElement | null>();
   const left = useMotionValue(0);
   const right = useMotionValue(0);
   const placed = useRef(false);
@@ -116,8 +130,8 @@ function LiquidTabs({ className, ...props }: LiquidTabsProps) {
   }, [activeElement, reduced, left, right]);
 
   const context = useMemo(
-    () => ({ reportActive, left, right }),
-    [reportActive, left, right],
+    () => ({ reportActive, left, right, icons, iconPosition }),
+    [reportActive, left, right, icons, iconPosition],
   );
 
   return (
@@ -152,11 +166,6 @@ function LiquidTabsList({
       className={cn("bg-muted relative flex w-fit rounded-lg p-1", className)}
       {...props}
     >
-      {/*
-       * One element for the whole strip rather than a fill per tab: mid-travel
-       * the pill spans two tabs, and per-tab fills would round their touching
-       * edges and split it in half.
-       */}
       <motion.span
         aria-hidden="true"
         data-slot="liquid-tabs-pill"
@@ -176,16 +185,23 @@ const liquidTabTrigger = cn(
   "duration-fast ease-standard transition-colors",
 );
 
-export type LiquidTabsTriggerProps = Omit<Primitive.Tab.Props, "render">;
+export type LiquidTabsTriggerProps = Omit<Primitive.Tab.Props, "render"> & {
+  /** Decorative - the label names the tab. */
+  icon?: ReactNode;
+};
 
-function LiquidTabsTrigger({ className, ...props }: LiquidTabsTriggerProps) {
+function LiquidTabsTrigger({
+  className,
+  icon,
+  ...props
+}: LiquidTabsTriggerProps) {
   return (
     <Primitive.Tab
       data-slot="liquid-tabs-trigger"
       className={cn(liquidTabTrigger, className)}
       {...props}
       render={(renderProps, state) => (
-        <LiquidTabSurface {...renderProps} active={state.active} />
+        <LiquidTabSurface {...renderProps} active={state.active} icon={icon} />
       )}
     />
   );
@@ -200,21 +216,92 @@ const asMotionProps = (props: ComponentProps<"button">) =>
 
 type LiquidTabSurfaceProps = ComponentProps<"button"> & {
   active: boolean;
+  icon?: ReactNode;
   ref?: Ref<HTMLButtonElement>;
 };
 
+type LiquidTabContentProps = {
+  icon?: ReactNode;
+  shown: boolean;
+  position: LiquidTabsIconPosition;
+  reduced: boolean;
+  children?: ReactNode;
+};
+
 /**
- * The label is drawn twice so the pill can clip the accent copy to a
- * rectangle: a colour swap would flip a whole label at once, where a clip lets
- * the stretched fill's edge cut the letters as it passes.
+ * Both copies of the label render this, so the accent copy travels with the
+ * plain one and the pill keeps clipping the same shape.
+ *
+ * The icon only ever scales, fades and blurs, and the label only translates -
+ * nothing here touches layout, so the tab box stays the size it was measured
+ * at.
+ */
+function LiquidTabContent({
+  icon,
+  shown,
+  position,
+  reduced,
+  children,
+}: LiquidTabContentProps) {
+  if (!icon) return <>{children}</>;
+
+  const transition = reduced ? NO_MOTION : ICON_MOTION;
+  const iconNode = (
+    <motion.span
+      aria-hidden="true"
+      data-slot="liquid-tabs-trigger-icon"
+      className="flex shrink-0 origin-center items-center justify-center"
+      style={{ width: ICON_SIZE, height: ICON_SIZE }}
+      animate={
+        shown
+          ? { opacity: 1, scale: 1, filter: "blur(0px)", x: 0 }
+          : {
+              opacity: 0,
+              scale: 0.5,
+              filter: "blur(2px)",
+              x: position === "start" ? LABEL_SHIFT : -LABEL_SHIFT,
+            }
+      }
+      // Renders the target on the server and on mount, so a hidden icon is
+      // never painted sharp for a frame before hydration reaches it.
+      initial={false}
+      transition={transition}
+    >
+      {icon}
+    </motion.span>
+  );
+
+  return (
+    <motion.span
+      data-slot="liquid-tabs-trigger-content"
+      className="flex items-center"
+      style={{ gap: ICON_GAP }}
+      animate={{
+        x: shown ? 0 : position === "start" ? -LABEL_SHIFT : LABEL_SHIFT,
+      }}
+      initial={false}
+      transition={transition}
+    >
+      {position === "start" && iconNode}
+      {children}
+      {position === "end" && iconNode}
+    </motion.span>
+  );
+}
+
+/**
+ * The label is drawn twice so the pill can clip the accent copy to a rectangle.
  */
 function LiquidTabSurface({
   active,
+  icon,
   ref,
   children,
   ...props
 }: LiquidTabSurfaceProps) {
-  const { reportActive, left, right } = useLiquidRoot("LiquidTabsTrigger");
+  const { reportActive, left, right, icons, iconPosition } =
+    useLiquidRoot("LiquidTabsTrigger");
+  const reduced = useReducedMotion() ?? false;
   const elementRef = useRef<HTMLButtonElement>(null);
 
   // Base UI's composite list re-registers the item whenever the ref detaches,
@@ -248,8 +335,6 @@ function LiquidTabSurface({
     const [start = 0, end = 0] = latest;
     const element = elementRef.current;
 
-    // Nothing measured yet - on the server, and before the first layout.
-    // Lighting the active tab whole is what the measurement will confirm.
     if (!element || end - start === 0) {
       return activeRef.current ? "inset(0)" : "inset(0 100% 0 0)";
     }
@@ -261,16 +346,27 @@ function LiquidTabSurface({
     return `inset(0 ${far}px 0 ${near}px)`;
   });
 
+  const content = (
+    <LiquidTabContent
+      icon={icon}
+      shown={icons === "all" || active}
+      position={iconPosition}
+      reduced={reduced}
+    >
+      {children}
+    </LiquidTabContent>
+  );
+
   return (
     <motion.button {...asMotionProps(props)} ref={setRef}>
-      {children}
+      {content}
       <motion.span
         aria-hidden="true"
         data-slot="liquid-tabs-highlight"
         className="text-accent-fg pointer-events-none absolute inset-0 flex items-center justify-center px-4"
         style={{ clipPath }}
       >
-        {children}
+        {content}
       </motion.span>
     </motion.button>
   );

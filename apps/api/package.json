@@ -18,6 +18,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.3",
     "@types/node": "^22.10.2",
+    "eslint": "10.9.1",
     "tsx": "^4.19.4",
     "typescript": "^6.0.2"
   }

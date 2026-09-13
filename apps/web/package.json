@@ -17,6 +17,9 @@
     "check": "prettier --check ."
   },
   "dependencies": {
+    "@hugeicons/core-free-icons": "^4.3.2",
+    "@hugeicons/react": "^1.1.10",
+    "@repo/ui": "workspace:*",
     "@tanstack/react-router": "latest",
     "@tanstack/react-start": "latest",
     "cn": "^0.2.6",
@@ -24,6 +27,7 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/eslint-config": "latest",
     "@tanstack/router-cli": "^1.132.0",
