@@ -1,10 +1,10 @@
 :root {
   /* Neutrals are Tailwind's `neutral` scale verbatim - chroma 0, no hue cast. */
-  --poise-color-bg: oklch(1 0 0);
+  --poise-color-bg: oklch(0.96 0 0);
   --poise-color-fg: oklch(0.205 0 0);
   --poise-color-muted: oklch(0.97 0 0);
   --poise-color-muted-fg: oklch(0.556 0 0);
-  --poise-color-border: oklch(0.922 0 0);
+  --poise-color-border: oklch(0.86 0 0);
 
   --poise-color-accent: oklch(0.305 0 0);
   --poise-color-accent-fg: oklch(0.985 0 0);
@@ -48,7 +48,7 @@
   --poise-color-bg: oklch(0.145 0 0);
   --poise-color-fg: oklch(0.985 0 0);
   --poise-color-muted: oklch(0.269 0 0);
-  --poise-color-muted-fg: oklch(0.708 0 0);
+  --poise-color-muted-fg: oklch(0.7 0 0);
   --poise-color-border: oklch(0.269 0 0);
   /* Lifted for contrast on the dark ground; the dark foreground keeps it readable. */
   --poise-color-accent: oklch(0.72 0.05 245);
@@ -73,6 +73,29 @@
   --radius-sm: var(--poise-radius-sm);
   --radius-md: var(--poise-radius-md);
   --radius-lg: var(--poise-radius-lg);
+
+  --spacing-header: var(--header-height, 0px);
+  --spacing-announcement: var(--announcement-height, 0px);
+  --spacing-top-space: calc(
+    var(--spacing-header, 0px) + var(--spacing-announcement, 0px)
+  );
+  --spacing-dynamic-top-space: calc(
+    var(--header-height, 0px) + var(--announcement-height, 0px)
+  );
+
+  --spacing-contain-max: 1600px;
+  --spacing-edge: max(
+    max(min(3.5vw, 96px), 8px),
+    calc((100vw - var(--spacing-contain-max)) / 2)
+  );
+
+  /* Z-index */
+  --z-index-header: 100;
+  --z-index-announcement: 101;
+  --z-index-toast: 102;
+  --z-index-modal-overlay: 199;
+  --z-index-modal: 200;
+  --z-index-router-overlay: 1000;
 
   /* The namespace is `--transition-duration-*`; `--duration-*` emits no utility. */
   --transition-duration-instant: var(--poise-duration-instant);
@@ -101,4 +124,28 @@
   --ease-out-back: var(--poise-ease-out-back);
   --ease-in-out-back: var(--poise-ease-in-out-back);
   --ease-in-out-anticipate: var(--poise-ease-in-out-anticipate);
+}
+
+@utility top-top-space-* {
+  top: calc(var(--spacing-top-space) + --value(number) * var(--spacing));
+  top: calc(var(--spacing-top-space) + --value([*]));
+}
+
+@utility top-dynamic-top-space-* {
+  top: calc(
+    var(--spacing-dynamic-top-space) + --value(number) * var(--spacing)
+  );
+  top: calc(var(--spacing-dynamic-top-space) + --value([*]));
+}
+
+@utility mt-top-space-* {
+  margin-top: calc(var(--spacing-top-space) + --value(number) * var(--spacing));
+  margin-top: calc(var(--spacing-top-space) + --value([*]));
+}
+
+@utility pt-top-space-* {
+  padding-top: calc(
+    var(--spacing-top-space) + --value(number) * var(--spacing)
+  );
+  padding-top: calc(var(--spacing-top-space) + --value([*]));
 }

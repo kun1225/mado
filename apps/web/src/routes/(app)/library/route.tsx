@@ -7,6 +7,7 @@ import {
   LiquidTabsList,
   LiquidTabsTrigger,
 } from '@repo/ui/liquid-tab'
+import { Separator } from '@repo/ui/separator'
 
 export const Route = createFileRoute('/(app)/library')({
   component: RouteComponent,
@@ -14,7 +15,7 @@ export const Route = createFileRoute('/(app)/library')({
 
 function RouteComponent() {
   return (
-    <main>
+    <main className="px-edge mt-20">
       <LiquidTabs defaultValue="overview">
         <LiquidTabsList>
           <LiquidTabsTrigger
@@ -31,6 +32,7 @@ function RouteComponent() {
           </LiquidTabsTrigger>
         </LiquidTabsList>
       </LiquidTabs>
+      <Separator className="mt-3" />
       <Outlet />
     </main>
   )
