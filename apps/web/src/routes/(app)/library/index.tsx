@@ -1,15 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
 
+import { NewCollectionCard } from './new-collection-card'
+
 export const Route = createFileRoute('/(app)/library/')({ component: Library })
 
 function Library() {
   return (
-    <main>
-      <p className="eyebrow">Library</p>
-      <h1>Your references live here.</h1>
-      <p className="intro">
-        The first collection view will connect to the Express API.
-      </p>
-    </main>
+    <section className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 py-6">
+      <NewCollectionCard />
+    </section>
   )
 }

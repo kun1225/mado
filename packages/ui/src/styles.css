@@ -58,6 +58,14 @@
   --poise-color-ring: oklch(0.72 0.05 245);
 }
 
+button,
+link,
+input,
+select,
+textarea {
+  cursor: pointer;
+}
+
 @theme inline {
   --color-bg: var(--poise-color-bg);
   --color-fg: var(--poise-color-fg);
