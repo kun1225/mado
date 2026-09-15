@@ -3,7 +3,7 @@
 import { Menu as Primitive } from '@base-ui/react/menu'
 import { ArrowRight01Icon, Tick02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { eases, springs } from './motion'
+import { eases, springs, type Spring } from './motion'
 import { cn } from 'cn'
 import { motion } from 'motion/react'
 import * as React from 'react'
@@ -524,7 +524,7 @@ function MorphItemOverlay({
         // Held in place while nothing is highlighted, so the pointer leaving
         // fades the block out rather than snapping it away.
         item ? 'opacity-100' : 'opacity-0',
-        'duration-fast ease-standard transition-[height,left,opacity,top,width]',
+        'duration-fast ease-standard transition-[background-color,height,left,opacity,top,width]',
       )}
       style={style}
     />
