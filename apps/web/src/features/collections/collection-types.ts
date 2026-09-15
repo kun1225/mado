@@ -9,3 +9,5 @@ export type Collection = {
 export type CreateCollectionInput = {
   name?: string
 }
+
+export type UpdateCollectionInput = Partial<Pick<Collection, 'name'>>

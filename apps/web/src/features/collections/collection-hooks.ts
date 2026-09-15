@@ -8,8 +8,9 @@ import {
   createCollection,
   fetchAllCollections,
   fetchCollection,
+  updateCollection,
 } from './collection-actions'
-import type { Collection } from './collection-types'
+import type { Collection, UpdateCollectionInput } from './collection-types'
 
 export const collectionKeys = {
   all: ['collections'] as const,
@@ -47,6 +48,33 @@ export function useCreateCollection() {
       queryClient.setQueryData(
         collectionKeys.detail(collection.id),
         collection,
+      )
+    },
+  })
+}
+
+export function useUpdateCollection() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string
+      input: UpdateCollectionInput
+    }) => updateCollection(id, input),
+    onSuccess: (collection: Collection) => {
+      queryClient.setQueryData(
+        collectionKeys.detail(collection.id),
+        collection,
+      )
+      queryClient.setQueryData<Collection[]>(
+        collectionKeys.all,
+        (collections = []) =>
+          collections.map((current) =>
+            current.id === collection.id ? collection : current,
+          ),
       )
     },
   })

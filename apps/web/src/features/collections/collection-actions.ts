@@ -1,6 +1,7 @@
 import type {
   Collection,
   CreateCollectionInput,
+  UpdateCollectionInput,
 } from './collection-types'
 
 const DATABASE_NAME = 'mado'
@@ -43,9 +44,7 @@ export async function fetchAllCollections(): Promise<Collection[]> {
   })
 }
 
-export async function fetchCollection(
-  id: string,
-): Promise<Collection | null> {
+export async function fetchCollection(id: string): Promise<Collection | null> {
   const database = await openDatabase()
   const request = database
     .transaction(COLLECTIONS_STORE, 'readonly')
@@ -74,6 +73,40 @@ export async function createCollection(
   return new Promise((resolve, reject) => {
     const transaction = database.transaction(COLLECTIONS_STORE, 'readwrite')
     transaction.objectStore(COLLECTIONS_STORE).put(collection)
+    transaction.oncomplete = () => resolve(collection)
+    transaction.onerror = () => reject(transaction.error)
+    transaction.onabort = () => reject(transaction.error)
+  })
+}
+
+export async function updateCollection(
+  id: string,
+  input: UpdateCollectionInput,
+): Promise<Collection> {
+  const database = await openDatabase()
+
+  const transaction = database.transaction(COLLECTIONS_STORE, 'readwrite')
+  const store = transaction.objectStore(COLLECTIONS_STORE)
+
+  const existing = await new Promise<Collection | undefined>(
+    (resolve, reject) => {
+      const request = store.get(id)
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    },
+  )
+
+  if (!existing) throw new Error(`Collection not found: ${id}`)
+
+  const collection: Collection = {
+    ...existing,
+    ...input,
+    updatedAt: new Date().toISOString(),
+  }
+
+  store.put(collection)
+
+  return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve(collection)
     transaction.onerror = () => reject(transaction.error)
     transaction.onabort = () => reject(transaction.error)
