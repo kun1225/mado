@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as appLibraryRouteRouteImport } from './routes/(app)/library/route'
+import { Route as appCollectionCollectionIdRouteImport } from './routes/(app)/collection/$collectionId'
 import { Route as appLibraryIndexRouteImport } from './routes/(app)/library/index'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,12 @@ const appLibraryRouteRoute = appLibraryRouteRouteImport.update({
   path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
+const appCollectionCollectionIdRoute =
+  appCollectionCollectionIdRouteImport.update({
+    id: '/(app)/collection/$collectionId',
+    path: '/collection/$collectionId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const appLibraryIndexRoute = appLibraryIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -32,29 +39,38 @@ const appLibraryIndexRoute = appLibraryIndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/library': typeof appLibraryRouteRouteWithChildren
+  '/collection/$collectionId': typeof appCollectionCollectionIdRoute
   '/library/': typeof appLibraryIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/collection/$collectionId': typeof appCollectionCollectionIdRoute
   '/library': typeof appLibraryIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/(app)/library': typeof appLibraryRouteRouteWithChildren
+  '/(app)/collection/$collectionId': typeof appCollectionCollectionIdRoute
   '/(app)/library/': typeof appLibraryIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/library' | '/library/'
+  fullPaths: '/' | '/library' | '/collection/$collectionId' | '/library/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/library'
-  id: '__root__' | '/' | '/(app)/library' | '/(app)/library/'
+  to: '/' | '/collection/$collectionId' | '/library'
+  id:
+    | '__root__'
+    | '/'
+    | '/(app)/library'
+    | '/(app)/collection/$collectionId'
+    | '/(app)/library/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   appLibraryRouteRoute: typeof appLibraryRouteRouteWithChildren
+  appCollectionCollectionIdRoute: typeof appCollectionCollectionIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -71,6 +87,13 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library'
       preLoaderRoute: typeof appLibraryRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(app)/collection/$collectionId': {
+      id: '/(app)/collection/$collectionId'
+      path: '/collection/$collectionId'
+      fullPath: '/collection/$collectionId'
+      preLoaderRoute: typeof appCollectionCollectionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(app)/library/': {
@@ -98,6 +121,7 @@ const appLibraryRouteRouteWithChildren = appLibraryRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   appLibraryRouteRoute: appLibraryRouteRouteWithChildren,
+  appCollectionCollectionIdRoute: appCollectionCollectionIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
