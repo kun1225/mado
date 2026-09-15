@@ -1,3 +1,7 @@
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
 :root {
   /* Neutrals are Tailwind's `neutral` scale verbatim - chroma 0, no hue cast. */
   --poise-color-bg: oklch(0.96 0 0);
@@ -58,12 +62,18 @@
   --poise-color-ring: oklch(0.72 0.05 245);
 }
 
-button,
-link,
-input,
-select,
-textarea {
-  cursor: pointer;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-bg text-fg;
+  }
+  button,
+  link,
+  select {
+    cursor: pointer;
+  }
 }
 
 @theme inline {

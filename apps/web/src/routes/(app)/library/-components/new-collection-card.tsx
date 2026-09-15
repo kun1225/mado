@@ -2,9 +2,11 @@ import { Add01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 
 export function NewCollectionCard({
+  label = 'New collection',
   disabled,
   onClick,
 }: {
+  label?: string
   disabled?: boolean
   onClick?: () => void
 }) {
@@ -17,7 +19,7 @@ export function NewCollectionCard({
     >
       <HugeiconsIcon icon={Add01Icon} size={32} strokeWidth={1.5} />
       <span className="absolute bottom-3 left-4 text-sm font-medium">
-        New collection
+        {label}
       </span>
     </button>
   )
