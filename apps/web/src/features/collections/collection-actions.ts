@@ -64,7 +64,8 @@ export async function createCollection(
   const now = new Date().toISOString()
   const collection: Collection = {
     id: crypto.randomUUID(),
-    name: input.name ?? 'Untitled collection',
+    name: input.name ?? 'New collection',
+    saveCount: 0,
     createdAt: now,
     updatedAt: now,
   }

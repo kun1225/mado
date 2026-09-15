@@ -1,13 +1,18 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 
-import { useCreateCollection } from '#/features/collections/collection-hooks'
+import {
+  useCollections,
+  useCreateCollection,
+} from '#/features/collections/collection-hooks'
 
-import { NewCollectionCard } from './new-collection-card'
+import { CollectionCard } from './-components/collection-card'
+import { NewCollectionCard } from './-components/new-collection-card'
 
 export const Route = createFileRoute('/(app)/library/')({ component: Library })
 
 function Library() {
   const navigate = useNavigate()
+  const collectionsQuery = useCollections()
   const createCollectionMutation = useCreateCollection()
 
   async function handleCreateCollection() {
@@ -20,11 +25,15 @@ function Library() {
   }
 
   return (
-    <section className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 py-6">
+    <section className="flex flex-row flex-nowrap gap-4 py-6">
       <NewCollectionCard
         disabled={createCollectionMutation.isPending}
         onClick={handleCreateCollection}
       />
+
+      {collectionsQuery.data?.map((collection) => (
+        <CollectionCard key={collection.id} collection={collection} />
+      ))}
     </section>
   )
 }

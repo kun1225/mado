@@ -1,6 +1,7 @@
 export type Collection = {
   id: string
   name: string
+  saveCount: number
   createdAt: string
   updatedAt: string
 }
