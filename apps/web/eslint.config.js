@@ -1,7 +1,7 @@
 //  @ts-check
 
-import { tanstackConfig } from '@tanstack/eslint-config'
-import { importSortConfig } from '@repo/eslint-config/import-sort'
+import { tanstackConfig } from '@tanstack/eslint-config';
+import { importSortConfig } from '@repo/eslint-config/import-sort';
 
 export default [
   ...tanstackConfig,
@@ -19,4 +19,4 @@ export default [
   {
     ignores: ['eslint.config.js', 'prettier.config.js'],
   },
-]
+];

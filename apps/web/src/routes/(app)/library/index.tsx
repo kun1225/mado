@@ -1,27 +1,27 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 import {
   useCollections,
   useCreateCollection,
-} from '#/features/collections/collection-hooks'
+} from '#/features/collections/collection-hooks';
 
-import { CollectionCard } from './-components/collection-card'
-import { NewCollectionCard } from './-components/new-collection-card'
+import { CollectionCard } from './-components/collection-card';
+import { NewCollectionCard } from './-components/new-collection-card';
 
-export const Route = createFileRoute('/(app)/library/')({ component: Library })
+export const Route = createFileRoute('/(app)/library/')({ component: Library });
 
 function Library() {
-  const navigate = useNavigate()
-  const collectionsQuery = useCollections()
-  const createCollectionMutation = useCreateCollection()
+  const navigate = useNavigate();
+  const collectionsQuery = useCollections();
+  const createCollectionMutation = useCreateCollection();
 
   async function handleCreateCollection() {
-    const collection = await createCollectionMutation.mutateAsync()
+    const collection = await createCollectionMutation.mutateAsync();
 
     await navigate({
       to: '/collection/$collectionId',
       params: { collectionId: collection.id },
-    })
+    });
   }
 
   return (
@@ -35,5 +35,5 @@ function Library() {
         <CollectionCard key={collection.id} collection={collection} />
       ))}
     </section>
-  )
+  );
 }

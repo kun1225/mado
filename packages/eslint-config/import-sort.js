@@ -1,33 +1,33 @@
-import simpleImportSort from "eslint-plugin-simple-import-sort";
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 
 export const importSortConfig = {
   plugins: {
-    "simple-import-sort": simpleImportSort,
+    'simple-import-sort': simpleImportSort,
   },
   rules: {
-    "simple-import-sort/imports": [
-      "error",
+    'simple-import-sort/imports': [
+      'error',
       {
         groups: [
           // Side-effect imports.
-          ["^\\u0000"],
+          ['^\\u0000'],
           // Node.js built-ins.
-          ["^node:"],
+          ['^node:'],
           // External packages.
-          ["^react$", "^react-dom$", "^@?\\w"],
+          ['^react$', '^react-dom$', '^@?\\w'],
           // Monorepo internal aliases.
-          ["^@repo(/.*|$)"],
+          ['^@repo(/.*|$)'],
           // Internal aliases.
-          ["^#/"],
+          ['^#/'],
           // Parent imports.
-          ["^\\.\\.(?!/?$)", "^\\.\\./?$"],
+          ['^\\.\\.(?!/?$)', '^\\.\\./?$'],
           // Same-folder imports.
-          ["^\\./(?=.*/)(?!/?$)", "^\\.(?!/?$)", "^\\./?$"],
+          ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
           // Style imports.
-          ["^.+\\.css$"],
+          ['^.+\\.css$'],
         ],
       },
     ],
-    "simple-import-sort/exports": "error",
+    'simple-import-sort/exports': 'error',
   },
 };

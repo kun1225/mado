@@ -1,17 +1,17 @@
-import { Image01FreeIcons, TrashFreeIcons } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { Image01FreeIcons, TrashFreeIcons } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { createFileRoute, Outlet } from '@tanstack/react-router';
 
 import {
   LiquidTabs,
   LiquidTabsList,
   LiquidTabsTrigger,
-} from '@repo/ui/liquid-tab'
-import { Separator } from '@repo/ui/separator'
+} from '@repo/ui/liquid-tab';
+import { Separator } from '@repo/ui/separator';
 
 export const Route = createFileRoute('/(app)/library')({
   component: RouteComponent,
-})
+});
 
 function RouteComponent() {
   return (
@@ -35,5 +35,5 @@ function RouteComponent() {
       <Separator className="mt-3" />
       <Outlet />
     </main>
-  )
+  );
 }

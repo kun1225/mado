@@ -1,13 +1,13 @@
 export type Collection = {
-  id: string
-  name: string
-  saveCount: number
-  createdAt: string
-  updatedAt: string
-}
+  id: string;
+  name: string;
+  saveCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export type CreateCollectionInput = {
-  name?: string
-}
+  name?: string;
+};
 
-export type UpdateCollectionInput = Partial<Pick<Collection, 'name'>>
+export type UpdateCollectionInput = Partial<Pick<Collection, 'name'>>;

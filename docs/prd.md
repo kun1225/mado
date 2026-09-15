@@ -64,30 +64,30 @@ The frontend should use the same domain API regardless of persistence mode.
 Example:
 
 ```ts
-createItem("image", {
+createItem('image', {
   collectionId,
   file,
-  persistence: "local",
+  persistence: 'local',
 });
 ```
 
 or:
 
 ```ts
-createItem("image", {
+createItem('image', {
   collectionId,
   file,
-  persistence: "cloud",
+  persistence: 'cloud',
 });
 ```
 
 or:
 
 ```ts
-createItem("image", {
+createItem('image', {
   collectionId,
   file,
-  persistence: "both",
+  persistence: 'both',
 });
 ```
 
@@ -307,13 +307,13 @@ OPFS
 The application should expose storage usage using:
 
 ```ts
-navigator.storage.estimate()
+navigator.storage.estimate();
 ```
 
 The application should also request persistent storage where appropriate:
 
 ```ts
-navigator.storage.persist()
+navigator.storage.persist();
 ```
 
 Local storage should not be presented as guaranteed backup.
@@ -477,7 +477,7 @@ Do not scatter plan-name checks throughout the frontend or backend.
 Avoid:
 
 ```ts
-if (user.plan === "pro") {
+if (user.plan === 'pro') {
   // ...
 }
 ```
@@ -526,35 +526,32 @@ The backend independently verifies capabilities for authorization.
 The frontend API accepts:
 
 ```ts
-type PersistenceMode =
-  | "local"
-  | "cloud"
-  | "both";
+type PersistenceMode = 'local' | 'cloud' | 'both';
 ```
 
 Examples:
 
 ```ts
-createItem("image", {
+createItem('image', {
   collectionId,
   file,
-  persistence: "local",
+  persistence: 'local',
 });
 ```
 
 ```ts
-createItem("image", {
+createItem('image', {
   collectionId,
   file,
-  persistence: "cloud",
+  persistence: 'cloud',
 });
 ```
 
 ```ts
-createItem("image", {
+createItem('image', {
   collectionId,
   file,
-  persistence: "both",
+  persistence: 'both',
 });
 ```
 
@@ -642,18 +639,14 @@ For `both`, local creation should succeed even if cloud synchronization temporar
 Suggested sync state:
 
 ```ts
-type SyncStatus =
-  | "pending"
-  | "syncing"
-  | "synced"
-  | "error";
+type SyncStatus = 'pending' | 'syncing' | 'synced' | 'error';
 ```
 
 Example local record:
 
 ```ts
 interface SyncState {
-  entityType: "item" | "collection" | "folder" | "tag";
+  entityType: 'item' | 'collection' | 'folder' | 'tag';
   entityId: string;
   status: SyncStatus;
   lastSyncedAt?: string;
@@ -669,13 +662,10 @@ Example:
 ```ts
 interface Change {
   id: string;
-  entityType: "item" | "collection" | "folder" | "tag";
+  entityType: 'item' | 'collection' | 'folder' | 'tag';
   entityId: string;
 
-  operation:
-    | "create"
-    | "update"
-    | "delete";
+  operation: 'create' | 'update' | 'delete';
 
   createdAt: number;
 }
@@ -744,7 +734,7 @@ Suggested model:
 ```ts
 interface MediaSource {
   sourceId: string;
-  mediaType: "image" | "video";
+  mediaType: 'image' | 'video';
   filename: string;
   mimeType: string;
   sizeBytes: number;
@@ -760,17 +750,11 @@ interface MediaLocation {
   id: string;
   sourceId: string;
 
-  provider:
-    | "opfs"
-    | "r2"
-    | "cloudflare_stream";
+  provider: 'opfs' | 'r2' | 'cloudflare_stream';
 
   locator: string;
 
-  status:
-    | "pending"
-    | "available"
-    | "failed";
+  status: 'pending' | 'available' | 'failed';
 }
 ```
 
@@ -806,9 +790,7 @@ Do not automatically delete local files when a user switches from `both` to `clo
 A safer model is:
 
 ```ts
-type LocalCachePolicy =
-  | "keep"
-  | "remove_after_upload";
+type LocalCachePolicy = 'keep' | 'remove_after_upload';
 ```
 
 Deletion should be explicit or controlled by a separate storage-management flow.
@@ -918,20 +900,20 @@ Example:
 
 ```ts
 createCollection({
-  name: "Typography",
-  persistence: "local",
+  name: 'Typography',
+  persistence: 'local',
 });
 ```
 
 Example:
 
 ```ts
-createItem("image", {
+createItem('image', {
   collectionId,
   folderId,
   file,
-  title: "Editorial typography",
-  persistence: "both",
+  title: 'Editorial typography',
+  persistence: 'both',
 });
 ```
 
@@ -957,17 +939,11 @@ async function createCollection(input: {
     createdAt: new Date().toISOString(),
   };
 
-  if (
-    input.persistence === "local" ||
-    input.persistence === "both"
-  ) {
+  if (input.persistence === 'local' || input.persistence === 'both') {
     await localMetadata.collections.put(collection);
   }
 
-  if (
-    input.persistence === "cloud" ||
-    input.persistence === "both"
-  ) {
+  if (input.persistence === 'cloud' || input.persistence === 'both') {
     await remoteMetadata.collections.create(collection);
   }
 
@@ -983,14 +959,14 @@ Example:
 
 ```ts
 async function createItem(
-  type: "image",
+  type: 'image',
   input: {
     collectionId: string;
     folderId?: string;
     file: File;
     title?: string;
     persistence: PersistenceMode;
-  }
+  },
 ) {
   const itemId = createId();
   const sourceId = createId();
@@ -1005,10 +981,7 @@ async function createItem(
     createdAt: new Date().toISOString(),
   };
 
-  if (
-    input.persistence === "local" ||
-    input.persistence === "both"
-  ) {
+  if (input.persistence === 'local' || input.persistence === 'both') {
     await localMedia.createImage({
       item,
       sourceId,
@@ -1016,10 +989,7 @@ async function createItem(
     });
   }
 
-  if (
-    input.persistence === "cloud" ||
-    input.persistence === "both"
-  ) {
+  if (input.persistence === 'cloud' || input.persistence === 'both') {
     try {
       await remoteMedia.createImage({
         item,
@@ -1027,9 +997,9 @@ async function createItem(
         file: input.file,
       });
     } catch (error) {
-      if (input.persistence === "both") {
+      if (input.persistence === 'both') {
         await syncQueue.add({
-          entityType: "item",
+          entityType: 'item',
           entityId: item.id,
         });
       } else {
@@ -1626,11 +1596,7 @@ The screenshot worker should run asynchronously because capture can be slow or f
 
 ```ts
 type SiteCaptureStatus =
-  | "pending"
-  | "processing"
-  | "ready"
-  | "partial"
-  | "failed";
+  'pending' | 'processing' | 'ready' | 'partial' | 'failed';
 ```
 
 `partial` means that some capture work succeeded while another part failed, such as metadata succeeding but the screenshot failing.
@@ -1849,10 +1815,7 @@ For local OPFS mode, V1 can use the original video for playback when the browser
 ### Media Variant Model
 
 ```ts
-type MediaVariantKind =
-  | "original"
-  | "thumbnail"
-  | "playback";
+type MediaVariantKind = 'original' | 'thumbnail' | 'playback';
 ```
 
 Each variant can have one or more locations:
@@ -1887,11 +1850,7 @@ playback  → Cloudflare Stream
 ### Processing Status
 
 ```ts
-type ProcessingStatus =
-  | "pending"
-  | "processing"
-  | "ready"
-  | "failed";
+type ProcessingStatus = 'pending' | 'processing' | 'ready' | 'failed';
 ```
 
 An item may exist before all variants are ready.

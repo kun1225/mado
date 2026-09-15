@@ -1,14 +1,14 @@
-import { Add01Icon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
+import { Add01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 
 export function NewCollectionCard({
   label = 'New collection',
   disabled,
   onClick,
 }: {
-  label?: string
-  disabled?: boolean
-  onClick?: () => void
+  label?: string;
+  disabled?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <button
@@ -22,5 +22,5 @@ export function NewCollectionCard({
         {label}
       </span>
     </button>
-  )
+  );
 }

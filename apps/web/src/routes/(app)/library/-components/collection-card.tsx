@@ -1,8 +1,8 @@
-import { Folder01Icon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { Link } from '@tanstack/react-router'
+import { Folder01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Link } from '@tanstack/react-router';
 
-import type { Collection } from '#/features/collections/collection-types'
+import type { Collection } from '#/features/collections/collection-types';
 
 export function CollectionCard({ collection }: { collection: Collection }) {
   return (
@@ -18,5 +18,5 @@ export function CollectionCard({ collection }: { collection: Collection }) {
         <p className="text-muted-fg text-sm">{collection.saveCount} saves</p>
       </div>
     </Link>
-  )
+  );
 }

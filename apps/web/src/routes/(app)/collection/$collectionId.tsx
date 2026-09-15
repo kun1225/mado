@@ -1,60 +1,60 @@
-import { ArrowLeft01Icon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { createFileRoute, Link } from '@tanstack/react-router';
 
-import { Input } from '@repo/ui/input'
-import { Separator } from '@repo/ui/separator'
+import { Input } from '@repo/ui/input';
+import { Separator } from '@repo/ui/separator';
 
 import {
   useCollection,
   useUpdateCollection,
-} from '#/features/collections/collection-hooks'
+} from '#/features/collections/collection-hooks';
 
-import { NewCollectionCard } from '../library/-components/new-collection-card'
+import { NewCollectionCard } from '../library/-components/new-collection-card';
 
 export const Route = createFileRoute('/(app)/collection/$collectionId')({
   component: CollectionPage,
-})
+});
 
 function CollectionPage() {
-  const { collectionId } = Route.useParams()
-  const collectionQuery = useCollection(collectionId)
-  const updateCollectionMutation = useUpdateCollection()
+  const { collectionId } = Route.useParams();
+  const collectionQuery = useCollection(collectionId);
+  const updateCollectionMutation = useUpdateCollection();
 
-  if (collectionQuery.isPending) return <p>Loading...</p>
+  if (collectionQuery.isPending) return <p>Loading...</p>;
   if (collectionQuery.isError) {
-    return <p>Unable to load this collection.</p>
+    return <p>Unable to load this collection.</p>;
   }
-  if (!collectionQuery.data) return <p>Collection not found.</p>
+  if (!collectionQuery.data) return <p>Collection not found.</p>;
 
-  const collectionName = collectionQuery.data.name
+  const collectionName = collectionQuery.data.name;
 
   function handleNameBlur(event: React.FocusEvent<HTMLInputElement>) {
-    const inputElement = event.currentTarget
-    const name = inputElement.value.trim()
+    const inputElement = event.currentTarget;
+    const name = inputElement.value.trim();
 
     if (!name || name === collectionName) {
-      inputElement.value = collectionName
-      updateCollectionMutation.reset()
-      return
+      inputElement.value = collectionName;
+      updateCollectionMutation.reset();
+      return;
     }
 
     updateCollectionMutation.mutate(
       { id: collectionId, input: { name } },
       {
         onError: () => {
-          inputElement.value = collectionName
+          inputElement.value = collectionName;
         },
       },
-    )
+    );
   }
 
   function handleNameKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'Enter') {
-      event.currentTarget.blur()
+      event.currentTarget.blur();
     } else if (event.key === 'Escape') {
-      event.currentTarget.value = collectionName
-      event.currentTarget.blur()
+      event.currentTarget.value = collectionName;
+      event.currentTarget.blur();
     }
   }
 
@@ -89,5 +89,5 @@ function CollectionPage() {
         <NewCollectionCard label="New folder" />
       </div>
     </>
-  )
+  );
 }

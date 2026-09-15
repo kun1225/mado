@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import { Tabs as Primitive } from '@base-ui/react/tabs'
-import { eases, springs } from './motion'
-import { cn } from 'cn'
+import { Tabs as Primitive } from '@base-ui/react/tabs';
+import { eases, springs } from './motion';
+import { cn } from 'cn';
 import {
   animate,
   motion,
@@ -11,7 +11,7 @@ import {
   useTransform,
   type HTMLMotionProps,
   type MotionValue,
-} from 'motion/react'
+} from 'motion/react';
 import {
   createContext,
   use,
@@ -23,54 +23,54 @@ import {
   type ComponentProps,
   type ReactNode,
   type Ref,
-} from 'react'
+} from 'react';
 
-const LEAD = { type: 'spring', visualDuration: 0.2, bounce: 0.16 } as const
-const TRAIL = { type: 'spring', visualDuration: 0.4, bounce: 0.32 } as const
+const LEAD = { type: 'spring', visualDuration: 0.2, bounce: 0.16 } as const;
+const TRAIL = { type: 'spring', visualDuration: 0.4, bounce: 0.32 } as const;
 
-const ICON_SIZE = 16
-const ICON_GAP = 6
-const LABEL_SHIFT = (ICON_SIZE + ICON_GAP) / 2
+const ICON_SIZE = 16;
+const ICON_GAP = 6;
+const LABEL_SHIFT = (ICON_SIZE + ICON_GAP) / 2;
 
 const ICON_MOTION = {
   ...springs.snappy,
   opacity: eases.standard,
   filter: eases.standard,
-} as const
-const NO_MOTION = { duration: 0 } as const
+} as const;
+const NO_MOTION = { duration: 0 } as const;
 
-export type LiquidTabsIcons = 'active' | 'all'
-export type LiquidTabsIconPosition = 'start' | 'end'
+export type LiquidTabsIcons = 'active' | 'all';
+export type LiquidTabsIconPosition = 'start' | 'end';
 
 type LiquidRootContextValue = {
-  reportActive: (element: HTMLElement, active: boolean) => void
-  left: MotionValue<number>
-  right: MotionValue<number>
-  icons: LiquidTabsIcons
-  iconPosition: LiquidTabsIconPosition
-}
+  reportActive: (element: HTMLElement, active: boolean) => void;
+  left: MotionValue<number>;
+  right: MotionValue<number>;
+  icons: LiquidTabsIcons;
+  iconPosition: LiquidTabsIconPosition;
+};
 
-const LiquidRootContext = createContext<LiquidRootContextValue | null>(null)
+const LiquidRootContext = createContext<LiquidRootContextValue | null>(null);
 
 function useLiquidRoot(part: string) {
-  const context = use(LiquidRootContext)
+  const context = use(LiquidRootContext);
   if (!context) {
-    throw new Error(`<${part}> must be rendered inside <LiquidTabs>.`)
+    throw new Error(`<${part}> must be rendered inside <LiquidTabs>.`);
   }
-  return context
+  return context;
 }
 
 const clamp = (value: number, max: number) =>
-  Math.min(Math.max(value, 0), Math.max(max, 0))
+  Math.min(Math.max(value, 0), Math.max(max, 0));
 
 /** Horizontal only - the stretch has no meaning stacked. */
 export type LiquidTabsProps = Omit<
   Primitive.Root.Props,
   'render' | 'orientation'
 > & {
-  icons?: LiquidTabsIcons
-  iconPosition?: LiquidTabsIconPosition
-}
+  icons?: LiquidTabsIcons;
+  iconPosition?: LiquidTabsIconPosition;
+};
 
 function LiquidTabs({
   className,
@@ -78,61 +78,61 @@ function LiquidTabs({
   iconPosition = 'start',
   ...props
 }: LiquidTabsProps) {
-  const [activeElement, setActiveElement] = useState<HTMLElement | null>()
-  const left = useMotionValue(0)
-  const right = useMotionValue(0)
-  const placed = useRef(false)
-  const reduced = useReducedMotion() ?? false
+  const [activeElement, setActiveElement] = useState<HTMLElement | null>();
+  const left = useMotionValue(0);
+  const right = useMotionValue(0);
+  const placed = useRef(false);
+  const reduced = useReducedMotion() ?? false;
 
   // Switching tabs deactivates one and activates another in the same commit,
   // so a tab may only clear the slot it still holds.
   const reportActive = useCallback((element: HTMLElement, active: boolean) => {
     setActiveElement((current) => {
-      if (active) return current === element ? current : element
-      return current === element ? null : current
-    })
-  }, [])
+      if (active) return current === element ? current : element;
+      return current === element ? null : current;
+    });
+  }, []);
 
   useLayoutEffect(() => {
-    const element = activeElement
-    if (!element) return
+    const element = activeElement;
+    if (!element) return;
 
     const settle = (sprung: boolean) => {
-      const nextLeft = element.offsetLeft
-      const nextRight = nextLeft + element.offsetWidth
+      const nextLeft = element.offsetLeft;
+      const nextRight = nextLeft + element.offsetWidth;
 
       if (!sprung) {
-        left.set(nextLeft)
-        right.set(nextRight)
-        return
+        left.set(nextLeft);
+        right.set(nextRight);
+        return;
       }
-      const forward = nextLeft > left.get()
-      animate(left, nextLeft, forward ? TRAIL : LEAD)
-      animate(right, nextRight, forward ? LEAD : TRAIL)
-    }
+      const forward = nextLeft > left.get();
+      animate(left, nextLeft, forward ? TRAIL : LEAD);
+      animate(right, nextRight, forward ? LEAD : TRAIL);
+    };
 
-    settle(placed.current && !reduced)
-    placed.current = true
+    settle(placed.current && !reduced);
+    placed.current = true;
 
     // A ResizeObserver reports once on observe, and that call is the
     // measurement just taken - letting it through would cut the stretch short.
-    let observed = false
+    let observed = false;
     const observer = new ResizeObserver(() => {
       if (!observed) {
-        observed = true
-        return
+        observed = true;
+        return;
       }
-      settle(false)
-    })
-    observer.observe(element)
+      settle(false);
+    });
+    observer.observe(element);
 
-    return () => observer.disconnect()
-  }, [activeElement, reduced, left, right])
+    return () => observer.disconnect();
+  }, [activeElement, reduced, left, right]);
 
   const context = useMemo(
     () => ({ reportActive, left, right, icons, iconPosition }),
     [reportActive, left, right, icons, iconPosition],
-  )
+  );
 
   return (
     <LiquidRootContext value={context}>
@@ -143,22 +143,22 @@ function LiquidTabs({
         {...props}
       />
     </LiquidRootContext>
-  )
+  );
 }
 
 export type LiquidTabsListProps = Omit<Primitive.List.Props, 'render'> & {
-  children?: ReactNode
-}
+  children?: ReactNode;
+};
 
 function LiquidTabsList({
   className,
   children,
   ...props
 }: LiquidTabsListProps) {
-  const { left, right } = useLiquidRoot('LiquidTabsList')
+  const { left, right } = useLiquidRoot('LiquidTabsList');
   const width = useTransform([left, right], (latest: number[]) =>
     Math.max((latest[1] ?? 0) - (latest[0] ?? 0), 0),
-  )
+  );
 
   return (
     <Primitive.List
@@ -174,7 +174,7 @@ function LiquidTabsList({
       />
       {children}
     </Primitive.List>
-  )
+  );
 }
 
 const liquidTabTrigger = cn(
@@ -183,12 +183,12 @@ const liquidTabTrigger = cn(
   'focus-visible:outline-ring outline-2 outline-transparent focus-visible:outline-offset-2',
   'data-disabled:text-muted-fg/50 data-disabled:pointer-events-none',
   'duration-fast ease-standard transition-colors',
-)
+);
 
 export type LiquidTabsTriggerProps = Omit<Primitive.Tab.Props, 'render'> & {
   /** Decorative - the label names the tab. */
-  icon?: ReactNode
-}
+  icon?: ReactNode;
+};
 
 function LiquidTabsTrigger({
   className,
@@ -204,7 +204,7 @@ function LiquidTabsTrigger({
         <LiquidTabSurface {...renderProps} active={state.active} icon={icon} />
       )}
     />
-  )
+  );
 }
 
 /**
@@ -212,21 +212,21 @@ function LiquidTabsTrigger({
  * element. Base UI never passes them, so assert past the overlap.
  */
 const asMotionProps = (props: ComponentProps<'button'>) =>
-  props as HTMLMotionProps<'button'>
+  props as HTMLMotionProps<'button'>;
 
 type LiquidTabSurfaceProps = ComponentProps<'button'> & {
-  active: boolean
-  icon?: ReactNode
-  ref?: Ref<HTMLButtonElement>
-}
+  active: boolean;
+  icon?: ReactNode;
+  ref?: Ref<HTMLButtonElement>;
+};
 
 type LiquidTabContentProps = {
-  icon?: ReactNode
-  shown: boolean
-  position: LiquidTabsIconPosition
-  reduced: boolean
-  children?: ReactNode
-}
+  icon?: ReactNode;
+  shown: boolean;
+  position: LiquidTabsIconPosition;
+  reduced: boolean;
+  children?: ReactNode;
+};
 
 /**
  * Both copies of the label render this, so the accent copy travels with the
@@ -243,9 +243,9 @@ function LiquidTabContent({
   reduced,
   children,
 }: LiquidTabContentProps) {
-  if (!icon) return <>{children}</>
+  if (!icon) return <>{children}</>;
 
-  const transition = reduced ? NO_MOTION : ICON_MOTION
+  const transition = reduced ? NO_MOTION : ICON_MOTION;
   const iconNode = (
     <motion.span
       aria-hidden="true"
@@ -269,7 +269,7 @@ function LiquidTabContent({
     >
       {icon}
     </motion.span>
-  )
+  );
 
   return (
     <motion.span
@@ -286,7 +286,7 @@ function LiquidTabContent({
       {children}
       {position === 'end' && iconNode}
     </motion.span>
-  )
+  );
 }
 
 /**
@@ -300,51 +300,51 @@ function LiquidTabSurface({
   ...props
 }: LiquidTabSurfaceProps) {
   const { reportActive, left, right, icons, iconPosition } =
-    useLiquidRoot('LiquidTabsTrigger')
-  const reduced = useReducedMotion() ?? false
-  const elementRef = useRef<HTMLButtonElement>(null)
+    useLiquidRoot('LiquidTabsTrigger');
+  const reduced = useReducedMotion() ?? false;
+  const elementRef = useRef<HTMLButtonElement>(null);
 
   // Base UI's composite list re-registers the item whenever the ref detaches,
   // so the callback has to keep its identity across renders.
-  const forwarded = useRef<Ref<HTMLButtonElement> | undefined>(ref)
-  forwarded.current = ref
+  const forwarded = useRef<Ref<HTMLButtonElement> | undefined>(ref);
+  forwarded.current = ref;
   const setRef = useCallback((element: HTMLButtonElement | null) => {
-    elementRef.current = element
-    const next = forwarded.current
-    if (typeof next === 'function') next(element)
-    else if (next) next.current = element
-  }, [])
+    elementRef.current = element;
+    const next = forwarded.current;
+    if (typeof next === 'function') next(element);
+    else if (next) next.current = element;
+  }, []);
 
   // The clip runs on frames of its own, and would otherwise read whichever
   // render built it.
-  const activeRef = useRef(active)
+  const activeRef = useRef(active);
   useLayoutEffect(() => {
-    activeRef.current = active
-  })
+    activeRef.current = active;
+  });
 
   // Layout, not passive: the report has to land before paint, or the pill
   // would start moving a frame late.
   useLayoutEffect(() => {
-    const element = elementRef.current
-    if (!active || !element) return
-    reportActive(element, true)
-    return () => reportActive(element, false)
-  }, [active, reportActive])
+    const element = elementRef.current;
+    if (!active || !element) return;
+    reportActive(element, true);
+    return () => reportActive(element, false);
+  }, [active, reportActive]);
 
   const clipPath = useTransform([left, right], (latest: number[]) => {
-    const [start = 0, end = 0] = latest
-    const element = elementRef.current
+    const [start = 0, end = 0] = latest;
+    const element = elementRef.current;
 
     if (!element || end - start === 0) {
-      return activeRef.current ? 'inset(0)' : 'inset(0 100% 0 0)'
+      return activeRef.current ? 'inset(0)' : 'inset(0 100% 0 0)';
     }
 
-    const own = element.offsetLeft
-    const extent = element.offsetWidth
-    const near = clamp(start - own, extent)
-    const far = clamp(own + extent - end, extent)
-    return `inset(0 ${far}px 0 ${near}px)`
-  })
+    const own = element.offsetLeft;
+    const extent = element.offsetWidth;
+    const near = clamp(start - own, extent);
+    const far = clamp(own + extent - end, extent);
+    return `inset(0 ${far}px 0 ${near}px)`;
+  });
 
   const content = (
     <LiquidTabContent
@@ -355,7 +355,7 @@ function LiquidTabSurface({
     >
       {children}
     </LiquidTabContent>
-  )
+  );
 
   return (
     <motion.button {...asMotionProps(props)} ref={setRef}>
@@ -369,10 +369,10 @@ function LiquidTabSurface({
         {content}
       </motion.span>
     </motion.button>
-  )
+  );
 }
 
-export type LiquidTabsPanelProps = Omit<Primitive.Panel.Props, 'render'>
+export type LiquidTabsPanelProps = Omit<Primitive.Panel.Props, 'render'>;
 
 function LiquidTabsPanel({ className, ...props }: LiquidTabsPanelProps) {
   return (
@@ -381,7 +381,7 @@ function LiquidTabsPanel({ className, ...props }: LiquidTabsPanelProps) {
       className={cn('flex-1 text-sm outline-none', className)}
       {...props}
     />
-  )
+  );
 }
 
-export { LiquidTabs, LiquidTabsList, LiquidTabsPanel, LiquidTabsTrigger }
+export { LiquidTabs, LiquidTabsList, LiquidTabsPanel, LiquidTabsTrigger };
