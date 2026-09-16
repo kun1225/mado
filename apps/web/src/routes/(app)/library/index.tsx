@@ -39,7 +39,7 @@ function Library() {
         ))}
       </section>
 
-      <div className="flex items-center justify-center py-6">
+      <div className="flex flex-1 items-center justify-center py-6">
         <Button>Add new source</Button>
       </div>
     </>

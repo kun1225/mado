@@ -15,7 +15,7 @@ export const Route = createFileRoute('/(app)/library')({
 
 function RouteComponent() {
   return (
-    <main className="px-edge flex flex-col pt-16 pb-6">
+    <main className="px-edge flex min-h-dvh flex-col pt-16 pb-6">
       <LiquidTabs defaultValue="overview">
         <LiquidTabsList>
           <LiquidTabsTrigger
