@@ -6,7 +6,7 @@ export const Route = createFileRoute('/(app)/collection')({
 
 function RouteComponent() {
   return (
-    <main className="px-edge mt-20">
+    <main className="px-edge">
       <Outlet />
     </main>
   );

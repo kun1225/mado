@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
+import { Button } from '@repo/ui/button';
+
 import {
   useCollections,
   useCreateCollection,
@@ -25,15 +27,21 @@ function Library() {
   }
 
   return (
-    <section className="flex flex-row flex-nowrap gap-4 py-6">
-      <NewCollectionCard
-        disabled={createCollectionMutation.isPending}
-        onClick={handleCreateCollection}
-      />
+    <>
+      <section className="flex flex-row flex-nowrap gap-4 overflow-y-auto pt-6 pb-2 *:shrink-0">
+        <NewCollectionCard
+          disabled={createCollectionMutation.isPending}
+          onClick={handleCreateCollection}
+        />
 
-      {collectionsQuery.data?.map((collection) => (
-        <CollectionCard key={collection.id} collection={collection} />
-      ))}
-    </section>
+        {collectionsQuery.data?.map((collection) => (
+          <CollectionCard key={collection.id} collection={collection} />
+        ))}
+      </section>
+
+      <div className="flex items-center justify-center py-6">
+        <Button>Add new source</Button>
+      </div>
+    </>
   );
 }

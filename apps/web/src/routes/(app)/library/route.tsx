@@ -15,7 +15,7 @@ export const Route = createFileRoute('/(app)/library')({
 
 function RouteComponent() {
   return (
-    <main className="px-edge mt-20">
+    <main className="px-edge flex flex-col pt-16 pb-6">
       <LiquidTabs defaultValue="overview">
         <LiquidTabsList>
           <LiquidTabsTrigger
@@ -32,7 +32,9 @@ function RouteComponent() {
           </LiquidTabsTrigger>
         </LiquidTabsList>
       </LiquidTabs>
+
       <Separator className="mt-3" />
+
       <Outlet />
     </main>
   );
