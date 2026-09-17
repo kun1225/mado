@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
-import { Button } from '@repo/ui/button';
-
 import {
   useCollections,
   useCreateCollection,
 } from '#/features/collections/collection-hooks';
+import { useAllSources } from '#/features/sources/source-hooks';
+import { AddSourceButton } from '#/routes/(app)/-components/add-source-button';
+import { SourceGrid } from '#/routes/(app)/-components/source-grid';
 
 import { CollectionCard } from './-components/collection-card';
 import { NewCollectionCard } from './-components/new-collection-card';
@@ -16,6 +17,7 @@ function Library() {
   const navigate = useNavigate();
   const collectionsQuery = useCollections();
   const createCollectionMutation = useCreateCollection();
+  const sourcesQuery = useAllSources();
 
   async function handleCreateCollection() {
     const collection = await createCollectionMutation.mutateAsync();
@@ -39,9 +41,16 @@ function Library() {
         ))}
       </section>
 
-      <div className="flex flex-1 items-center justify-center py-6">
-        <Button>Add new source</Button>
-      </div>
+      {sourcesQuery.data && sourcesQuery.data.length > 0 ? (
+        <div className="flex flex-1 flex-col gap-6 py-6">
+          <AddSourceButton collectionId={null} />
+          <SourceGrid sources={sourcesQuery.data} showCollection />
+        </div>
+      ) : (
+        <div className="flex flex-1 items-center justify-center py-6">
+          <AddSourceButton collectionId={null} />
+        </div>
+      )}
     </>
   );
 }

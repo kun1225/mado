@@ -2,7 +2,6 @@ import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 
-import { Button } from '@repo/ui/button';
 import { Input } from '@repo/ui/input';
 import { Separator } from '@repo/ui/separator';
 
@@ -10,6 +9,9 @@ import {
   useCollection,
   useUpdateCollection,
 } from '#/features/collections/collection-hooks';
+import { useSources } from '#/features/sources/source-hooks';
+import { AddSourceButton } from '#/routes/(app)/-components/add-source-button';
+import { SourceGrid } from '#/routes/(app)/-components/source-grid';
 
 import { NewCollectionCard } from '../library/-components/new-collection-card';
 
@@ -23,6 +25,7 @@ function CollectionPage() {
   const { collectionId } = Route.useParams();
   const collectionQuery = useCollection(collectionId);
   const updateCollectionMutation = useUpdateCollection();
+  const sourcesQuery = useSources(collectionId);
 
   if (collectionQuery.isPending) return <p>Loading...</p>;
   if (collectionQuery.isError) {
@@ -95,9 +98,16 @@ function CollectionPage() {
         <NewCollectionCard label="New folder" />
       </div>
 
-      <div className="flex grow items-center justify-center py-6">
-        <Button>Add new source</Button>
-      </div>
+      {sourcesQuery.data && sourcesQuery.data.length > 0 ? (
+        <div className="flex grow flex-col gap-6 py-6">
+          <AddSourceButton collectionId={collectionId} />
+          <SourceGrid sources={sourcesQuery.data} />
+        </div>
+      ) : (
+        <div className="flex grow items-center justify-center py-6">
+          <AddSourceButton collectionId={collectionId} />
+        </div>
+      )}
     </div>
   );
 }
