@@ -1,27 +1,23 @@
 export type Spring = {
   readonly type: 'spring';
-  /**
-   * Seconds until the value first reaches its target - which is when the eye
-   * reads the move as finished. Whatever bouncing follows is decoration, so
-   * this, not the settling time, is the animation's felt speed.
-   */
   readonly visualDuration: number;
-  /** How far past the target it carries. 0 never overshoots, 1 rings on. */
-  readonly bounce: number;
+  readonly bounce?: number;
 };
 
 export const springs = {
-  /** Buttons, toggles, anything under the pointer. */
+  micro: { type: 'spring', visualDuration: 0.12, bounce: 0.15 },
   snappy: { type: 'spring', visualDuration: 0.2, bounce: 0.3 },
-  /** Panels, popovers, layout shifts. */
+  precise: { type: 'spring', visualDuration: 0.25 },
   smooth: { type: 'spring', visualDuration: 0.4, bounce: 0.5 },
-  /** Deliberate overshoot. Use sparingly. */
   bouncy: { type: 'spring', visualDuration: 0.3, bounce: 0.4 },
+  gentle: { type: 'spring', visualDuration: 0.5, bounce: 0.15 },
+  slow: { type: 'spring', visualDuration: 0.7, bounce: 0.2 },
+  playful: { type: 'spring', visualDuration: 0.35, bounce: 0.6 },
+  exit: { type: 'spring', visualDuration: 0.15 },
 } as const satisfies Record<string, Spring>;
 
 export type SpringName = keyof typeof springs;
 
-/** Duration-based alternative to a spring - no overshoot, ever. */
 export type Ease = {
   readonly type: 'tween';
   readonly duration: number;

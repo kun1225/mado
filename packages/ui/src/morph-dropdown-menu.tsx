@@ -286,7 +286,7 @@ function MorphDropdownMenuContent(props: MorphDropdownMenuContentProps) {
   return (
     <MorphPopup
       contentSlot="morph-dropdown-menu-content"
-      openTransition={springs.smooth}
+      openTransition={springs.bouncy}
       {...props}
     />
   );
