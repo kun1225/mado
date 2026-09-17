@@ -1,6 +1,7 @@
 export type Collection = {
   id: string;
   name: string;
+  /** Derived from the sources on read, so it can never drift. */
   saveCount: number;
   createdAt: string;
   updatedAt: string;

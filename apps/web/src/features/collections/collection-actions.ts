@@ -1,60 +1,49 @@
+import { countSourcesByCollection } from '#/features/sources/source-actions';
+import {
+  openDatabase,
+  STORES,
+  toCompletion,
+  toPromise,
+} from '#/features/storage/database';
+
 import type {
   Collection,
   CreateCollectionInput,
   UpdateCollectionInput,
 } from './collection-types';
 
-const DATABASE_NAME = 'mado';
-const DATABASE_VERSION = 1;
-const COLLECTIONS_STORE = 'collections';
-
-let databasePromise: Promise<IDBDatabase> | undefined;
-
-function openDatabase() {
-  if (databasePromise) return databasePromise;
-
-  databasePromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-
-    request.onupgradeneeded = () => {
-      request.result.createObjectStore(COLLECTIONS_STORE, { keyPath: 'id' });
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-
-  return databasePromise;
-}
-
 export async function fetchAllCollections(): Promise<Collection[]> {
   const database = await openDatabase();
-  const request = database
-    .transaction(COLLECTIONS_STORE, 'readonly')
-    .objectStore(COLLECTIONS_STORE)
-    .getAll();
+  const collections = await toPromise<Collection[]>(
+    database
+      .transaction(STORES.collections, 'readonly')
+      .objectStore(STORES.collections)
+      .getAll(),
+  );
+  const counts = await countSourcesByCollection();
 
-  return new Promise((resolve, reject) => {
-    request.onsuccess = () =>
-      resolve(
-        request.result.sort((first, second) =>
-          second.updatedAt.localeCompare(first.updatedAt),
-        ),
-      );
-    request.onerror = () => reject(request.error);
-  });
+  return collections
+    .map((collection) => ({
+      ...collection,
+      saveCount: counts.get(collection.id) ?? 0,
+    }))
+    .sort((first, second) => second.updatedAt.localeCompare(first.updatedAt));
 }
 
 export async function fetchCollection(id: string): Promise<Collection | null> {
   const database = await openDatabase();
-  const request = database
-    .transaction(COLLECTIONS_STORE, 'readonly')
-    .objectStore(COLLECTIONS_STORE)
-    .get(id);
+  const collection = await toPromise<Collection | undefined>(
+    database
+      .transaction(STORES.collections, 'readonly')
+      .objectStore(STORES.collections)
+      .get(id),
+  );
 
-  return new Promise((resolve, reject) => {
-    request.onsuccess = () => resolve(request.result ?? null);
-    request.onerror = () => reject(request.error);
-  });
+  if (!collection) return null;
+
+  const counts = await countSourcesByCollection();
+
+  return { ...collection, saveCount: counts.get(id) ?? 0 };
 }
 
 export async function createCollection(
@@ -69,14 +58,12 @@ export async function createCollection(
     updatedAt: now,
   };
   const database = await openDatabase();
+  const transaction = database.transaction(STORES.collections, 'readwrite');
 
-  return new Promise((resolve, reject) => {
-    const transaction = database.transaction(COLLECTIONS_STORE, 'readwrite');
-    transaction.objectStore(COLLECTIONS_STORE).put(collection);
-    transaction.oncomplete = () => resolve(collection);
-    transaction.onerror = () => reject(transaction.error);
-    transaction.onabort = () => reject(transaction.error);
-  });
+  transaction.objectStore(STORES.collections).put(collection);
+  await toCompletion(transaction);
+
+  return collection;
 }
 
 export async function updateCollection(
@@ -84,17 +71,10 @@ export async function updateCollection(
   input: UpdateCollectionInput,
 ): Promise<Collection> {
   const database = await openDatabase();
+  const transaction = database.transaction(STORES.collections, 'readwrite');
+  const store = transaction.objectStore(STORES.collections);
 
-  const transaction = database.transaction(COLLECTIONS_STORE, 'readwrite');
-  const store = transaction.objectStore(COLLECTIONS_STORE);
-
-  const existing = await new Promise<Collection | undefined>(
-    (resolve, reject) => {
-      const request = store.get(id);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    },
-  );
+  const existing = await toPromise<Collection | undefined>(store.get(id));
 
   if (!existing) throw new Error(`Collection not found: ${id}`);
 
@@ -105,10 +85,9 @@ export async function updateCollection(
   };
 
   store.put(collection);
+  await toCompletion(transaction);
 
-  return new Promise((resolve, reject) => {
-    transaction.oncomplete = () => resolve(collection);
-    transaction.onerror = () => reject(transaction.error);
-    transaction.onabort = () => reject(transaction.error);
-  });
+  const counts = await countSourcesByCollection();
+
+  return { ...collection, saveCount: counts.get(id) ?? 0 };
 }

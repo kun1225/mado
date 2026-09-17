@@ -5,6 +5,7 @@ let createCollection: typeof import('./collection-actions').createCollection;
 let fetchAllCollections: typeof import('./collection-actions').fetchAllCollections;
 let fetchCollection: typeof import('./collection-actions').fetchCollection;
 let updateCollection: typeof import('./collection-actions').updateCollection;
+let openDatabase: typeof import('../storage/database').openDatabase;
 
 beforeEach(async () => {
   vi.resetModules();
@@ -16,7 +17,34 @@ beforeEach(async () => {
     fetchCollection,
     updateCollection,
   } = await import('./collection-actions'));
+
+  ({ openDatabase } = await import('../storage/database'));
 });
+
+async function seedSource(collectionId: string | null, id: string) {
+  const database = await openDatabase();
+  const transaction = database.transaction('sources', 'readwrite');
+
+  transaction.objectStore('sources').put({
+    id,
+    collectionId,
+    kind: 'image',
+    fileName: 'shot.png',
+    mimeType: 'image/png',
+    sizeBytes: 1,
+    width: null,
+    height: null,
+    durationSeconds: null,
+    storageKey: id,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    deletedAt: null,
+  });
+
+  await new Promise((resolve) => {
+    transaction.oncomplete = resolve;
+  });
+}
 
 describe('createCollection', () => {
   it('defaults name to "New collection"', async () => {
@@ -58,6 +86,31 @@ describe('fetchCollection', () => {
     const collection = await fetchCollection(created.id);
 
     expect(collection).toEqual(created);
+  });
+});
+
+describe('saveCount', () => {
+  it("counts the collection's sources instead of the stored zero", async () => {
+    const created = await createCollection({ name: 'Sites' });
+    await seedSource(created.id, 'source-1');
+    await seedSource(created.id, 'source-2');
+    await seedSource(null, 'source-3');
+
+    const fetched = await fetchCollection(created.id);
+    const [listed] = await fetchAllCollections();
+
+    expect(created.saveCount).toBe(0);
+    expect(fetched?.saveCount).toBe(2);
+    expect(listed.saveCount).toBe(2);
+  });
+
+  it('stays correct after renaming the collection', async () => {
+    const created = await createCollection({ name: 'Sites' });
+    await seedSource(created.id, 'source-1');
+
+    const updated = await updateCollection(created.id, { name: 'Websites' });
+
+    expect(updated.saveCount).toBe(1);
   });
 });
 
