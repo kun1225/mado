@@ -17,6 +17,13 @@ export default [
     },
   },
   {
+    files: ['**/*.test.ts', '**/*.test.tsx'],
+    rules: {
+      '@typescript-eslint/consistent-type-imports': 'off',
+      'no-global-assign': 'off',
+    },
+  },
+  {
     ignores: ['eslint.config.js', 'prettier.config.js'],
   },
 ];
