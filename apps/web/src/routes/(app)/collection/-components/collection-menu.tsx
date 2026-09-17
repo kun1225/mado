@@ -2,15 +2,15 @@ import {
   Delete02Icon,
   MoreHorizontalIcon,
   PencilEdit02Icon,
-} from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
+} from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 
 import {
   MorphDropdownMenu,
   MorphDropdownMenuContent,
   MorphDropdownMenuItem,
   MorphDropdownMenuTrigger,
-} from '@repo/ui/morph-dropdown-menu'
+} from '@repo/ui/morph-dropdown-menu';
 
 export function CollectionMenu() {
   return (
@@ -34,5 +34,5 @@ export function CollectionMenu() {
         </MorphDropdownMenuItem>
       </MorphDropdownMenuContent>
     </MorphDropdownMenu>
-  )
+  );
 }
