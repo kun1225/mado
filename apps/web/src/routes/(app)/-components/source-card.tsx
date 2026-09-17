@@ -6,6 +6,8 @@ import { Button } from '@repo/ui/button';
 import { useMediaObjectUrl } from '#/features/sources/source-hooks';
 import type { Source } from '#/features/sources/source-types';
 
+import { SourceCardProgressBlur } from './source-card-progress-blur';
+
 export function SourceCard({
   source,
   collectionName,
@@ -20,7 +22,7 @@ export function SourceCard({
   const objectUrl = useMediaObjectUrl(source.storageKey, source.mimeType);
 
   return (
-    <figure className="group border-border relative aspect-square overflow-hidden rounded-md border">
+    <figure className="group relative aspect-square overflow-hidden rounded-md">
       {objectUrl === null && (
         <div className="bg-muted size-full animate-pulse" />
       )}
@@ -36,28 +38,40 @@ export function SourceCard({
       {objectUrl !== null && source.kind === 'video' && (
         <video
           src={objectUrl}
-          controls
-          preload="metadata"
+          autoPlay
+          muted
+          loop
+          playsInline
           className="size-full object-cover"
         />
       )}
 
-      <header className="bg-bg/50 absolute inset-x-0 top-0 flex items-center justify-between gap-2 py-1 pr-1 pl-2 opacity-0 backdrop-blur-xs transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-        <figcaption className="text-fg truncate text-xs font-medium">
-          {collectionName}
-        </figcaption>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label={`Delete ${source.fileName}`}
+        disabled={isDeleting}
+        onClick={() => onDelete(source.id)}
+        className="text-danger hover:text-danger hover:bg-danger/10 bg-bg/50 absolute top-1 right-1 opacity-0 backdrop-blur-xs transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+      >
+        <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={1.5} />
+      </Button>
 
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={`Delete ${source.fileName}`}
-          disabled={isDeleting}
-          onClick={() => onDelete(source.id)}
-          className="text-danger hover:text-danger hover:bg-danger/10 shrink-0"
-        >
-          <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={1.5} />
-        </Button>
-      </header>
+      <figcaption className="absolute inset-x-0 bottom-0 pt-5">
+        <SourceCardProgressBlur />
+
+        <div className="duration-base ease-standard relative px-2 pt-1 pb-1.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+          <p className="text-fg truncate text-xs font-medium">
+            {source.fileName}
+          </p>
+
+          {collectionName !== undefined && (
+            <p className="text-fg/60 truncate text-[0.625rem] leading-tight">
+              {collectionName}
+            </p>
+          )}
+        </div>
+      </figcaption>
     </figure>
   );
 }
