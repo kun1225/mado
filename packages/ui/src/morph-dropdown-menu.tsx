@@ -3,7 +3,7 @@
 import { Menu as Primitive } from '@base-ui/react/menu';
 import { ArrowRight01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { eases, springs, type Spring } from './motion';
+import { springs, type Spring } from './motion';
 import { cn } from 'cn';
 import { motion } from 'motion/react';
 import * as React from 'react';
@@ -81,41 +81,6 @@ function collapsedPose(
   }
 }
 
-/**
- * Fades the popup out while the card collapses, and holds Base UI off until the
- * fade is done.
- *
- * Base UI unmounts a menu popup as soon as the animations on the popup element
- * itself have finished. Handing `Menu.Root` an `actionsRef` does not stop that
- * the way it does for `Select`, and the collapse is a JS spring, which
- * `getAnimations()` cannot see - so the popup was cut away before it could
- * shrink. A Web Animation is something Base UI can see. It runs on the curve
- * the collapse closes on, and because effects run child before parent it is
- * always registered by the time Base UI looks.
- */
-function MorphPopupExit({
-  open,
-  popupRef,
-}: {
-  open: boolean;
-  popupRef: React.RefObject<HTMLDivElement | null>;
-}) {
-  React.useEffect(() => {
-    const element = popupRef.current;
-    if (!element || open) return;
-
-    const animation = element.animate([{ opacity: 1 }, { opacity: 0 }], {
-      duration: eases.standard.duration * 1000,
-      easing: `cubic-bezier(${eases.standard.ease.join(',')})`,
-      fill: 'forwards',
-    });
-
-    return () => animation.cancel();
-  }, [open, popupRef]);
-
-  return null;
-}
-
 /** Pins the growing card to the edge that faces the anchor. */
 function anchoredEdge(side: MorphSide) {
   switch (side) {
@@ -132,9 +97,7 @@ export type MorphDropdownMenuProps = Omit<Primitive.Root.Props, 'actionsRef'>;
 
 /**
  * `actionsRef` lets the popup unmount itself once the closing animation
- * settles. Unlike `Select`, `Menu` does not stop its own unmount when the ref
- * is given, so `MorphPopup` also runs an exit fade for Base UI to wait on -
- * see `MorphPopupExit`.
+ * settles. The popup's CSS fade gives Base UI an exit animation to observe.
  */
 function MorphDropdownMenu(props: MorphDropdownMenuProps) {
   const actionsRef = React.useRef<Primitive.Root.Actions | null>(null);
@@ -163,8 +126,7 @@ function MorphDropdownMenuTrigger({
         'hover:not-data-disabled:bg-muted data-popup-open:not-data-disabled:bg-muted',
         'focus-visible:outline-ring outline-2 outline-offset-2 outline-transparent',
         'data-disabled:text-muted-fg data-disabled:cursor-not-allowed',
-        // Above the popup, so the popup is hidden until it grows clear.
-        'data-popup-open:z-50',
+        'z-50',
         'duration-fast ease-standard transition-[background-color,outline-color,scale]',
         className,
       )}
@@ -206,7 +168,6 @@ function MorphPopup({
 }: MorphPopupProps) {
   const { actionsRef, anchorRef } = useMorphAnchor(contentSlot);
   const contentRef = React.useRef<HTMLDivElement>(null);
-  const popupRef = React.useRef<HTMLDivElement>(null);
   const [naturalSize, setNaturalSize] = React.useState<{
     width: number;
     height: number;
@@ -247,7 +208,7 @@ function MorphPopup({
         className={cn('isolate z-40', positionerClassName)}
       >
         <Primitive.Popup
-          className="group/morph pointer-events-none relative outline-none"
+          className="group/morph duration-middle ease-in-out-circ pointer-events-none relative transition-[opacity,filter] outline-none data-ending-style:opacity-0 data-ending-style:blur-sm data-starting-style:blur-sm"
           {...props}
           render={(
             { children: popupChildren, ref, style, ...renderProps },
@@ -263,17 +224,16 @@ function MorphPopup({
             return (
               <div
                 {...renderProps}
-                ref={mergeRefs(popupRef, ref)}
+                ref={ref}
                 style={{ ...style, ...naturalSize }}
               >
-                <MorphPopupExit open={state.open} popupRef={popupRef} />
                 <motion.div
                   className={cn(
                     'border-border bg-bg text-fg pointer-events-auto absolute overflow-hidden rounded-md border shadow-lg',
                     anchoredEdge(physicalSide),
                     'duration-slower ease-standard transition-shadow',
                     'group-data-starting-style/morph:shadow-transparent',
-                    'group-data-ending-style/morph:duration-base group-data-ending-style/morph:shadow-transparent',
+                    'group-data-ending-style/morph:shadow-transparent',
                   )}
                   initial={collapsed}
                   animate={
@@ -281,7 +241,7 @@ function MorphPopup({
                       ? { ...naturalSize, x: 0, y: 0 }
                       : collapsed
                   }
-                  transition={state.open ? openTransition : eases.standard}
+                  transition={openTransition}
                   // The spring, not the exit fade, decides when it goes.
                   onAnimationComplete={() => {
                     if (!state.open) actionsRef.current?.unmount();
@@ -298,10 +258,6 @@ function MorphPopup({
             data-slot={contentSlot}
             className={cn(
               'relative w-max max-w-(--available-width) min-w-32 p-1',
-              'duration-slower ease-standard opacity-100 transition-[filter,opacity]',
-              'group-data-starting-style/morph:opacity-0 group-data-starting-style/morph:blur-sm',
-              'group-data-ending-style/morph:filter-sm group-data-ending-style/morph:opacity-0',
-              'group-data-ending-style/morph:duration-slow',
               className,
             )}
           >
