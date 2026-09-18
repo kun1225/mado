@@ -25,6 +25,7 @@
     "@tanstack/react-router-ssr-query": "^1.167.2",
     "@tanstack/react-start": "latest",
     "cn": "^0.2.6",
+    "masonry-layout": "^4.2.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^4.6.5"
@@ -34,6 +35,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/eslint-config": "latest",
     "@tanstack/router-cli": "^1.132.0",
+    "@types/masonry-layout": "^4.2.8",
     "@types/node": "^22.10.2",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
