@@ -41,6 +41,28 @@ export function Masonry<TItem>({
   const masonryRef = useRef<MasonryLayout | null>(null);
   const [isLaidOut, setIsLaidOut] = useState(false);
 
+  const keys = items.map(getKey);
+  const [seenKeys, setSeenKeys] = useState<ReadonlySet<string>>(
+    () => new Set(keys),
+  );
+
+  const enteringKeys = keys.filter((key) => !seenKeys.has(key));
+  // For `useEffect` dependency
+  const enteringSignature = enteringKeys.join('\n');
+
+  useEffect(() => {
+    if (enteringKeys.length === 0) return;
+
+    const timer = setTimeout(
+      () => {
+        setSeenKeys((seen) => new Set([...seen, ...enteringKeys]));
+      },
+      (TRANSITION_DURATION * 2) / 3,
+    );
+
+    return () => clearTimeout(timer);
+  }, [enteringSignature]);
+
   /**
    * `masonry-layout` reads `window` while it loads, so it can only be imported
    * once we are in the browser.
@@ -110,15 +132,28 @@ export function Masonry<TItem>({
         className={cn(COLUMN_SIZER_CLASS, columnClassName)}
       />
 
-      {items.map((item) => (
-        <li
-          key={getKey(item)}
-          style={{ marginBottom: gutter }}
-          className={cn(ITEM_CLASS, columnClassName)}
-        >
-          {children(item)}
-        </li>
-      ))}
+      {items.map((item) => {
+        const key = getKey(item);
+
+        return (
+          <li
+            key={key}
+            style={{ marginBottom: gutter }}
+            className={cn(ITEM_CLASS, columnClassName)}
+          >
+            <div
+              className={cn(
+                'duration-slow ease-standard transition-[opacity,filter]',
+                seenKeys.has(key)
+                  ? 'opacity-100 blur-none'
+                  : 'opacity-0 blur-md',
+              )}
+            >
+              {children(item)}
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }
