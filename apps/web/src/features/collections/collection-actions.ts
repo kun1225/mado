@@ -1,4 +1,7 @@
-import { countSourcesByCollection } from '#/features/sources/source-actions';
+import {
+  countSourcesByCollection,
+  softDeleteSourcesInCollection,
+} from '#/features/sources/source-actions';
 import {
   openDatabase,
   STORES,
@@ -90,4 +93,31 @@ export async function updateCollection(
   const counts = await countSourcesByCollection();
 
   return { ...collection, saveCount: counts.get(id) ?? 0 };
+}
+
+/**
+ * Hard delete: unlike a source, a collection cannot be restored, so its sources
+ * land in the trash on their own and come back to the library if restored.
+ */
+export async function deleteCollection(id: string): Promise<Collection> {
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    [STORES.collections, STORES.sources],
+    'readwrite',
+  );
+  const store = transaction.objectStore(STORES.collections);
+
+  const existing = await toPromise<Collection | undefined>(store.get(id));
+
+  if (!existing) throw new Error(`Collection not found: ${id}`);
+
+  await softDeleteSourcesInCollection(
+    transaction.objectStore(STORES.sources),
+    id,
+  );
+
+  store.delete(id);
+  await toCompletion(transaction);
+
+  return existing;
 }

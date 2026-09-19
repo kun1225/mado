@@ -1,7 +1,10 @@
 import { IDBFactory } from 'fake-indexeddb';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { Source } from '../sources/source-types';
+
 let createCollection: typeof import('./collection-actions').createCollection;
+let deleteCollection: typeof import('./collection-actions').deleteCollection;
 let fetchAllCollections: typeof import('./collection-actions').fetchAllCollections;
 let fetchCollection: typeof import('./collection-actions').fetchCollection;
 let updateCollection: typeof import('./collection-actions').updateCollection;
@@ -13,6 +16,7 @@ beforeEach(async () => {
 
   ({
     createCollection,
+    deleteCollection,
     fetchAllCollections,
     fetchCollection,
     updateCollection,
@@ -43,6 +47,18 @@ async function seedSource(collectionId: string | null, id: string) {
 
   await new Promise((resolve) => {
     transaction.oncomplete = resolve;
+  });
+}
+
+async function readSource(id: string) {
+  const database = await openDatabase();
+  const request = database
+    .transaction('sources', 'readonly')
+    .objectStore('sources')
+    .get(id);
+
+  return new Promise<Source>((resolve) => {
+    request.onsuccess = () => resolve(request.result);
   });
 }
 
@@ -130,5 +146,55 @@ describe('updateCollection', () => {
     await expect(updateCollection('missing-id', { name: 'x' })).rejects.toThrow(
       'Collection not found: missing-id',
     );
+  });
+});
+
+describe('deleteCollection', () => {
+  it('removes the collection', async () => {
+    const created = await createCollection({ name: 'Sites' });
+
+    const deleted = await deleteCollection(created.id);
+
+    expect(deleted.id).toBe(created.id);
+    expect(await fetchCollection(created.id)).toBeNull();
+    expect(await fetchAllCollections()).toEqual([]);
+  });
+
+  it('throws when the collection does not exist', async () => {
+    await expect(deleteCollection('missing-id')).rejects.toThrow(
+      'Collection not found: missing-id',
+    );
+  });
+
+  it('sends its sources to the trash and detaches them', async () => {
+    const created = await createCollection({ name: 'Sites' });
+    await seedSource(created.id, 'source-1');
+    await seedSource(created.id, 'source-2');
+
+    await deleteCollection(created.id);
+
+    for (const id of ['source-1', 'source-2']) {
+      const source = await readSource(id);
+
+      expect(source.deletedAt).not.toBeNull();
+      expect(source.collectionId).toBeNull();
+    }
+  });
+
+  it('leaves sources of other collections alone', async () => {
+    const deletedCollection = await createCollection({ name: 'Sites' });
+    const keptCollection = await createCollection({ name: 'Typography' });
+    await seedSource(deletedCollection.id, 'source-1');
+    await seedSource(keptCollection.id, 'source-2');
+    await seedSource(null, 'source-3');
+
+    await deleteCollection(deletedCollection.id);
+
+    const kept = await readSource('source-2');
+    const loose = await readSource('source-3');
+
+    expect(kept.deletedAt).toBeNull();
+    expect(kept.collectionId).toBe(keptCollection.id);
+    expect(loose.deletedAt).toBeNull();
   });
 });

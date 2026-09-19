@@ -1,12 +1,13 @@
 import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 
 import { Input } from '@repo/ui/input';
 import { Separator } from '@repo/ui/separator';
 
 import {
   useCollection,
+  useDeleteCollection,
   useUpdateCollection,
 } from '#/features/collections/collection-hooks';
 import { useSources } from '#/features/sources/source-hooks';
@@ -23,8 +24,10 @@ export const Route = createFileRoute('/(app)/collection/$collectionId')({
 
 function CollectionPage() {
   const { collectionId } = Route.useParams();
+  const navigate = useNavigate();
   const collectionQuery = useCollection(collectionId);
   const updateCollectionMutation = useUpdateCollection();
+  const deleteCollectionMutation = useDeleteCollection();
   const sourcesQuery = useSources(collectionId);
 
   if (collectionQuery.isPending) return <p>Loading...</p>;
@@ -33,7 +36,16 @@ function CollectionPage() {
   }
   if (!collectionQuery.data) return <p>Collection not found.</p>;
 
-  const collectionName = collectionQuery.data.name;
+  const collection = collectionQuery.data;
+  const collectionName = collection.name;
+
+  function handleDelete() {
+    deleteCollectionMutation.mutate(collectionId, {
+      onSuccess: () => {
+        void navigate({ to: '/library' });
+      },
+    });
+  }
 
   function handleNameBlur(event: React.FocusEvent<HTMLInputElement>) {
     const inputElement = event.currentTarget;
@@ -69,7 +81,7 @@ function CollectionPage() {
       <div className="flex h-11 items-center gap-1">
         <Link
           to="/library"
-          className="text-fg hover:bg-muted flex size-8 items-center justify-center rounded-md transition-colors"
+          className="flex size-8 items-center justify-center rounded-md text-fg transition-colors hover:bg-muted"
         >
           <HugeiconsIcon icon={ArrowLeft01Icon} size={18} strokeWidth={1.5} />
         </Link>
@@ -83,7 +95,12 @@ function CollectionPage() {
           className="field-sizing-content h-8 w-auto border-transparent px-3 text-2xl font-semibold"
         />
 
-        <CollectionMenu />
+        <CollectionMenu
+          collection={collection}
+          onDelete={handleDelete}
+          isDeleting={deleteCollectionMutation.isPending}
+          isDeleteError={deleteCollectionMutation.isError}
+        />
       </div>
 
       {updateCollectionMutation.isError && (

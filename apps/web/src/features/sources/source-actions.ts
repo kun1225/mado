@@ -173,3 +173,29 @@ export async function deleteSource(id: string): Promise<Source> {
 
   return source;
 }
+
+/**
+ * Soft-deletes every source in a collection, inside the caller's transaction so
+ * the collection and its sources go away together.
+ *
+ * `collectionId` is cleared because the collection row is hard-deleted: if a
+ * future Deleted tab restores one of these, it belongs in the library.
+ */
+export async function softDeleteSourcesInCollection(
+  store: IDBObjectStore,
+  collectionId: string,
+): Promise<void> {
+  const sources = await toPromise<Source[]>(
+    store.index(SOURCES_COLLECTION_INDEX).getAll(collectionId),
+  );
+  const now = new Date().toISOString();
+
+  for (const source of sources) {
+    store.put({
+      ...source,
+      collectionId: null,
+      deletedAt: source.deletedAt ?? now,
+      updatedAt: now,
+    });
+  }
+}

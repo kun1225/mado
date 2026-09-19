@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { sourceKeys } from '#/features/sources/source-hooks';
+
 import {
   createCollection,
+  deleteCollection,
   fetchAllCollections,
   fetchCollection,
   updateCollection,
@@ -67,6 +70,32 @@ export function useUpdateCollection() {
             current.id === collection.id ? collection : current,
           ),
       );
+    },
+  });
+}
+
+export function useDeleteCollection() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteCollection,
+    onSuccess: (collection: Collection) => {
+      queryClient.setQueryData<Collection[]>(
+        collectionKeys.all,
+        (collections = []) =>
+          collections.filter((current) => current.id !== collection.id),
+      );
+      queryClient.removeQueries({
+        queryKey: collectionKeys.detail(collection.id),
+      });
+      queryClient.removeQueries({
+        queryKey: sourceKeys.byCollection(collection.id),
+      });
+
+      return queryClient.invalidateQueries({
+        queryKey: sourceKeys.all,
+        exact: true,
+      });
     },
   });
 }
