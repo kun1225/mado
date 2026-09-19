@@ -1,5 +1,9 @@
 import { Button } from '@repo/ui/button';
 
+/**
+ * Floats over the grid, so the wrapper has to let clicks through to the cards
+ * behind it - only the pill itself takes pointer events.
+ */
 export function SourceSelectionBar({
   count,
   onClear,
