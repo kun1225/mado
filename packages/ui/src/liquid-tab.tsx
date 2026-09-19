@@ -163,13 +163,13 @@ function LiquidTabsList({
   return (
     <Primitive.List
       data-slot="liquid-tabs-list"
-      className={cn('bg-bg relative flex w-fit rounded-lg p-1', className)}
+      className={cn('relative flex w-fit rounded-lg bg-bg p-1', className)}
       {...props}
     >
       <motion.span
         aria-hidden="true"
         data-slot="liquid-tabs-pill"
-        className="bg-accent pointer-events-none absolute inset-y-1 left-0 z-0 rounded-md"
+        className="pointer-events-none absolute inset-y-1 left-0 z-0 rounded-md bg-accent"
         style={{ x: left, width }}
       />
       {children}
@@ -178,11 +178,11 @@ function LiquidTabsList({
 }
 
 const liquidTabTrigger = cn(
-  'text-muted-fg relative z-1 flex h-9 cursor-pointer items-center justify-center rounded-md px-4 text-sm font-medium whitespace-nowrap',
+  'relative z-1 flex h-9 cursor-pointer items-center justify-center rounded-md px-4 text-sm font-medium whitespace-nowrap text-muted-fg',
   'not-data-active:hover:text-fg',
-  'focus-visible:outline-ring outline-2 outline-transparent focus-visible:outline-offset-2',
-  'data-disabled:text-muted-fg/50 data-disabled:pointer-events-none',
-  'duration-fast ease-standard transition-colors',
+  'outline-2 outline-transparent focus-visible:outline-offset-2 focus-visible:outline-ring',
+  'data-disabled:pointer-events-none data-disabled:text-muted-fg/50',
+  'transition-colors duration-fast ease-standard',
 );
 
 export type LiquidTabsTriggerProps = Omit<Primitive.Tab.Props, 'render'> & {
@@ -363,7 +363,7 @@ function LiquidTabSurface({
       <motion.span
         aria-hidden="true"
         data-slot="liquid-tabs-highlight"
-        className="text-accent-fg pointer-events-none absolute inset-0 flex items-center justify-center px-4"
+        className="pointer-events-none absolute inset-0 flex items-center justify-center px-4 text-accent-fg"
         style={{ clipPath }}
       >
         {content}

@@ -13,7 +13,7 @@ export function Separator({
     <Primitive
       orientation={orientation}
       className={cn(
-        'before:bg-border relative shrink-0 before:absolute before:inset-0 before:rounded-full',
+        'relative shrink-0 before:absolute before:inset-0 before:rounded-full before:bg-border',
         orientation === 'horizontal' ? 'h-px w-full' : 'h-full w-px',
         className,
       )}

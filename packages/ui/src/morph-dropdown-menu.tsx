@@ -121,13 +121,13 @@ function MorphDropdownMenuTrigger({
     <Primitive.Trigger
       data-slot="morph-dropdown-menu-trigger"
       className={cn(
-        'group text-fg border-border bg-bg relative flex h-10 w-fit min-w-0 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm',
+        'group relative flex h-10 w-fit min-w-0 cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-bg px-3 py-2 text-sm text-fg',
         'active:scale-98',
         'hover:not-data-disabled:bg-muted data-popup-open:not-data-disabled:bg-muted',
-        'focus-visible:outline-ring outline-2 outline-offset-2 outline-transparent',
-        'data-disabled:text-muted-fg data-disabled:cursor-not-allowed',
+        'outline-2 outline-offset-2 outline-transparent focus-visible:outline-ring',
+        'data-disabled:cursor-not-allowed data-disabled:text-muted-fg',
         'z-50',
-        'duration-fast ease-standard transition-[background-color,outline-color,scale]',
+        'transition-[background-color,outline-color,scale] duration-fast ease-standard',
         className,
       )}
       {...props}
@@ -208,7 +208,7 @@ function MorphPopup({
         className={cn('isolate z-40', positionerClassName)}
       >
         <Primitive.Popup
-          className="group/morph duration-middle ease-in-out-circ pointer-events-none relative transition-[opacity,filter] outline-none data-ending-style:opacity-0 data-ending-style:blur-sm data-starting-style:blur-sm"
+          className="group/morph pointer-events-none relative transition-[opacity,filter] duration-middle ease-in-out-circ outline-none data-ending-style:opacity-0 data-ending-style:blur-sm data-starting-style:blur-sm"
           {...props}
           render={(
             { children: popupChildren, ref, style, ...renderProps },
@@ -229,9 +229,9 @@ function MorphPopup({
               >
                 <motion.div
                   className={cn(
-                    'border-border bg-bg text-fg pointer-events-auto absolute overflow-hidden rounded-md border shadow-lg',
+                    'pointer-events-auto absolute overflow-hidden rounded-md border border-border bg-bg text-fg shadow-lg',
                     anchoredEdge(physicalSide),
-                    'duration-slower ease-standard transition-shadow',
+                    'transition-shadow duration-slower ease-standard',
                     'group-data-starting-style/morph:shadow-transparent',
                     'group-data-ending-style/morph:shadow-transparent',
                   )}
@@ -334,7 +334,7 @@ function MorphDropdownMenuSubTrigger({
             icon={ArrowRight01Icon}
             size={14}
             aria-hidden="true"
-            className="text-muted-fg absolute right-2"
+            className="absolute right-2 text-muted-fg"
           />
         </MorphItemSurface>
       )}
@@ -373,16 +373,16 @@ export type MorphItemVariant = 'default' | 'danger';
  */
 const itemClassName = (variant: MorphItemVariant = 'default') =>
   cn(
-    'text-fg relative flex h-9 cursor-default items-center gap-2 rounded-sm px-2 text-sm outline-none select-none',
+    'relative flex h-9 cursor-default items-center gap-2 rounded-sm px-2 text-sm text-fg outline-none select-none',
     variant === 'danger' && 'text-danger',
-    'data-disabled:text-muted-fg data-disabled:pointer-events-none',
-    'duration-fast ease-standard transition-colors',
+    'data-disabled:pointer-events-none data-disabled:text-muted-fg',
+    'transition-colors duration-fast ease-standard',
     '[&_svg]:pointer-events-none [&_svg]:shrink-0',
   );
 
 const indicatorClassName = cn(
-  'text-muted-fg absolute right-2 flex items-center',
-  'duration-base transition-[opacity,scale] ease-in-out',
+  'absolute right-2 flex items-center text-muted-fg',
+  'transition-[opacity,scale] duration-base ease-in-out',
   'data-starting-style:scale-50 data-starting-style:opacity-0',
   'data-ending-style:scale-50 data-ending-style:opacity-0',
 );
@@ -480,7 +480,7 @@ function MorphItemOverlay({
         // Held in place while nothing is highlighted, so the pointer leaving
         // fades the block out rather than snapping it away.
         item ? 'opacity-100' : 'opacity-0',
-        'duration-fast ease-standard transition-[background-color,height,left,opacity,top,width]',
+        'transition-[background-color,height,left,opacity,top,width] duration-fast ease-standard',
       )}
       style={style}
     />
@@ -576,7 +576,7 @@ function MorphDropdownMenuGroupLabel({
   return (
     <Primitive.GroupLabel
       data-slot="morph-dropdown-menu-group-label"
-      className={cn('text-muted-fg px-2 py-1.5 text-xs font-medium', className)}
+      className={cn('px-2 py-1.5 text-xs font-medium text-muted-fg', className)}
       {...props}
     />
   );
@@ -589,7 +589,7 @@ function MorphDropdownMenuSeparator({
   return (
     <Primitive.Separator
       data-slot="morph-dropdown-menu-separator"
-      className={cn('bg-border pointer-events-none -mx-1 my-1 h-px', className)}
+      className={cn('pointer-events-none -mx-1 my-1 h-px bg-border', className)}
       {...props}
     />
   );
@@ -602,7 +602,7 @@ function MorphDropdownMenuShortcut({
   return (
     <span
       data-slot="morph-dropdown-menu-shortcut"
-      className={cn('text-muted-fg ml-auto text-xs tracking-widest', className)}
+      className={cn('ml-auto text-xs tracking-widest text-muted-fg', className)}
       {...props}
     />
   );

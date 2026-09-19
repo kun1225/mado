@@ -122,7 +122,7 @@ export function Masonry<TItem>({
     <ul
       ref={containerRef}
       className={cn(
-        'duration-slow ease-standard transition-opacity',
+        'transition-opacity duration-slow ease-standard',
         isLaidOut ? 'opacity-100' : 'opacity-0',
       )}
     >
@@ -143,7 +143,7 @@ export function Masonry<TItem>({
           >
             <div
               className={cn(
-                'duration-slow ease-standard transition-[opacity,filter]',
+                'transition-[opacity,filter] duration-slow ease-standard',
                 seenKeys.has(key)
                   ? 'opacity-100 blur-none'
                   : 'opacity-0 blur-md',

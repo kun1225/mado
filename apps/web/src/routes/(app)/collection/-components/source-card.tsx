@@ -18,9 +18,9 @@ export function SourceCard({
   const objectUrl = useMediaObjectUrl(source.storageKey, source.mimeType);
 
   return (
-    <figure className="group border-border relative aspect-square overflow-hidden rounded-md border">
+    <figure className="group relative aspect-square overflow-hidden rounded-md border border-border">
       {objectUrl === null && (
-        <div className="bg-muted size-full animate-pulse" />
+        <div className="size-full animate-pulse bg-muted" />
       )}
 
       {objectUrl !== null && source.kind === 'image' && (

@@ -30,7 +30,7 @@ export function SourceCard({
       className="group relative overflow-hidden rounded-md"
     >
       {objectUrl === null && (
-        <div className="bg-muted size-full animate-pulse" />
+        <div className="size-full animate-pulse bg-muted" />
       )}
 
       {objectUrl !== null && source.kind === 'image' && (
@@ -58,7 +58,7 @@ export function SourceCard({
         aria-label={`Delete ${source.fileName}`}
         disabled={isDeleting}
         onClick={() => onDelete(source.id)}
-        className="text-danger hover:text-danger hover:bg-bg/70 bg-bg/50 absolute top-1 right-1 opacity-0 backdrop-blur-xs transition-[opacity,background_color] group-hover:opacity-100 focus-visible:opacity-100"
+        className="absolute top-1 right-1 bg-bg/50 text-danger opacity-0 backdrop-blur-xs transition-[opacity,background_color] group-hover:opacity-100 hover:bg-bg/70 hover:text-danger focus-visible:opacity-100"
       >
         <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={1.5} />
       </Button>
@@ -66,13 +66,13 @@ export function SourceCard({
       <figcaption className="absolute inset-x-0 bottom-0 pt-4">
         <SourceCardProgressBlur />
 
-        <div className="duration-base ease-standard relative px-2 pt-1 pb-1.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
-          <p className="text-bg truncate text-xs font-medium">
+        <div className="relative px-2 pt-1 pb-1.5 opacity-0 transition-opacity duration-base ease-standard group-focus-within:opacity-100 group-hover:opacity-100">
+          <p className="truncate text-xs font-medium text-bg">
             {source.fileName}
           </p>
 
           {collectionName !== undefined && (
-            <p className="text-bg/70 truncate text-[0.625rem] leading-tight">
+            <p className="truncate text-[0.625rem] leading-tight text-bg/70">
               {collectionName}
             </p>
           )}
