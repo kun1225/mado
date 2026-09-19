@@ -238,3 +238,63 @@ export async function softDeleteSourcesInCollection(
     });
   }
 }
+
+/**
+ * Moves many sources to the trash. One transaction: all of them move, or none.
+ */
+export async function deleteSources(ids: string[]): Promise<Source[]> {
+  const database = await openDatabase();
+  const transaction = database.transaction(STORES.sources, 'readwrite');
+  const store = transaction.objectStore(STORES.sources);
+
+  const found = await Promise.all(
+    ids.map((id) => toPromise<Source | undefined>(store.get(id))),
+  );
+  const now = new Date().toISOString();
+  // Skip ids that are already gone, so one missing card does not stop the rest.
+  const sources = found
+    .filter((source): source is Source => source !== undefined)
+    .map((source) => ({ ...source, deletedAt: now, updatedAt: now }));
+
+  for (const source of sources) store.put(source);
+
+  await toCompletion(transaction);
+
+  return sources;
+}
+
+/**
+ * Deletes many sources for good. Only for sources already in the trash.
+ */
+export async function hardDeleteSources(ids: string[]): Promise<Source[]> {
+  const database = await openDatabase();
+  const transaction = database.transaction(STORES.sources, 'readwrite');
+  const store = transaction.objectStore(STORES.sources);
+
+  const found = await Promise.all(
+    ids.map((id) => toPromise<Source | undefined>(store.get(id))),
+  );
+  const sources = found.filter(
+    (source): source is Source => source !== undefined,
+  );
+
+  for (const source of sources) store.delete(source.id);
+
+  // Records first. A file with no record only wastes space, but a record with
+  // no file becomes a card that never loads.
+  await toCompletion(transaction);
+
+  // Keep going if one file fails, so the other files still get deleted.
+  await Promise.all(
+    sources.map((source) =>
+      deleteMediaFile(source.storageKey).catch((error: unknown) => {
+        console.error(
+          `Failed to delete media file: ${source.storageKey}`,
+          error,
+        );
+      }),
+    ),
+  );
+
+  return sources;
+}

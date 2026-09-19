@@ -3,7 +3,10 @@ import { cn } from 'cn';
 import { useCollections } from '#/features/collections/collection-hooks';
 import { useSourceSelection } from '#/features/sources/hooks/use-source-selection';
 
-import { useDeleteSource } from '../../../features/sources/source-hooks';
+import {
+  useDeleteSource,
+  useDeleteSources,
+} from '../../../features/sources/source-hooks';
 import type { Source } from '../../../features/sources/source-types';
 
 import { Masonry } from './masonry';
@@ -14,20 +17,27 @@ export function SourceGrid({
   sources,
   showCollection,
   onDelete,
-  deletingId,
+  onBulkDelete,
+  deletingIds,
+  isBulkDeleting,
 }: {
   sources: Source[];
   showCollection?: boolean;
   onDelete?: (id: string) => void;
-  deletingId?: string | null;
+  onBulkDelete?: (ids: string[]) => void;
+  deletingIds?: readonly string[];
+  isBulkDeleting?: boolean;
 }) {
   const collectionsQuery = useCollections();
   const deleteSourceMutation = useDeleteSource();
+  const deleteSourcesMutation = useDeleteSources();
   const selection = useSourceSelection(sources);
 
-  const softDeletingId = deleteSourceMutation.isPending
-    ? deleteSourceMutation.variables
-    : null;
+  const pendingIds = new Set([
+    ...(deletingIds ?? []),
+    ...(deleteSourceMutation.isPending ? [deleteSourceMutation.variables] : []),
+    ...(deleteSourcesMutation.isPending ? deleteSourcesMutation.variables : []),
+  ]);
 
   const collectionNames = new Map(
     collectionsQuery.data?.map((collection) => [
@@ -35,6 +45,12 @@ export function SourceGrid({
       collection.name,
     ]),
   );
+
+  function handleBulkDelete() {
+    const ids = selection.selectedSources.map((source) => source.id);
+
+    (onBulkDelete ?? deleteSourcesMutation.mutate)(ids);
+  }
 
   return (
     <>
@@ -49,7 +65,7 @@ export function SourceGrid({
                   : undefined
               }
               deletion={{
-                isPending: source.id === (deletingId ?? softDeletingId),
+                isPending: pendingIds.has(source.id),
                 onDelete: () =>
                   (onDelete ?? deleteSourceMutation.mutate)(source.id),
               }}
@@ -67,6 +83,8 @@ export function SourceGrid({
         <SourceSelectionBar
           count={selection.selectedSources.length}
           onClear={selection.clear}
+          onDelete={handleBulkDelete}
+          isDeleting={isBulkDeleting ?? deleteSourcesMutation.isPending}
         />
       )}
     </>

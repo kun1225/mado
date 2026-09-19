@@ -5,10 +5,12 @@ import type { Source } from './source-types';
 
 let countSourcesByCollection: typeof import('./source-actions').countSourcesByCollection;
 let deleteSource: typeof import('./source-actions').deleteSource;
+let deleteSources: typeof import('./source-actions').deleteSources;
 let fetchAllSources: typeof import('./source-actions').fetchAllSources;
 let fetchDeletedSources: typeof import('./source-actions').fetchDeletedSources;
 let fetchSourcesByCollection: typeof import('./source-actions').fetchSourcesByCollection;
 let hardDeleteSource: typeof import('./source-actions').hardDeleteSource;
+let hardDeleteSources: typeof import('./source-actions').hardDeleteSources;
 let deleteMediaFile: typeof import('./source-storage').deleteMediaFile;
 let openDatabase: typeof import('../storage/database').openDatabase;
 let newSourceSchema: typeof import('./source-types').newSourceSchema;
@@ -62,10 +64,12 @@ beforeEach(async () => {
   ({
     countSourcesByCollection,
     deleteSource,
+    deleteSources,
     fetchAllSources,
     fetchDeletedSources,
     fetchSourcesByCollection,
     hardDeleteSource,
+    hardDeleteSources,
   } = await import('./source-actions'));
   ({ deleteMediaFile } = await import('./source-storage'));
   ({ openDatabase } = await import('../storage/database'));
@@ -239,6 +243,56 @@ describe('hardDeleteSource', () => {
     await expect(hardDeleteSource('missing-id')).rejects.toThrow(
       'Source not found: missing-id',
     );
+    expect(deleteMediaFile).not.toHaveBeenCalled();
+  });
+});
+
+describe('deleteSources', () => {
+  it('soft deletes every source it is given', async () => {
+    await seedSources([
+      buildSource({ id: 'a' }),
+      buildSource({ id: 'b' }),
+      buildSource({ id: 'c' }),
+    ]);
+
+    const deleted = await deleteSources(['a', 'b']);
+
+    expect(deleted.map((source) => source.id)).toEqual(['a', 'b']);
+    expect(deleted.every((source) => source.deletedAt !== null)).toBe(true);
+    await expect(fetchSourcesByCollection(COLLECTION_ID)).resolves.toHaveLength(
+      1,
+    );
+  });
+
+  it('skips ids that no longer exist', async () => {
+    await seedSources([buildSource({ id: 'a' })]);
+
+    const deleted = await deleteSources(['a', 'missing-id']);
+
+    expect(deleted.map((source) => source.id)).toEqual(['a']);
+  });
+});
+
+describe('hardDeleteSources', () => {
+  it('removes every record and its media file', async () => {
+    await seedSources([
+      buildSource({ id: 'a', deletedAt: '2026-01-04T00:00:00.000Z' }),
+      buildSource({ id: 'b', deletedAt: '2026-01-04T00:00:00.000Z' }),
+      buildSource({ id: 'c', deletedAt: '2026-01-04T00:00:00.000Z' }),
+    ]);
+
+    const hardDeleted = await hardDeleteSources(['a', 'b']);
+
+    expect(hardDeleted.map((source) => source.id)).toEqual(['a', 'b']);
+    expect(deleteMediaFile).toHaveBeenCalledWith('a');
+    expect(deleteMediaFile).toHaveBeenCalledWith('b');
+    await expect(fetchDeletedSources()).resolves.toHaveLength(1);
+  });
+
+  it('skips ids that no longer exist', async () => {
+    const hardDeleted = await hardDeleteSources(['missing-id']);
+
+    expect(hardDeleted).toEqual([]);
     expect(deleteMediaFile).not.toHaveBeenCalled();
   });
 });

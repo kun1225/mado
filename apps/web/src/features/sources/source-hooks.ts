@@ -7,10 +7,12 @@ import { collectionKeys } from '#/features/collections/collection-hooks';
 import {
   createSources,
   deleteSource,
+  deleteSources,
   fetchAllSources,
   fetchDeletedSources,
   fetchSourcesByCollection,
   hardDeleteSource,
+  hardDeleteSources,
 } from './source-actions';
 import { isMediaStorageSupported, readMediaFile } from './source-storage';
 
@@ -108,6 +110,19 @@ export function useDeleteSource() {
   });
 }
 
+export function useDeleteSources() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteSources,
+    onSuccess: (sources) =>
+      invalidateAfterSourceChange(
+        queryClient,
+        sources.map(({ collectionId }) => collectionId),
+      ),
+  });
+}
+
 export function useHardDeleteSource() {
   const queryClient = useQueryClient();
 
@@ -116,6 +131,20 @@ export function useHardDeleteSource() {
     // Settled, not success: a failed media delete still leaves the record gone.
     onSettled: (source) =>
       invalidateAfterSourceChange(queryClient, [source?.collectionId ?? null]),
+  });
+}
+
+export function useHardDeleteSources() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: hardDeleteSources,
+    // Settled, not success: a failed media delete still leaves the records gone.
+    onSettled: (sources) =>
+      invalidateAfterSourceChange(
+        queryClient,
+        sources?.map(({ collectionId }) => collectionId) ?? [],
+      ),
   });
 }
 

@@ -12,38 +12,50 @@ import {
 import type { Source } from '#/features/sources/source-types';
 
 export function HardDeleteSourceDialog({
-  source,
+  sources,
   open,
   onOpenChange,
   onConfirm,
   isDeleting,
   isError,
 }: {
-  source: Source;
+  sources: Source[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   isDeleting?: boolean;
   isError?: boolean;
 }) {
+  const single = sources.length === 1 ? sources[0] : null;
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            Delete "
-            <span className="break-all underline">{source.fileName}</span>"{' '}
-            forever?
+            {single ? (
+              <>
+                Delete "
+                <span className="break-all underline">{single.fileName}</span>"{' '}
+                forever?
+              </>
+            ) : (
+              <>Delete {sources.length} files forever?</>
+            )}
           </AlertDialogTitle>
 
           <AlertDialogDescription>
-            You cannot get this file back.
+            {single
+              ? 'You cannot get this file back.'
+              : 'You cannot get these files back.'}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         {isError && (
           <p className="text-sm text-danger">
-            Failed to delete the file. Please try again.
+            {single
+              ? 'Failed to delete the file. Please try again.'
+              : 'Failed to delete the files. Please try again.'}
           </p>
         )}
 

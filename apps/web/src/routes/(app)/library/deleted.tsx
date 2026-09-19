@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 
 import {
   useDeletedSources,
-  useHardDeleteSource,
+  useHardDeleteSources,
 } from '#/features/sources/source-hooks';
 import type { Source } from '#/features/sources/source-types';
 import { SourceGrid } from '#/routes/(app)/-components/source-grid';
@@ -16,9 +16,9 @@ export const Route = createFileRoute('/(app)/library/deleted')({
 
 function Deleted() {
   const deletedSourcesQuery = useDeletedSources();
-  const hardDeleteSourceMutation = useHardDeleteSource();
-  // Kept after the dialog closes so the name stays put while it animates out.
-  const [pendingSource, setPendingSource] = useState<Source | null>(null);
+  const hardDeleteSourcesMutation = useHardDeleteSources();
+  // Kept after the dialog closes so the names stay put while it animates out.
+  const [pendingSources, setPendingSources] = useState<Source[]>([]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   // The store is browser-only, so the first paint has nothing to show yet -
@@ -43,22 +43,24 @@ function Deleted() {
     );
   }
 
-  function handleAskToHardDelete(id: string) {
-    const source = sources.find((candidate) => candidate.id === id);
+  function handleAskToHardDelete(ids: string[]) {
+    const selectedIds = new Set(ids);
+    const picked = sources.filter((source) => selectedIds.has(source.id));
 
-    if (!source) return;
+    if (picked.length === 0) return;
 
-    hardDeleteSourceMutation.reset();
-    setPendingSource(source);
+    hardDeleteSourcesMutation.reset();
+    setPendingSources(picked);
     setIsConfirmOpen(true);
   }
 
   function handleConfirmHardDelete() {
-    if (!pendingSource) return;
+    if (pendingSources.length === 0) return;
 
-    hardDeleteSourceMutation.mutate(pendingSource.id, {
-      onSuccess: () => setIsConfirmOpen(false),
-    });
+    hardDeleteSourcesMutation.mutate(
+      pendingSources.map((source) => source.id),
+      { onSuccess: () => setIsConfirmOpen(false) },
+    );
   }
 
   return (
@@ -66,22 +68,24 @@ function Deleted() {
       <SourceGrid
         sources={sources}
         showCollection
-        onDelete={handleAskToHardDelete}
-        deletingId={
-          hardDeleteSourceMutation.isPending
-            ? hardDeleteSourceMutation.variables
-            : null
+        onDelete={(id) => handleAskToHardDelete([id])}
+        onBulkDelete={handleAskToHardDelete}
+        deletingIds={
+          hardDeleteSourcesMutation.isPending
+            ? hardDeleteSourcesMutation.variables
+            : []
         }
+        isBulkDeleting={hardDeleteSourcesMutation.isPending}
       />
 
-      {pendingSource && (
+      {pendingSources.length > 0 && (
         <HardDeleteSourceDialog
-          source={pendingSource}
+          sources={pendingSources}
           open={isConfirmOpen}
           onOpenChange={setIsConfirmOpen}
           onConfirm={handleConfirmHardDelete}
-          isDeleting={hardDeleteSourceMutation.isPending}
-          isError={hardDeleteSourceMutation.isError}
+          isDeleting={hardDeleteSourcesMutation.isPending}
+          isError={hardDeleteSourcesMutation.isError}
         />
       )}
     </div>
