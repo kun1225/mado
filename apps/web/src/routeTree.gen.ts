@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as appCollectionRouteRouteImport } from './routes/(app)/collection/route'
 import { Route as appLibraryRouteRouteImport } from './routes/(app)/library/route'
-import { Route as ProtoEmptyLibraryRouteImport } from './routes/proto/empty-library'
 import { Route as ProtoNewCollectionCardRouteImport } from './routes/proto/new-collection-card'
 import { Route as appCollectionCollectionIdRouteImport } from './routes/(app)/collection/$collectionId'
 import { Route as appLibraryIndexRouteImport } from './routes/(app)/library/index'
@@ -31,11 +30,6 @@ const appCollectionRouteRoute = appCollectionRouteRouteImport.update({
 const appLibraryRouteRoute = appLibraryRouteRouteImport.update({
   id: '/(app)/library',
   path: '/library',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProtoEmptyLibraryRoute = ProtoEmptyLibraryRouteImport.update({
-  id: '/proto/empty-library',
-  path: '/proto/empty-library',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProtoNewCollectionCardRoute = ProtoNewCollectionCardRouteImport.update({
@@ -64,7 +58,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/collection': typeof appCollectionRouteRouteWithChildren
   '/library': typeof appLibraryRouteRouteWithChildren
-  '/proto/empty-library': typeof ProtoEmptyLibraryRoute
   '/proto/new-collection-card': typeof ProtoNewCollectionCardRoute
   '/collection/$collectionId': typeof appCollectionCollectionIdRoute
   '/library/deleted': typeof appLibraryDeletedRoute
@@ -73,7 +66,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/collection': typeof appCollectionRouteRouteWithChildren
-  '/proto/empty-library': typeof ProtoEmptyLibraryRoute
   '/proto/new-collection-card': typeof ProtoNewCollectionCardRoute
   '/collection/$collectionId': typeof appCollectionCollectionIdRoute
   '/library/deleted': typeof appLibraryDeletedRoute
@@ -84,7 +76,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/(app)/collection': typeof appCollectionRouteRouteWithChildren
   '/(app)/library': typeof appLibraryRouteRouteWithChildren
-  '/proto/empty-library': typeof ProtoEmptyLibraryRoute
   '/proto/new-collection-card': typeof ProtoNewCollectionCardRoute
   '/(app)/collection/$collectionId': typeof appCollectionCollectionIdRoute
   '/(app)/library/deleted': typeof appLibraryDeletedRoute
@@ -96,7 +87,6 @@ export interface FileRouteTypes {
     | '/'
     | '/collection'
     | '/library'
-    | '/proto/empty-library'
     | '/proto/new-collection-card'
     | '/collection/$collectionId'
     | '/library/deleted'
@@ -105,7 +95,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/collection'
-    | '/proto/empty-library'
     | '/proto/new-collection-card'
     | '/collection/$collectionId'
     | '/library/deleted'
@@ -115,7 +104,6 @@ export interface FileRouteTypes {
     | '/'
     | '/(app)/collection'
     | '/(app)/library'
-    | '/proto/empty-library'
     | '/proto/new-collection-card'
     | '/(app)/collection/$collectionId'
     | '/(app)/library/deleted'
@@ -126,7 +114,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   appCollectionRouteRoute: typeof appCollectionRouteRouteWithChildren
   appLibraryRouteRoute: typeof appLibraryRouteRouteWithChildren
-  ProtoEmptyLibraryRoute: typeof ProtoEmptyLibraryRoute
   ProtoNewCollectionCardRoute: typeof ProtoNewCollectionCardRoute
 }
 
@@ -151,13 +138,6 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library'
       preLoaderRoute: typeof appLibraryRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/proto/empty-library': {
-      id: '/proto/empty-library'
-      path: '/proto/empty-library'
-      fullPath: '/proto/empty-library'
-      preLoaderRoute: typeof ProtoEmptyLibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/proto/new-collection-card': {
@@ -220,7 +200,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   appCollectionRouteRoute: appCollectionRouteRouteWithChildren,
   appLibraryRouteRoute: appLibraryRouteRouteWithChildren,
-  ProtoEmptyLibraryRoute: ProtoEmptyLibraryRoute,
   ProtoNewCollectionCardRoute: ProtoNewCollectionCardRoute,
 }
 export const routeTree = rootRouteImport
