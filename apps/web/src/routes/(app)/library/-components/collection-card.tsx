@@ -13,8 +13,8 @@ export function CollectionCard({ collection }: { collection: Collection }) {
     >
       <HugeiconsIcon icon={Folder01Icon} size={32} strokeWidth={1.5} />
 
-      <div className="absolute bottom-3 left-4">
-        <p className="text-sm font-medium">{collection.name}</p>
+      <div className="absolute inset-x-4 bottom-3 min-w-0">
+        <p className="truncate text-sm font-medium">{collection.name}</p>
         <p className="text-sm text-muted-fg">{collection.saveCount} saves</p>
       </div>
     </Link>
