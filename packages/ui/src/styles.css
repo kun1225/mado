@@ -16,6 +16,26 @@
   --poise-color-danger-fg: oklch(0.985 0 0);
   --poise-color-ring: oklch(0.305 0 0);
 
+  --poise-gradient-danger-cover:
+    radial-gradient(
+      120% 100% at 18% 0%,
+      oklch(1 0 0 / 0.28) 0%,
+      oklch(1 0 0 / 0.1) 38%,
+      oklch(1 0 0 / 0) 72%
+    ),
+    linear-gradient(
+      to bottom,
+      oklch(0.55 0.17 28) 0%,
+      oklch(0.557 0.168 28.2) 12.5%,
+      oklch(0.577 0.164 28.6) 25%,
+      oklch(0.604 0.157 29.3) 37.5%,
+      oklch(0.635 0.15 30) 50%,
+      oklch(0.666 0.143 30.7) 62.5%,
+      oklch(0.693 0.136 31.4) 75%,
+      oklch(0.713 0.132 31.8) 87.5%,
+      oklch(0.72 0.13 32) 100%
+    );
+
   --poise-radius-sm: 0.375rem;
   --poise-radius-md: 0.5rem;
   --poise-radius-lg: 0.75rem;
@@ -60,6 +80,28 @@
   --poise-color-danger: oklch(0.7 0.08 30);
   --poise-color-danger-fg: oklch(0.145 0 0);
   --poise-color-ring: oklch(0.72 0.05 245);
+
+  /* Dropped in lightness and desaturated ~35% so the cover sits on the dark
+     canvas instead of vibrating off it. */
+  --poise-gradient-danger-cover:
+    radial-gradient(
+      120% 100% at 18% 0%,
+      oklch(1 0 0 / 0.14) 0%,
+      oklch(1 0 0 / 0.05) 38%,
+      oklch(1 0 0 / 0) 72%
+    ),
+    linear-gradient(
+      to bottom,
+      oklch(0.38 0.11 28) 0%,
+      oklch(0.385 0.109 28.2) 12.5%,
+      oklch(0.399 0.106 28.6) 25%,
+      oklch(0.418 0.102 29.3) 37.5%,
+      oklch(0.44 0.0975 30) 50%,
+      oklch(0.462 0.0929 30.7) 62.5%,
+      oklch(0.481 0.0891 31.4) 75%,
+      oklch(0.495 0.0863 31.8) 87.5%,
+      oklch(0.5 0.085 32) 100%
+    );
 }
 
 @layer base {
