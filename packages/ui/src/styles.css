@@ -153,6 +153,7 @@
   --z-index-header: 100;
   --z-index-announcement: 101;
   --z-index-toast: 102;
+  --z-index-action-bar: 150;
   --z-index-modal-overlay: 199;
   --z-index-modal: 200;
   --z-index-router-overlay: 1000;
