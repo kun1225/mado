@@ -19,11 +19,13 @@ import { DeleteCollectionDialog } from './delete-collection-dialog';
 
 export function CollectionMenu({
   collection,
+  onRename,
   onDelete,
   isDeleting,
   isDeleteError,
 }: {
   collection: Collection;
+  onRename: () => void;
   onDelete: () => void;
   isDeleting?: boolean;
   isDeleteError?: boolean;
@@ -41,7 +43,7 @@ export function CollectionMenu({
         </MorphDropdownMenuTrigger>
 
         <MorphDropdownMenuContent align="start" className="min-w-52">
-          <MorphDropdownMenuItem>
+          <MorphDropdownMenuItem onClick={onRename}>
             <HugeiconsIcon
               icon={PencilEdit02Icon}
               size={16}
