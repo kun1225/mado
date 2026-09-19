@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
@@ -29,6 +30,7 @@ function CollectionPage() {
   const updateCollectionMutation = useUpdateCollection();
   const deleteCollectionMutation = useDeleteCollection();
   const sourcesQuery = useSources(collectionId);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   if (collectionQuery.isPending) return <p>Loading...</p>;
   if (collectionQuery.isError) {
@@ -76,6 +78,10 @@ function CollectionPage() {
     }
   }
 
+  function handleRename() {
+    requestAnimationFrame(() => nameInputRef.current?.focus());
+  }
+
   return (
     <div className="flex min-h-svh flex-col pt-16 pb-6">
       <div className="flex h-11 items-center gap-1">
@@ -87,6 +93,7 @@ function CollectionPage() {
         </Link>
 
         <Input
+          ref={nameInputRef}
           key={collectionName}
           defaultValue={collectionName}
           onBlur={handleNameBlur}
@@ -97,6 +104,7 @@ function CollectionPage() {
 
         <CollectionMenu
           collection={collection}
+          onRename={handleRename}
           onDelete={handleDelete}
           isDeleting={deleteCollectionMutation.isPending}
           isDeleteError={deleteCollectionMutation.isError}

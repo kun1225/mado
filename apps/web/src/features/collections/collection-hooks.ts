@@ -92,10 +92,16 @@ export function useDeleteCollection() {
         queryKey: sourceKeys.byCollection(collection.id),
       });
 
-      return queryClient.invalidateQueries({
-        queryKey: sourceKeys.all,
-        exact: true,
-      });
+      return Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: sourceKeys.all,
+          exact: true,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: sourceKeys.deleted,
+          exact: true,
+        }),
+      ]);
     },
   });
 }

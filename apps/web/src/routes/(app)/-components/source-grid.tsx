@@ -9,12 +9,23 @@ import { SourceCard } from './source-card';
 export function SourceGrid({
   sources,
   showCollection,
+  onDelete,
+  deletingId,
 }: {
   sources: Source[];
   showCollection?: boolean;
+  /** The Deleted tab swaps the soft delete for a confirmed hard delete. */
+  onDelete?: (id: string) => void;
+  deletingId?: string | null;
 }) {
   const collectionsQuery = useCollections();
   const deleteSourceMutation = useDeleteSource();
+
+  // Only one of the two can be running: the mutation stays idle when the
+  // caller brings its own delete.
+  const softDeletingId = deleteSourceMutation.isPending
+    ? deleteSourceMutation.variables
+    : null;
 
   const collectionNames = new Map(
     collectionsQuery.data?.map((collection) => [
@@ -33,11 +44,8 @@ export function SourceGrid({
               ? collectionNames.get(source.collectionId)
               : undefined
           }
-          onDelete={deleteSourceMutation.mutate}
-          isDeleting={
-            deleteSourceMutation.isPending &&
-            deleteSourceMutation.variables === source.id
-          }
+          onDelete={onDelete ?? deleteSourceMutation.mutate}
+          isDeleting={source.id === (deletingId ?? softDeletingId)}
         />
       )}
     </Masonry>

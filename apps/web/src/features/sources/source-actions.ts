@@ -141,6 +141,22 @@ export async function fetchAllSources(): Promise<Source[]> {
   return toVisibleSources(sources);
 }
 
+export async function fetchDeletedSources(): Promise<Source[]> {
+  const database = await openDatabase();
+  const sources = await toPromise<Source[]>(
+    database
+      .transaction(STORES.sources, 'readonly')
+      .objectStore(STORES.sources)
+      .getAll(),
+  );
+
+  return sources
+    .filter((source) => source.deletedAt !== null)
+    .sort((first, second) =>
+      (second.deletedAt ?? '').localeCompare(first.deletedAt ?? ''),
+    );
+}
+
 export async function countSourcesByCollection(): Promise<Map<string, number>> {
   const sources = await fetchAllSources();
 
@@ -172,6 +188,29 @@ export async function deleteSource(id: string): Promise<Source> {
   await toCompletion(transaction);
 
   return source;
+}
+
+/**
+ * Hard delete, for a source that is already in the trash: the record and the
+ * stored bytes both go, so the caller must confirm with the user first.
+ */
+export async function hardDeleteSource(id: string): Promise<Source> {
+  const database = await openDatabase();
+  const transaction = database.transaction(STORES.sources, 'readwrite');
+  const store = transaction.objectStore(STORES.sources);
+
+  const existing = await toPromise<Source | undefined>(store.get(id));
+
+  if (!existing) throw new Error(`Source not found: ${id}`);
+
+  store.delete(id);
+  await toCompletion(transaction);
+
+  // The record goes first: a leftover file only wastes space, while a record
+  // pointing at missing bytes would show up as a card that never loads.
+  await deleteMediaFile(existing.storageKey);
+
+  return existing;
 }
 
 /**

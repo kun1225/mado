@@ -8,12 +8,15 @@ import {
   createSources,
   deleteSource,
   fetchAllSources,
+  fetchDeletedSources,
   fetchSourcesByCollection,
+  hardDeleteSource,
 } from './source-actions';
 import { isMediaStorageSupported, readMediaFile } from './source-storage';
 
 export const sourceKeys = {
   all: ['sources'] as const,
+  deleted: ['sources', 'deleted'] as const,
   byCollection: (collectionId: string) =>
     ['sources', 'collection', collectionId] as const,
 };
@@ -24,6 +27,14 @@ export function useAllSources() {
   return useQuery({
     queryKey: sourceKeys.all,
     queryFn: fetchAllSources,
+    enabled: isSupported,
+  });
+}
+
+export function useDeletedSources() {
+  return useQuery({
+    queryKey: sourceKeys.deleted,
+    queryFn: fetchDeletedSources,
     enabled: isSupported,
   });
 }
@@ -45,6 +56,10 @@ function invalidateAfterSourceChange(
   );
   const invalidations = [
     queryClient.invalidateQueries({ queryKey: sourceKeys.all, exact: true }),
+    queryClient.invalidateQueries({
+      queryKey: sourceKeys.deleted,
+      exact: true,
+    }),
   ];
 
   for (const id of affectedCollectionIds) {
@@ -90,6 +105,17 @@ export function useDeleteSource() {
     mutationFn: deleteSource,
     onSuccess: (source) =>
       invalidateAfterSourceChange(queryClient, [source.collectionId]),
+  });
+}
+
+export function useHardDeleteSource() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: hardDeleteSource,
+    // Settled, not success: a failed media delete still leaves the record gone.
+    onSettled: (source) =>
+      invalidateAfterSourceChange(queryClient, [source?.collectionId ?? null]),
   });
 }
 

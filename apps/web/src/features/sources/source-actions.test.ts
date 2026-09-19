@@ -6,12 +6,24 @@ import type { Source } from './source-types';
 let countSourcesByCollection: typeof import('./source-actions').countSourcesByCollection;
 let deleteSource: typeof import('./source-actions').deleteSource;
 let fetchAllSources: typeof import('./source-actions').fetchAllSources;
+let fetchDeletedSources: typeof import('./source-actions').fetchDeletedSources;
 let fetchSourcesByCollection: typeof import('./source-actions').fetchSourcesByCollection;
+let hardDeleteSource: typeof import('./source-actions').hardDeleteSource;
+let deleteMediaFile: typeof import('./source-storage').deleteMediaFile;
 let openDatabase: typeof import('../storage/database').openDatabase;
 let newSourceSchema: typeof import('./source-types').newSourceSchema;
 let sourceKindSchema: typeof import('./source-types').sourceKindSchema;
 
 const COLLECTION_ID = '11111111-1111-4111-8111-111111111111';
+
+// OPFS does not exist in the test environment, so the media side is stubbed and
+// asserted through the spy.
+vi.mock('./source-storage', () => ({
+  isMediaStorageSupported: false,
+  deleteMediaFile: vi.fn(() => Promise.resolve()),
+  readMediaFile: vi.fn(),
+  writeMediaFile: vi.fn(() => Promise.resolve()),
+}));
 
 function buildSource(overrides: Partial<Source> & { id: string }): Source {
   return {
@@ -51,8 +63,11 @@ beforeEach(async () => {
     countSourcesByCollection,
     deleteSource,
     fetchAllSources,
+    fetchDeletedSources,
     fetchSourcesByCollection,
+    hardDeleteSource,
   } = await import('./source-actions'));
+  ({ deleteMediaFile } = await import('./source-storage'));
   ({ openDatabase } = await import('../storage/database'));
   ({ newSourceSchema, sourceKindSchema } = await import('./source-types'));
 });
@@ -148,6 +163,30 @@ describe('fetchAllSources', () => {
   });
 });
 
+describe('fetchDeletedSources', () => {
+  it('returns only soft-deleted sources, most recently deleted first', async () => {
+    await seedSources([
+      buildSource({ id: 'a' }),
+      buildSource({ id: 'b', deletedAt: '2026-01-04T00:00:00.000Z' }),
+      buildSource({
+        id: 'c',
+        collectionId: null,
+        deletedAt: '2026-01-05T00:00:00.000Z',
+      }),
+    ]);
+
+    const sources = await fetchDeletedSources();
+
+    expect(sources.map((source) => source.id)).toEqual(['c', 'b']);
+  });
+
+  it('returns an empty list when nothing is deleted', async () => {
+    await seedSources([buildSource({ id: 'a' })]);
+
+    await expect(fetchDeletedSources()).resolves.toEqual([]);
+  });
+});
+
 describe('countSourcesByCollection', () => {
   it('counts live sources per collection and skips library-level ones', async () => {
     await seedSources([
@@ -179,5 +218,27 @@ describe('deleteSource', () => {
     await expect(deleteSource('missing-id')).rejects.toThrow(
       'Source not found: missing-id',
     );
+  });
+});
+
+describe('hardDeleteSource', () => {
+  it('removes the record and its media file for good', async () => {
+    await seedSources([
+      buildSource({ id: 'a', deletedAt: '2026-01-04T00:00:00.000Z' }),
+      buildSource({ id: 'b', deletedAt: '2026-01-04T00:00:00.000Z' }),
+    ]);
+
+    const hardDeleted = await hardDeleteSource('a');
+
+    expect(hardDeleted.id).toBe('a');
+    expect(deleteMediaFile).toHaveBeenCalledWith('a');
+    await expect(fetchDeletedSources()).resolves.toHaveLength(1);
+  });
+
+  it('throws when the source does not exist', async () => {
+    await expect(hardDeleteSource('missing-id')).rejects.toThrow(
+      'Source not found: missing-id',
+    );
+    expect(deleteMediaFile).not.toHaveBeenCalled();
   });
 });

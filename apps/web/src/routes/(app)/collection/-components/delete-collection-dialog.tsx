@@ -1,5 +1,6 @@
 import { Delete02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
+import { cn } from 'cn';
 
 import {
   AlertDialog,
@@ -33,17 +34,23 @@ export function DeleteCollectionDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="gap-0 p-1.5">
-        <div className="flex min-h-40 items-end justify-center overflow-hidden rounded-[6px] bg-(image:--poise-gradient-danger-cover) px-5">
-          <div className="relative w-full rounded-t-[10px] bg-bg px-4 pt-7 pb-4 text-center">
+      <AlertDialogContent className="gap-0 p-1">
+        <div
+          className={cn(
+            'relative flex min-h-40 items-end justify-center overflow-hidden rounded-md bg-(image:--poise-gradient-danger-cover) px-6',
+            'before:absolute before:bottom-0 before:left-2 before:size-4 before:rounded-md before:bg-transparent before:shadow-[8px_8px_0px_0px_var(--color-bg)]',
+            'after:absolute after:right-2 after:bottom-0 after:size-4 after:rounded-md after:bg-transparent after:shadow-[-8px_8px_0px_0px_var(--color-bg)]',
+          )}
+        >
+          <div className="relative w-full rounded-t-md bg-bg px-4 pt-8 pb-4 text-center">
             <span
               aria-hidden="true"
-              className="absolute top-0 left-1/2 grid size-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-bg text-danger ring-4 ring-bg"
+              className="absolute top-0 left-1/2 grid size-10 -translate-x-1/2 -translate-y-1/2 place-items-center overflow-hidden rounded-full bg-bg text-danger ring-4 ring-bg"
             >
               <HugeiconsIcon icon={Delete02Icon} size={22} strokeWidth={1.5} />
             </span>
 
-            <p className="text-sm leading-snug font-medium text-pretty">
+            <p className="text-sm font-medium text-pretty break-all">
               {collection.name}
             </p>
 
@@ -53,14 +60,14 @@ export function DeleteCollectionDialog({
           </div>
         </div>
 
-        <div className="grid gap-5 px-4.5 pt-5 pb-4">
+        <div className="grid gap-6 px-5 py-6">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this collection?</AlertDialogTitle>
 
             <AlertDialogDescription>
               {collection.saveCount > 0
-                ? 'The collection and its saves move to the trash. The collection cannot be brought back.'
-                : 'This collection is deleted for good and cannot be brought back.'}
+                ? 'The collection and its saves move to the trash. You cannot get them back.'
+                : 'You cannot get this collection back'}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
