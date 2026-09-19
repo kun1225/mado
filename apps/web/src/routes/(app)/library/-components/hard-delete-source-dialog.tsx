@@ -31,7 +31,9 @@ export function HardDeleteSourceDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            Delete “{source.fileName}” forever?
+            Delete "
+            <span className="break-all underline">{source.fileName}</span>"{' '}
+            forever?
           </AlertDialogTitle>
 
           <AlertDialogDescription>
