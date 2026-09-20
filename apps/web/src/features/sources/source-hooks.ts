@@ -13,6 +13,7 @@ import {
   fetchSourcesByCollection,
   hardDeleteSource,
   hardDeleteSources,
+  restoreSources,
 } from './source-actions';
 import { isMediaStorageSupported, readMediaFile } from './source-storage';
 
@@ -115,6 +116,19 @@ export function useDeleteSources() {
 
   return useMutation({
     mutationFn: deleteSources,
+    onSuccess: (sources) =>
+      invalidateAfterSourceChange(
+        queryClient,
+        sources.map(({ collectionId }) => collectionId),
+      ),
+  });
+}
+
+export function useRestoreSources() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: restoreSources,
     onSuccess: (sources) =>
       invalidateAfterSourceChange(
         queryClient,

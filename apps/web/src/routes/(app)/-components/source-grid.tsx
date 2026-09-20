@@ -18,15 +18,18 @@ export function SourceGrid({
   showCollection,
   onDelete,
   onBulkDelete,
+  onBulkRestore,
   deletingIds,
-  isBulkDeleting,
+  isBulkPending,
 }: {
   sources: Source[];
   showCollection?: boolean;
   onDelete?: (id: string) => void;
   onBulkDelete?: (ids: string[]) => void;
+  /** Only the trash passes this, so the bar hides the button everywhere else. */
+  onBulkRestore?: (ids: string[]) => void;
   deletingIds?: readonly string[];
-  isBulkDeleting?: boolean;
+  isBulkPending?: boolean;
 }) {
   const collectionsQuery = useCollections();
   const deleteSourceMutation = useDeleteSource();
@@ -46,10 +49,16 @@ export function SourceGrid({
     ]),
   );
 
-  function handleBulkDelete() {
-    const ids = selection.selectedSources.map((source) => source.id);
+  function selectedIds() {
+    return selection.selectedSources.map((source) => source.id);
+  }
 
-    (onBulkDelete ?? deleteSourcesMutation.mutate)(ids);
+  function handleBulkDelete() {
+    (onBulkDelete ?? deleteSourcesMutation.mutate)(selectedIds());
+  }
+
+  function handleBulkRestore() {
+    onBulkRestore?.(selectedIds());
   }
 
   return (
@@ -84,7 +93,8 @@ export function SourceGrid({
           count={selection.selectedSources.length}
           onClear={selection.clear}
           onDelete={handleBulkDelete}
-          isDeleting={isBulkDeleting ?? deleteSourcesMutation.isPending}
+          onRestore={onBulkRestore && handleBulkRestore}
+          isPending={isBulkPending ?? deleteSourcesMutation.isPending}
         />
       )}
     </>

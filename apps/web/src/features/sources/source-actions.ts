@@ -264,6 +264,34 @@ export async function deleteSources(ids: string[]): Promise<Source[]> {
 }
 
 /**
+ * Brings many sources back out of the trash. Nothing has to be rewritten to
+ * OPFS: a soft delete never removed the bytes, so clearing `deletedAt` is the
+ * whole restore.
+ *
+ * A source that was never deleted is left out rather than touched, so its
+ * `updatedAt` does not move for no reason.
+ */
+export async function restoreSources(ids: string[]): Promise<Source[]> {
+  const database = await openDatabase();
+  const transaction = database.transaction(STORES.sources, 'readwrite');
+  const store = transaction.objectStore(STORES.sources);
+
+  const found = await Promise.all(
+    ids.map((id) => toPromise<Source | undefined>(store.get(id))),
+  );
+  const now = new Date().toISOString();
+  const sources = found
+    .filter((source): source is Source => source?.deletedAt != null)
+    .map((source) => ({ ...source, deletedAt: null, updatedAt: now }));
+
+  for (const source of sources) store.put(source);
+
+  await toCompletion(transaction);
+
+  return sources;
+}
+
+/**
  * Deletes many sources for good. Only for sources already in the trash.
  */
 export async function hardDeleteSources(ids: string[]): Promise<Source[]> {

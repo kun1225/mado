@@ -4,6 +4,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import {
   useDeletedSources,
   useHardDeleteSources,
+  useRestoreSources,
 } from '#/features/sources/source-hooks';
 import type { Source } from '#/features/sources/source-types';
 import { SourceGrid } from '#/routes/(app)/-components/source-grid';
@@ -17,6 +18,7 @@ export const Route = createFileRoute('/(app)/library/deleted')({
 function Deleted() {
   const deletedSourcesQuery = useDeletedSources();
   const hardDeleteSourcesMutation = useHardDeleteSources();
+  const restoreSourcesMutation = useRestoreSources();
   // Kept after the dialog closes so the names stay put while it animates out.
   const [pendingSources, setPendingSources] = useState<Source[]>([]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -70,12 +72,19 @@ function Deleted() {
         showCollection
         onDelete={(id) => handleAskToHardDelete([id])}
         onBulkDelete={handleAskToHardDelete}
-        deletingIds={
-          hardDeleteSourcesMutation.isPending
+        onBulkRestore={restoreSourcesMutation.mutate}
+        deletingIds={[
+          ...(hardDeleteSourcesMutation.isPending
             ? hardDeleteSourcesMutation.variables
-            : []
+            : []),
+          ...(restoreSourcesMutation.isPending
+            ? restoreSourcesMutation.variables
+            : []),
+        ]}
+        isBulkPending={
+          hardDeleteSourcesMutation.isPending ||
+          restoreSourcesMutation.isPending
         }
-        isBulkDeleting={hardDeleteSourcesMutation.isPending}
       />
 
       {pendingSources.length > 0 && (
