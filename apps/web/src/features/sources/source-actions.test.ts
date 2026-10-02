@@ -12,6 +12,8 @@ let fetchSourcesByCollection: typeof import('./source-actions').fetchSourcesByCo
 let hardDeleteSource: typeof import('./source-actions').hardDeleteSource;
 let hardDeleteSources: typeof import('./source-actions').hardDeleteSources;
 let restoreSources: typeof import('./source-actions').restoreSources;
+let updateSource: typeof import('./source-actions').updateSource;
+let updateSourceSchema: typeof import('./source-types').updateSourceSchema;
 let deleteMediaFile: typeof import('./source-storage').deleteMediaFile;
 let openDatabase: typeof import('../storage/database').openDatabase;
 let newSourceSchema: typeof import('./source-types').newSourceSchema;
@@ -30,7 +32,11 @@ vi.mock('./source-storage', () => ({
 
 function buildSource(overrides: Partial<Source> & { id: string }): Source {
   return {
-    collectionId: COLLECTION_ID,
+    name: 'shot',
+    url: null,
+    note: null,
+    tags: [],
+    collectionIds: [COLLECTION_ID],
     kind: 'image',
     fileName: 'shot.png',
     mimeType: 'image/png',
@@ -72,10 +78,12 @@ beforeEach(async () => {
     hardDeleteSource,
     hardDeleteSources,
     restoreSources,
+    updateSource,
   } = await import('./source-actions'));
   ({ deleteMediaFile } = await import('./source-storage'));
   ({ openDatabase } = await import('../storage/database'));
-  ({ newSourceSchema, sourceKindSchema } = await import('./source-types'));
+  ({ newSourceSchema, sourceKindSchema, updateSourceSchema } =
+    await import('./source-types'));
 });
 
 describe('newSourceSchema', () => {
@@ -141,7 +149,7 @@ describe('fetchSourcesByCollection', () => {
       buildSource({ id: 'a' }),
       buildSource({
         id: 'b',
-        collectionId: '22222222-2222-4222-8222-222222222222',
+        collectionIds: ['22222222-2222-4222-8222-222222222222'],
       }),
     ]);
 
@@ -157,7 +165,7 @@ describe('fetchAllSources', () => {
       buildSource({ id: 'a' }),
       buildSource({
         id: 'b',
-        collectionId: null,
+        collectionIds: [],
         createdAt: '2026-01-02T00:00:00.000Z',
       }),
       buildSource({ id: 'c', deletedAt: '2026-01-04T00:00:00.000Z' }),
@@ -176,7 +184,7 @@ describe('fetchDeletedSources', () => {
       buildSource({ id: 'b', deletedAt: '2026-01-04T00:00:00.000Z' }),
       buildSource({
         id: 'c',
-        collectionId: null,
+        collectionIds: [],
         deletedAt: '2026-01-05T00:00:00.000Z',
       }),
     ]);
@@ -199,7 +207,7 @@ describe('countSourcesByCollection', () => {
       buildSource({ id: 'a' }),
       buildSource({ id: 'b' }),
       buildSource({ id: 'c', deletedAt: '2026-01-04T00:00:00.000Z' }),
-      buildSource({ id: 'd', collectionId: null }),
+      buildSource({ id: 'd', collectionIds: [] }),
     ]);
 
     const counts = await countSourcesByCollection();
@@ -343,5 +351,83 @@ describe('restoreSources', () => {
 
     expect(restored).toEqual([]);
     await expect(fetchAllSources()).resolves.toHaveLength(1);
+  });
+});
+
+describe('fetchSourcesByCollection with many collections', () => {
+  it('finds a source in each collection it belongs to', async () => {
+    const other = '22222222-2222-4222-8222-222222222222';
+    await seedSources([
+      buildSource({ id: 'a', collectionIds: [COLLECTION_ID, other] }),
+    ]);
+
+    expect((await fetchSourcesByCollection(COLLECTION_ID)).length).toBe(1);
+    expect((await fetchSourcesByCollection(other)).length).toBe(1);
+
+    const counts = await countSourcesByCollection();
+    expect(counts.get(COLLECTION_ID)).toBe(1);
+    expect(counts.get(other)).toBe(1);
+  });
+});
+
+describe('updateSourceSchema', () => {
+  it('trims the name and rejects an empty one', () => {
+    expect(updateSourceSchema.parse({ name: '  Poster ' })).toEqual({
+      name: 'Poster',
+    });
+    expect(() => updateSourceSchema.parse({ name: '   ' })).toThrow();
+  });
+
+  it('turns an empty url or note into null and rejects a bad url', () => {
+    expect(updateSourceSchema.parse({ url: '', note: ' ' })).toEqual({
+      url: null,
+      note: null,
+    });
+    expect(() =>
+      updateSourceSchema.parse({ url: 'javascript:alert(1)' }),
+    ).toThrow();
+    expect(() => updateSourceSchema.parse({ url: 'not a url' })).toThrow();
+    expect(updateSourceSchema.parse({ url: 'https://a.com/x' }).url).toBe(
+      'https://a.com/x',
+    );
+  });
+
+  it('normalizes tags and removes duplicates', () => {
+    expect(
+      updateSourceSchema.parse({ tags: ['#Poster', 'poster', ' ', 'Red '] })
+        .tags,
+    ).toEqual(['poster', 'red']);
+  });
+});
+
+describe('updateSource', () => {
+  it('changes only the given fields and bumps updatedAt', async () => {
+    await seedSources([buildSource({ id: 'a' })]);
+
+    const updated = await updateSource('a', { note: 'hello', tags: ['Red'] });
+
+    expect(updated.note).toBe('hello');
+    expect(updated.tags).toEqual(['red']);
+    expect(updated.name).toBe('shot');
+    expect(updated.updatedAt).not.toBe('2026-01-01T00:00:00.000Z');
+    expect((await fetchAllSources())[0]?.note).toBe('hello');
+  });
+
+  it('moves a source between collections', async () => {
+    const other = '22222222-2222-4222-8222-222222222222';
+    await seedSources([buildSource({ id: 'a' })]);
+
+    await updateSource('a', { collectionIds: [other] });
+
+    expect(await fetchSourcesByCollection(COLLECTION_ID)).toEqual([]);
+    expect((await fetchSourcesByCollection(other)).length).toBe(1);
+  });
+
+  it('throws for a missing source and for invalid input', async () => {
+    await expect(updateSource('missing', { name: 'x' })).rejects.toThrow(
+      'Source not found: missing',
+    );
+    await seedSources([buildSource({ id: 'a' })]);
+    await expect(updateSource('a', { name: '' })).rejects.toThrow();
   });
 });

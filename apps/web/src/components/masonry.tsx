@@ -8,7 +8,7 @@ const COLUMN_SIZER_CLASS = 'masonry-column-sizer';
 
 const TRANSITION_DURATION = 400;
 
-const GUTTER = 16;
+const GUTTER = 10;
 
 const COLUMN_CLASS = cn(
   'w-[calc((100%-1rem)/2)] md:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-3rem)/4)]',

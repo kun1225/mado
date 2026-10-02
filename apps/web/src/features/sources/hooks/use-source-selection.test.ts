@@ -17,7 +17,11 @@ import {
 function buildSource(id: string): Source {
   return {
     id,
-    collectionId: null,
+    name: id,
+    url: null,
+    note: null,
+    tags: [],
+    collectionIds: [],
     kind: 'image',
     fileName: `${id}.png`,
     mimeType: 'image/png',

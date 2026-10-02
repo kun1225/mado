@@ -24,9 +24,80 @@ export const newSourceSchema = z.object({
 
 export type NewSourceInput = z.infer<typeof newSourceSchema>;
 
+export const MAX_NAME_LENGTH = 120;
+export const MAX_NOTE_LENGTH = 2000;
+export const MAX_URL_LENGTH = 2048;
+export const MAX_TAG_LENGTH = 40;
+export const MAX_TAGS = 20;
+
+/** "#Brand Kit " -> "brand kit" */
+export function normalizeTag(raw: string): string {
+  return raw.trim().replace(/^#+/, '').trim().toLowerCase();
+}
+
+function isHttpUrl(value: string): boolean {
+  try {
+    const { protocol } = new URL(value);
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+const emptyToNull = (value: string) => (value === '' ? null : value);
+
+export const updateSourceSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, 'Name is required')
+      .max(
+        MAX_NAME_LENGTH,
+        `Name must be ${MAX_NAME_LENGTH} characters or fewer`,
+      ),
+    url: z
+      .string()
+      .trim()
+      .max(MAX_URL_LENGTH)
+      .refine(
+        (value) => value === '' || isHttpUrl(value),
+        'Enter a valid http(s) URL',
+      )
+      .transform(emptyToNull),
+    note: z
+      .string()
+      .trim()
+      .max(
+        MAX_NOTE_LENGTH,
+        `Note must be ${MAX_NOTE_LENGTH} characters or fewer`,
+      )
+      .transform(emptyToNull),
+    tags: z
+      .array(z.string())
+      .transform((tags) => [
+        ...new Set(tags.map(normalizeTag).filter((tag) => tag !== '')),
+      ])
+      .pipe(
+        z
+          .array(z.string().max(MAX_TAG_LENGTH, 'Tag is too long'))
+          .max(MAX_TAGS, `Use ${MAX_TAGS} tags or fewer`),
+      ),
+    collectionIds: z.array(z.uuid()).transform((ids) => [...new Set(ids)]),
+  })
+  .partial();
+
+export type UpdateSourceInput = z.input<typeof updateSourceSchema>;
+
 export type Source = {
   id: string;
-  collectionId: string | null;
+  /** Display name, editable. `fileName` is the original and never changes. */
+  name: string;
+  url: string | null;
+  note: string | null;
+  tags: string[];
+  /** Empty means the source lives only in the library. */
+  collectionIds: string[];
   kind: SourceKind;
   fileName: string;
   mimeType: string;

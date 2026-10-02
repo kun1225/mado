@@ -16,6 +16,7 @@ export function SourceCard({
   collectionName,
   deletion,
   selection,
+  onOpen,
 }: {
   source: Source;
   collectionName?: string;
@@ -28,6 +29,8 @@ export function SourceCard({
     isActive: boolean;
     onToggle: (options: ToggleSelectOptions) => void;
   };
+  /** Leave out where a card should not open the detail dialog. */
+  onOpen?: () => void;
 }) {
   const objectUrl = useMediaObjectUrl(source.storageKey, source.mimeType);
 
@@ -50,7 +53,7 @@ export function SourceCard({
       {objectUrl !== null && source.kind === 'image' && (
         <img
           src={objectUrl}
-          alt={source.fileName}
+          alt={source.name}
           className="size-full object-cover"
         />
       )}
@@ -76,8 +79,17 @@ export function SourceCard({
         />
       )}
 
+      {!selection.isActive && onOpen && (
+        <button
+          type="button"
+          aria-label={`Open ${source.name}`}
+          onClick={onOpen}
+          className="absolute inset-0 z-10 cursor-zoom-in"
+        />
+      )}
+
       <SourceCardCheckbox
-        fileName={source.fileName}
+        fileName={source.name}
         isSelected={selection.isSelected}
         isSelectionMode={selection.isActive}
         onToggle={selection.onToggle}
@@ -86,7 +98,7 @@ export function SourceCard({
       <Button
         variant="ghost"
         size="icon-sm"
-        aria-label={`Delete ${source.fileName}`}
+        aria-label={`Delete ${source.name}`}
         disabled={deletion.isPending}
         onClick={deletion.onDelete}
         className="absolute top-1 right-1 z-20 border-bg/80 bg-fg/40 text-bg/80 opacity-0 backdrop-blur-xs transition-[opacity,background_color] group-hover:opacity-100 hover:bg-bg/70 hover:text-danger focus-visible:opacity-100"
@@ -98,9 +110,7 @@ export function SourceCard({
         <SourceCardProgressBlur />
 
         <div className="relative px-2 pt-1 pb-1.5 opacity-0 transition-opacity duration-base ease-standard group-focus-within:opacity-100 group-hover:opacity-100">
-          <p className="truncate text-xs font-medium text-bg">
-            {source.fileName}
-          </p>
+          <p className="truncate text-xs font-medium text-bg">{source.name}</p>
 
           {collectionName !== undefined && (
             <p className="truncate text-[0.625rem] leading-tight text-bg/70">

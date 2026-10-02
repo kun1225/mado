@@ -70,6 +70,7 @@ function Deleted() {
       <SourceGrid
         sources={sources}
         showCollection
+        canOpenDetail={false}
         onDelete={(id) => handleAskToHardDelete([id])}
         onBulkDelete={handleAskToHardDelete}
         onBulkRestore={restoreSourcesMutation.mutate}

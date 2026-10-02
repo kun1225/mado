@@ -7,8 +7,17 @@ import {
 } from '#/features/storage/database';
 
 import { deleteMediaFile, writeMediaFile } from './source-storage';
-import type { NewSourceInput, Source, SourceKind } from './source-types';
-import { newSourceSchema, sourceKindSchema } from './source-types';
+import type {
+  NewSourceInput,
+  Source,
+  SourceKind,
+  UpdateSourceInput,
+} from './source-types';
+import {
+  newSourceSchema,
+  sourceKindSchema,
+  updateSourceSchema,
+} from './source-types';
 
 type MediaMetadata = Pick<Source, 'width' | 'height' | 'durationSeconds'>;
 
@@ -66,7 +75,11 @@ export async function createSource(input: NewSourceInput): Promise<Source> {
 
   const source: Source = {
     id,
-    collectionId,
+    name: file.name.replace(/\.[^.]+$/, '') || file.name,
+    url: null,
+    note: null,
+    tags: [],
+    collectionIds: collectionId ? [collectionId] : [],
     kind,
     fileName: file.name,
     mimeType: file.type,
@@ -161,12 +174,39 @@ export async function countSourcesByCollection(): Promise<Map<string, number>> {
   const sources = await fetchAllSources();
 
   return sources.reduce((counts, source) => {
-    if (source.collectionId === null) return counts;
-    return counts.set(
-      source.collectionId,
-      (counts.get(source.collectionId) ?? 0) + 1,
-    );
+    for (const id of source.collectionIds) {
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+    return counts;
   }, new Map<string, number>());
+}
+
+/**
+ * Edits the user-facing fields. Only the keys in `input` change.
+ */
+export async function updateSource(
+  id: string,
+  input: UpdateSourceInput,
+): Promise<Source> {
+  const patch = updateSourceSchema.parse(input);
+  const database = await openDatabase();
+  const transaction = database.transaction(STORES.sources, 'readwrite');
+  const store = transaction.objectStore(STORES.sources);
+
+  const existing = await toPromise<Source | undefined>(store.get(id));
+
+  if (!existing) throw new Error(`Source not found: ${id}`);
+
+  const source: Source = {
+    ...existing,
+    ...patch,
+    updatedAt: new Date().toISOString(),
+  };
+
+  store.put(source);
+  await toCompletion(transaction);
+
+  return source;
 }
 
 /**
@@ -214,11 +254,11 @@ export async function hardDeleteSource(id: string): Promise<Source> {
 }
 
 /**
- * Soft-deletes every source in a collection, inside the caller's transaction so
- * the collection and its sources go away together.
+ * Detaches a collection from its sources, inside the caller's transaction so
+ * the collection and its sources change together.
  *
- * `collectionId` is cleared because the collection row is hard-deleted: if a
- * future Deleted tab restores one of these, it belongs in the library.
+ * A source that lived only in this collection goes to the trash, as before.
+ * One that is also in another collection just loses this one and stays visible.
  */
 export async function softDeleteSourcesInCollection(
   store: IDBObjectStore,
@@ -230,10 +270,17 @@ export async function softDeleteSourcesInCollection(
   const now = new Date().toISOString();
 
   for (const source of sources) {
+    const collectionIds = source.collectionIds.filter(
+      (id) => id !== collectionId,
+    );
+
     store.put({
       ...source,
-      collectionId: null,
-      deletedAt: source.deletedAt ?? now,
+      collectionIds,
+      deletedAt:
+        collectionIds.length === 0
+          ? (source.deletedAt ?? now)
+          : source.deletedAt,
       updatedAt: now,
     });
   }

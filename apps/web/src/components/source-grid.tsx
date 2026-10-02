@@ -1,6 +1,7 @@
 import { cn } from 'cn';
 
 import { useCollections } from '#/features/collections/collection-hooks';
+import { useSourceDetail } from '#/features/sources/hooks/use-source-detail';
 import { useSourceSelection } from '#/features/sources/hooks/use-source-selection';
 import {
   useDeleteSource,
@@ -8,6 +9,7 @@ import {
 } from '#/features/sources/source-hooks';
 import type { Source } from '#/features/sources/source-types';
 
+import { SourceDetailDialog } from './source-detail/source-detail-dialog';
 import { Masonry } from './masonry';
 import { SourceCard } from './source-card';
 import { SourceGridSelectionBar } from './source-grid-selection-bar';
@@ -15,6 +17,7 @@ import { SourceGridSelectionBar } from './source-grid-selection-bar';
 export function SourceGrid({
   sources,
   showCollection,
+  canOpenDetail = true,
   onDelete,
   onBulkDelete,
   onBulkRestore,
@@ -23,6 +26,8 @@ export function SourceGrid({
 }: {
   sources: Source[];
   showCollection?: boolean;
+  /** The trash turns this off: a deleted source is not editable. */
+  canOpenDetail?: boolean;
   onDelete?: (id: string) => void;
   onBulkDelete?: (ids: string[]) => void;
   /** Only the trash passes this, so the bar hides the button everywhere else. */
@@ -34,6 +39,7 @@ export function SourceGrid({
   const deleteSourceMutation = useDeleteSource();
   const deleteSourcesMutation = useDeleteSources();
   const selection = useSourceSelection(sources);
+  const detail = useSourceDetail();
 
   const pendingIds = new Set([
     ...(deletingIds ?? []),
@@ -68,9 +74,15 @@ export function SourceGrid({
             <SourceCard
               source={source}
               collectionName={
-                showCollection && source.collectionId
-                  ? collectionNames.get(source.collectionId)
+                showCollection
+                  ? source.collectionIds
+                      .map((id) => collectionNames.get(id))
+                      .filter(Boolean)
+                      .join(', ') || undefined
                   : undefined
+              }
+              onOpen={
+                canOpenDetail ? () => detail.setActiveId(source.id) : undefined
               }
               deletion={{
                 isPending: pendingIds.has(source.id),
@@ -86,6 +98,14 @@ export function SourceGrid({
           )}
         </Masonry>
       </div>
+
+      {canOpenDetail && (
+        <SourceDetailDialog
+          sources={sources}
+          activeId={detail.activeId}
+          onActiveIdChange={detail.setActiveId}
+        />
+      )}
 
       {selection.isSelectionMode && (
         <SourceGridSelectionBar

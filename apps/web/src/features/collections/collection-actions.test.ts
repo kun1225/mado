@@ -25,13 +25,21 @@ beforeEach(async () => {
   ({ openDatabase } = await import('../storage/database'));
 });
 
-async function seedSource(collectionId: string | null, id: string) {
+async function seedSource(collectionId: string | string[] | null, id: string) {
   const database = await openDatabase();
   const transaction = database.transaction('sources', 'readwrite');
 
   transaction.objectStore('sources').put({
     id,
-    collectionId,
+    name: 'shot',
+    url: null,
+    note: null,
+    tags: [],
+    collectionIds: Array.isArray(collectionId)
+      ? collectionId
+      : collectionId
+        ? [collectionId]
+        : [],
     kind: 'image',
     fileName: 'shot.png',
     mimeType: 'image/png',
@@ -177,7 +185,7 @@ describe('deleteCollection', () => {
       const source = await readSource(id);
 
       expect(source.deletedAt).not.toBeNull();
-      expect(source.collectionId).toBeNull();
+      expect(source.collectionIds).toEqual([]);
     }
   });
 
@@ -194,7 +202,20 @@ describe('deleteCollection', () => {
     const loose = await readSource('source-3');
 
     expect(kept.deletedAt).toBeNull();
-    expect(kept.collectionId).toBe(keptCollection.id);
+    expect(kept.collectionIds).toEqual([keptCollection.id]);
     expect(loose.deletedAt).toBeNull();
+  });
+
+  it('keeps a source that is also in another collection', async () => {
+    const deletedCollection = await createCollection({ name: 'Sites' });
+    const keptCollection = await createCollection({ name: 'Typography' });
+    await seedSource([deletedCollection.id, keptCollection.id], 'shared');
+
+    await deleteCollection(deletedCollection.id);
+
+    const shared = await readSource('shared');
+
+    expect(shared.deletedAt).toBeNull();
+    expect(shared.collectionIds).toEqual([keptCollection.id]);
   });
 });

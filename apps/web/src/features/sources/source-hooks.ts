@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -14,8 +14,10 @@ import {
   hardDeleteSource,
   hardDeleteSources,
   restoreSources,
+  updateSource,
 } from './source-actions';
 import { isMediaStorageSupported, readMediaFile } from './source-storage';
+import type { UpdateSourceInput } from './source-types';
 
 export const sourceKeys = {
   all: ['sources'] as const,
@@ -32,6 +34,16 @@ export function useAllSources() {
     queryFn: fetchAllSources,
     enabled: isSupported,
   });
+}
+
+/** Every tag in use, for suggestions. */
+export function useAllTags() {
+  const { data } = useAllSources();
+
+  return useMemo(
+    () => [...new Set((data ?? []).flatMap((source) => source.tags))].sort(),
+    [data],
+  );
 }
 
 export function useDeletedSources() {
@@ -101,13 +113,29 @@ export function useCreateSources() {
   });
 }
 
+export function useUpdateSource() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateSourceInput }) =>
+      updateSource(id, input),
+    // A collection change moves the source between lists and counts, and the
+    // old collection ids are not known here, so refresh every sources list.
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: sourceKeys.all }),
+        queryClient.invalidateQueries({ queryKey: collectionKeys.all }),
+      ]),
+  });
+}
+
 export function useDeleteSource() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: deleteSource,
     onSuccess: (source) =>
-      invalidateAfterSourceChange(queryClient, [source.collectionId]),
+      invalidateAfterSourceChange(queryClient, source.collectionIds),
   });
 }
 
@@ -119,7 +147,7 @@ export function useDeleteSources() {
     onSuccess: (sources) =>
       invalidateAfterSourceChange(
         queryClient,
-        sources.map(({ collectionId }) => collectionId),
+        sources.flatMap(({ collectionIds }) => collectionIds),
       ),
   });
 }
@@ -132,7 +160,7 @@ export function useRestoreSources() {
     onSuccess: (sources) =>
       invalidateAfterSourceChange(
         queryClient,
-        sources.map(({ collectionId }) => collectionId),
+        sources.flatMap(({ collectionIds }) => collectionIds),
       ),
   });
 }
@@ -144,7 +172,7 @@ export function useHardDeleteSource() {
     mutationFn: hardDeleteSource,
     // Settled, not success: a failed media delete still leaves the record gone.
     onSettled: (source) =>
-      invalidateAfterSourceChange(queryClient, [source?.collectionId ?? null]),
+      invalidateAfterSourceChange(queryClient, source?.collectionIds ?? []),
   });
 }
 
@@ -157,7 +185,7 @@ export function useHardDeleteSources() {
     onSettled: (sources) =>
       invalidateAfterSourceChange(
         queryClient,
-        sources?.map(({ collectionId }) => collectionId) ?? [],
+        sources?.flatMap(({ collectionIds }) => collectionIds) ?? [],
       ),
   });
 }
