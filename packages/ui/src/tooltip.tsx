@@ -1,10 +1,6 @@
 import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
 import { cn } from 'cn';
 
-/**
- * One popup, many triggers: pass the handle to every trigger and to the root,
- * and the same bubble travels between them instead of closing and reopening.
- */
 const createTooltipHandle = TooltipPrimitive.createHandle;
 
 function TooltipProvider({
@@ -49,10 +45,10 @@ const tooltipViewport = cn(
   '**:data-current:w-max **:data-current:translate-x-0 **:data-current:whitespace-nowrap **:data-current:opacity-100 **:data-current:transition-[translate,opacity] **:data-current:duration-middle **:data-current:ease-out-quint',
   '**:data-previous:w-max **:data-previous:translate-x-0 **:data-previous:whitespace-nowrap **:data-previous:opacity-100 **:data-previous:transition-[translate,opacity] **:data-previous:duration-middle **:data-previous:ease-out-quint',
 
-  "data-[activation-direction~='left']:[&_[data-current][data-starting-style]]:-translate-x-1/2 data-[activation-direction~='left']:[&_[data-current][data-starting-style]]:opacity-0",
-  "data-[activation-direction~='right']:[&_[data-current][data-starting-style]]:translate-x-1/2 data-[activation-direction~='right']:[&_[data-current][data-starting-style]]:opacity-0",
-  "data-[activation-direction~='left']:[&_[data-previous][data-ending-style]]:translate-x-1/2 data-[activation-direction~='left']:[&_[data-previous][data-ending-style]]:opacity-0",
-  "data-[activation-direction~='right']:[&_[data-previous][data-ending-style]]:-translate-x-1/2 data-[activation-direction~='right']:[&_[data-previous][data-ending-style]]:opacity-0",
+  "data-[activation-direction~='left']:[&_[data-current][data-starting-style]]:translate-x-[-200%] data-[activation-direction~='left']:[&_[data-current][data-starting-style]]:opacity-0",
+  "data-[activation-direction~='right']:[&_[data-current][data-starting-style]]:translate-x-[200%] data-[activation-direction~='right']:[&_[data-current][data-starting-style]]:opacity-0",
+  "data-[activation-direction~='left']:[&_[data-previous][data-ending-style]]:translate-x-[200%] data-[activation-direction~='left']:[&_[data-previous][data-ending-style]]:opacity-0",
+  "data-[activation-direction~='right']:[&_[data-previous][data-ending-style]]:translate-x-[-200%] data-[activation-direction~='right']:[&_[data-previous][data-ending-style]]:opacity-0",
 
   '[[data-instant]_&_[data-current]]:transition-none [[data-instant]_&_[data-previous]]:transition-none',
 );

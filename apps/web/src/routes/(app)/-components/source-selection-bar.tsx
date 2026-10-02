@@ -11,10 +11,6 @@ import {
   TooltipTrigger,
 } from '@repo/ui/tooltip';
 
-/**
- * One handle for every button in the bar, so the same bubble slides from one
- * icon to the next instead of closing and reopening.
- */
 const selectionTooltip = createTooltipHandle<string>();
 
 /**
@@ -41,7 +37,7 @@ export function SourceSelectionBar({
   return (
     <TooltipProvider delay={120}>
       <div className="pointer-events-none fixed inset-x-0 bottom-6 z-action-bar flex justify-center px-edge">
-        <div className="pointer-events-auto relative flex animate-in items-center gap-1 rounded-full border border-border bg-bg py-2 pr-2 pl-4 shadow-md duration-slow ease-out-back fade-in-0 slide-in-from-bottom-2">
+        <div className="pointer-events-auto relative flex animate-in items-center gap-1 rounded-full border border-border bg-bg py-1 pr-2 pl-4 shadow-md duration-slow ease-out-back fade-in-0 slide-in-from-bottom-2">
           <p className="text-sm font-medium text-fg">{count} selected</p>
 
           <Button
@@ -66,7 +62,7 @@ export function SourceSelectionBar({
                   variant="ghost"
                   size="icon-sm"
                   disabled={isPending}
-                  className="rounded-full text-fg"
+                  className="hit-area-1 rounded-full text-fg"
                 />
               }
             >
@@ -88,7 +84,7 @@ export function SourceSelectionBar({
                 variant="ghost"
                 size="icon-sm"
                 disabled={isPending}
-                className="rounded-full text-danger hover:bg-danger/10 hover:text-danger"
+                className="hit-area-1 rounded-full text-danger hover:bg-danger/10 hover:text-danger"
               />
             }
           >

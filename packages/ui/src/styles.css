@@ -212,3 +212,43 @@
   );
   padding-top: calc(var(--spacing-top-space) + --value([*]));
 }
+
+@utility hit-area {
+  position: relative;
+  --tw-hit-area-t: --spacing(2);
+  --tw-hit-area-r: --spacing(2);
+  --tw-hit-area-b: --spacing(2);
+  --tw-hit-area-l: --spacing(2);
+  &::before {
+    content: '';
+    position: absolute;
+    top: calc(var(--tw-hit-area-t, 0px) * -1);
+    right: calc(var(--tw-hit-area-r, 0px) * -1);
+    bottom: calc(var(--tw-hit-area-b, 0px) * -1);
+    left: calc(var(--tw-hit-area-l, 0px) * -1);
+    border-radius: inherit;
+    pointer-events: inherit;
+  }
+}
+
+@utility hit-area-* {
+  position: relative;
+  --tw-hit-area-t: --spacing(--value(number));
+  --tw-hit-area-r: --spacing(--value(number));
+  --tw-hit-area-b: --spacing(--value(number));
+  --tw-hit-area-l: --spacing(--value(number));
+  --tw-hit-area-t: --value(--hit-area-*, [length]);
+  --tw-hit-area-r: --value(--hit-area-*, [length]);
+  --tw-hit-area-b: --value(--hit-area-*, [length]);
+  --tw-hit-area-l: --value(--hit-area-*, [length]);
+  &::before {
+    content: '';
+    position: absolute;
+    top: calc(var(--tw-hit-area-t, 0px) * -1);
+    right: calc(var(--tw-hit-area-r, 0px) * -1);
+    bottom: calc(var(--tw-hit-area-b, 0px) * -1);
+    left: calc(var(--tw-hit-area-l, 0px) * -1);
+    border-radius: inherit;
+    pointer-events: inherit;
+  }
+}
