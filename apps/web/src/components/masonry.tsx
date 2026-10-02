@@ -11,7 +11,7 @@ const TRANSITION_DURATION = 400;
 const GUTTER = 10;
 
 const COLUMN_CLASS = cn(
-  'w-[calc((100%-1rem)/2)] md:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-3rem)/4)]',
+  'w-[calc((100%-10px)/2)] md:w-[calc((100%-20px)/3)] lg:w-[calc((100%-30px)/4)]',
 );
 
 /**
@@ -20,8 +20,8 @@ const COLUMN_CLASS = cn(
  *
  * Items keep whatever height their content asks for, so `columnClassName` only
  * sets the width of one column. It has to leave room for the gutters, which
- * sit between columns but not outside them: four columns with a 16px gutter
- * need `w-[calc((100%-3rem)/4)]`, since three gaps fall between four columns.
+ * sit between columns but not outside them: four columns with a 10px gutter
+ * need `w-[calc((100%-30px)/4)]`, since three gaps fall between four columns.
  */
 export function Masonry<TItem>({
   items,

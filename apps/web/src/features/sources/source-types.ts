@@ -46,6 +46,22 @@ function isHttpUrl(value: string): boolean {
 
 const emptyToNull = (value: string) => (value === '' ? null : value);
 
+const tagLimitsSchema = z
+  .array(z.string().max(MAX_TAG_LENGTH, 'Tag is too long'))
+  .max(MAX_TAGS, `Use ${MAX_TAGS} tags or fewer`);
+
+const tagListSchema = z
+  .array(z.string())
+  .transform((tags) => [
+    ...new Set(tags.map(normalizeTag).filter((tag) => tag !== '')),
+  ]);
+
+const collectionIdListSchema = z
+  .array(z.uuid())
+  .transform((ids) => [...new Set(ids)]);
+
+export const tagsSchema = tagListSchema.pipe(tagLimitsSchema);
+
 export const updateSourceSchema = z
   .object({
     name: z
@@ -73,17 +89,17 @@ export const updateSourceSchema = z
         `Note must be ${MAX_NOTE_LENGTH} characters or fewer`,
       )
       .transform(emptyToNull),
-    tags: z
-      .array(z.string())
-      .transform((tags) => [
-        ...new Set(tags.map(normalizeTag).filter((tag) => tag !== '')),
-      ])
-      .pipe(
-        z
-          .array(z.string().max(MAX_TAG_LENGTH, 'Tag is too long'))
-          .max(MAX_TAGS, `Use ${MAX_TAGS} tags or fewer`),
-      ),
-    collectionIds: z.array(z.uuid()).transform((ids) => [...new Set(ids)]),
+    tags: tagsSchema,
+    collectionIds: collectionIdListSchema,
+    /**
+     * Changes to a list, applied to the stored value inside the save. Prefer
+     * these over `tags` and `collectionIds`: a full list built from stale props
+     * can undo an edit that has not shown up yet.
+     */
+    addTags: tagListSchema,
+    removeTags: tagListSchema,
+    addCollectionIds: collectionIdListSchema,
+    removeCollectionIds: collectionIdListSchema,
   })
   .partial();
 

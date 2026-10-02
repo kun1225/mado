@@ -37,7 +37,7 @@ export function SourceDetailToolbar({
   onTogglePanel: () => void;
 }) {
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 px-3 text-bg">
+    <header className="flex h-12 shrink-0 items-center gap-2 px-edge text-bg">
       <Button
         variant="ghost"
         size="icon-sm"

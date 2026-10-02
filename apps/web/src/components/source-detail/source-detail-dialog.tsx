@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
 
 import { Dialog, DialogContent, DialogTitle } from '@repo/ui/dialog';
 
@@ -22,7 +23,10 @@ export function SourceDetailDialog({
   onActiveIdChange: (id: string | null) => void;
 }) {
   const deleteSourceMutation = useDeleteSource();
-  const [isPanelOpen, setIsPanelOpen] = useState(true);
+  // On a phone the panel covers the image, so it starts closed there.
+  const [isPanelOpen, setIsPanelOpen] = useState(
+    () => window.matchMedia('(min-width: 768px)').matches,
+  );
   const view = resolveSourceDetail(sources, activeId);
 
   // Keeps the last source on screen while the dialog fades out.
@@ -33,27 +37,21 @@ export function SourceDetailDialog({
   const previousId = view.previous?.id;
   const nextId = view.next?.id;
 
-  useEffect(() => {
-    if (view.source === undefined) return;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (isEditablePasteTarget(event.target)) return;
-
-      const targetId =
-        event.key === 'ArrowLeft'
-          ? previousId
-          : event.key === 'ArrowRight'
-            ? nextId
-            : undefined;
-
-      if (targetId !== undefined) onActiveIdChange(targetId);
-    }
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [view.source, previousId, nextId, onActiveIdChange]);
-
   if (source === undefined) return null;
+
+  function handleKeyDown(event: KeyboardEvent) {
+    if (view.source === undefined || isEditablePasteTarget(event.target))
+      return;
+
+    const targetId =
+      event.key === 'ArrowLeft'
+        ? previousId
+        : event.key === 'ArrowRight'
+          ? nextId
+          : undefined;
+
+    if (targetId !== undefined) onActiveIdChange(targetId);
+  }
 
   function handleDelete() {
     if (source === undefined) return;
@@ -78,7 +76,7 @@ export function SourceDetailDialog({
         if (!isOpen) onActiveIdChange(null);
       }}
     >
-      <DialogContent className="flex flex-col">
+      <DialogContent className="flex flex-col" onKeyDown={handleKeyDown}>
         <DialogTitle className="sr-only">{source.name}</DialogTitle>
 
         <SourceDetailToolbar
@@ -95,11 +93,13 @@ export function SourceDetailDialog({
           onTogglePanel={() => setIsPanelOpen((isOpen) => !isOpen)}
         />
 
-        <div className="flex min-h-0 flex-1 gap-4 px-4 pb-4">
+        <div className="relative flex min-h-0 flex-1 px-edge pb-4">
           <SourceDetailViewer key={`viewer-${source.id}`} source={source} />
-          {isPanelOpen && (
-            <SourceDetailPanel key={`panel-${source.id}`} source={source} />
-          )}
+          <SourceDetailPanel
+            key={`panel-${source.id}`}
+            source={source}
+            isOpen={isPanelOpen}
+          />
         </div>
       </DialogContent>
     </Dialog>

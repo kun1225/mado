@@ -16,6 +16,7 @@ import type {
 import {
   newSourceSchema,
   sourceKindSchema,
+  tagsSchema,
   updateSourceSchema,
 } from './source-types';
 
@@ -188,7 +189,13 @@ export async function updateSource(
   id: string,
   input: UpdateSourceInput,
 ): Promise<Source> {
-  const patch = updateSourceSchema.parse(input);
+  const {
+    addTags,
+    removeTags,
+    addCollectionIds,
+    removeCollectionIds,
+    ...fields
+  } = updateSourceSchema.parse(input);
   const database = await openDatabase();
   const transaction = database.transaction(STORES.sources, 'readwrite');
   const store = transaction.objectStore(STORES.sources);
@@ -197,9 +204,15 @@ export async function updateSource(
 
   if (!existing) throw new Error(`Source not found: ${id}`);
 
+  const merged = { ...existing, ...fields };
   const source: Source = {
-    ...existing,
-    ...patch,
+    ...merged,
+    tags: tagsSchema.parse(applyListChange(merged.tags, addTags, removeTags)),
+    collectionIds: applyListChange(
+      merged.collectionIds,
+      addCollectionIds,
+      removeCollectionIds,
+    ),
     updatedAt: new Date().toISOString(),
   };
 
@@ -207,6 +220,18 @@ export async function updateSource(
   await toCompletion(transaction);
 
   return source;
+}
+
+function applyListChange(
+  current: string[],
+  add: string[] = [],
+  remove: string[] = [],
+): string[] {
+  const removed = new Set(remove);
+
+  return [...new Set([...current, ...add])].filter(
+    (item) => !removed.has(item),
+  );
 }
 
 /**

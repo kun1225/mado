@@ -1,3 +1,5 @@
+import { cn } from 'cn';
+
 import type { Source } from '#/features/sources/source-types';
 
 import { SourceDetailCollections } from './source-detail-collections';
@@ -19,17 +21,36 @@ function describe(source: Source): string {
     .join(' · ');
 }
 
-export function SourceDetailPanel({ source }: { source: Source }) {
+export function SourceDetailPanel({
+  source,
+  isOpen,
+}: {
+  source: Source;
+  isOpen: boolean;
+}) {
   return (
-    <aside className="flex w-80 shrink-0 flex-col gap-5 overflow-y-auto rounded-lg bg-bg p-4 text-fg">
-      <header className="flex flex-col gap-0.5 border-b border-border pb-3">
-        <h2 className="text-sm font-medium">Details</h2>
-        <p className="text-xs text-muted-fg">{describe(source)}</p>
-      </header>
+    <div
+      className={cn(
+        'motion-reduce:transition-none md:shrink-0 md:overflow-hidden md:transition-[width] md:duration-300 md:ease-in-out-circ',
+        isOpen ? 'md:w-88' : 'md:w-0',
+      )}
+      inert={!isOpen}
+    >
+      <aside
+        className={cn(
+          'z-10 flex flex-col gap-5 overflow-y-auto rounded-md bg-bg p-4 text-fg shadow-lg transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none max-md:absolute max-md:top-0 max-md:right-4 max-md:bottom-4 max-md:w-72 max-md:max-w-[calc(100%-2rem)] md:ml-4 md:h-full md:w-80',
+          !isOpen && 'translate-x-[calc(100%+1rem)]',
+        )}
+      >
+        <header className="flex flex-col gap-0.5 border-b border-border pb-3">
+          <h2 className="text-sm font-medium">Details</h2>
+          <p className="text-xs text-muted-fg">{describe(source)}</p>
+        </header>
 
-      <SourceDetailFields source={source} />
-      <SourceDetailCollections source={source} />
-      <SourceDetailTags source={source} />
-    </aside>
+        <SourceDetailFields source={source} />
+        <SourceDetailCollections source={source} />
+        <SourceDetailTags source={source} />
+      </aside>
+    </div>
   );
 }

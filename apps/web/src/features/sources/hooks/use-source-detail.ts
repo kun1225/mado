@@ -32,28 +32,22 @@ export function resolveSourceDetail(
   };
 }
 
-/**
- * The open source lives in the URL (`?source=<id>`), so Back closes the dialog
- * and the link opens the same source again.
- */
 export function useSourceDetail() {
   const search: Record<string, unknown> = useSearch({ strict: false });
   const navigate = useNavigate();
   const rawId = search[SOURCE_SEARCH_KEY];
   const activeId = typeof rawId === 'string' ? rawId : null;
 
-  const setActiveId = useCallback(
-    (id: string | null, options?: { replace?: boolean }) =>
-      navigate({
-        to: '.',
-        search: (previous: Record<string, unknown>) => ({
-          ...previous,
-          [SOURCE_SEARCH_KEY]: id ?? undefined,
-        }),
-        replace: options?.replace ?? false,
-      } as never),
-    [navigate],
-  );
+  const setActiveId = (id: string | null, options?: { replace?: boolean }) =>
+    navigate({
+      to: '.',
+      search: (previous: Record<string, unknown>) => ({
+        ...previous,
+        [SOURCE_SEARCH_KEY]: id ?? undefined,
+      }),
+      replace: options?.replace ?? false,
+      resetScroll: false,
+    } as never);
 
   return { activeId, setActiveId };
 }

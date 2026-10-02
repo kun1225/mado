@@ -431,3 +431,28 @@ describe('updateSource', () => {
     await expect(updateSource('a', { name: '' })).rejects.toThrow();
   });
 });
+
+describe('updateSource list changes', () => {
+  it('applies add and remove to the stored lists, not to a stale copy', async () => {
+    const other = '22222222-2222-4222-8222-222222222222';
+    await seedSources([buildSource({ id: 'a', tags: ['red'] })]);
+
+    // Both are built from the same stale source, like two fast clicks.
+    await Promise.all([
+      updateSource('a', { addTags: ['blue'], addCollectionIds: [other] }),
+      updateSource('a', { addTags: ['green'], removeTags: ['red'] }),
+    ]);
+
+    const [source] = await fetchAllSources();
+
+    expect(source.tags.sort()).toEqual(['blue', 'green']);
+    expect(source.collectionIds).toEqual([COLLECTION_ID, other]);
+  });
+
+  it('keeps the tag limit when adding', async () => {
+    const tags = Array.from({ length: 20 }, (_, index) => `t${index}`);
+    await seedSources([buildSource({ id: 'a', tags })]);
+
+    await expect(updateSource('a', { addTags: ['extra'] })).rejects.toThrow();
+  });
+});

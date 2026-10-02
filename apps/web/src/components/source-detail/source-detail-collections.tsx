@@ -4,7 +4,10 @@ import { HugeiconsIcon } from '@hugeicons/react';
 
 import { useCollections } from '#/features/collections/collection-hooks';
 import { useUpdateSource } from '#/features/sources/source-hooks';
-import type { Source } from '#/features/sources/source-types';
+import type {
+  Source,
+  UpdateSourceInput,
+} from '#/features/sources/source-types';
 
 import { SourceDetailChip } from './source-detail-chip';
 
@@ -21,8 +24,8 @@ export function SourceDetailCollections({ source }: { source: Source }) {
     ({ id }) => !source.collectionIds.includes(id),
   );
 
-  function save(collectionIds: string[]) {
-    updateSourceMutation.mutate({ id: source.id, input: { collectionIds } });
+  function save(input: UpdateSourceInput) {
+    updateSourceMutation.mutate({ id: source.id, input });
   }
 
   return (
@@ -37,9 +40,7 @@ export function SourceDetailCollections({ source }: { source: Source }) {
           <SourceDetailChip
             key={collection.id}
             label={collection.name}
-            onRemove={() =>
-              save(source.collectionIds.filter((id) => id !== collection.id))
-            }
+            onRemove={() => save({ removeCollectionIds: [collection.id] })}
           />
         ))}
 
@@ -67,7 +68,7 @@ export function SourceDetailCollections({ source }: { source: Source }) {
             <li key={collection.id}>
               <button
                 type="button"
-                onClick={() => save([...source.collectionIds, collection.id])}
+                onClick={() => save({ addCollectionIds: [collection.id] })}
                 className="w-full truncate rounded px-2 py-1.5 text-left text-sm hover:bg-muted"
               >
                 {collection.name}

@@ -9,7 +9,4 @@ export async function downloadSource(source: Source): Promise<void> {
   link.href = url;
   link.download = source.fileName;
   link.click();
-
-  // The click starts the download on the same tick, so the URL can go now.
-  URL.revokeObjectURL(url);
 }
