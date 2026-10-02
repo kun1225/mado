@@ -25,6 +25,7 @@
     "@tanstack/react-router-ssr-query": "^1.167.2",
     "@tanstack/react-start": "latest",
     "cn": "^0.2.6",
+    "liquid-gooey": "^0.2.2",
     "masonry-layout": "^4.2.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

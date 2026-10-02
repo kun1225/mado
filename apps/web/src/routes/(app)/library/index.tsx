@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { AddSourceButton } from '#/components/add-source-button';
 import { CollectionNewCard } from '#/components/collection-new-card';
 import { SourceGrid } from '#/components/source-grid';
+import { SourcesEmptyState } from '#/components/sources-empty-state';
 import {
   useCollections,
   useCreateCollection,
@@ -42,15 +43,16 @@ function Library() {
       </section>
 
       {sourcesQuery.data && sourcesQuery.data.length > 0 ? (
-        <div className="flex flex-1 flex-col gap-6 py-6">
-          <AddSourceButton collectionId={null} />
+        <div className="flex flex-1 flex-col pt-6 pb-24">
           <SourceGrid sources={sourcesQuery.data} showCollection />
         </div>
       ) : (
         <div className="flex flex-1 items-center justify-center py-6">
-          <AddSourceButton collectionId={null} />
+          <SourcesEmptyState />
         </div>
       )}
+
+      <AddSourceButton collectionId={null} />
     </>
   );
 }

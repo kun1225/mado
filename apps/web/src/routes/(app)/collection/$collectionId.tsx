@@ -9,6 +9,7 @@ import { Separator } from '@repo/ui/separator';
 import { AddSourceButton } from '#/components/add-source-button';
 import { CollectionNewCard } from '#/components/collection-new-card';
 import { SourceGrid } from '#/components/source-grid';
+import { SourcesEmptyState } from '#/components/sources-empty-state';
 import {
   useCollection,
   useDeleteCollection,
@@ -123,15 +124,16 @@ function CollectionPage() {
       </div>
 
       {sourcesQuery.data && sourcesQuery.data.length > 0 ? (
-        <div className="flex grow flex-col gap-6 py-6">
-          <AddSourceButton collectionId={collectionId} />
+        <div className="flex grow flex-col pt-6 pb-24">
           <SourceGrid sources={sourcesQuery.data} />
         </div>
       ) : (
         <div className="flex grow items-center justify-center py-6">
-          <AddSourceButton collectionId={collectionId} />
+          <SourcesEmptyState />
         </div>
       )}
+
+      <AddSourceButton collectionId={collectionId} />
     </div>
   );
 }
