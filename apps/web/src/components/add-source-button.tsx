@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Add01Icon,
   Image01FreeIcons,
@@ -16,9 +16,9 @@ import {
   TooltipTrigger,
 } from '@repo/ui/tooltip';
 
+import { usePasteMedia } from '#/features/sources/hooks/use-paste-media';
+import { ACCEPTED_FILE_TYPES } from '#/features/sources/source-clipboard';
 import { useCreateSources } from '#/features/sources/source-hooks';
-
-const ACCEPTED_FILE_TYPES = 'image/*,video/*';
 
 const TOGGLE_SIZE = 56;
 const ACTION_SIZE = 48;
@@ -62,6 +62,13 @@ export function AddSourceButton({
   const createSourcesMutation = useCreateSources();
   const [open, setOpen] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+
+  const { mutate: createSources } = createSourcesMutation;
+  const handlePaste = useCallback(
+    (file: File) => createSources([{ collectionId, file }]),
+    [collectionId, createSources],
+  );
+  usePasteMedia(handlePaste);
 
   useEffect(() => {
     setReducedMotion(matchMedia('(prefers-reduced-motion: reduce)').matches);
