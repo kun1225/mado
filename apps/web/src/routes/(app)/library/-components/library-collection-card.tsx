@@ -4,7 +4,11 @@ import { Link } from '@tanstack/react-router';
 
 import type { Collection } from '#/features/collections/collection-types';
 
-export function CollectionCard({ collection }: { collection: Collection }) {
+export function LibraryCollectionCard({
+  collection,
+}: {
+  collection: Collection;
+}) {
   return (
     <Link
       to="/collection/$collectionId"

@@ -6,16 +6,15 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Input } from '@repo/ui/input';
 import { Separator } from '@repo/ui/separator';
 
+import { AddSourceButton } from '#/components/add-source-button';
+import { CollectionNewCard } from '#/components/collection-new-card';
+import { SourceGrid } from '#/components/source-grid';
 import {
   useCollection,
   useDeleteCollection,
   useUpdateCollection,
 } from '#/features/collections/collection-hooks';
 import { useSources } from '#/features/sources/source-hooks';
-import { AddSourceButton } from '#/routes/(app)/-components/add-source-button';
-import { SourceGrid } from '#/routes/(app)/-components/source-grid';
-
-import { NewCollectionCard } from '../library/-components/new-collection-card';
 
 import { CollectionMenu } from './-components/collection-menu';
 
@@ -120,7 +119,7 @@ function CollectionPage() {
       <Separator className="mt-3" />
 
       <div className="py-6">
-        <NewCollectionCard label="New folder" />
+        <CollectionNewCard label="New folder" />
       </div>
 
       {sourcesQuery.data && sourcesQuery.data.length > 0 ? (

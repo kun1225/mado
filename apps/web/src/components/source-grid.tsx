@@ -2,16 +2,15 @@ import { cn } from 'cn';
 
 import { useCollections } from '#/features/collections/collection-hooks';
 import { useSourceSelection } from '#/features/sources/hooks/use-source-selection';
-
 import {
   useDeleteSource,
   useDeleteSources,
-} from '../../../features/sources/source-hooks';
-import type { Source } from '../../../features/sources/source-types';
+} from '#/features/sources/source-hooks';
+import type { Source } from '#/features/sources/source-types';
 
 import { Masonry } from './masonry';
 import { SourceCard } from './source-card';
-import { SourceSelectionBar } from './source-selection-bar';
+import { SourceGridSelectionBar } from './source-grid-selection-bar';
 
 export function SourceGrid({
   sources,
@@ -89,7 +88,7 @@ export function SourceGrid({
       </div>
 
       {selection.isSelectionMode && (
-        <SourceSelectionBar
+        <SourceGridSelectionBar
           count={selection.selectedSources.length}
           onClear={selection.clear}
           onDelete={handleBulkDelete}

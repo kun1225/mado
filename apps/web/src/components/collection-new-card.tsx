@@ -12,7 +12,7 @@ const TILE_CLASS = cn(
   'group-hover:scale-100 group-hover:opacity-100 group-hover:duration-middle',
 );
 
-export function NewCollectionCard({
+export function CollectionNewCard({
   label = 'New collection',
   disabled,
   onClick,

@@ -11,7 +11,7 @@ import {
 
 import type { Source } from '#/features/sources/source-types';
 
-export function HardDeleteSourceDialog({
+export function LibraryDeleteDialog({
   sources,
   open,
   onOpenChange,

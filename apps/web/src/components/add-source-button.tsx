@@ -3,7 +3,7 @@ import { ZodError } from 'zod';
 
 import { Button } from '@repo/ui/button';
 
-import { useCreateSources } from '../../../features/sources/source-hooks';
+import { useCreateSources } from '#/features/sources/source-hooks';
 
 const ACCEPTED_FILE_TYPES = 'image/*,video/*';
 

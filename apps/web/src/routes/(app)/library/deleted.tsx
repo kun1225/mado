@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 
+import { SourceGrid } from '#/components/source-grid';
 import {
   useDeletedSources,
   useHardDeleteSources,
   useRestoreSources,
 } from '#/features/sources/source-hooks';
 import type { Source } from '#/features/sources/source-types';
-import { SourceGrid } from '#/routes/(app)/-components/source-grid';
 
-import { HardDeleteSourceDialog } from './-components/hard-delete-source-dialog';
+import { LibraryDeleteDialog } from './-components/library-delete-dialog';
 
 export const Route = createFileRoute('/(app)/library/deleted')({
   component: Deleted,
@@ -88,7 +88,7 @@ function Deleted() {
       />
 
       {pendingSources.length > 0 && (
-        <HardDeleteSourceDialog
+        <LibraryDeleteDialog
           sources={pendingSources}
           open={isConfirmOpen}
           onOpenChange={setIsConfirmOpen}

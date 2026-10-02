@@ -15,7 +15,7 @@ import {
 
 import type { Collection } from '#/features/collections/collection-types';
 
-import { DeleteCollectionDialog } from './delete-collection-dialog';
+import { CollectionDeleteDialog } from './collection-delete-dialog';
 
 export function CollectionMenu({
   collection,
@@ -62,7 +62,7 @@ export function CollectionMenu({
         </MorphDropdownMenuContent>
       </MorphDropdownMenu>
 
-      <DeleteCollectionDialog
+      <CollectionDeleteDialog
         collection={collection}
         open={isConfirmOpen}
         onOpenChange={setIsConfirmOpen}

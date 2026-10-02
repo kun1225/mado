@@ -15,7 +15,7 @@ import {
 
 import type { Collection } from '#/features/collections/collection-types';
 
-export function DeleteCollectionDialog({
+export function CollectionDeleteDialog({
   collection,
   open,
   onOpenChange,

@@ -1,15 +1,15 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
+import { AddSourceButton } from '#/components/add-source-button';
+import { CollectionNewCard } from '#/components/collection-new-card';
+import { SourceGrid } from '#/components/source-grid';
 import {
   useCollections,
   useCreateCollection,
 } from '#/features/collections/collection-hooks';
 import { useAllSources } from '#/features/sources/source-hooks';
-import { AddSourceButton } from '#/routes/(app)/-components/add-source-button';
-import { SourceGrid } from '#/routes/(app)/-components/source-grid';
 
-import { CollectionCard } from './-components/collection-card';
-import { NewCollectionCard } from './-components/new-collection-card';
+import { LibraryCollectionCard } from './-components/library-collection-card';
 
 export const Route = createFileRoute('/(app)/library/')({ component: Library });
 
@@ -31,13 +31,13 @@ function Library() {
   return (
     <>
       <section className="flex flex-row flex-nowrap gap-4 overflow-y-auto pt-6 pb-2 *:shrink-0">
-        <NewCollectionCard
+        <CollectionNewCard
           disabled={createCollectionMutation.isPending}
           onClick={handleCreateCollection}
         />
 
         {collectionsQuery.data?.map((collection) => (
-          <CollectionCard key={collection.id} collection={collection} />
+          <LibraryCollectionCard key={collection.id} collection={collection} />
         ))}
       </section>
 

@@ -20,7 +20,7 @@ const selectionTooltip = createTooltipHandle<string>();
  * The labels name tools the user is already reaching for, so they open on
  * arrival rather than after the usual reading pause.
  */
-export function SourceSelectionBar({
+export function SourceGridSelectionBar({
   count,
   onClear,
   onDelete,
