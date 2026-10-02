@@ -56,14 +56,27 @@ export async function createCollection(
   const collection: Collection = {
     id: crypto.randomUUID(),
     name: input.name ?? 'New collection',
+    parentId: input.parentId ?? null,
     saveCount: 0,
     createdAt: now,
     updatedAt: now,
   };
   const database = await openDatabase();
   const transaction = database.transaction(STORES.collections, 'readwrite');
+  const store = transaction.objectStore(STORES.collections);
 
-  transaction.objectStore(STORES.collections).put(collection);
+  if (collection.parentId) {
+    const parent = await toPromise<Collection | undefined>(
+      store.get(collection.parentId),
+    );
+
+    if (!parent) {
+      transaction.abort();
+      throw new Error(`Collection not found: ${collection.parentId}`);
+    }
+  }
+
+  store.put(collection);
   await toCompletion(transaction);
 
   return collection;
@@ -95,9 +108,22 @@ export async function updateCollection(
   return { ...collection, saveCount: counts.get(id) ?? 0 };
 }
 
+function collectBranchIds(all: Collection[], rootId: string): string[] {
+  const ids = [rootId];
+
+  for (const id of ids) {
+    for (const collection of all) {
+      if (collection.parentId === id) ids.push(collection.id);
+    }
+  }
+
+  return ids;
+}
+
 /**
  * Hard delete: unlike a source, a collection cannot be restored, so its sources
  * land in the trash on their own and come back to the library if restored.
+ * Collections nested inside go with it, and so do their sources.
  */
 export async function deleteCollection(id: string): Promise<Collection> {
   const database = await openDatabase();
@@ -111,12 +137,16 @@ export async function deleteCollection(id: string): Promise<Collection> {
 
   if (!existing) throw new Error(`Collection not found: ${id}`);
 
-  await softDeleteSourcesInCollection(
-    transaction.objectStore(STORES.sources),
-    id,
-  );
+  const all = await toPromise<Collection[]>(store.getAll());
 
-  store.delete(id);
+  for (const branchId of collectBranchIds(all, id)) {
+    await softDeleteSourcesInCollection(
+      transaction.objectStore(STORES.sources),
+      branchId,
+    );
+    store.delete(branchId);
+  }
+
   await toCompletion(transaction);
 
   return existing;

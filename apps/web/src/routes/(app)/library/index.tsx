@@ -5,7 +5,7 @@ import { CollectionNewCard } from '#/components/collection-new-card';
 import { SourceGrid } from '#/components/source-grid';
 import { SourcesEmptyState } from '#/components/sources-empty-state';
 import {
-  useCollections,
+  useChildCollections,
   useCreateCollection,
 } from '#/features/collections/collection-hooks';
 import { useAllSources } from '#/features/sources/source-hooks';
@@ -16,7 +16,7 @@ export const Route = createFileRoute('/(app)/library/')({ component: Library });
 
 function Library() {
   const navigate = useNavigate();
-  const collectionsQuery = useCollections();
+  const collectionsQuery = useChildCollections(null);
   const createCollectionMutation = useCreateCollection();
   const sourcesQuery = useAllSources();
 

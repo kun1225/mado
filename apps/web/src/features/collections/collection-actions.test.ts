@@ -83,6 +83,28 @@ describe('createCollection', () => {
 
     expect(collection.name).toBe('Reading list');
   });
+
+  it('is top level by default', async () => {
+    const collection = await createCollection();
+
+    expect(collection.parentId).toBeNull();
+  });
+
+  it('nests under the given parent', async () => {
+    const parent = await createCollection({ name: 'Parent' });
+
+    const child = await createCollection({ parentId: parent.id });
+
+    expect(child.parentId).toBe(parent.id);
+    expect((await fetchCollection(child.id))?.parentId).toBe(parent.id);
+  });
+
+  it('throws and stores nothing when the parent does not exist', async () => {
+    await expect(createCollection({ parentId: 'missing-id' })).rejects.toThrow(
+      'Collection not found: missing-id',
+    );
+    expect(await fetchAllCollections()).toEqual([]);
+  });
 });
 
 describe('fetchAllCollections', () => {
@@ -217,5 +239,34 @@ describe('deleteCollection', () => {
 
     expect(shared.deletedAt).toBeNull();
     expect(shared.collectionIds).toEqual([keptCollection.id]);
+  });
+
+  it('deletes nested collections with it and leaves others alone', async () => {
+    const parent = await createCollection({ name: 'Parent' });
+    const child = await createCollection({ parentId: parent.id });
+    const grandchild = await createCollection({ parentId: child.id });
+    const sibling = await createCollection({ name: 'Sibling' });
+
+    const deleted = await deleteCollection(parent.id);
+
+    expect(deleted.id).toBe(parent.id);
+    expect(await fetchCollection(child.id)).toBeNull();
+    expect(await fetchCollection(grandchild.id)).toBeNull();
+    expect((await fetchAllCollections()).map((c) => c.id)).toEqual([
+      sibling.id,
+    ]);
+  });
+
+  it('sends the sources of nested collections to the trash', async () => {
+    const parent = await createCollection({ name: 'Parent' });
+    const child = await createCollection({ parentId: parent.id });
+    await seedSource(child.id, 'nested-source');
+
+    await deleteCollection(parent.id);
+
+    const source = await readSource('nested-source');
+
+    expect(source.deletedAt).not.toBeNull();
+    expect(source.collectionIds).toEqual([]);
   });
 });

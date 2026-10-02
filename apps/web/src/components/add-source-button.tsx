@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Add01Icon,
   Image01FreeIcons,
@@ -64,10 +64,7 @@ export function AddSourceButton({
   const [reducedMotion, setReducedMotion] = useState(false);
 
   const { mutate: createSources } = createSourcesMutation;
-  const handlePaste = useCallback(
-    (file: File) => createSources([{ collectionId, file }]),
-    [collectionId, createSources],
-  );
+  const handlePaste = (file: File) => createSources([{ collectionId, file }]);
   usePasteMedia(handlePaste);
 
   useEffect(() => {

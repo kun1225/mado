@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -40,10 +40,7 @@ export function useAllSources() {
 export function useAllTags() {
   const { data } = useAllSources();
 
-  return useMemo(
-    () => [...new Set((data ?? []).flatMap((source) => source.tags))].sort(),
-    [data],
-  );
+  return [...new Set((data ?? []).flatMap((source) => source.tags))].sort();
 }
 
 export function useDeletedSources() {

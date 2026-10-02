@@ -11,11 +11,15 @@ import { CollectionNewCard } from '#/components/collection-new-card';
 import { SourceGrid } from '#/components/source-grid';
 import { SourcesEmptyState } from '#/components/sources-empty-state';
 import {
+  useChildCollections,
   useCollection,
+  useCreateCollection,
   useDeleteCollection,
   useUpdateCollection,
 } from '#/features/collections/collection-hooks';
 import { useSources } from '#/features/sources/source-hooks';
+
+import { LibraryCollectionCard } from '../library/-components/library-collection-card';
 
 import { CollectionMenu } from './-components/collection-menu';
 
@@ -29,6 +33,8 @@ function CollectionPage() {
   const collectionQuery = useCollection(collectionId);
   const updateCollectionMutation = useUpdateCollection();
   const deleteCollectionMutation = useDeleteCollection();
+  const createCollectionMutation = useCreateCollection();
+  const childCollectionsQuery = useChildCollections(collectionId);
   const sourcesQuery = useSources(collectionId);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -46,6 +52,17 @@ function CollectionPage() {
       onSuccess: () => {
         void navigate({ to: '/library' });
       },
+    });
+  }
+
+  async function handleCreateChild() {
+    const child = await createCollectionMutation.mutateAsync({
+      parentId: collectionId,
+    });
+
+    await navigate({
+      to: '/collection/$collectionId',
+      params: { collectionId: child.id },
     });
   }
 
@@ -86,7 +103,12 @@ function CollectionPage() {
     <div className="flex min-h-svh flex-col pt-16 pb-6">
       <div className="flex h-11 items-center gap-1">
         <Link
-          to="/library"
+          {...(collection.parentId
+            ? {
+                to: '/collection/$collectionId' as const,
+                params: { collectionId: collection.parentId },
+              }
+            : { to: '/library' as const })}
           className="flex size-8 items-center justify-center rounded-md text-fg transition-colors hover:bg-muted"
         >
           <HugeiconsIcon icon={ArrowLeft01Icon} size={18} strokeWidth={1.5} />
@@ -119,9 +141,17 @@ function CollectionPage() {
 
       <Separator className="mt-3" />
 
-      <div className="py-6">
-        <CollectionNewCard label="New folder" />
-      </div>
+      <section className="flex flex-row flex-nowrap gap-4 overflow-y-auto py-6 *:shrink-0">
+        <CollectionNewCard
+          label="New folder"
+          disabled={createCollectionMutation.isPending}
+          onClick={handleCreateChild}
+        />
+
+        {childCollectionsQuery.data?.map((child) => (
+          <LibraryCollectionCard key={child.id} collection={child} />
+        ))}
+      </section>
 
       {sourcesQuery.data && sourcesQuery.data.length > 0 ? (
         <div className="flex grow flex-col pt-6 pb-24">

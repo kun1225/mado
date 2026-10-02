@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 
 import type { Source } from '../source-types';

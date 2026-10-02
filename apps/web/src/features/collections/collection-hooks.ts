@@ -26,6 +26,18 @@ export function useCollections() {
   });
 }
 
+export function useChildCollections(parentId: string | null) {
+  return useQuery({
+    queryKey: collectionKeys.all,
+    queryFn: fetchAllCollections,
+    enabled: isBrowser,
+    select: (collections) =>
+      collections.filter(
+        (collection) => (collection.parentId ?? null) === parentId,
+      ),
+  });
+}
+
 export function useCollection(id: string) {
   return useQuery({
     queryKey: collectionKeys.detail(id),
@@ -93,6 +105,8 @@ export function useDeleteCollection() {
       });
 
       return Promise.all([
+        // Nested collections went with it, so refresh every collection query.
+        queryClient.invalidateQueries({ queryKey: collectionKeys.all }),
         queryClient.invalidateQueries({
           queryKey: sourceKeys.all,
           exact: true,
