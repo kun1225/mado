@@ -6,7 +6,7 @@ import {
   toPromise,
 } from '#/features/storage/database';
 
-import { deleteMediaFile, writeMediaFile } from './source-media';
+import { compressMedia, deleteMediaFile, writeMediaFile } from './source-media';
 import type {
   NewSourceInput,
   Source,
@@ -68,7 +68,8 @@ function readMediaMetadata(
 }
 
 export async function createSource(input: NewSourceInput): Promise<Source> {
-  const { collectionId, file } = newSourceSchema.parse(input);
+  const { collectionId, file: original } = newSourceSchema.parse(input);
+  const file = await compressMedia(original);
   const kind = sourceKindSchema.parse(file.type.split('/')[0]);
   const metadata = await readMediaMetadata(file, kind);
   const id = crypto.randomUUID();

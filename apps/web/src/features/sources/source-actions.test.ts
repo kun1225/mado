@@ -25,6 +25,7 @@ const COLLECTION_ID = '11111111-1111-4111-8111-111111111111';
 // asserted through the spy.
 vi.mock('./source-media', () => ({
   isMediaStorageSupported: false,
+  compressMedia: vi.fn((file: File) => Promise.resolve(file)),
   deleteMediaFile: vi.fn(() => Promise.resolve()),
   readMediaFile: vi.fn(),
   writeMediaFile: vi.fn(() => Promise.resolve()),
