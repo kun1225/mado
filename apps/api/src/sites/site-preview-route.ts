@@ -1,8 +1,7 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { z } from 'zod';
 
-import { SafeFetchError } from './site-preview-safe-fetch.js';
-import { getSitePreview } from './site-preview.js';
+import { SafeFetchError, getSitePreview } from './site-preview.js';
 
 const MAX_URL_LENGTH = 2048;
 
@@ -50,6 +49,7 @@ export function createSitesRouter({
         });
         return;
       }
+
       console.error('Site preview failed:', error);
       response
         .status(500)
