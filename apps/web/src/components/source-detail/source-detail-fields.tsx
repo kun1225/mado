@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { Input } from '@repo/ui/input';
 
-import { useSourceField } from '#/features/sources/hooks/use-source-field';
+import { useSourceField } from '#/features/sources/hooks/source-interaction-hooks';
 import type { Source } from '#/features/sources/source-types';
 
 function FieldError({ message }: { message: string | null }) {

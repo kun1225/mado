@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Source } from '../source-types';
 
-import { resolveSourceDetail } from './use-source-detail';
+import { resolveSourceDetail } from './source-interaction-hooks';
 
 const sources = ['a', 'b', 'c'].map((id) => ({ id }) as Source);
 

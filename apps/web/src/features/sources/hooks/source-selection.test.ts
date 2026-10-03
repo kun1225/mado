@@ -5,14 +5,14 @@ import type { Source } from '../source-types';
 import type {
   SelectionState,
   ToggleSelectOptions,
-} from './use-source-selection';
+} from './source-interaction-hooks';
 import {
   applyClick,
   EMPTY_SELECTION_STATE,
   getSelectedIds,
   getSelectedSources,
   toggleSelection,
-} from './use-source-selection';
+} from './source-interaction-hooks';
 
 function buildSource(id: string): Source {
   return {

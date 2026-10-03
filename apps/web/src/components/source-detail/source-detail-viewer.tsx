@@ -1,4 +1,4 @@
-import { useMediaObjectUrl } from '#/features/sources/source-hooks';
+import { useMediaObjectUrl } from '#/features/sources/hooks/source-hooks';
 import type { Source } from '#/features/sources/source-types';
 
 export function SourceDetailViewer({ source }: { source: Source }) {

@@ -4,8 +4,8 @@ import { cn } from 'cn';
 
 import { Button } from '@repo/ui/button';
 
-import type { ToggleSelectOptions } from '#/features/sources/hooks/use-source-selection';
-import { useMediaObjectUrl } from '#/features/sources/source-hooks';
+import { useMediaObjectUrl } from '#/features/sources/hooks/source-hooks';
+import type { ToggleSelectOptions } from '#/features/sources/hooks/source-interaction-hooks';
 import type { Source } from '#/features/sources/source-types';
 
 import { SourceCardCheckbox } from './source-card-checkbox';

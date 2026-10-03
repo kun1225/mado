@@ -6,7 +6,7 @@ import {
   useDeletedSources,
   useHardDeleteSources,
   useRestoreSources,
-} from '#/features/sources/source-hooks';
+} from '#/features/sources/hooks/source-hooks';
 import type { Source } from '#/features/sources/source-types';
 
 import { LibraryDeleteDialog } from './-components/library-delete-dialog';

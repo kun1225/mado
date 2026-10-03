@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { detectPastedContent } from './source-clipboard';
+import { detectPastedContent } from './source-media';
 
 function createClipboardData(
   items: Array<{

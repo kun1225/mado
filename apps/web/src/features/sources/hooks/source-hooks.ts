@@ -15,9 +15,9 @@ import {
   hardDeleteSources,
   restoreSources,
   updateSource,
-} from './source-actions';
-import { isMediaStorageSupported, readMediaFile } from './source-storage';
-import type { UpdateSourceInput } from './source-types';
+} from '../source-actions';
+import { isMediaStorageSupported, readMediaFile } from '../source-media';
+import type { UpdateSourceInput } from '../source-types';
 
 export const sourceKeys = {
   all: ['sources'] as const,

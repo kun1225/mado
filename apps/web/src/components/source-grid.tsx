@@ -1,12 +1,14 @@
 import { cn } from 'cn';
 
 import { useCollections } from '#/features/collections/collection-hooks';
-import { useSourceDetail } from '#/features/sources/hooks/use-source-detail';
-import { useSourceSelection } from '#/features/sources/hooks/use-source-selection';
 import {
   useDeleteSource,
   useDeleteSources,
-} from '#/features/sources/source-hooks';
+} from '#/features/sources/hooks/source-hooks';
+import {
+  useSourceDetail,
+  useSourceSelection,
+} from '#/features/sources/hooks/source-interaction-hooks';
 import type { Source } from '#/features/sources/source-types';
 
 import { SourceDetailDialog } from './source-detail/source-detail-dialog';

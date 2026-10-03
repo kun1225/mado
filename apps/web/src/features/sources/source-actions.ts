@@ -6,7 +6,7 @@ import {
   toPromise,
 } from '#/features/storage/database';
 
-import { deleteMediaFile, writeMediaFile } from './source-storage';
+import { deleteMediaFile, writeMediaFile } from './source-media';
 import type {
   NewSourceInput,
   Source,

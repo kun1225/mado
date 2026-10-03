@@ -3,7 +3,7 @@ import { Folder01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 
 import { useCollections } from '#/features/collections/collection-hooks';
-import { useUpdateSource } from '#/features/sources/source-hooks';
+import { useUpdateSource } from '#/features/sources/hooks/source-hooks';
 import type {
   Source,
   UpdateSourceInput,

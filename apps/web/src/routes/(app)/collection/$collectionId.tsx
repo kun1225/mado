@@ -17,7 +17,7 @@ import {
   useDeleteCollection,
   useUpdateCollection,
 } from '#/features/collections/collection-hooks';
-import { useSources } from '#/features/sources/source-hooks';
+import { useSources } from '#/features/sources/hooks/source-hooks';
 
 import { LibraryCollectionCard } from '../library/-components/library-collection-card';
 

@@ -8,7 +8,7 @@ import {
   useChildCollections,
   useCreateCollection,
 } from '#/features/collections/collection-hooks';
-import { useAllSources } from '#/features/sources/source-hooks';
+import { useAllSources } from '#/features/sources/hooks/source-hooks';
 
 import { LibraryCollectionCard } from './-components/library-collection-card';
 

@@ -2,7 +2,7 @@ import { Tick02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from 'cn';
 
-import type { ToggleSelectOptions } from '#/features/sources/hooks/use-source-selection';
+import type { ToggleSelectOptions } from '#/features/sources/hooks/source-interaction-hooks';
 
 export function SourceCardCheckbox({
   fileName,

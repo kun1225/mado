@@ -14,7 +14,7 @@ let hardDeleteSources: typeof import('./source-actions').hardDeleteSources;
 let restoreSources: typeof import('./source-actions').restoreSources;
 let updateSource: typeof import('./source-actions').updateSource;
 let updateSourceSchema: typeof import('./source-types').updateSourceSchema;
-let deleteMediaFile: typeof import('./source-storage').deleteMediaFile;
+let deleteMediaFile: typeof import('./source-media').deleteMediaFile;
 let openDatabase: typeof import('../storage/database').openDatabase;
 let newSourceSchema: typeof import('./source-types').newSourceSchema;
 let sourceKindSchema: typeof import('./source-types').sourceKindSchema;
@@ -23,7 +23,7 @@ const COLLECTION_ID = '11111111-1111-4111-8111-111111111111';
 
 // OPFS does not exist in the test environment, so the media side is stubbed and
 // asserted through the spy.
-vi.mock('./source-storage', () => ({
+vi.mock('./source-media', () => ({
   isMediaStorageSupported: false,
   deleteMediaFile: vi.fn(() => Promise.resolve()),
   readMediaFile: vi.fn(),
@@ -80,7 +80,7 @@ beforeEach(async () => {
     restoreSources,
     updateSource,
   } = await import('./source-actions'));
-  ({ deleteMediaFile } = await import('./source-storage'));
+  ({ deleteMediaFile } = await import('./source-media'));
   ({ openDatabase } = await import('../storage/database'));
   ({ newSourceSchema, sourceKindSchema, updateSourceSchema } =
     await import('./source-types'));

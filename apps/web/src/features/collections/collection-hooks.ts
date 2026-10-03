@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { sourceKeys } from '#/features/sources/source-hooks';
+import { sourceKeys } from '#/features/sources/hooks/source-hooks';
 
 import {
   createCollection,
