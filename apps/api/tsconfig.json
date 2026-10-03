@@ -3,7 +3,6 @@
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "outDir": "dist",
     "noEmit": false
   },
   "include": ["src/**/*.ts"]

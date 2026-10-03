@@ -9,11 +9,13 @@
     "start": "node dist/src/server.js",
     "lint": "eslint .",
     "check-types": "tsc --noEmit",
-    "test": "echo 'No API tests yet'"
+    "test": "vitest run"
   },
   "dependencies": {
+    "cheerio": "^1.2.0",
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
@@ -23,6 +25,7 @@
     "@types/node": "^22.10.2",
     "eslint": "10.9.1",
     "tsx": "^4.19.4",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "^5.0.0"
   }
 }
