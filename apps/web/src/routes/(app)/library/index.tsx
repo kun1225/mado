@@ -31,7 +31,7 @@ function Library() {
 
   return (
     <>
-      <section className="flex flex-row flex-nowrap gap-4 overflow-y-auto pt-6 pb-2 *:shrink-0">
+      <section className="flex flex-row flex-nowrap gap-4 overflow-y-auto py-6 *:shrink-0">
         <CollectionNewCard
           disabled={createCollectionMutation.isPending}
           onClick={handleCreateCollection}
@@ -43,7 +43,7 @@ function Library() {
       </section>
 
       {sourcesQuery.data && sourcesQuery.data.length > 0 ? (
-        <div className="flex flex-1 flex-col pt-6 pb-24">
+        <div className="flex flex-1 flex-col">
           <SourceGrid sources={sourcesQuery.data} showCollection />
         </div>
       ) : (

@@ -154,7 +154,7 @@ function CollectionPage() {
       </section>
 
       {sourcesQuery.data && sourcesQuery.data.length > 0 ? (
-        <div className="flex grow flex-col pt-6 pb-24">
+        <div className="flex grow flex-col">
           <SourceGrid sources={sourcesQuery.data} />
         </div>
       ) : (

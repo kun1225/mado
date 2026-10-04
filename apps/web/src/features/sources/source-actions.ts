@@ -143,7 +143,7 @@ export function compressSource(source: Source): Promise<Source> {
 // *** runCompression ***
 async function runCompression(source: Source): Promise<Source> {
   const stored = await readMediaFile(source.storageKey);
-  // OPFS keeps no MIME type or name, and the compressor needs both.
+  // OPFS does not keep MIME type or name, and the compressor needs both.
   const original = new File([stored], source.fileName, {
     type: source.mimeType,
   });
