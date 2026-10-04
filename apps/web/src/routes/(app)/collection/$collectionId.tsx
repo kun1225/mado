@@ -17,7 +17,7 @@ import {
   useDeleteCollection,
   useUpdateCollection,
 } from '#/features/collections/collection-hooks';
-import { useSources } from '#/features/sources/source-hooks';
+import { useSources } from '#/features/sources/hooks/source-hooks';
 
 import { LibraryCollectionCard } from '../library/-components/library-collection-card';
 
@@ -154,7 +154,7 @@ function CollectionPage() {
       </section>
 
       {sourcesQuery.data && sourcesQuery.data.length > 0 ? (
-        <div className="flex grow flex-col pt-6 pb-24">
+        <div className="flex grow flex-col">
           <SourceGrid sources={sourcesQuery.data} />
         </div>
       ) : (

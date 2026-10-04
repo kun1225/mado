@@ -16,9 +16,9 @@ import {
   TooltipTrigger,
 } from '@repo/ui/tooltip';
 
-import { usePasteMedia } from '#/features/sources/hooks/use-paste-media';
-import { ACCEPTED_FILE_TYPES } from '#/features/sources/source-clipboard';
-import { useCreateSources } from '#/features/sources/source-hooks';
+import { useCreateSources } from '#/features/sources/hooks/source-hooks';
+import { usePasteMedia } from '#/features/sources/hooks/source-interaction-hooks';
+import { ACCEPTED_FILE_TYPES } from '#/features/sources/source-media';
 
 const TOGGLE_SIZE = 56;
 const ACTION_SIZE = 48;

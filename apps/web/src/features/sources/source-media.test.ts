@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { detectPastedContent } from './source-clipboard';
+import { compressMedia, detectPastedContent, fitWithin } from './source-media';
 
 function createClipboardData(
   items: Array<{
@@ -99,5 +99,41 @@ describe('detectPastedContent', () => {
     ]);
 
     expect(detectPastedContent(data)).toEqual({ kind: 'ignored' });
+  });
+});
+
+describe('fitWithin', () => {
+  it('keeps a size that already fits', () => {
+    expect(fitWithin(800, 600, 1920)).toEqual({ width: 800, height: 600 });
+  });
+
+  it('scales a landscape size down by its long side', () => {
+    expect(fitWithin(3840, 2160, 1920)).toEqual({ width: 1920, height: 1080 });
+  });
+
+  it('scales a portrait size down by its long side', () => {
+    expect(fitWithin(2160, 3840, 1920)).toEqual({ width: 1080, height: 1920 });
+  });
+
+  it('rounds to even numbers', () => {
+    const { width, height } = fitWithin(3001, 1999, 1500);
+
+    expect(width % 2).toBe(0);
+    expect(height % 2).toBe(0);
+  });
+});
+
+describe('compressMedia', () => {
+  it('returns the original for a GIF', async () => {
+    const file = createFile('a.gif', 'image/gif');
+
+    expect(await compressMedia(file)).toBe(file);
+  });
+
+  it('returns the original when compression is not possible', async () => {
+    // The test environment has no OffscreenCanvas or WebCodecs.
+    const file = createFile('a.png', 'image/png');
+
+    expect(await compressMedia(file)).toBe(file);
   });
 });

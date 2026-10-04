@@ -31,6 +31,23 @@ function seedV2Database(): Promise<void> {
   });
 }
 
+function seedNewerDatabase(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('mado', 4);
+
+    request.onupgradeneeded = () => {
+      const database = request.result;
+      database.createObjectStore('collections', { keyPath: 'id' });
+      database.createObjectStore('sources', { keyPath: 'id' });
+    };
+    request.onsuccess = () => {
+      request.result.close();
+      resolve();
+    };
+    request.onerror = () => reject(request.error);
+  });
+}
+
 describe('database v3 migration', () => {
   it('moves collectionId into collectionIds and fills the new fields', async () => {
     await seedV2Database();
@@ -56,5 +73,16 @@ describe('database v3 migration', () => {
     expect(
       await toPromise(store.index('collectionIds').getAll('c1')),
     ).toHaveLength(1);
+  });
+
+  it('opens a database created by a newer app version', async () => {
+    await seedNewerDatabase();
+
+    const { openDatabase } = await import('./database');
+    const database = await openDatabase();
+
+    expect(database.version).toBe(4);
+    expect(database.objectStoreNames).toContain('collections');
+    expect(database.objectStoreNames).toContain('sources');
   });
 });

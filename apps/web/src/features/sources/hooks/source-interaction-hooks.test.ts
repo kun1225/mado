@@ -5,14 +5,15 @@ import type { Source } from '../source-types';
 import type {
   SelectionState,
   ToggleSelectOptions,
-} from './use-source-selection';
+} from './source-interaction-hooks';
 import {
   applyClick,
   EMPTY_SELECTION_STATE,
   getSelectedIds,
   getSelectedSources,
+  resolveSourceDetail,
   toggleSelection,
-} from './use-source-selection';
+} from './source-interaction-hooks';
 
 function buildSource(id: string): Source {
   return {
@@ -152,5 +153,27 @@ describe('getSelectedSources', () => {
     expect(
       getSelectedSources(SOURCES, new Set(['1', 'gone'])).map(({ id }) => id),
     ).toEqual(['1']);
+  });
+});
+
+const detailSources = ['a', 'b', 'c'].map((id) => ({ id }) as Source);
+
+describe('resolveSourceDetail', () => {
+  it('returns the source and both neighbours', () => {
+    const view = resolveSourceDetail(detailSources, 'b');
+
+    expect(view.index).toBe(1);
+    expect(view.previous?.id).toBe('a');
+    expect(view.next?.id).toBe('c');
+  });
+
+  it('has no neighbour past either end', () => {
+    expect(resolveSourceDetail(detailSources, 'a').previous).toBeUndefined();
+    expect(resolveSourceDetail(detailSources, 'c').next).toBeUndefined();
+  });
+
+  it('returns nothing for a missing or null id', () => {
+    expect(resolveSourceDetail(detailSources, 'zzz').source).toBeUndefined();
+    expect(resolveSourceDetail(detailSources, null).index).toBe(-1);
   });
 });

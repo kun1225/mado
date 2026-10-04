@@ -9,6 +9,15 @@ export const STORES = {
 export const SOURCES_COLLECTION_INDEX = 'collectionIds';
 const LEGACY_SOURCES_COLLECTION_INDEX = 'collectionId';
 
+function openCurrentDatabase(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DATABASE_NAME);
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
 /**
  * v3: a source can sit in many collections and gains name, url, note and tags.
  * Runs inside the upgrade transaction, so it is all-or-nothing.
@@ -76,7 +85,14 @@ export function openDatabase(): Promise<IDBDatabase> {
       }
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onerror = () => {
+      if (request.error?.name === 'VersionError') {
+        openCurrentDatabase().then(resolve, reject);
+        return;
+      }
+
+      reject(request.error);
+    };
   });
 
   return databasePromise;

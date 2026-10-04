@@ -1,12 +1,15 @@
 import { cn } from 'cn';
 
 import { useCollections } from '#/features/collections/collection-hooks';
-import { useSourceDetail } from '#/features/sources/hooks/use-source-detail';
-import { useSourceSelection } from '#/features/sources/hooks/use-source-selection';
 import {
+  useCompressingSourceIds,
   useDeleteSource,
   useDeleteSources,
-} from '#/features/sources/source-hooks';
+} from '#/features/sources/hooks/source-hooks';
+import {
+  useSourceDetail,
+  useSourceSelection,
+} from '#/features/sources/hooks/source-interaction-hooks';
 import type { Source } from '#/features/sources/source-types';
 
 import { SourceDetailDialog } from './source-detail/source-detail-dialog';
@@ -38,6 +41,7 @@ export function SourceGrid({
   const collectionsQuery = useCollections();
   const deleteSourceMutation = useDeleteSource();
   const deleteSourcesMutation = useDeleteSources();
+  const compressingIds = useCompressingSourceIds();
   const selection = useSourceSelection(sources);
   const detail = useSourceDetail();
 
@@ -73,6 +77,7 @@ export function SourceGrid({
           {(source) => (
             <SourceCard
               source={source}
+              isCompressing={compressingIds.has(source.id)}
               collectionName={
                 showCollection
                   ? source.collectionIds

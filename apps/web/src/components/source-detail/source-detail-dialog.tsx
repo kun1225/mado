@@ -3,10 +3,12 @@ import type { KeyboardEvent } from 'react';
 
 import { Dialog, DialogContent, DialogTitle } from '@repo/ui/dialog';
 
-import { resolveSourceDetail } from '#/features/sources/hooks/use-source-detail';
-import { isEditablePasteTarget } from '#/features/sources/source-clipboard';
-import { downloadSource } from '#/features/sources/source-download';
-import { useDeleteSource } from '#/features/sources/source-hooks';
+import { useDeleteSource } from '#/features/sources/hooks/source-hooks';
+import { resolveSourceDetail } from '#/features/sources/hooks/source-interaction-hooks';
+import {
+  downloadSource,
+  isEditablePasteTarget,
+} from '#/features/sources/source-media';
 import type { Source } from '#/features/sources/source-types';
 
 import { SourceDetailPanel } from './source-detail-panel';

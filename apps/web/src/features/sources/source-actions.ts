@@ -6,7 +6,12 @@ import {
   toPromise,
 } from '#/features/storage/database';
 
-import { deleteMediaFile, writeMediaFile } from './source-storage';
+import {
+  compressMedia,
+  deleteMediaFile,
+  readMediaFile,
+  writeMediaFile,
+} from './source-media';
 import type {
   NewSourceInput,
   Source,
@@ -32,7 +37,7 @@ const UNKNOWN_METADATA: MediaMetadata = {
  * Metadata is a nice-to-have, so a file the browser cannot decode still gets
  * stored — it just keeps null dimensions.
  */
-function readMediaMetadata(
+async function readMediaMetadata(
   file: File,
   kind: SourceKind,
 ): Promise<MediaMetadata> {
@@ -120,6 +125,60 @@ export async function createSources(
   }
 
   return sources;
+}
+
+// Compression is heavy, so each file waits for the previous file to finish.
+let previousTask: Promise<unknown> = Promise.resolve();
+export function compressSource(source: Source): Promise<Source> {
+  const currentTask = previousTask.then(() => {
+    return runCompression(source);
+  });
+
+  // Keep the queue usable after failure, while returning the real error to the caller.
+  previousTask = currentTask.catch(() => undefined);
+
+  return currentTask;
+}
+
+// *** runCompression ***
+async function runCompression(source: Source): Promise<Source> {
+  const stored = await readMediaFile(source.storageKey);
+  // OPFS does not keep MIME type or name, and the compressor needs both.
+  const original = new File([stored], source.fileName, {
+    type: source.mimeType,
+  });
+  const compressed = await compressMedia(original);
+
+  if (compressed === original) return source;
+
+  const metadata = await readMediaMetadata(compressed, source.kind);
+
+  await writeMediaFile(source.storageKey, compressed);
+
+  const database = await openDatabase();
+  const transaction = database.transaction(STORES.sources, 'readwrite');
+  const store = transaction.objectStore(STORES.sources);
+  const existing = await toPromise<Source | undefined>(store.get(source.id));
+
+  if (!existing) {
+    // Deleted for good while compressing: the new file would be left behind.
+    await deleteMediaFile(source.storageKey);
+    return source;
+  }
+
+  const updated: Source = {
+    ...existing,
+    fileName: compressed.name,
+    mimeType: compressed.type,
+    sizeBytes: compressed.size,
+    ...metadata,
+    updatedAt: new Date().toISOString(),
+  };
+
+  store.put(updated);
+  await toCompletion(transaction);
+
+  return updated;
 }
 
 function toVisibleSources(sources: Source[]): Source[] {

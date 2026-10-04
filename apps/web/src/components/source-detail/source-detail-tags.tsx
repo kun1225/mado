@@ -2,7 +2,10 @@ import { useId, useState } from 'react';
 import { Tag01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 
-import { useAllTags, useUpdateSource } from '#/features/sources/source-hooks';
+import {
+  useAllTags,
+  useUpdateSource,
+} from '#/features/sources/hooks/source-hooks';
 import type {
   Source,
   UpdateSourceInput,
