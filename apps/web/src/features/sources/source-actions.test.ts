@@ -1,8 +1,12 @@
 import { IDBFactory } from 'fake-indexeddb';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Source } from './source-types';
 
+let compressSource: typeof import('./source-actions').compressSource;
+let compressMedia: typeof import('./source-media').compressMedia;
+let readMediaFile: typeof import('./source-media').readMediaFile;
+let writeMediaFile: typeof import('./source-media').writeMediaFile;
 let countSourcesByCollection: typeof import('./source-actions').countSourcesByCollection;
 let deleteSource: typeof import('./source-actions').deleteSource;
 let deleteSources: typeof import('./source-actions').deleteSources;
@@ -70,6 +74,7 @@ beforeEach(async () => {
   indexedDB = new IDBFactory();
 
   ({
+    compressSource,
     countSourcesByCollection,
     deleteSource,
     deleteSources,
@@ -81,7 +86,8 @@ beforeEach(async () => {
     restoreSources,
     updateSource,
   } = await import('./source-actions'));
-  ({ deleteMediaFile } = await import('./source-media'));
+  ({ compressMedia, deleteMediaFile, readMediaFile, writeMediaFile } =
+    await import('./source-media'));
   ({ openDatabase } = await import('../storage/database'));
   ({ newSourceSchema, sourceKindSchema, updateSourceSchema } =
     await import('./source-types'));
@@ -455,5 +461,75 @@ describe('updateSource list changes', () => {
     await seedSources([buildSource({ id: 'a', tags })]);
 
     await expect(updateSource('a', { addTags: ['extra'] })).rejects.toThrow();
+  });
+});
+
+describe('compressSource', () => {
+  const smaller = new File(['x'], 'shot.webp', { type: 'image/webp' });
+
+  beforeEach(() => {
+    // The media mocks are shared between tests, so start each one clean.
+    vi.mocked(compressMedia).mockReset();
+    vi.mocked(compressMedia).mockImplementation((file) =>
+      Promise.resolve(file),
+    );
+    vi.mocked(writeMediaFile).mockClear();
+    vi.mocked(deleteMediaFile).mockClear();
+    vi.mocked(readMediaFile).mockResolvedValue(new File(['original'], 'a'));
+    // jsdom is not used here, so the image decoder is faked.
+    vi.stubGlobal(
+      'Image',
+      class {
+        naturalWidth = 1280;
+        naturalHeight = 960;
+        onload: (() => void) | null = null;
+        set src(_value: string) {
+          queueMicrotask(() => this.onload?.());
+        }
+      },
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('stores the smaller file and updates the record to match', async () => {
+    const source = buildSource({ id: 'a', sizeBytes: 1000 });
+    await seedSources([source]);
+    vi.mocked(compressMedia).mockResolvedValue(smaller);
+
+    const result = await compressSource(source);
+
+    expect(writeMediaFile).toHaveBeenCalledWith('a', smaller);
+    expect(result).toMatchObject({
+      fileName: 'shot.webp',
+      mimeType: 'image/webp',
+      sizeBytes: 1,
+      width: 1280,
+      height: 960,
+    });
+    expect((await fetchAllSources())[0]).toMatchObject({
+      fileName: 'shot.webp',
+      sizeBytes: 1,
+    });
+  });
+
+  it('leaves the source alone when compression changes nothing', async () => {
+    const source = buildSource({ id: 'a' });
+    await seedSources([source]);
+
+    const result = await compressSource(source);
+
+    expect(writeMediaFile).not.toHaveBeenCalled();
+    expect(result).toBe(source);
+  });
+
+  it('removes the new file when the source was deleted for good meanwhile', async () => {
+    vi.mocked(compressMedia).mockResolvedValue(smaller);
+
+    await compressSource(buildSource({ id: 'gone' }));
+
+    expect(deleteMediaFile).toHaveBeenCalledWith('gone');
   });
 });

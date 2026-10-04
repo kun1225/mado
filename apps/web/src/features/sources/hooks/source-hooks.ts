@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useMutationState,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 
 import { collectionKeys } from '#/features/collections/collection-hooks';
 
 import {
+  compressSource,
   createSources,
   deleteSource,
   deleteSources,
@@ -17,7 +23,7 @@ import {
   updateSource,
 } from '../source-actions';
 import { isMediaStorageSupported, readMediaFile } from '../source-media';
-import type { UpdateSourceInput } from '../source-types';
+import type { Source, UpdateSourceInput } from '../source-types';
 
 export const sourceKeys = {
   all: ['sources'] as const,
@@ -97,11 +103,38 @@ function invalidateAfterSourceChange(
   return Promise.all(invalidations);
 }
 
-export function useCreateSources() {
+const COMPRESS_MUTATION_KEY = ['sources', 'compress'] as const;
+
+function useCompressSource() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: COMPRESS_MUTATION_KEY,
+    mutationFn: compressSource,
+    onSettled: (_source, _error, original) =>
+      invalidateAfterSourceChange(queryClient, original.collectionIds),
+  });
+}
+
+/** Ids of sources whose stored file is still being shrunk in the background. */
+export function useCompressingSourceIds(): ReadonlySet<string> {
+  const ids = useMutationState({
+    filters: { mutationKey: COMPRESS_MUTATION_KEY, status: 'pending' },
+    select: (mutation) => (mutation.state.variables as Source).id,
+  });
+
+  return new Set(ids);
+}
+
+export function useCreateSources() {
+  const queryClient = useQueryClient();
+  const { mutate: compress } = useCompressSource();
+
+  return useMutation({
     mutationFn: createSources,
+    // The sources are already visible at this point; shrinking them happens
+    // afterwards so the upload feels instant.
+    onSuccess: (sources) => sources.forEach((source) => compress(source)),
     onSettled: (_data, _error, inputs) =>
       invalidateAfterSourceChange(
         queryClient,
@@ -194,7 +227,11 @@ export function useHardDeleteSources() {
  * OPFS does not keep the MIME type, so `slice` re-attaches it. Slicing a file
  * is lazy, so this does not copy the bytes.
  */
-export function useMediaObjectUrl(storageKey: string, mimeType: string) {
+export function useMediaObjectUrl(
+  storageKey: string,
+  mimeType: string,
+  sizeBytes: number,
+) {
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -216,7 +253,9 @@ export function useMediaObjectUrl(storageKey: string, mimeType: string) {
       setObjectUrl(null);
       if (createdUrl) URL.revokeObjectURL(createdUrl);
     };
-  }, [storageKey, mimeType]);
+    // The size changes when compression swaps the stored bytes in place, which
+    // would leave the old blob URL pointing at a file that no longer exists.
+  }, [storageKey, mimeType, sizeBytes]);
 
   return objectUrl;
 }

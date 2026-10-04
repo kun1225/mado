@@ -2,6 +2,7 @@ import { cn } from 'cn';
 
 import { useCollections } from '#/features/collections/collection-hooks';
 import {
+  useCompressingSourceIds,
   useDeleteSource,
   useDeleteSources,
 } from '#/features/sources/hooks/source-hooks';
@@ -40,6 +41,7 @@ export function SourceGrid({
   const collectionsQuery = useCollections();
   const deleteSourceMutation = useDeleteSource();
   const deleteSourcesMutation = useDeleteSources();
+  const compressingIds = useCompressingSourceIds();
   const selection = useSourceSelection(sources);
   const detail = useSourceDetail();
 
@@ -75,6 +77,7 @@ export function SourceGrid({
           {(source) => (
             <SourceCard
               source={source}
+              isCompressing={compressingIds.has(source.id)}
               collectionName={
                 showCollection
                   ? source.collectionIds

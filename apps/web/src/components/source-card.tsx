@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Delete02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from 'cn';
@@ -14,12 +15,15 @@ import { SourceCardProgressBlur } from './source-card-progress-blur';
 export function SourceCard({
   source,
   collectionName,
+  isCompressing = false,
   deletion,
   selection,
   onOpen,
 }: {
   source: Source;
   collectionName?: string;
+  /** The stored file is still being shrunk; the card shows it as busy. */
+  isCompressing?: boolean;
   deletion: {
     isPending?: boolean;
     onDelete: () => void;
@@ -32,21 +36,32 @@ export function SourceCard({
   /** Leave out where a card should not open the detail dialog. */
   onOpen?: () => void;
 }) {
-  const objectUrl = useMediaObjectUrl(source.storageKey, source.mimeType);
+  const objectUrl = useMediaObjectUrl(
+    source.storageKey,
+    source.mimeType,
+    source.sizeBytes,
+  );
+
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const isUnplayable = objectUrl !== null && failedUrl === objectUrl;
 
   const aspectRatio =
     source.width && source.height ? source.width / source.height : 1;
 
+  // Compression swaps the stored file, which breaks a video that is playing.
+  const isWaitingForVideo = isCompressing && source.kind === 'video';
+
   return (
     <figure
       style={{ aspectRatio }}
+      aria-busy={isCompressing}
       className={cn(
         'group relative overflow-hidden rounded-md select-none',
         'transition-shadow duration-base ease-standard',
         selection.isSelected && 'ring-2 ring-fg ring-offset-2 ring-offset-bg',
       )}
     >
-      {objectUrl === null && (
+      {(objectUrl === null || isWaitingForVideo) && (
         <div className="size-full animate-pulse bg-muted" />
       )}
 
@@ -58,15 +73,41 @@ export function SourceCard({
         />
       )}
 
-      {objectUrl !== null && source.kind === 'video' && (
-        <video
-          src={objectUrl}
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="size-full object-cover"
-        />
+      {objectUrl !== null &&
+        source.kind === 'video' &&
+        !isCompressing &&
+        !isUnplayable && (
+          <video
+            src={objectUrl}
+            onError={() => setFailedUrl(objectUrl)}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="size-full object-cover"
+          />
+        )}
+
+      {isUnplayable && !isCompressing && (
+        <p
+          role="alert"
+          className="flex size-full items-center justify-center bg-muted p-2 text-center text-xs text-muted-fg"
+        >
+          This video format can't be played in this browser.
+        </p>
+      )}
+
+      {isCompressing && (
+        <div
+          role="status"
+          aria-label={`Optimizing ${source.name}`}
+          className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-fg/30 backdrop-blur-xs"
+        >
+          <span
+            aria-hidden
+            className="size-6 animate-spin rounded-full border-2 border-bg border-t-transparent motion-reduce:animate-none"
+          />
+        </div>
       )}
 
       {selection.isActive && (

@@ -222,7 +222,11 @@ async function compressVideo(file: File): Promise<File> {
       },
     });
 
-    if (!conversion.isValid) return file;
+    const droppedVideo = conversion.discardedTracks.some(({ track }) =>
+      track.isVideoTrack(),
+    );
+
+    if (!conversion.isValid || droppedVideo) return file;
 
     await conversion.execute();
 
