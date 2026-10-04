@@ -107,7 +107,7 @@ export type UpdateSourceInput = z.input<typeof updateSourceSchema>;
 
 export type Source = {
   id: string;
-  /** Display name, editable. `fileName` is the original and never changes. */
+  /** Display name, editable. `fileName` is the stored file's name and only changes when compression changes its format. */
   name: string;
   url: string | null;
   note: string | null;
