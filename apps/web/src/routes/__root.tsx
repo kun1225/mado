@@ -5,6 +5,8 @@ import {
   Scripts,
 } from '@tanstack/react-router';
 
+import { Toaster } from '@repo/ui/sonner';
+
 import appCss from '../styles.css?url';
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
@@ -54,6 +56,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <Toaster />
         <Scripts />
       </body>
     </html>

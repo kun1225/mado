@@ -22,6 +22,7 @@ let deleteMediaFile: typeof import('./source-media').deleteMediaFile;
 let openDatabase: typeof import('../storage/database').openDatabase;
 let newSourceSchema: typeof import('./source-types').newSourceSchema;
 let sourceKindSchema: typeof import('./source-types').sourceKindSchema;
+let createSources: typeof import('./source-actions').createSources;
 
 const COLLECTION_ID = '11111111-1111-4111-8111-111111111111';
 
@@ -75,6 +76,7 @@ beforeEach(async () => {
 
   ({
     compressSource,
+    createSources,
     countSourcesByCollection,
     deleteSource,
     deleteSources,
@@ -131,6 +133,48 @@ describe('sourceKindSchema', () => {
     expect(() => sourceKindSchema.parse('application')).toThrow(
       'Only images and videos are supported',
     );
+  });
+});
+
+describe('createSources', () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      'Image',
+      class {
+        naturalWidth = 1280;
+        naturalHeight = 960;
+        onload: (() => void) | null = null;
+        set src(_value: string) {
+          queueMicrotask(() => this.onload?.());
+        }
+      },
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('preserves successful sources when another file fails', async () => {
+    vi.mocked(writeMediaFile).mockImplementation(async (_key, file) => {
+      if (file.name === 'failed.png') throw new Error('Storage is full.');
+    });
+
+    const result = await createSources([
+      {
+        collectionId: COLLECTION_ID,
+        file: new File(['failed'], 'failed.png', { type: 'image/png' }),
+      },
+      {
+        collectionId: COLLECTION_ID,
+        file: new File(['saved'], 'saved.png', { type: 'image/png' }),
+      },
+    ]);
+
+    expect(result).toMatchObject({
+      error: { message: 'Storage is full.' },
+      sources: [{ fileName: 'saved.png' }],
+    });
   });
 });
 

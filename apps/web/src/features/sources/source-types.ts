@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const MAX_FILE_MB = 512;
 
-const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
+export const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
 
 export const sourceKindSchema = z.enum(['image', 'video'], {
   error: 'Only images and videos are supported',

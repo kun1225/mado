@@ -7,7 +7,6 @@ import {
 import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from 'cn';
 import { Liquid } from 'liquid-gooey';
-import { ZodError } from 'zod';
 
 import {
   Tooltip,
@@ -16,7 +15,10 @@ import {
   TooltipTrigger,
 } from '@repo/ui/tooltip';
 
-import { useCreateSources } from '#/features/sources/hooks/source-hooks';
+import {
+  useCreateSources,
+  useIsCreatingSources,
+} from '#/features/sources/hooks/source-hooks';
 import { usePasteMedia } from '#/features/sources/hooks/source-interaction-hooks';
 import { ACCEPTED_FILE_TYPES } from '#/features/sources/source-media';
 
@@ -43,14 +45,6 @@ const ACTIONS = [
 
 type ActionKey = (typeof ACTIONS)[number]['key'];
 
-function toErrorMessage(error: unknown) {
-  if (error instanceof ZodError) {
-    return error.issues[0]?.message ?? 'That file is not supported.';
-  }
-  if (error instanceof Error) return error.message;
-  return 'Something went wrong while adding the file.';
-}
-
 export function AddSourceButton({
   collectionId,
 }: {
@@ -59,11 +53,11 @@ export function AddSourceButton({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
-  const createSourcesMutation = useCreateSources();
+  const { mutate: createSources } = useCreateSources();
+  const isCreating = useIsCreatingSources();
   const [open, setOpen] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
 
-  const { mutate: createSources } = createSourcesMutation;
   const handlePaste = (file: File) => createSources([{ collectionId, file }]);
   usePasteMedia(handlePaste);
 
@@ -101,7 +95,7 @@ export function AddSourceButton({
     // Reset so picking the same file again still fires a change event.
     fileInput.value = '';
 
-    if (inputs.length > 0) createSourcesMutation.mutate(inputs);
+    if (inputs.length > 0) createSources(inputs);
   }
 
   function handleAction(key: ActionKey) {
@@ -124,15 +118,6 @@ export function AddSourceButton({
       />
 
       <div ref={rootRef} className="fixed bottom-6 left-edge z-action-bar">
-        {createSourcesMutation.isError && (
-          <p
-            role="alert"
-            className="absolute bottom-3 left-16 w-max max-w-64 rounded-md bg-fg px-3 py-1.5 text-xs text-bg"
-          >
-            {toErrorMessage(createSourcesMutation.error)}
-          </p>
-        )}
-
         <Liquid
           blur={8}
           contrast={20}
@@ -207,10 +192,10 @@ export function AddSourceButton({
               aria-label={open ? 'Close menu' : 'Add new source'}
               aria-expanded={open}
               onClick={() => setOpen((value) => !value)}
-              disabled={createSourcesMutation.isPending}
+              disabled={isCreating}
               className={cn(CIRCLE_BUTTON, 'size-14 transition-[scale]')}
             >
-              {createSourcesMutation.isPending ? (
+              {isCreating ? (
                 <span
                   aria-hidden
                   className="size-6 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none"

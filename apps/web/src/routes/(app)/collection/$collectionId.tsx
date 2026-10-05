@@ -8,6 +8,7 @@ import { Separator } from '@repo/ui/separator';
 
 import { AddSourceButton } from '#/components/add-source-button';
 import { CollectionNewCard } from '#/components/collection-new-card';
+import { SourceDropZone } from '#/components/source-drop-zone';
 import { SourceGrid } from '#/components/source-grid';
 import { SourcesEmptyState } from '#/components/sources-empty-state';
 import {
@@ -153,15 +154,19 @@ function CollectionPage() {
         ))}
       </section>
 
-      {sourcesQuery.data && sourcesQuery.data.length > 0 ? (
-        <div className="flex grow flex-col">
+      <SourceDropZone
+        collectionId={collectionId}
+        label={collectionName}
+        className="flex grow flex-col"
+      >
+        {sourcesQuery.data && sourcesQuery.data.length > 0 ? (
           <SourceGrid sources={sourcesQuery.data} />
-        </div>
-      ) : (
-        <div className="flex grow items-center justify-center py-6">
-          <SourcesEmptyState />
-        </div>
-      )}
+        ) : (
+          <div className="flex grow items-center justify-center py-6">
+            <SourcesEmptyState />
+          </div>
+        )}
+      </SourceDropZone>
 
       <AddSourceButton collectionId={collectionId} />
     </div>

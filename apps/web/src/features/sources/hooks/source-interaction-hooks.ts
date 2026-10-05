@@ -1,11 +1,23 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
+import type { FileRejection } from 'react-dropzone';
+import { useDropzone } from 'react-dropzone';
 
-import { detectPastedContent, isEditablePasteTarget } from '../source-media';
+import { toast } from '@repo/ui/sonner';
+
+import {
+  ACCEPTED_FILE_TYPES,
+  detectPastedContent,
+  isEditablePasteTarget,
+} from '../source-media';
 import type { Source } from '../source-types';
-import { updateSourceSchema } from '../source-types';
+import {
+  MAX_FILE_BYTES,
+  MAX_FILE_MB,
+  updateSourceSchema,
+} from '../source-types';
 
-import { useUpdateSource } from './source-hooks';
+import { useCreateSources, useUpdateSource } from './source-hooks';
 
 export const SOURCE_SEARCH_KEY = 'source';
 
@@ -262,3 +274,45 @@ export function usePasteMedia(onPaste: (file: File) => void) {
     return () => window.removeEventListener('paste', handlePaste);
   }, [onPaste]);
 }
+
+// 'image/*,video/*' -> { 'image/*': [], 'video/*': [] }, the shape react-dropzone wants.
+const DROP_ACCEPT = Object.fromEntries(
+  ACCEPTED_FILE_TYPES.split(',').map((type) => [type, []]),
+);
+
+/**
+ * Turns an element into a drop target that adds the dropped media to
+ * `collectionId`, or to the library alone when it is null.
+ */
+export function useSourceDropzone(collectionId: string | null) {
+  const { mutate: createSources } = useCreateSources();
+
+  function handleDrop(files: File[], rejections: FileRejection[]) {
+    if (rejections.length > 0) {
+      toast.error(toRejectionMessage(rejections.length));
+    }
+    if (files.length > 0) {
+      createSources(files.map((file) => ({ collectionId, file })));
+    }
+  }
+
+  const { getRootProps, isDragActive } = useDropzone({
+    accept: DROP_ACCEPT,
+    maxSize: MAX_FILE_BYTES,
+    onDrop: handleDrop,
+    noClick: true,
+    noKeyboard: true,
+    noPaste: true,
+  });
+
+  return { getRootProps, isDragActive };
+}
+
+// *** toRejectionMessage ***
+function toRejectionMessage(count: number): string {
+  const files = count === 1 ? 'file' : 'files';
+
+  return `Skipped ${count} ${files}. Only images and videos up to ${MAX_FILE_MB}MB are supported.`;
+}
+
+export { toRejectionMessage };

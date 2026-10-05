@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
 import {
+  useIsMutating,
   useMutation,
   useMutationState,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import { ZodError } from 'zod';
+
+import { toast } from '@repo/ui/sonner';
 
 import { collectionKeys } from '#/features/collections/collection-hooks';
 
@@ -126,21 +130,42 @@ export function useCompressingSourceIds(): ReadonlySet<string> {
   return new Set(ids);
 }
 
+const CREATE_MUTATION_KEY = ['sources', 'create'] as const;
+
 export function useCreateSources() {
   const queryClient = useQueryClient();
   const { mutate: compress } = useCompressSource();
 
   return useMutation({
+    mutationKey: CREATE_MUTATION_KEY,
     mutationFn: createSources,
     // The sources are already visible at this point; shrinking them happens
     // afterwards so the upload feels instant.
-    onSuccess: (sources) => sources.forEach((source) => compress(source)),
+    onSuccess: ({ sources, error }) => {
+      sources.forEach((source) => compress(source));
+      if (error) toast.error(toCreateErrorMessage(error));
+    },
+    onError: (error) => toast.error(toCreateErrorMessage(error)),
     onSettled: (_data, _error, inputs) =>
       invalidateAfterSourceChange(
         queryClient,
         inputs.map(({ collectionId }) => collectionId),
       ),
   });
+}
+
+// *** toCreateErrorMessage ***
+function toCreateErrorMessage(error: unknown) {
+  if (error instanceof ZodError) {
+    return error.issues[0]?.message ?? 'That file is not supported.';
+  }
+  if (error instanceof Error) return error.message;
+  return 'Something went wrong while adding the file.';
+}
+
+/** True while any upload is saving, from the + button, paste, or a drop. */
+export function useIsCreatingSources(): boolean {
+  return useIsMutating({ mutationKey: CREATE_MUTATION_KEY }) > 0;
 }
 
 export function useUpdateSource() {

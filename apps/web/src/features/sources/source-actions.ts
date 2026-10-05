@@ -113,18 +113,19 @@ export async function createSource(input: NewSourceInput): Promise<Source> {
   return source;
 }
 
+/**
+ * Saves each file on its own, so one bad file does not lose the others.
+ */
 export async function createSources(
   inputs: NewSourceInput[],
-): Promise<Source[]> {
+): Promise<{ sources: Source[]; error: unknown }> {
   const results = await Promise.allSettled(inputs.map(createSource));
-  const sources: Source[] = [];
+  const sources = results
+    .filter((result) => result.status === 'fulfilled')
+    .map((result) => result.value);
+  const failed = results.find((result) => result.status === 'rejected');
 
-  for (const result of results) {
-    if (result.status === 'rejected') throw result.reason;
-    sources.push(result.value);
-  }
-
-  return sources;
+  return { sources, error: failed?.reason };
 }
 
 // Compression is heavy, so each file waits for the previous file to finish.

@@ -3,7 +3,7 @@ export function SourcesEmptyState() {
     <div className="text-center">
       <p className="text-base font-medium">Nothing here yet</p>
       <p className="mt-1 text-sm text-muted-fg">
-        Tap + to add images or websites.
+        Tap + to add images or websites, or drop files here.
       </p>
     </div>
   );

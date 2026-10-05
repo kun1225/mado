@@ -13,6 +13,7 @@ import {
   getSelectedSources,
   resolveSourceDetail,
   toggleSelection,
+  toRejectionMessage,
 } from './source-interaction-hooks';
 
 function buildSource(id: string): Source {
@@ -175,5 +176,19 @@ describe('resolveSourceDetail', () => {
   it('returns nothing for a missing or null id', () => {
     expect(resolveSourceDetail(detailSources, 'zzz').source).toBeUndefined();
     expect(resolveSourceDetail(detailSources, null).index).toBe(-1);
+  });
+});
+
+describe('toRejectionMessage', () => {
+  it('uses the singular for one file', () => {
+    expect(toRejectionMessage(1)).toBe(
+      'Skipped 1 file. Only images and videos up to 512MB are supported.',
+    );
+  });
+
+  it('uses the plural for many files', () => {
+    expect(toRejectionMessage(3)).toBe(
+      'Skipped 3 files. Only images and videos up to 512MB are supported.',
+    );
   });
 });
