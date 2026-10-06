@@ -73,16 +73,32 @@ export function SourceCard({
         />
       )}
 
-      {source.kind === 'website' && source.storageKey && (
-        <div className="flex size-full min-h-40 flex-col justify-end bg-muted p-4">
-          {source.site?.domain && (
-            <p className="truncate text-xs text-muted-fg">
-              {source.site.domain}
-            </p>
-          )}
-          <p className="mt-1 line-clamp-2 text-sm font-medium">{source.name}</p>
-        </div>
+      {source.kind === 'website' && source.site?.ogImage && (
+        <img
+          src={source.site.ogImage}
+          alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          className="size-full object-cover"
+        />
       )}
+
+      {source.kind === 'website' &&
+        !source.site?.ogImage &&
+        (objectUrl ? (
+          <img src={objectUrl} alt="" className="size-full object-cover" />
+        ) : (
+          <div className="flex size-full min-h-40 flex-col justify-end bg-muted p-4">
+            {source.site?.domain && (
+              <p className="truncate text-xs text-muted-fg">
+                {source.site.domain}
+              </p>
+            )}
+            <p className="mt-1 line-clamp-2 text-sm font-medium">
+              {source.name}
+            </p>
+          </div>
+        ))}
 
       {objectUrl !== null &&
         source.kind === 'video' &&

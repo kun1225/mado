@@ -37,10 +37,10 @@ export function SourceDetailViewer({ source }: { source: Source }) {
               referrerPolicy="no-referrer"
               className="size-full border-0 bg-bg"
             />
-          ) : objectUrl ? (
+          ) : objectUrl || source.site.ogImage ? (
             <img
-              src={objectUrl}
-              alt={`Screenshot of ${source.name}`}
+              src={objectUrl ?? source.site.ogImage ?? undefined}
+              alt={`Preview of ${source.name}`}
               className="size-full object-contain"
             />
           ) : (

@@ -124,7 +124,9 @@ export async function createWebsiteSource(
 ): Promise<Source> {
   const { collectionId, url } = newWebsiteSourceSchema.parse(input);
   const preview = await fetchSitePreview(url);
-  const screenshot = await fetchSiteCapture(preview.finalUrl).catch(() => null);
+  const screenshot = preview.ogImage
+    ? null
+    : await fetchSiteCapture(preview.finalUrl).catch(() => null);
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const source: Source = {
@@ -135,7 +137,10 @@ export async function createWebsiteSource(
     tags: [],
     collectionIds: collectionId ? [collectionId] : [],
     kind: 'website',
-    site: { ...preview, captureStatus: screenshot ? 'ready' : 'failed' },
+    site: {
+      ...preview,
+      captureStatus: screenshot || preview.ogImage ? 'ready' : 'failed',
+    },
     fileName: screenshot?.name ?? '',
     mimeType: screenshot?.type ?? '',
     sizeBytes: screenshot?.size ?? 0,
