@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
 import {
   useIsMutating,
@@ -39,6 +39,24 @@ export const sourceKeys = {
 };
 
 const isSupported = typeof indexedDB !== 'undefined' && isMediaStorageSupported;
+
+/**
+ * The server cannot see browser storage, so it assumes support; the client
+ * corrects that after hydration instead of mismatching the server HTML.
+ */
+export function useIsSourceStorageSupported(): boolean {
+  return useSyncExternalStore(
+    subscribeToNothing,
+    () => isSupported,
+    () => true,
+  );
+}
+
+// *** subscribeToNothing ***
+// Support never changes while the page is open.
+function subscribeToNothing() {
+  return () => {};
+}
 
 export function useAllSources() {
   return useQuery({
@@ -208,8 +226,10 @@ export function useDeleteSource() {
 
   return useMutation({
     mutationFn: deleteSource,
-    onSuccess: (source) =>
-      invalidateAfterSourceChange(queryClient, source.collectionIds),
+    onSuccess: (source) => {
+      showUndoDeleteToast(queryClient, [source]);
+      return invalidateAfterSourceChange(queryClient, source.collectionIds);
+    },
   });
 }
 
@@ -218,12 +238,45 @@ export function useDeleteSources() {
 
   return useMutation({
     mutationFn: deleteSources,
-    onSuccess: (sources) =>
-      invalidateAfterSourceChange(
+    onSuccess: (sources) => {
+      showUndoDeleteToast(queryClient, sources);
+      return invalidateAfterSourceChange(
         queryClient,
         sources.flatMap(({ collectionIds }) => collectionIds),
-      ),
+      );
+    },
   });
+}
+
+// *** showUndoDeleteToast ***
+function showUndoDeleteToast(queryClient: QueryClient, sources: Source[]) {
+  if (sources.length === 0) return;
+
+  toast(toTrashMessage(sources), {
+    action: {
+      label: 'Undo',
+      onClick: () => {
+        restoreSources(sources.map(({ id }) => id))
+          .then((restored) =>
+            invalidateAfterSourceChange(
+              queryClient,
+              restored.flatMap(({ collectionIds }) => collectionIds),
+            ),
+          )
+          .catch((error: unknown) => {
+            console.error('Failed to undo the delete.', error);
+            toast.error('Could not undo. Find it in the Deleted tab.');
+          });
+      },
+    },
+  });
+}
+
+// *** toTrashMessage ***
+function toTrashMessage(sources: Pick<Source, 'name'>[]): string {
+  return sources.length === 1
+    ? `"${sources[0].name}" deleted`
+    : `${sources.length} saves deleted`;
 }
 
 export function useRestoreSources() {
@@ -304,3 +357,5 @@ export function useMediaObjectUrl(
 
   return objectUrl;
 }
+
+export { toTrashMessage };

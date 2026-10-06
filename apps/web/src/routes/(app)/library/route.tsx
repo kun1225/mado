@@ -14,6 +14,9 @@ import {
 } from '@repo/ui/liquid-tab';
 import { Separator } from '@repo/ui/separator';
 
+import { StorageUnsupportedNotice } from '#/components/storage-unsupported-notice';
+import { useIsSourceStorageSupported } from '#/features/sources/hooks/source-hooks';
+
 export const Route = createFileRoute('/(app)/library')({
   component: RouteComponent,
 });
@@ -25,6 +28,7 @@ type TabPath = typeof ALL_TAB | typeof DELETED_TAB;
 
 function RouteComponent() {
   const navigate = useNavigate();
+  const isStorageSupported = useIsSourceStorageSupported();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -55,7 +59,7 @@ function RouteComponent() {
 
       <Separator className="mt-3" />
 
-      <Outlet />
+      {isStorageSupported ? <Outlet /> : <StorageUnsupportedNotice />}
     </main>
   );
 }
