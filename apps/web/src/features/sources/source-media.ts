@@ -10,6 +10,7 @@ import {
   QUALITY_MEDIUM,
 } from 'mediabunny';
 
+import type { SiteSourcePreview } from './site-source.type';
 import type { Source } from './source-types';
 
 const MEDIA_DIRECTORY = 'media';
@@ -28,6 +29,32 @@ export const isMediaStorageSupported =
   typeof navigator !== 'undefined' &&
   'storage' in navigator &&
   typeof navigator.storage.getDirectory === 'function';
+
+const SITES_API = `${import.meta.env.VITE_API_ORIGIN ?? 'http://localhost:4000'}/api/v1/sites`;
+
+export async function fetchSitePreview(
+  url: string,
+): Promise<SiteSourcePreview> {
+  const response = await fetch(`${SITES_API}/preview`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ url }),
+  });
+  if (!response.ok) throw new Error('Could not preview this website.');
+  return (await response.json()) as SiteSourcePreview;
+}
+
+export async function fetchSiteCapture(url: string): Promise<File> {
+  const response = await fetch(`${SITES_API}/capture`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ url }),
+  });
+  if (!response.ok) throw new Error('Could not capture this website.');
+  const image = await response.blob();
+  if (image.type !== 'image/webp') throw new Error('Invalid website capture.');
+  return new File([image], 'website.webp', { type: image.type });
+}
 
 async function getMediaDirectory(): Promise<FileSystemDirectoryHandle> {
   const root = await navigator.storage.getDirectory();
@@ -67,6 +94,7 @@ export async function deleteMediaFile(key: string): Promise<void> {
 }
 
 export async function downloadSource(source: Source): Promise<void> {
+  if (!source.storageKey) throw new Error('This source has no file.');
   const file = await readMediaFile(source.storageKey);
   const url = URL.createObjectURL(file.slice(0, file.size, source.mimeType));
   const link = document.createElement('a');
@@ -117,8 +145,23 @@ function getPastedMediaFile(data: DataTransfer): File | null {
   return null;
 }
 
-function getPastedUrl(_data: DataTransfer): string | null {
-  return null;
+// *** getPastedUrl ***
+function getPastedUrl(data: DataTransfer): string | null {
+  const text = data.getData('text/plain').trim();
+  if (text.length === 0 || text.length > 2048) return null;
+
+  try {
+    const url = new URL(text);
+    if (
+      (url.protocol !== 'http:' && url.protocol !== 'https:') ||
+      url.username ||
+      url.password
+    )
+      return null;
+    return url.href;
+  } catch {
+    return null;
+  }
 }
 
 export function isEditablePasteTarget(target: EventTarget | null): boolean {

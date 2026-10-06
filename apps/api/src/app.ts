@@ -7,7 +7,7 @@ import { createSitesRouter } from './sites/site-preview-route.js';
 export function createApp(): Express {
   const app = express();
 
-  const webOrigin = process.env.WEB_ORIGIN ?? 'http://localhost:3000';
+  const webOrigin = process.env.WEB_ORIGIN ?? 'http://localhost:3100';
 
   app.use(cors({ origin: webOrigin }));
   app.use(express.json());

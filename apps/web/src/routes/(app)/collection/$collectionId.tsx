@@ -5,6 +5,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 
 import { Input } from '@repo/ui/input';
 import { Separator } from '@repo/ui/separator';
+import { toast } from '@repo/ui/sonner';
 
 import { AddSourceButton } from '#/components/add-source-button';
 import { CollectionNewCard } from '#/components/collection-new-card';
@@ -39,11 +40,15 @@ function CollectionPage() {
   const sourcesQuery = useSources(collectionId);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  if (collectionQuery.isPending) return <p>Loading...</p>;
+  // The store is browser-only; reads are quick, so stay blank instead of
+  // flashing a loading line.
+  if (collectionQuery.isPending) return null;
   if (collectionQuery.isError) {
-    return <p>Unable to load this collection.</p>;
+    return <CollectionMissing message="Unable to load this collection." />;
   }
-  if (!collectionQuery.data) return <p>Collection not found.</p>;
+  if (!collectionQuery.data) {
+    return <CollectionMissing message="Collection not found." />;
+  }
 
   const collection = collectionQuery.data;
   const collectionName = collection.name;
@@ -56,15 +61,18 @@ function CollectionPage() {
     });
   }
 
-  async function handleCreateChild() {
-    const child = await createCollectionMutation.mutateAsync({
-      parentId: collectionId,
-    });
-
-    await navigate({
-      to: '/collection/$collectionId',
-      params: { collectionId: child.id },
-    });
+  function handleCreateChild() {
+    createCollectionMutation.mutate(
+      { parentId: collectionId },
+      {
+        onSuccess: (child) =>
+          navigate({
+            to: '/collection/$collectionId',
+            params: { collectionId: child.id },
+          }),
+        onError: () => toast.error('Could not create the folder. Try again.'),
+      },
+    );
   }
 
   function handleNameBlur(event: React.FocusEvent<HTMLInputElement>) {
@@ -110,6 +118,7 @@ function CollectionPage() {
                 params: { collectionId: collection.parentId },
               }
             : { to: '/library' as const })}
+          aria-label="Back"
           className="flex size-8 items-center justify-center rounded-md text-fg transition-colors hover:bg-muted"
         >
           <HugeiconsIcon icon={ArrowLeft01Icon} size={18} strokeWidth={1.5} />
@@ -135,7 +144,7 @@ function CollectionPage() {
       </div>
 
       {updateCollectionMutation.isError && (
-        <p className="text-destructive mt-1 text-sm">
+        <p role="alert" className="mt-1 text-sm text-danger">
           Failed to update collection name.
         </p>
       )}
@@ -159,7 +168,11 @@ function CollectionPage() {
         label={collectionName}
         className="flex grow flex-col"
       >
-        {sourcesQuery.data && sourcesQuery.data.length > 0 ? (
+        {sourcesQuery.isPending ? null : sourcesQuery.isError ? (
+          <p className="flex grow items-center justify-center py-6 text-sm text-danger">
+            Unable to load the saves in this collection.
+          </p>
+        ) : sourcesQuery.data.length > 0 ? (
           <SourceGrid sources={sourcesQuery.data} />
         ) : (
           <div className="flex grow items-center justify-center py-6">
@@ -169,6 +182,21 @@ function CollectionPage() {
       </SourceDropZone>
 
       <AddSourceButton collectionId={collectionId} />
+    </div>
+  );
+}
+
+// *** CollectionMissing ***
+function CollectionMissing({ message }: { message: string }) {
+  return (
+    <div className="flex min-h-svh flex-col items-center justify-center gap-3 text-center">
+      <p className="text-sm text-muted-fg">{message}</p>
+      <Link
+        to="/library"
+        className="text-sm font-medium underline underline-offset-4"
+      >
+        Back to library
+      </Link>
     </div>
   );
 }

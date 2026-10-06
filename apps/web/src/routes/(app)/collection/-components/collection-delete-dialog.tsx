@@ -66,8 +66,8 @@ export function CollectionDeleteDialog({
 
             <AlertDialogDescription>
               {collection.saveCount > 0
-                ? 'The collection and its saves move to the trash. You cannot get them back.'
-                : 'You cannot get this collection back'}
+                ? 'You cannot get this collection back. Its saves move to the trash, where you can put them back.'
+                : 'You cannot get this collection back.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
 

@@ -13,9 +13,11 @@ import { toast } from '@repo/ui/sonner';
 
 import { collectionKeys } from '#/features/collections/collection-hooks';
 
+import type { SiteSourceInput } from '../site-source.type';
 import {
   compressSource,
   createSources,
+  createWebsiteSource,
   deleteSource,
   deleteSources,
   fetchAllSources,
@@ -154,6 +156,23 @@ export function useCreateSources() {
   });
 }
 
+export function useCreateWebsiteSource() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: CREATE_MUTATION_KEY,
+    mutationFn: (input: SiteSourceInput) => createWebsiteSource(input),
+    onSuccess: (source) => {
+      if (source.site?.captureStatus === 'failed') {
+        toast.warning('Website saved without a screenshot.');
+      }
+    },
+    onError: (error) => toast.error(toCreateErrorMessage(error)),
+    onSettled: (_data, _error, input) =>
+      invalidateAfterSourceChange(queryClient, [input.collectionId]),
+  });
+}
+
 // *** toCreateErrorMessage ***
 function toCreateErrorMessage(error: unknown) {
   if (error instanceof ZodError) {
@@ -253,13 +272,14 @@ export function useHardDeleteSources() {
  * is lazy, so this does not copy the bytes.
  */
 export function useMediaObjectUrl(
-  storageKey: string,
+  storageKey: string | null,
   mimeType: string,
   sizeBytes: number,
 ) {
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    if (storageKey === null) return;
     let createdUrl: string | undefined;
     let isCancelled = false;
 

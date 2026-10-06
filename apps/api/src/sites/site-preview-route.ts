@@ -1,7 +1,11 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { z } from 'zod';
 
-import { SafeFetchError, getSitePreview } from './site-preview.js';
+import {
+  SafeFetchError,
+  captureSiteScreenshot,
+  getSitePreview,
+} from './site-preview.js';
 
 const MAX_URL_LENGTH = 2048;
 
@@ -27,6 +31,7 @@ export function createSitesRouter({
   appOrigin: string;
 }): ExpressRouter {
   const router = Router();
+  let activeCaptures = 0;
 
   router.post('/preview', async (request, response) => {
     const body = previewBodySchema.safeParse(request.body);
@@ -54,6 +59,44 @@ export function createSitesRouter({
       response
         .status(500)
         .json({ error: 'internal', message: 'Preview failed' });
+    }
+  });
+
+  router.post('/capture', async (request, response) => {
+    const body = previewBodySchema.safeParse(request.body);
+    if (!body.success) {
+      response
+        .status(400)
+        .json({ error: 'invalid-url', message: 'Enter a valid http(s) URL' });
+      return;
+    }
+    if (activeCaptures >= 2) {
+      response.status(429).json({
+        error: 'capture-busy',
+        message: 'Too many captures are running',
+      });
+      return;
+    }
+
+    activeCaptures++;
+    try {
+      const image = await captureSiteScreenshot(new URL(body.data.url));
+      response.type('image/webp').send(image);
+    } catch (error) {
+      if (error instanceof SafeFetchError) {
+        response.status(400).json({
+          error: 'url-not-allowed',
+          message: 'This URL cannot be captured',
+        });
+        return;
+      }
+
+      console.error('Site capture failed:', error);
+      response
+        .status(502)
+        .json({ error: 'capture-failed', message: 'Capture failed' });
+    } finally {
+      activeCaptures--;
     }
   });
 

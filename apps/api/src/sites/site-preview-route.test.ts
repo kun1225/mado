@@ -68,3 +68,40 @@ describe('POST /api/v1/sites/preview', () => {
     expect(response.status).toBe(400);
   });
 });
+
+describe('POST /api/v1/sites/capture', () => {
+  let server: Server;
+  let endpoint: string;
+
+  beforeAll(async () => {
+    server = createApp().listen(0);
+    await new Promise((resolve) => server.once('listening', resolve));
+    endpoint = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api/v1/sites/capture`;
+  });
+
+  afterAll(() => {
+    server.close();
+  });
+
+  it('rejects invalid URLs', async () => {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ url: 'file:///etc/passwd' }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: 'invalid-url' });
+  });
+
+  it('rejects private addresses', async () => {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ url: 'http://127.0.0.1:9/' }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: 'url-not-allowed' });
+  });
+});

@@ -28,7 +28,10 @@ export function LibraryCollectionCard({
 
         <div className="absolute inset-x-4 bottom-3 min-w-0">
           <p className="truncate text-sm font-medium">{collection.name}</p>
-          <p className="text-sm text-muted-fg">{collection.saveCount} saves</p>
+          <p className="text-sm text-muted-fg">
+            {collection.saveCount}{' '}
+            {collection.saveCount === 1 ? 'save' : 'saves'}
+          </p>
         </div>
       </Link>
     </div>

@@ -6,9 +6,12 @@ import {
   toPromise,
 } from '#/features/storage/database';
 
+import type { SiteSourceInput } from './site-source.type';
 import {
   compressMedia,
   deleteMediaFile,
+  fetchSiteCapture,
+  fetchSitePreview,
   readMediaFile,
   writeMediaFile,
 } from './source-media';
@@ -19,7 +22,9 @@ import type {
   UpdateSourceInput,
 } from './source-types';
 import {
+  MAX_NAME_LENGTH,
   newSourceSchema,
+  newWebsiteSourceSchema,
   sourceKindSchema,
   tagsSchema,
   updateSourceSchema,
@@ -39,7 +44,7 @@ const UNKNOWN_METADATA: MediaMetadata = {
  */
 async function readMediaMetadata(
   file: File,
-  kind: SourceKind,
+  kind: Exclude<SourceKind, 'website'>,
 ): Promise<MediaMetadata> {
   const url = URL.createObjectURL(file);
 
@@ -97,7 +102,7 @@ export async function createSource(input: NewSourceInput): Promise<Source> {
     deletedAt: null,
   };
 
-  await writeMediaFile(source.storageKey, file);
+  await writeMediaFile(id, file);
 
   try {
     const database = await openDatabase();
@@ -106,8 +111,52 @@ export async function createSource(input: NewSourceInput): Promise<Source> {
     transaction.objectStore(STORES.sources).put(source);
     await toCompletion(transaction);
   } catch (error) {
-    await deleteMediaFile(source.storageKey);
+    await deleteMediaFile(id);
     throw new Error(`Failed to save "${file.name}".`, { cause: error });
+  }
+
+  return source;
+}
+
+// *** createWebsiteSource ***
+export async function createWebsiteSource(
+  input: SiteSourceInput,
+): Promise<Source> {
+  const { collectionId, url } = newWebsiteSourceSchema.parse(input);
+  const preview = await fetchSitePreview(url);
+  const screenshot = await fetchSiteCapture(preview.finalUrl).catch(() => null);
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+  const source: Source = {
+    id,
+    name: (preview.title ?? preview.domain).slice(0, MAX_NAME_LENGTH),
+    url: preview.finalUrl,
+    note: null,
+    tags: [],
+    collectionIds: collectionId ? [collectionId] : [],
+    kind: 'website',
+    site: { ...preview, captureStatus: screenshot ? 'ready' : 'failed' },
+    fileName: screenshot?.name ?? '',
+    mimeType: screenshot?.type ?? '',
+    sizeBytes: screenshot?.size ?? 0,
+    width: screenshot ? 1440 : null,
+    height: screenshot ? 900 : null,
+    durationSeconds: null,
+    storageKey: screenshot ? id : null,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+  };
+
+  try {
+    if (screenshot) await writeMediaFile(id, screenshot);
+    const database = await openDatabase();
+    const transaction = database.transaction(STORES.sources, 'readwrite');
+    transaction.objectStore(STORES.sources).put(source);
+    await toCompletion(transaction);
+  } catch (error) {
+    if (screenshot) await deleteMediaFile(id);
+    throw new Error(`Failed to save "${source.name}".`, { cause: error });
   }
 
   return source;
@@ -131,6 +180,8 @@ export async function createSources(
 // Compression is heavy, so each file waits for the previous file to finish.
 let previousTask: Promise<unknown> = Promise.resolve();
 export function compressSource(source: Source): Promise<Source> {
+  if (source.kind === 'website' || !source.storageKey)
+    return Promise.resolve(source);
   const currentTask = previousTask.then(() => {
     return runCompression(source);
   });
@@ -143,7 +194,9 @@ export function compressSource(source: Source): Promise<Source> {
 
 // *** runCompression ***
 async function runCompression(source: Source): Promise<Source> {
-  const stored = await readMediaFile(source.storageKey);
+  if (source.kind === 'website' || !source.storageKey) return source;
+  const storageKey = source.storageKey;
+  const stored = await readMediaFile(storageKey);
   // OPFS does not keep MIME type or name, and the compressor needs both.
   const original = new File([stored], source.fileName, {
     type: source.mimeType,
@@ -154,7 +207,7 @@ async function runCompression(source: Source): Promise<Source> {
 
   const metadata = await readMediaMetadata(compressed, source.kind);
 
-  await writeMediaFile(source.storageKey, compressed);
+  await writeMediaFile(storageKey, compressed);
 
   const database = await openDatabase();
   const transaction = database.transaction(STORES.sources, 'readwrite');
@@ -163,7 +216,7 @@ async function runCompression(source: Source): Promise<Source> {
 
   if (!existing) {
     // Deleted for good while compressing: the new file would be left behind.
-    await deleteMediaFile(source.storageKey);
+    await deleteMediaFile(storageKey);
     return source;
   }
 
@@ -333,7 +386,7 @@ export async function hardDeleteSource(id: string): Promise<Source> {
 
   // The record goes first: a leftover file only wastes space, while a record
   // pointing at missing bytes would show up as a card that never loads.
-  await deleteMediaFile(existing.storageKey);
+  if (existing.storageKey) await deleteMediaFile(existing.storageKey);
 
   return existing;
 }
@@ -446,14 +499,13 @@ export async function hardDeleteSources(ids: string[]): Promise<Source[]> {
 
   // Keep going if one file fails, so the other files still get deleted.
   await Promise.all(
-    sources.map((source) =>
-      deleteMediaFile(source.storageKey).catch((error: unknown) => {
-        console.error(
-          `Failed to delete media file: ${source.storageKey}`,
-          error,
-        );
-      }),
-    ),
+    sources
+      .flatMap((source) => (source.storageKey ? [source.storageKey] : []))
+      .map((storageKey) =>
+        deleteMediaFile(storageKey).catch((error: unknown) => {
+          console.error(`Failed to delete media file: ${storageKey}`, error);
+        }),
+      ),
   );
 
   return sources;

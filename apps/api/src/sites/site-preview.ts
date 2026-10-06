@@ -5,8 +5,10 @@ import https from 'node:https';
 import { BlockList, isIP } from 'node:net';
 import type { Readable } from 'node:stream';
 import zlib from 'node:zlib';
+import { chromium } from 'playwright';
 import type {
   SitePreview,
+  SitePreviewCaptureOptions,
   SitePreviewDependencies,
   SitePreviewEmbed,
   SitePreviewFetchedPage,
@@ -46,6 +48,197 @@ export async function getSitePreview(
     ...metadata,
     embed: chooseEmbed(getProviderEmbed(url), page, appOrigin),
   };
+}
+
+const CAPTURE_TIMEOUT_MS = 20000;
+const MAX_CAPTURE_REQUESTS = 60;
+const MAX_CAPTURE_CONCURRENT_REQUESTS = 8;
+const MAX_CAPTURE_RESOURCE_BYTES = 3 * 1024 * 1024;
+const MAX_CAPTURE_TOTAL_BYTES = 20 * 1024 * 1024;
+
+// *** captureSiteScreenshot ***
+export async function captureSiteScreenshot(
+  url: URL,
+  { allowPrivateAddresses = false }: SitePreviewCaptureOptions = {},
+): Promise<Buffer> {
+  if (
+    (url.protocol !== 'http:' && url.protocol !== 'https:') ||
+    url.username ||
+    url.password
+  ) {
+    throw new SafeFetchError(
+      'unsupported-protocol',
+      'Unsupported URL protocol',
+    );
+  }
+  const host = url.hostname.replace(/^\[|\]$/g, '');
+  if (!allowPrivateAddresses && isIP(host) && isPrivateAddress(host)) {
+    throw new SafeFetchError('blocked-address', 'Private address');
+  }
+
+  const signal = AbortSignal.timeout(CAPTURE_TIMEOUT_MS);
+  const browser = await chromium.launch({
+    channel: 'chromium',
+    headless: true,
+  });
+
+  try {
+    const context = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+      deviceScaleFactor: 1,
+      javaScriptEnabled: false,
+      serviceWorkers: 'block',
+    });
+    let requests = 0;
+    let activeRequests = 0;
+    let totalBytes = 0;
+    let navigationError: unknown;
+
+    await context.route('**/*', async (route) => {
+      if (
+        route.request().method() !== 'GET' ||
+        requests >= MAX_CAPTURE_REQUESTS ||
+        activeRequests >= MAX_CAPTURE_CONCURRENT_REQUESTS
+      ) {
+        await route.abort();
+        return;
+      }
+
+      requests++;
+      activeRequests++;
+      try {
+        const resource = await fetchCaptureResource(
+          new URL(route.request().url()),
+          signal,
+          allowPrivateAddresses,
+        );
+        totalBytes += resource.body.length;
+        if (totalBytes > MAX_CAPTURE_TOTAL_BYTES) {
+          await route.abort();
+          return;
+        }
+
+        await route.fulfill({
+          status: resource.status,
+          headers: Object.fromEntries(
+            ['content-type', 'location', 'access-control-allow-origin']
+              .map((name) => [name, resource.headers.get(name)])
+              .filter((entry): entry is [string, string] => entry[1] !== null),
+          ),
+          body: resource.body,
+        });
+      } catch (error) {
+        if (route.request().isNavigationRequest() && !navigationError) {
+          navigationError = error;
+        }
+        await route.abort();
+      } finally {
+        activeRequests--;
+      }
+    });
+
+    const page = await context.newPage();
+    const response = await page
+      .goto(url.href, {
+        waitUntil: 'domcontentloaded',
+        timeout: CAPTURE_TIMEOUT_MS,
+      })
+      .catch((error: unknown) => {
+        throw navigationError ?? error;
+      });
+    if (!response?.ok()) throw new Error('Website did not load');
+
+    await page
+      .waitForLoadState('load', { timeout: 2500 })
+      .catch(() => undefined);
+    return await page.screenshot({
+      type: 'webp',
+      quality: 75,
+      scale: 'css',
+      animations: 'disabled',
+      timeout: 3000,
+    });
+  } finally {
+    await browser.close();
+  }
+}
+
+// *** fetchCaptureResource ***
+async function fetchCaptureResource(
+  url: URL,
+  signal: AbortSignal,
+  allowPrivateAddresses: boolean,
+): Promise<{ status: number; headers: Headers; body: Buffer }> {
+  if (
+    (url.protocol !== 'http:' && url.protocol !== 'https:') ||
+    url.username ||
+    url.password
+  ) {
+    throw new SafeFetchError(
+      'unsupported-protocol',
+      'Unsupported URL protocol',
+    );
+  }
+
+  const response = await request(
+    url,
+    signal,
+    allowPrivateAddresses,
+    'identity',
+    '*/*',
+  );
+  const headers = toHeaders(response.headers);
+  const status = response.statusCode ?? 0;
+  const location = headers.get('location');
+  if (REDIRECT_STATUSES.has(status) && location) {
+    if (!URL.canParse(location, url)) {
+      response.destroy();
+      throw new SafeFetchError('unsupported-protocol', 'Unsafe redirect');
+    }
+    const next = new URL(location, url);
+    if (
+      (next.protocol !== 'http:' && next.protocol !== 'https:') ||
+      next.username ||
+      next.password
+    ) {
+      response.destroy();
+      throw new SafeFetchError('unsupported-protocol', 'Unsafe redirect');
+    }
+  }
+  const body = REDIRECT_STATUSES.has(status)
+    ? (response.destroy(), Buffer.alloc(0))
+    : await readCaptureBody(response, headers);
+
+  return { status, headers, body };
+}
+
+// *** readCaptureBody ***
+async function readCaptureBody(
+  response: IncomingMessage,
+  headers: Headers,
+): Promise<Buffer> {
+  const encoding = headers.get('content-encoding')?.trim().toLowerCase() ?? '';
+  const decoder = DECODERS[encoding]?.();
+  if (encoding && encoding !== 'identity' && !decoder) {
+    response.destroy();
+    throw new Error('Unsupported response encoding');
+  }
+
+  const source = decoder ? response.pipe(decoder) : response;
+  const chunks: Buffer[] = [];
+  let size = 0;
+
+  try {
+    for await (const chunk of source) {
+      size += chunk.length;
+      if (size > MAX_CAPTURE_RESOURCE_BYTES)
+        throw new Error('Resource too large');
+      chunks.push(chunk);
+    }
+    return Buffer.concat(chunks);
+  } finally {
+    response.destroy();
+  }
 }
 
 const TIMEOUT_MS = 8000;
@@ -110,6 +303,8 @@ function request(
   url: URL,
   signal: AbortSignal,
   allowPrivate: boolean,
+  acceptEncoding = 'gzip, deflate, br',
+  accept = 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.5',
 ): Promise<IncomingMessage> {
   const host = url.hostname.replace(/^\[|\]$/g, '');
   if (!allowPrivate && isIP(host) && isPrivateAddress(host)) {
@@ -131,9 +326,9 @@ function request(
         lookup: createGuardedLookup(allowPrivate) as never,
         headers: {
           'user-agent': 'Mozilla/5.0 (compatible; MadoBot/1.0)',
-          accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.5',
+          accept,
           'accept-language': 'en',
-          'accept-encoding': 'gzip, deflate, br',
+          'accept-encoding': acceptEncoding,
         },
       },
       resolve,

@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
+import { toast } from '@repo/ui/sonner';
+
 import { AddSourceButton } from '#/components/add-source-button';
 import { CollectionNewCard } from '#/components/collection-new-card';
 import { SourceDropZone } from '#/components/source-drop-zone';
@@ -21,12 +23,14 @@ function Library() {
   const createCollectionMutation = useCreateCollection();
   const sourcesQuery = useAllSources();
 
-  async function handleCreateCollection() {
-    const collection = await createCollectionMutation.mutateAsync();
-
-    await navigate({
-      to: '/collection/$collectionId',
-      params: { collectionId: collection.id },
+  function handleCreateCollection() {
+    createCollectionMutation.mutate(undefined, {
+      onSuccess: (collection) =>
+        navigate({
+          to: '/collection/$collectionId',
+          params: { collectionId: collection.id },
+        }),
+      onError: () => toast.error('Could not create the collection. Try again.'),
     });
   }
 
@@ -48,7 +52,13 @@ function Library() {
         label="Library"
         className="flex flex-1 flex-col"
       >
-        {sourcesQuery.data && sourcesQuery.data.length > 0 ? (
+        {/* The store is browser-only: stay blank while it loads rather than
+            flash "Nothing here yet" at someone with a full library. */}
+        {sourcesQuery.isPending ? null : sourcesQuery.isError ? (
+          <p className="flex flex-1 items-center justify-center py-6 text-sm text-danger">
+            Unable to load your library.
+          </p>
+        ) : sourcesQuery.data.length > 0 ? (
           <SourceGrid sources={sourcesQuery.data} showCollection />
         ) : (
           <div className="flex flex-1 items-center justify-center py-6">

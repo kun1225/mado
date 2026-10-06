@@ -1,6 +1,61 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { compressMedia, detectPastedContent, fitWithin } from './source-media';
+import {
+  compressMedia,
+  detectPastedContent,
+  fetchSiteCapture,
+  fetchSitePreview,
+  fitWithin,
+} from './source-media';
+
+afterEach(() => vi.unstubAllGlobals());
+
+describe('site API helpers', () => {
+  it('posts a URL and returns preview metadata', async () => {
+    const preview = { title: 'Example', finalUrl: 'https://example.com/' };
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(preview), {
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    expect(await fetchSitePreview('https://example.com')).toEqual(preview);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/sites/preview',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ url: 'https://example.com' }),
+      }),
+    );
+  });
+
+  it('returns a WebP file from the capture response', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(new Blob(['image'], { type: 'image/webp' }), {
+          headers: { 'content-type': 'image/webp' },
+        }),
+      ),
+    );
+
+    const file = await fetchSiteCapture('https://example.com');
+    expect(file.name).toBe('website.webp');
+    expect(file.type).toBe('image/webp');
+  });
+
+  it('rejects failed captures', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response(null, { status: 502 })),
+    );
+
+    await expect(fetchSiteCapture('https://example.com')).rejects.toThrow(
+      'Could not capture this website.',
+    );
+  });
+});
 
 function createClipboardData(
   items: Array<{
@@ -8,8 +63,9 @@ function createClipboardData(
     type: string;
     getAsFile: () => File | null;
   }>,
+  text = '',
 ): DataTransfer {
-  return { items } as unknown as DataTransfer;
+  return { items, getData: () => text } as unknown as DataTransfer;
 }
 
 function createFile(name: string, type: string, contents = 'bytes') {
@@ -93,13 +149,26 @@ describe('detectPastedContent', () => {
     expect(detectPastedContent(data)).toEqual({ kind: 'ignored' });
   });
 
-  it('ignores URLs until URL support is implemented', () => {
-    const data = createClipboardData([
-      { kind: 'string', type: 'text/plain', getAsFile: () => null },
-    ]);
+  it('detects a pasted website URL', () => {
+    const data = createClipboardData(
+      [{ kind: 'string', type: 'text/plain', getAsFile: () => null }],
+      ' https://example.com/page ',
+    );
 
-    expect(detectPastedContent(data)).toEqual({ kind: 'ignored' });
+    expect(detectPastedContent(data)).toEqual({
+      kind: 'url',
+      url: 'https://example.com/page',
+    });
   });
+
+  it.each(['hello', 'file:///etc/passwd', 'https://user:pass@example.com'])(
+    'ignores invalid website text %s',
+    (text) => {
+      expect(detectPastedContent(createClipboardData([], text))).toEqual({
+        kind: 'ignored',
+      });
+    },
+  );
 });
 
 describe('fitWithin', () => {

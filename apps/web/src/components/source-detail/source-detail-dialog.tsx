@@ -88,7 +88,7 @@ export function SourceDetailDialog({
             previousId ? () => onActiveIdChange(previousId) : undefined
           }
           onNext={nextId ? () => onActiveIdChange(nextId) : undefined}
-          onDownload={handleDownload}
+          onDownload={source.kind === 'website' ? undefined : handleDownload}
           onDelete={handleDelete}
           isDeleting={deleteSourceMutation.isPending}
           isPanelOpen={isPanelOpen}

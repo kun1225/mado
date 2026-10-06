@@ -258,21 +258,25 @@ export function useSourceField(source: Source, field: TextField) {
   return { draft: current.draft, setDraft, error: current.error, commit };
 }
 
-export function usePasteMedia(onPaste: (file: File) => void) {
+export function usePasteSource(
+  onMedia: (file: File) => void,
+  onWebsite: (url: string) => void,
+) {
   useEffect(() => {
     function handlePaste(event: ClipboardEvent) {
       if (isEditablePasteTarget(event.target)) return;
 
       const content = detectPastedContent(event.clipboardData);
-      if (content.kind !== 'media') return;
+      if (content.kind === 'ignored') return;
 
       event.preventDefault();
-      onPaste(content.file);
+      if (content.kind === 'media') onMedia(content.file);
+      else onWebsite(content.url);
     }
 
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
-  }, [onPaste]);
+  }, [onMedia, onWebsite]);
 }
 
 // 'image/*,video/*' -> { 'image/*': [], 'video/*': [] }, the shape react-dropzone wants.

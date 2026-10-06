@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { SiteSourceMetadata } from './site-source.type';
+
 export const MAX_FILE_MB = 512;
 
 export const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
@@ -8,7 +10,7 @@ export const sourceKindSchema = z.enum(['image', 'video'], {
   error: 'Only images and videos are supported',
 });
 
-export type SourceKind = z.infer<typeof sourceKindSchema>;
+export type SourceKind = z.infer<typeof sourceKindSchema> | 'website';
 
 export const newSourceSchema = z.object({
   /** Null means the source was added at the library level, outside any collection. */
@@ -29,6 +31,19 @@ export const MAX_NOTE_LENGTH = 2000;
 export const MAX_URL_LENGTH = 2048;
 export const MAX_TAG_LENGTH = 40;
 export const MAX_TAGS = 20;
+
+export const newWebsiteSourceSchema = z.object({
+  collectionId: z.uuid().nullable(),
+  url: z
+    .string()
+    .trim()
+    .max(MAX_URL_LENGTH)
+    .pipe(z.url({ protocol: /^https?$/ }))
+    .refine((value) => {
+      const { username, password } = new URL(value);
+      return !username && !password;
+    }, 'URL must not contain a user name or password'),
+});
 
 /** "#Brand Kit " -> "brand kit" */
 export function normalizeTag(raw: string): string {
@@ -115,6 +130,7 @@ export type Source = {
   /** Empty means the source lives only in the library. */
   collectionIds: string[];
   kind: SourceKind;
+  site?: SiteSourceMetadata;
   fileName: string;
   mimeType: string;
   sizeBytes: number;
@@ -122,7 +138,7 @@ export type Source = {
   height: number | null;
   durationSeconds: number | null;
   /** Name of the file inside the OPFS media directory. */
-  storageKey: string;
+  storageKey: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

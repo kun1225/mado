@@ -30,7 +30,7 @@ export function SourceDetailToolbar({
   total: number;
   onPrevious?: () => void;
   onNext?: () => void;
-  onDownload: () => void;
+  onDownload?: () => void;
   onDelete: () => void;
   isDeleting: boolean;
   isPanelOpen: boolean;
@@ -63,15 +63,17 @@ export function SourceDetailToolbar({
       </Button>
 
       <div className="ml-auto flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className={TOOLBAR_BUTTON}
-          aria-label="Download"
-          onClick={onDownload}
-        >
-          <HugeiconsIcon icon={Download01Icon} size={18} strokeWidth={1.5} />
-        </Button>
+        {onDownload && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className={TOOLBAR_BUTTON}
+            aria-label="Download"
+            onClick={onDownload}
+          >
+            <HugeiconsIcon icon={Download01Icon} size={18} strokeWidth={1.5} />
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon-sm"

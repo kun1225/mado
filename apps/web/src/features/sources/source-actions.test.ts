@@ -7,6 +7,9 @@ let compressSource: typeof import('./source-actions').compressSource;
 let compressMedia: typeof import('./source-media').compressMedia;
 let readMediaFile: typeof import('./source-media').readMediaFile;
 let writeMediaFile: typeof import('./source-media').writeMediaFile;
+let fetchSitePreview: typeof import('./source-media').fetchSitePreview;
+let fetchSiteCapture: typeof import('./source-media').fetchSiteCapture;
+let createWebsiteSource: typeof import('./source-actions').createWebsiteSource;
 let countSourcesByCollection: typeof import('./source-actions').countSourcesByCollection;
 let deleteSource: typeof import('./source-actions').deleteSource;
 let deleteSources: typeof import('./source-actions').deleteSources;
@@ -34,6 +37,8 @@ vi.mock('./source-media', () => ({
   deleteMediaFile: vi.fn(() => Promise.resolve()),
   readMediaFile: vi.fn(),
   writeMediaFile: vi.fn(() => Promise.resolve()),
+  fetchSitePreview: vi.fn(),
+  fetchSiteCapture: vi.fn(),
 }));
 
 function buildSource(overrides: Partial<Source> & { id: string }): Source {
@@ -77,6 +82,7 @@ beforeEach(async () => {
   ({
     compressSource,
     createSources,
+    createWebsiteSource,
     countSourcesByCollection,
     deleteSource,
     deleteSources,
@@ -88,8 +94,14 @@ beforeEach(async () => {
     restoreSources,
     updateSource,
   } = await import('./source-actions'));
-  ({ compressMedia, deleteMediaFile, readMediaFile, writeMediaFile } =
-    await import('./source-media'));
+  ({
+    compressMedia,
+    deleteMediaFile,
+    fetchSitePreview,
+    fetchSiteCapture,
+    readMediaFile,
+    writeMediaFile,
+  } = await import('./source-media'));
   ({ openDatabase } = await import('../storage/database'));
   ({ newSourceSchema, sourceKindSchema, updateSourceSchema } =
     await import('./source-types'));
@@ -175,6 +187,80 @@ describe('createSources', () => {
       error: { message: 'Storage is full.' },
       sources: [{ fileName: 'saved.png' }],
     });
+  });
+});
+
+describe('createWebsiteSource', () => {
+  beforeEach(() => {
+    vi.mocked(writeMediaFile).mockClear();
+    vi.mocked(writeMediaFile).mockResolvedValue(undefined);
+    vi.mocked(fetchSitePreview).mockClear();
+  });
+
+  const preview = {
+    url: 'https://example.com/',
+    finalUrl: 'https://example.com/',
+    domain: 'example.com',
+    title: 'Example',
+    description: null,
+    favicon: null,
+    ogImage: null,
+    embed: { mode: 'iframe' as const, src: 'https://example.com/' },
+  };
+
+  it('stores the screenshot as the cover', async () => {
+    vi.mocked(fetchSitePreview).mockResolvedValue(preview);
+    vi.mocked(fetchSiteCapture).mockResolvedValue(
+      new File(['image'], 'website.webp', { type: 'image/webp' }),
+    );
+
+    const source = await createWebsiteSource({
+      collectionId: COLLECTION_ID,
+      url: 'https://example.com',
+    });
+
+    expect(source).toMatchObject({
+      kind: 'website',
+      name: 'Example',
+      collectionIds: [COLLECTION_ID],
+      site: { captureStatus: 'ready', embed: preview.embed },
+      storageKey: source.id,
+    });
+    expect(writeMediaFile).toHaveBeenCalledWith(source.id, expect.any(File));
+    expect((await fetchAllSources()).map((item) => item.id)).toContain(
+      source.id,
+    );
+  });
+
+  it('keeps the website when capture fails', async () => {
+    vi.mocked(fetchSitePreview).mockResolvedValue(preview);
+    vi.mocked(fetchSiteCapture).mockRejectedValue(new Error('Capture failed'));
+
+    const source = await createWebsiteSource({
+      collectionId: null,
+      url: 'https://example.com',
+    });
+
+    expect(source).toMatchObject({
+      kind: 'website',
+      collectionIds: [],
+      site: { captureStatus: 'failed' },
+      storageKey: null,
+    });
+    expect(writeMediaFile).not.toHaveBeenCalled();
+    expect((await fetchAllSources()).map((item) => item.id)).toContain(
+      source.id,
+    );
+  });
+
+  it('rejects a URL with embedded credentials', async () => {
+    await expect(
+      createWebsiteSource({
+        collectionId: null,
+        url: 'https://user:pass@example.com',
+      }),
+    ).rejects.toThrow();
+    expect(fetchSitePreview).not.toHaveBeenCalled();
   });
 });
 
@@ -298,6 +384,22 @@ describe('hardDeleteSource', () => {
     expect(hardDeleted.id).toBe('a');
     expect(deleteMediaFile).toHaveBeenCalledWith('a');
     await expect(fetchDeletedSources()).resolves.toHaveLength(1);
+  });
+
+  it('removes a website without a screenshot', async () => {
+    await seedSources([
+      buildSource({
+        id: 'site',
+        kind: 'website',
+        storageKey: null,
+        deletedAt: '2026-01-04T00:00:00.000Z',
+      }),
+    ]);
+
+    await hardDeleteSource('site');
+
+    expect(deleteMediaFile).not.toHaveBeenCalled();
+    await expect(fetchDeletedSources()).resolves.toEqual([]);
   });
 
   it('throws when the source does not exist', async () => {

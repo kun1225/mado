@@ -17,10 +17,13 @@ import {
 
 import {
   useCreateSources,
+  useCreateWebsiteSource,
   useIsCreatingSources,
 } from '#/features/sources/hooks/source-hooks';
-import { usePasteMedia } from '#/features/sources/hooks/source-interaction-hooks';
+import { usePasteSource } from '#/features/sources/hooks/source-interaction-hooks';
 import { ACCEPTED_FILE_TYPES } from '#/features/sources/source-media';
+
+import { WebsiteUrlDialog } from './website-url-dialog';
 
 const TOGGLE_SIZE = 56;
 const ACTION_SIZE = 48;
@@ -54,12 +57,18 @@ export function AddSourceButton({
   const rootRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const { mutate: createSources } = useCreateSources();
+  const { mutate: createWebsiteEmbedSource, isPending } =
+    useCreateWebsiteSource();
   const isCreating = useIsCreatingSources();
   const [open, setOpen] = useState(false);
+  const [websiteDialogOpen, setWebsiteDialogOpen] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
 
-  const handlePaste = (file: File) => createSources([{ collectionId, file }]);
-  usePasteMedia(handlePaste);
+  const handlePasteMedia = (file: File) =>
+    createSources([{ collectionId, file }]);
+  const handlePasteWebsite = (url: string) =>
+    createWebsiteEmbedSource({ collectionId, url });
+  usePasteSource(handlePasteMedia, handlePasteWebsite);
 
   useEffect(() => {
     setReducedMotion(matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -100,8 +109,15 @@ export function AddSourceButton({
 
   function handleAction(key: ActionKey) {
     setOpen(false);
-    // TODO: The website action will open a paste-a-URL dialog; not built yet.
     if (key === 'image') fileInputRef.current?.click();
+    else setWebsiteDialogOpen(true);
+  }
+
+  function handleWebsiteSubmit(url: string) {
+    createWebsiteEmbedSource(
+      { collectionId, url },
+      { onSuccess: () => setWebsiteDialogOpen(false) },
+    );
   }
 
   const transition = reducedMotion ? { duration: 0 } : ('bouncy' as const);
@@ -216,6 +232,14 @@ export function AddSourceButton({
           </Liquid.Item>
         </Liquid>
       </div>
+      {websiteDialogOpen && (
+        <WebsiteUrlDialog
+          open={websiteDialogOpen}
+          onOpenChange={setWebsiteDialogOpen}
+          onSubmit={handleWebsiteSubmit}
+          isSaving={isPending}
+        />
+      )}
     </TooltipProvider>
   );
 }

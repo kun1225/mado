@@ -54,3 +54,8 @@ export type SitePreviewDependencies = {
   appOrigin: string;
   fetchPage?: (url: URL) => Promise<SitePreviewFetchedPage>;
 };
+
+export type SitePreviewCaptureOptions = {
+  /** Only for tests that capture a local page. */
+  allowPrivateAddresses?: boolean;
+};

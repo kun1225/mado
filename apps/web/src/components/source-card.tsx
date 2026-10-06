@@ -61,7 +61,7 @@ export function SourceCard({
         selection.isSelected && 'ring-2 ring-fg ring-offset-2 ring-offset-bg',
       )}
     >
-      {(objectUrl === null || isWaitingForVideo) && (
+      {((objectUrl === null && source.storageKey) || isWaitingForVideo) && (
         <div className="size-full animate-pulse bg-muted" />
       )}
 
@@ -71,6 +71,17 @@ export function SourceCard({
           alt={source.name}
           className="size-full object-cover"
         />
+      )}
+
+      {source.kind === 'website' && source.storageKey && (
+        <div className="flex size-full min-h-40 flex-col justify-end bg-muted p-4">
+          {source.site?.domain && (
+            <p className="truncate text-xs text-muted-fg">
+              {source.site.domain}
+            </p>
+          )}
+          <p className="mt-1 line-clamp-2 text-sm font-medium">{source.name}</p>
+        </div>
       )}
 
       {objectUrl !== null &&
@@ -142,7 +153,7 @@ export function SourceCard({
         aria-label={`Delete ${source.name}`}
         disabled={deletion.isPending}
         onClick={deletion.onDelete}
-        className="absolute top-1 right-1 z-20 border-bg/80 bg-fg/40 text-bg/80 opacity-0 backdrop-blur-xs transition-[opacity,background_color] group-hover:opacity-100 hover:bg-bg/70 hover:text-danger focus-visible:opacity-100"
+        className="absolute top-1 right-1 z-20 border-bg/80 bg-fg/40 text-bg/80 opacity-0 backdrop-blur-xs transition-[opacity,background-color] group-hover:opacity-100 hover:bg-bg/70 hover:text-danger focus-visible:opacity-100 pointer-coarse:pointer-events-none"
       >
         <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={1.5} />
       </Button>

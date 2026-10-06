@@ -70,7 +70,7 @@ export function SourceDetailTags({ source }: { source: Source }) {
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={addDraft}
-          className="w-20 min-w-0 flex-1 bg-transparent px-1 py-0.5 text-xs outline-none placeholder:text-muted-fg"
+          className="w-20 min-w-0 flex-1 bg-transparent px-1 py-0.5 text-base outline-none placeholder:text-muted-fg md:text-xs"
         />
 
         <datalist id={suggestionsId}>

@@ -35,7 +35,7 @@ export function SourceDetailFields({ source }: { source: Source }) {
           onBlur={name.commit}
           onKeyDown={blurOnEnter}
           aria-invalid={name.error !== null}
-          className="h-9 text-sm text-fg"
+          className="h-9 text-base text-fg md:text-sm"
         />
         <FieldError message={name.error} />
       </label>
@@ -46,12 +46,17 @@ export function SourceDetailFields({ source }: { source: Source }) {
           type="url"
           inputMode="url"
           placeholder="https://..."
-          value={url.draft}
-          onChange={(event) => url.setDraft(event.target.value)}
-          onBlur={url.commit}
-          onKeyDown={blurOnEnter}
-          aria-invalid={url.error !== null}
-          className="h-9 text-sm text-fg"
+          value={source.kind === 'website' ? (source.url ?? '') : url.draft}
+          onChange={
+            source.kind === 'website'
+              ? undefined
+              : (event) => url.setDraft(event.target.value)
+          }
+          onBlur={source.kind === 'website' ? undefined : url.commit}
+          onKeyDown={source.kind === 'website' ? undefined : blurOnEnter}
+          readOnly={source.kind === 'website'}
+          aria-invalid={source.kind !== 'website' && url.error !== null}
+          className="h-9 text-base text-fg md:text-sm"
         />
         <FieldError message={url.error} />
       </label>
@@ -66,7 +71,7 @@ export function SourceDetailFields({ source }: { source: Source }) {
             onChange={(event) => note.setDraft(event.target.value)}
             onBlur={note.commit}
             aria-invalid={note.error !== null}
-            className="resize-none rounded-md border border-border bg-transparent px-2.5 py-2 text-sm text-fg outline-none focus-visible:border-ring aria-invalid:border-danger"
+            className="resize-none rounded-md border border-border bg-transparent px-2.5 py-2 text-base text-fg outline-none focus-visible:border-ring aria-invalid:border-danger md:text-sm"
           />
           <FieldError message={note.error} />
         </label>
