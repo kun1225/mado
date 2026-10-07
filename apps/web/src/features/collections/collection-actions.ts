@@ -1,4 +1,5 @@
 import {
+  collectBranchIds,
   countSourcesByCollection,
   softDeleteSourcesInCollection,
 } from '#/features/sources/source-actions';
@@ -106,18 +107,6 @@ export async function updateCollection(
   const counts = await countSourcesByCollection();
 
   return { ...collection, saveCount: counts.get(id) ?? 0 };
-}
-
-function collectBranchIds(all: Collection[], rootId: string): string[] {
-  const ids = [rootId];
-
-  for (const id of ids) {
-    for (const collection of all) {
-      if (collection.parentId === id) ids.push(collection.id);
-    }
-  }
-
-  return ids;
 }
 
 /**

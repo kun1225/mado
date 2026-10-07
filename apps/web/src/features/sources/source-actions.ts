@@ -1,3 +1,4 @@
+import type { Collection } from '#/features/collections/collection-types';
 import {
   openDatabase,
   SOURCES_COLLECTION_INDEX,
@@ -249,15 +250,53 @@ export async function fetchSourcesByCollection(
   collectionId: string,
 ): Promise<Source[]> {
   const database = await openDatabase();
-  const sources = await toPromise<Source[]>(
-    database
-      .transaction(STORES.sources, 'readonly')
-      .objectStore(STORES.sources)
-      .index(SOURCES_COLLECTION_INDEX)
-      .getAll(collectionId),
+  const transaction = database.transaction(
+    [STORES.collections, STORES.sources],
+    'readonly',
+  );
+  const collections = await toPromise<Collection[]>(
+    transaction.objectStore(STORES.collections).getAll(),
+  );
+  const index = transaction
+    .objectStore(STORES.sources)
+    .index(SOURCES_COLLECTION_INDEX);
+  // All reads start in the same tick, so the transaction stays open.
+  const lists = await Promise.all(
+    collectBranchIds(collections, collectionId).map((id) =>
+      toPromise<Source[]>(index.getAll(id)),
+    ),
+  );
+  // A source in both a folder and its child comes back twice.
+  const uniqueSources = new Map(
+    lists.flat().map((source) => [source.id, source]),
   );
 
-  return toVisibleSources(sources);
+  return toVisibleSources([...uniqueSources.values()]);
+}
+
+// *** collectBranchIds ***
+export function collectBranchIds(all: Collection[], rootId: string): string[] {
+  const ids = [rootId];
+
+  for (const id of ids) {
+    for (const collection of all) {
+      if (collection.parentId === id) ids.push(collection.id);
+    }
+  }
+
+  return ids;
+}
+
+// *** fetchCollectionNodes ***
+async function fetchCollectionNodes(): Promise<Collection[]> {
+  const database = await openDatabase();
+
+  return toPromise<Collection[]>(
+    database
+      .transaction(STORES.collections, 'readonly')
+      .objectStore(STORES.collections)
+      .getAll(),
+  );
 }
 
 export async function fetchAllSources(): Promise<Source[]> {
@@ -289,14 +328,40 @@ export async function fetchDeletedSources(): Promise<Source[]> {
 }
 
 export async function countSourcesByCollection(): Promise<Map<string, number>> {
-  const sources = await fetchAllSources();
+  const [collections, sources] = await Promise.all([
+    fetchCollectionNodes(),
+    fetchAllSources(),
+  ]);
+  const parentById = new Map(
+    collections.map(({ id, parentId }) => [id, parentId]),
+  );
 
   return sources.reduce((counts, source) => {
-    for (const id of source.collectionIds) {
+    for (const id of collectAncestorIds(parentById, source.collectionIds)) {
       counts.set(id, (counts.get(id) ?? 0) + 1);
     }
     return counts;
   }, new Map<string, number>());
+}
+
+// *** collectAncestorIds ***
+/** The given collections and every collection above them, each once. */
+function collectAncestorIds(
+  parentById: Map<string, string | null>,
+  ids: string[],
+): Set<string> {
+  const ancestorIds = new Set<string>();
+
+  for (const id of ids) {
+    let current: string | null | undefined = id;
+
+    while (current && !ancestorIds.has(current)) {
+      ancestorIds.add(current);
+      current = parentById.get(current);
+    }
+  }
+
+  return ancestorIds;
 }
 
 /**

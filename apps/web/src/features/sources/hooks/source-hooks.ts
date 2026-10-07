@@ -89,42 +89,13 @@ export function useSources(collectionId: string) {
   });
 }
 
-function invalidateAfterSourceChange(
-  queryClient: QueryClient,
-  collectionIds: (string | null)[],
-) {
-  const affectedCollectionIds = new Set(
-    collectionIds.filter((id): id is string => id !== null),
-  );
-  const invalidations = [
-    queryClient.invalidateQueries({ queryKey: sourceKeys.all, exact: true }),
-    queryClient.invalidateQueries({
-      queryKey: sourceKeys.deleted,
-      exact: true,
-    }),
-  ];
-
-  for (const id of affectedCollectionIds) {
-    invalidations.push(
-      queryClient.invalidateQueries({
-        queryKey: sourceKeys.byCollection(id),
-      }),
-      queryClient.invalidateQueries({
-        queryKey: collectionKeys.detail(id),
-      }),
-    );
-  }
-
-  if (affectedCollectionIds.size > 0) {
-    invalidations.push(
-      queryClient.invalidateQueries({
-        queryKey: collectionKeys.all,
-        exact: true,
-      }),
-    );
-  }
-
-  return Promise.all(invalidations);
+// A source also shows in every folder above its own, so refresh every source
+// list and every collection count instead of only the folders it is in.
+function invalidateAfterSourceChange(queryClient: QueryClient) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: sourceKeys.all }),
+    queryClient.invalidateQueries({ queryKey: collectionKeys.all }),
+  ]);
 }
 
 const COMPRESS_MUTATION_KEY = ['sources', 'compress'] as const;
@@ -135,8 +106,7 @@ function useCompressSource() {
   return useMutation({
     mutationKey: COMPRESS_MUTATION_KEY,
     mutationFn: compressSource,
-    onSettled: (_source, _error, original) =>
-      invalidateAfterSourceChange(queryClient, original.collectionIds),
+    onSettled: () => invalidateAfterSourceChange(queryClient),
   });
 }
 
@@ -166,11 +136,7 @@ export function useCreateSources() {
       if (error) toast.error(toCreateErrorMessage(error));
     },
     onError: (error) => toast.error(toCreateErrorMessage(error)),
-    onSettled: (_data, _error, inputs) =>
-      invalidateAfterSourceChange(
-        queryClient,
-        inputs.map(({ collectionId }) => collectionId),
-      ),
+    onSettled: () => invalidateAfterSourceChange(queryClient),
   });
 }
 
@@ -181,8 +147,7 @@ export function useCreateWebsiteSource() {
     mutationKey: CREATE_MUTATION_KEY,
     mutationFn: (input: SiteSourceInput) => createWebsiteSource(input),
     onError: (error) => toast.error(toCreateErrorMessage(error)),
-    onSettled: (_data, _error, input) =>
-      invalidateAfterSourceChange(queryClient, [input.collectionId]),
+    onSettled: () => invalidateAfterSourceChange(queryClient),
   });
 }
 
@@ -206,13 +171,7 @@ export function useUpdateSource() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateSourceInput }) =>
       updateSource(id, input),
-    // A collection change moves the source between lists and counts, and the
-    // old collection ids are not known here, so refresh every sources list.
-    onSuccess: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: sourceKeys.all }),
-        queryClient.invalidateQueries({ queryKey: collectionKeys.all }),
-      ]),
+    onSuccess: () => invalidateAfterSourceChange(queryClient),
   });
 }
 
@@ -223,7 +182,7 @@ export function useDeleteSource() {
     mutationFn: deleteSource,
     onSuccess: (source) => {
       showUndoDeleteToast(queryClient, [source]);
-      return invalidateAfterSourceChange(queryClient, source.collectionIds);
+      return invalidateAfterSourceChange(queryClient);
     },
   });
 }
@@ -235,10 +194,7 @@ export function useDeleteSources() {
     mutationFn: deleteSources,
     onSuccess: (sources) => {
       showUndoDeleteToast(queryClient, sources);
-      return invalidateAfterSourceChange(
-        queryClient,
-        sources.flatMap(({ collectionIds }) => collectionIds),
-      );
+      return invalidateAfterSourceChange(queryClient);
     },
   });
 }
@@ -255,12 +211,7 @@ function showUndoDeleteToast(queryClient: QueryClient, sources: Source[]) {
       label: 'Undo',
       onClick: () => {
         restoreSources(sources.map(({ id }) => id))
-          .then((restored) =>
-            invalidateAfterSourceChange(
-              queryClient,
-              restored.flatMap(({ collectionIds }) => collectionIds),
-            ),
-          )
+          .then(() => invalidateAfterSourceChange(queryClient))
           .catch((error: unknown) => {
             console.error('Failed to undo the delete.', error);
             toast.error('Could not undo. Find it in the Deleted tab.');
@@ -289,11 +240,7 @@ export function useRestoreSources() {
 
   return useMutation({
     mutationFn: restoreSources,
-    onSuccess: (sources) =>
-      invalidateAfterSourceChange(
-        queryClient,
-        sources.flatMap(({ collectionIds }) => collectionIds),
-      ),
+    onSuccess: () => invalidateAfterSourceChange(queryClient),
   });
 }
 
@@ -303,8 +250,7 @@ export function useHardDeleteSource() {
   return useMutation({
     mutationFn: hardDeleteSource,
     // Settled, not success: a failed media delete still leaves the record gone.
-    onSettled: (source) =>
-      invalidateAfterSourceChange(queryClient, source?.collectionIds ?? []),
+    onSettled: () => invalidateAfterSourceChange(queryClient),
   });
 }
 
@@ -314,11 +260,7 @@ export function useHardDeleteSources() {
   return useMutation({
     mutationFn: hardDeleteSources,
     // Settled, not success: a failed media delete still leaves the records gone.
-    onSettled: (sources) =>
-      invalidateAfterSourceChange(
-        queryClient,
-        sources?.flatMap(({ collectionIds }) => collectionIds) ?? [],
-      ),
+    onSettled: () => invalidateAfterSourceChange(queryClient),
   });
 }
 

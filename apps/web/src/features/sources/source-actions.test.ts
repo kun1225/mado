@@ -75,6 +75,27 @@ async function seedSources(sources: Source[]) {
   });
 }
 
+async function seedCollections(
+  collections: { id: string; parentId: string | null }[],
+) {
+  const database = await openDatabase();
+  const transaction = database.transaction('collections', 'readwrite');
+  const store = transaction.objectStore('collections');
+
+  for (const collection of collections) {
+    store.put({
+      ...collection,
+      name: 'folder',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+  }
+
+  await new Promise((resolve) => {
+    transaction.oncomplete = resolve;
+  });
+}
+
 beforeEach(async () => {
   vi.resetModules();
   indexedDB = new IDBFactory();
@@ -547,6 +568,69 @@ describe('fetchSourcesByCollection with many collections', () => {
     const counts = await countSourcesByCollection();
     expect(counts.get(COLLECTION_ID)).toBe(1);
     expect(counts.get(other)).toBe(1);
+  });
+});
+
+describe('nested collections', () => {
+  const CHILD_ID = '33333333-3333-4333-8333-333333333333';
+  const GRANDCHILD_ID = '44444444-4444-4444-8444-444444444444';
+
+  beforeEach(async () => {
+    await seedCollections([
+      { id: COLLECTION_ID, parentId: null },
+      { id: CHILD_ID, parentId: COLLECTION_ID },
+      { id: GRANDCHILD_ID, parentId: CHILD_ID },
+    ]);
+  });
+
+  it('shows sources from every folder below, newest first', async () => {
+    await seedSources([
+      buildSource({ id: 'a', createdAt: '2026-01-01T00:00:00.000Z' }),
+      buildSource({
+        id: 'b',
+        collectionIds: [CHILD_ID],
+        createdAt: '2026-01-02T00:00:00.000Z',
+      }),
+      buildSource({
+        id: 'c',
+        collectionIds: [GRANDCHILD_ID],
+        createdAt: '2026-01-03T00:00:00.000Z',
+      }),
+    ]);
+
+    const sources = await fetchSourcesByCollection(COLLECTION_ID);
+
+    expect(sources.map((source) => source.id)).toEqual(['c', 'b', 'a']);
+    expect(
+      (await fetchSourcesByCollection(CHILD_ID)).map((source) => source.id),
+    ).toEqual(['c', 'b']);
+  });
+
+  it('shows a source once when it is in a folder and its child', async () => {
+    await seedSources([
+      buildSource({ id: 'a', collectionIds: [COLLECTION_ID, GRANDCHILD_ID] }),
+    ]);
+
+    expect(await fetchSourcesByCollection(COLLECTION_ID)).toHaveLength(1);
+
+    const counts = await countSourcesByCollection();
+    expect(counts.get(COLLECTION_ID)).toBe(1);
+    expect(counts.get(CHILD_ID)).toBe(1);
+    expect(counts.get(GRANDCHILD_ID)).toBe(1);
+  });
+
+  it('counts sources from every folder below', async () => {
+    await seedSources([
+      buildSource({ id: 'a' }),
+      buildSource({ id: 'b', collectionIds: [CHILD_ID] }),
+      buildSource({ id: 'c', collectionIds: [GRANDCHILD_ID] }),
+    ]);
+
+    const counts = await countSourcesByCollection();
+
+    expect(counts.get(COLLECTION_ID)).toBe(3);
+    expect(counts.get(CHILD_ID)).toBe(2);
+    expect(counts.get(GRANDCHILD_ID)).toBe(1);
   });
 });
 
