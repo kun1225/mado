@@ -6,11 +6,7 @@ import { cn } from 'cn';
 import type { Collection } from '#/features/collections/collection-types';
 import { useSourceDropzone } from '#/features/sources/hooks/source-interaction-hooks';
 
-export function LibraryCollectionCard({
-  collection,
-}: {
-  collection: Collection;
-}) {
+export function CollectionCard({ collection }: { collection: Collection }) {
   const { getRootProps, isDragActive } = useSourceDropzone(collection.id);
 
   return (
@@ -36,4 +32,17 @@ export function LibraryCollectionCard({
       </Link>
     </div>
   );
+}
+
+const SKELETON_COUNT = 3;
+
+/** Same size as `CollectionCard`, so real cards replace it in place. */
+export function CollectionCardSkeletons() {
+  return Array.from({ length: SKELETON_COUNT }, (_, index) => (
+    <div
+      key={index}
+      aria-hidden
+      className="size-48 animate-pulse rounded-md bg-muted motion-reduce:animate-none"
+    />
+  ));
 }

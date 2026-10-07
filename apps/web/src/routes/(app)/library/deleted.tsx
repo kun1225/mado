@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 
-import { SourceGrid } from '#/components/source-grid';
-import { SourceGridSkeleton } from '#/components/source-grid-skeleton';
+import { SourceGrid, SourceGridSkeleton } from '#/components/source-grid';
 import {
   useDeletedSources,
   useHardDeleteSources,

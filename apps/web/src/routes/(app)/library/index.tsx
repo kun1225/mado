@@ -3,19 +3,19 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { toast } from '@repo/ui/sonner';
 
 import { AddSourceButton } from '#/components/add-source-button';
+import {
+  CollectionCard,
+  CollectionCardSkeletons,
+} from '#/components/collection-card';
 import { CollectionNewCard } from '#/components/collection-new-card';
 import { SourceDropZone } from '#/components/source-drop-zone';
-import { SourceGrid } from '#/components/source-grid';
-import { SourceGridSkeleton } from '#/components/source-grid-skeleton';
+import { SourceGrid, SourceGridSkeleton } from '#/components/source-grid';
 import { SourcesEmptyState } from '#/components/sources-empty-state';
 import {
   useChildCollections,
   useCreateCollection,
 } from '#/features/collections/collection-hooks';
 import { useAllSources } from '#/features/sources/hooks/source-hooks';
-
-import { LibraryCollectionCard } from './-components/library-collection-card';
-import { LibraryCollectionCardSkeletons } from './-components/library-collection-card-skeleton';
 
 export const Route = createFileRoute('/(app)/library/')({ component: Library });
 
@@ -45,13 +45,10 @@ function Library() {
         />
 
         {collectionsQuery.isPending ? (
-          <LibraryCollectionCardSkeletons />
+          <CollectionCardSkeletons />
         ) : (
           collectionsQuery.data?.map((collection) => (
-            <LibraryCollectionCard
-              key={collection.id}
-              collection={collection}
-            />
+            <CollectionCard key={collection.id} collection={collection} />
           ))
         )}
       </section>

@@ -1,4 +1,16 @@
+import { Delete02Icon, RestoreBinIcon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from 'cn';
+
+import { Button } from '@repo/ui/button';
+import { Separator } from '@repo/ui/separator';
+import {
+  createTooltipHandle,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@repo/ui/tooltip';
 
 import { useCollections } from '#/features/collections/collection-hooks';
 import {
@@ -15,7 +27,6 @@ import type { Source } from '#/features/sources/source-types';
 import { SourceDetailDialog } from './source-detail/source-detail-dialog';
 import { Masonry } from './masonry';
 import { SourceCard } from './source-card';
-import { SourceGridSelectionBar } from './source-grid-selection-bar';
 
 export function SourceGrid({
   sources,
@@ -122,5 +133,128 @@ export function SourceGrid({
         />
       )}
     </>
+  );
+}
+
+// Varied heights so the placeholder reads as a masonry wall, not a table.
+const TILE_ASPECTS = [
+  'aspect-[4/5]',
+  'aspect-square',
+  'aspect-[4/3]',
+  'aspect-[3/4]',
+  'aspect-[5/4]',
+  'aspect-[4/5]',
+  'aspect-[3/4]',
+  'aspect-square',
+  'aspect-[4/3]',
+  'aspect-[4/5]',
+  'aspect-[5/4]',
+  'aspect-[3/4]',
+];
+
+/** Same column widths as `Masonry`, so the real grid lands without a jump. */
+export function SourceGridSkeleton() {
+  return (
+    <div aria-hidden className="columns-2 gap-2.5 md:columns-3 lg:columns-4">
+      {TILE_ASPECTS.map((aspect, index) => (
+        <div
+          key={index}
+          className={cn(
+            'mb-2.5 w-full animate-pulse break-inside-avoid rounded-md bg-muted motion-reduce:animate-none',
+            aspect,
+          )}
+        />
+      ))}
+    </div>
+  );
+}
+
+const selectionTooltip = createTooltipHandle<string>();
+
+/**
+ * Floats over the grid, so the wrapper has to let clicks through to the cards
+ * behind it - only the pill itself takes pointer events.
+ *
+ * The labels name tools the user is already reaching for, so they open on
+ * arrival rather than after the usual reading pause.
+ */
+// *** SourceGridSelectionBar ***
+function SourceGridSelectionBar({
+  count,
+  onClear,
+  onDelete,
+  onRestore,
+  isPending,
+}: {
+  count: number;
+  onClear: () => void;
+  onDelete: () => void;
+  /** Only the trash offers this, so the button is absent everywhere else. */
+  onRestore?: () => void;
+  isPending?: boolean;
+}) {
+  return (
+    <TooltipProvider delay={120}>
+      <div className="pointer-events-none fixed inset-x-0 bottom-6 z-action-bar flex justify-center px-edge">
+        <div className="pointer-events-auto relative flex animate-in items-center gap-1 rounded-full border border-border bg-bg py-1 pr-2 pl-4 shadow-md duration-slow ease-out-back fade-in-0 slide-in-from-bottom-2">
+          <p className="text-sm font-medium text-fg">{count} selected</p>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClear}
+            className="rounded-full text-muted-fg"
+          >
+            Clear
+          </Button>
+
+          <Separator orientation="vertical" />
+
+          {onRestore && (
+            <TooltipTrigger
+              handle={selectionTooltip}
+              payload="Put back"
+              aria-label="Put back"
+              onClick={onRestore}
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  disabled={isPending}
+                  className="hit-area-1 rounded-full text-fg"
+                />
+              }
+            >
+              <HugeiconsIcon
+                icon={RestoreBinIcon}
+                size={16}
+                strokeWidth={1.5}
+              />
+            </TooltipTrigger>
+          )}
+
+          <TooltipTrigger
+            handle={selectionTooltip}
+            payload="Delete"
+            aria-label="Delete"
+            onClick={onDelete}
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                disabled={isPending}
+                className="hit-area-1 rounded-full text-danger hover:bg-danger/10 hover:text-danger"
+              />
+            }
+          >
+            <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={1.5} />
+          </TooltipTrigger>
+        </div>
+
+        <Tooltip handle={selectionTooltip}>
+          {({ payload }) => <TooltipContent>{payload}</TooltipContent>}
+        </Tooltip>
+      </div>
+    </TooltipProvider>
   );
 }

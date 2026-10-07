@@ -8,10 +8,10 @@ import { Separator } from '@repo/ui/separator';
 import { toast } from '@repo/ui/sonner';
 
 import { AddSourceButton } from '#/components/add-source-button';
+import { CollectionCard } from '#/components/collection-card';
 import { CollectionNewCard } from '#/components/collection-new-card';
 import { SourceDropZone } from '#/components/source-drop-zone';
-import { SourceGrid } from '#/components/source-grid';
-import { SourceGridSkeleton } from '#/components/source-grid-skeleton';
+import { SourceGrid, SourceGridSkeleton } from '#/components/source-grid';
 import { SourcesEmptyState } from '#/components/sources-empty-state';
 import {
   useChildCollections,
@@ -21,8 +21,6 @@ import {
   useUpdateCollection,
 } from '#/features/collections/collection-hooks';
 import { useSources } from '#/features/sources/hooks/source-hooks';
-
-import { LibraryCollectionCard } from '../library/-components/library-collection-card';
 
 import { CollectionMenu } from './-components/collection-menu';
 
@@ -160,7 +158,7 @@ function CollectionPage() {
         />
 
         {childCollectionsQuery.data?.map((child) => (
-          <LibraryCollectionCard key={child.id} collection={child} />
+          <CollectionCard key={child.id} collection={child} />
         ))}
       </section>
 
