@@ -11,6 +11,7 @@ import { AddSourceButton } from '#/components/add-source-button';
 import { CollectionNewCard } from '#/components/collection-new-card';
 import { SourceDropZone } from '#/components/source-drop-zone';
 import { SourceGrid } from '#/components/source-grid';
+import { SourceGridSkeleton } from '#/components/source-grid-skeleton';
 import { SourcesEmptyState } from '#/components/sources-empty-state';
 import {
   useChildCollections,
@@ -168,7 +169,9 @@ function CollectionPage() {
         label={collectionName}
         className="flex grow flex-col"
       >
-        {sourcesQuery.isPending ? null : sourcesQuery.isError ? (
+        {sourcesQuery.isPending ? (
+          <SourceGridSkeleton />
+        ) : sourcesQuery.isError ? (
           <p className="flex grow items-center justify-center py-6 text-sm text-danger">
             Unable to load the saves in this collection.
           </p>

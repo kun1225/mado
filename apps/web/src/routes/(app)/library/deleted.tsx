@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 
 import { SourceGrid } from '#/components/source-grid';
+import { SourceGridSkeleton } from '#/components/source-grid-skeleton';
 import {
   useDeletedSources,
   useHardDeleteSources,
@@ -24,8 +25,14 @@ function Deleted() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   // The store is browser-only, so the first paint has nothing to show yet -
-  // staying blank beats flashing "nothing deleted" at someone with a full bin.
-  if (deletedSourcesQuery.isPending) return null;
+  // a skeleton beats flashing "nothing deleted" at someone with a full bin.
+  if (deletedSourcesQuery.isPending) {
+    return (
+      <div className="py-6">
+        <SourceGridSkeleton />
+      </div>
+    );
+  }
 
   if (deletedSourcesQuery.isError) {
     return (

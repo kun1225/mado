@@ -82,6 +82,7 @@ function LiquidTabs({
   const left = useMotionValue(0);
   const right = useMotionValue(0);
   const placed = useRef(false);
+  const [isPlaced, setIsPlaced] = useState(false);
   const reduced = useReducedMotion() ?? false;
 
   // Switching tabs deactivates one and activates another in the same commit,
@@ -113,6 +114,7 @@ function LiquidTabs({
 
     settle(placed.current && !reduced);
     placed.current = true;
+    setIsPlaced(true);
 
     // A ResizeObserver reports once on observe, and that call is the
     // measurement just taken - letting it through would cut the stretch short.
@@ -138,8 +140,9 @@ function LiquidTabs({
     <LiquidRootContext value={context}>
       <Primitive.Root
         data-slot="liquid-tabs"
+        data-placed={isPlaced ? '' : undefined}
         orientation="horizontal"
-        className={cn('isolate flex flex-col gap-2', className)}
+        className={cn('group/liquid isolate flex flex-col gap-2', className)}
         {...props}
       />
     </LiquidRootContext>
@@ -180,6 +183,8 @@ function LiquidTabsList({
 const liquidTabTrigger = cn(
   'relative z-1 flex h-9 cursor-pointer items-center justify-center rounded-md px-4 text-sm font-medium whitespace-nowrap text-muted-fg',
   'not-data-active:hover:text-fg',
+  // Until the pill is measured (SSR + hydration), paint the active tab in CSS.
+  'group-not-data-placed/liquid:data-active:bg-accent',
   'outline-2 outline-transparent focus-visible:outline-offset-2 focus-visible:outline-ring',
   'data-disabled:pointer-events-none data-disabled:text-muted-fg/50',
   'transition-colors duration-fast ease-standard',

@@ -6,6 +6,7 @@ import { AddSourceButton } from '#/components/add-source-button';
 import { CollectionNewCard } from '#/components/collection-new-card';
 import { SourceDropZone } from '#/components/source-drop-zone';
 import { SourceGrid } from '#/components/source-grid';
+import { SourceGridSkeleton } from '#/components/source-grid-skeleton';
 import { SourcesEmptyState } from '#/components/sources-empty-state';
 import {
   useChildCollections,
@@ -14,6 +15,7 @@ import {
 import { useAllSources } from '#/features/sources/hooks/source-hooks';
 
 import { LibraryCollectionCard } from './-components/library-collection-card';
+import { LibraryCollectionCardSkeletons } from './-components/library-collection-card-skeleton';
 
 export const Route = createFileRoute('/(app)/library/')({ component: Library });
 
@@ -42,9 +44,16 @@ function Library() {
           onClick={handleCreateCollection}
         />
 
-        {collectionsQuery.data?.map((collection) => (
-          <LibraryCollectionCard key={collection.id} collection={collection} />
-        ))}
+        {collectionsQuery.isPending ? (
+          <LibraryCollectionCardSkeletons />
+        ) : (
+          collectionsQuery.data?.map((collection) => (
+            <LibraryCollectionCard
+              key={collection.id}
+              collection={collection}
+            />
+          ))
+        )}
       </section>
 
       <SourceDropZone
@@ -52,9 +61,11 @@ function Library() {
         label="Library"
         className="flex flex-1 flex-col"
       >
-        {/* The store is browser-only: stay blank while it loads rather than
-            flash "Nothing here yet" at someone with a full library. */}
-        {sourcesQuery.isPending ? null : sourcesQuery.isError ? (
+        {/* The store is browser-only: show a skeleton while it loads rather
+            than flash "Nothing here yet" at someone with a full library. */}
+        {sourcesQuery.isPending ? (
+          <SourceGridSkeleton />
+        ) : sourcesQuery.isError ? (
           <p className="flex flex-1 items-center justify-center py-6 text-sm text-danger">
             Unable to load your library.
           </p>
