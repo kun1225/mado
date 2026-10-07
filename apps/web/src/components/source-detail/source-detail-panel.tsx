@@ -12,7 +12,6 @@ import {
   MorphDropdownMenu,
   MorphDropdownMenuContent,
   MorphDropdownMenuItem,
-  MorphDropdownMenuSeparator,
   MorphDropdownMenuSub,
   MorphDropdownMenuSubContent,
   MorphDropdownMenuSubTrigger,
@@ -239,7 +238,7 @@ function CollectionMenuNode({
   node: CollectionNode;
   onAdd: (id: string) => void;
 }) {
-  const { collection, children, isAvailable } = node;
+  const { collection, children } = node;
 
   if (children.length === 0) {
     return (
@@ -255,14 +254,6 @@ function CollectionMenuNode({
         {collection.name}
       </MorphDropdownMenuSubTrigger>
       <MorphDropdownMenuSubContent>
-        {isAvailable && (
-          <>
-            <MorphDropdownMenuItem onClick={() => onAdd(collection.id)}>
-              {collection.name}
-            </MorphDropdownMenuItem>
-            <MorphDropdownMenuSeparator />
-          </>
-        )}
         {children.map((child) => (
           <CollectionMenuNode
             key={child.collection.id}
