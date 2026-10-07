@@ -69,14 +69,14 @@ describe('POST /api/v1/sites/preview', () => {
   });
 });
 
-describe('POST /api/v1/sites/capture', () => {
+describe('POST /api/v1/sites/image', () => {
   let server: Server;
   let endpoint: string;
 
   beforeAll(async () => {
     server = createApp().listen(0);
     await new Promise((resolve) => server.once('listening', resolve));
-    endpoint = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api/v1/sites/capture`;
+    endpoint = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api/v1/sites/image`;
   });
 
   afterAll(() => {

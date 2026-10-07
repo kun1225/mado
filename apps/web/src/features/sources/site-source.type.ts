@@ -11,10 +11,6 @@ export type SiteSourcePreview = {
     | { mode: 'none'; reason: string };
 };
 
-export type SiteSourceMetadata = SiteSourcePreview & {
-  captureStatus: 'ready' | 'failed';
-};
-
 export type SiteSourceInput = {
   collectionId: string | null;
   url: string;

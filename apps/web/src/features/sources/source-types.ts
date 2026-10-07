@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { SiteSourceMetadata } from './site-source.type';
+import type { SiteSourcePreview } from './site-source.type';
 
 export const MAX_FILE_MB = 512;
 
@@ -130,7 +130,7 @@ export type Source = {
   /** Empty means the source lives only in the library. */
   collectionIds: string[];
   kind: SourceKind;
-  site?: SiteSourceMetadata;
+  site?: SiteSourcePreview;
   fileName: string;
   mimeType: string;
   sizeBytes: number;

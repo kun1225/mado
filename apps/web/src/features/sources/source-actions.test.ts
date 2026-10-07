@@ -8,7 +8,7 @@ let compressMedia: typeof import('./source-media').compressMedia;
 let readMediaFile: typeof import('./source-media').readMediaFile;
 let writeMediaFile: typeof import('./source-media').writeMediaFile;
 let fetchSitePreview: typeof import('./source-media').fetchSitePreview;
-let fetchSiteCapture: typeof import('./source-media').fetchSiteCapture;
+let fetchSiteImage: typeof import('./source-media').fetchSiteImage;
 let createWebsiteSource: typeof import('./source-actions').createWebsiteSource;
 let countSourcesByCollection: typeof import('./source-actions').countSourcesByCollection;
 let deleteSource: typeof import('./source-actions').deleteSource;
@@ -38,7 +38,7 @@ vi.mock('./source-media', () => ({
   readMediaFile: vi.fn(),
   writeMediaFile: vi.fn(() => Promise.resolve()),
   fetchSitePreview: vi.fn(),
-  fetchSiteCapture: vi.fn(),
+  fetchSiteImage: vi.fn(),
 }));
 
 function buildSource(overrides: Partial<Source> & { id: string }): Source {
@@ -98,7 +98,7 @@ beforeEach(async () => {
     compressMedia,
     deleteMediaFile,
     fetchSitePreview,
-    fetchSiteCapture,
+    fetchSiteImage,
     readMediaFile,
     writeMediaFile,
   } = await import('./source-media'));
@@ -192,9 +192,21 @@ describe('createSources', () => {
 
 describe('createWebsiteSource', () => {
   beforeEach(() => {
+    vi.stubGlobal(
+      'Image',
+      class {
+        naturalWidth = 1200;
+        naturalHeight = 630;
+        onload: (() => void) | null = null;
+        set src(_value: string) {
+          queueMicrotask(() => this.onload?.());
+        }
+      },
+    );
     vi.mocked(writeMediaFile).mockClear();
     vi.mocked(writeMediaFile).mockResolvedValue(undefined);
     vi.mocked(fetchSitePreview).mockClear();
+    vi.mocked(fetchSiteImage).mockClear();
   });
 
   const preview = {
@@ -204,14 +216,14 @@ describe('createWebsiteSource', () => {
     title: 'Example',
     description: null,
     favicon: null,
-    ogImage: null,
+    ogImage: 'https://example.com/og.png',
     embed: { mode: 'iframe' as const, src: 'https://example.com/' },
   };
 
-  it('stores the screenshot as the cover', async () => {
+  it('stores the OG image as the cover', async () => {
     vi.mocked(fetchSitePreview).mockResolvedValue(preview);
-    vi.mocked(fetchSiteCapture).mockResolvedValue(
-      new File(['image'], 'website.webp', { type: 'image/webp' }),
+    vi.mocked(fetchSiteImage).mockResolvedValue(
+      new File(['image'], 'og.png', { type: 'image/png' }),
     );
 
     const source = await createWebsiteSource({
@@ -219,11 +231,15 @@ describe('createWebsiteSource', () => {
       url: 'https://example.com',
     });
 
+    expect(fetchSiteImage).toHaveBeenCalledWith('https://example.com/og.png');
     expect(source).toMatchObject({
       kind: 'website',
       name: 'Example',
       collectionIds: [COLLECTION_ID],
-      site: { captureStatus: 'ready', embed: preview.embed },
+      site: { embed: preview.embed },
+      mimeType: 'image/png',
+      width: 1200,
+      height: 630,
       storageKey: source.id,
     });
     expect(writeMediaFile).toHaveBeenCalledWith(source.id, expect.any(File));
@@ -232,9 +248,9 @@ describe('createWebsiteSource', () => {
     );
   });
 
-  it('keeps the website when capture fails', async () => {
+  it('keeps the website when the image download fails', async () => {
     vi.mocked(fetchSitePreview).mockResolvedValue(preview);
-    vi.mocked(fetchSiteCapture).mockRejectedValue(new Error('Capture failed'));
+    vi.mocked(fetchSiteImage).mockRejectedValue(new Error('Download failed'));
 
     const source = await createWebsiteSource({
       collectionId: null,
@@ -244,13 +260,24 @@ describe('createWebsiteSource', () => {
     expect(source).toMatchObject({
       kind: 'website',
       collectionIds: [],
-      site: { captureStatus: 'failed' },
       storageKey: null,
     });
     expect(writeMediaFile).not.toHaveBeenCalled();
-    expect((await fetchAllSources()).map((item) => item.id)).toContain(
-      source.id,
-    );
+  });
+
+  it('skips the download when the site has no OG image', async () => {
+    vi.mocked(fetchSitePreview).mockResolvedValue({
+      ...preview,
+      ogImage: null,
+    });
+
+    const source = await createWebsiteSource({
+      collectionId: null,
+      url: 'https://example.com',
+    });
+
+    expect(fetchSiteImage).not.toHaveBeenCalled();
+    expect(source.storageKey).toBeNull();
   });
 
   it('rejects a URL with embedded credentials', async () => {

@@ -9,6 +9,7 @@ Status of the website embed feature. Branch: `feat/site-preview-api`.
 - Official embeds: YouTube, Vimeo, Spotify, Figma
 - Page metadata: title, description, favicon, OG image
 - Safe fetch: blocks private addresses, limits time, size and redirects
+- `POST /api/v1/sites/image`: downloads the OG image for the browser (CORS), saved as the cover
 - 124 tests, security review and code review fixed
 
 ## Before commit
@@ -36,6 +37,5 @@ Status of the website embed feature. Branch: `feat/site-preview-api`.
 
 ## Later (from the PRD)
 
-- [ ] Hero screenshot worker (headless browser), `SiteCaptureStatus`
+- [ ] Hero screenshot of the page (needs a headless browser, or a screenshot service). Today there is none: the cover is the OG image.
 - [ ] `POST /api/v1/sites/:sourceId/refresh` to run the check again
-- [ ] Store OG image and screenshot as media assets

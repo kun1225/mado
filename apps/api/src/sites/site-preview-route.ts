@@ -2,14 +2,14 @@ import { Router, type Router as ExpressRouter } from 'express';
 import { z } from 'zod';
 
 import {
-  SafeFetchError,
-  captureSiteScreenshot,
+  fetchSiteImage,
   getSitePreview,
+  isRejectedUrlError,
 } from './site-preview.js';
 
 const MAX_URL_LENGTH = 2048;
 
-const previewBodySchema = z.object({
+const urlBodySchema = z.object({
   url: z
     .string()
     .trim()
@@ -31,10 +31,9 @@ export function createSitesRouter({
   appOrigin: string;
 }): ExpressRouter {
   const router = Router();
-  let activeCaptures = 0;
 
   router.post('/preview', async (request, response) => {
-    const body = previewBodySchema.safeParse(request.body);
+    const body = urlBodySchema.safeParse(request.body);
     if (!body.success) {
       response
         .status(400)
@@ -47,7 +46,7 @@ export function createSitesRouter({
         await getSitePreview(new URL(body.data.url), { appOrigin }),
       );
     } catch (error) {
-      if (error instanceof SafeFetchError) {
+      if (isRejectedUrlError(error)) {
         response.status(400).json({
           error: 'url-not-allowed',
           message: 'This URL cannot be previewed',
@@ -62,41 +61,31 @@ export function createSitesRouter({
     }
   });
 
-  router.post('/capture', async (request, response) => {
-    const body = previewBodySchema.safeParse(request.body);
+  router.post('/image', async (request, response) => {
+    const body = urlBodySchema.safeParse(request.body);
     if (!body.success) {
       response
         .status(400)
         .json({ error: 'invalid-url', message: 'Enter a valid http(s) URL' });
       return;
     }
-    if (activeCaptures >= 2) {
-      response.status(429).json({
-        error: 'capture-busy',
-        message: 'Too many captures are running',
-      });
-      return;
-    }
 
-    activeCaptures++;
     try {
-      const image = await captureSiteScreenshot(new URL(body.data.url));
-      response.type('image/webp').send(image);
+      const image = await fetchSiteImage(new URL(body.data.url));
+      response.type(image.type).send(image.body);
     } catch (error) {
-      if (error instanceof SafeFetchError) {
+      if (isRejectedUrlError(error)) {
         response.status(400).json({
           error: 'url-not-allowed',
-          message: 'This URL cannot be captured',
+          message: 'This URL cannot be downloaded',
         });
         return;
       }
 
-      console.error('Site capture failed:', error);
+      console.error('Site image failed:', error);
       response
         .status(502)
-        .json({ error: 'capture-failed', message: 'Capture failed' });
-    } finally {
-      activeCaptures--;
+        .json({ error: 'image-failed', message: 'Image download failed' });
     }
   });
 

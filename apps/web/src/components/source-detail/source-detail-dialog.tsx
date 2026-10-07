@@ -95,7 +95,11 @@ export function SourceDetailDialog({
         if (!isOpen) onActiveIdChange(null);
       }}
     >
-      <DialogContent className="flex flex-col" onKeyDown={handleKeyDown}>
+      <DialogContent
+        className="flex flex-col"
+        onBackdropClick={() => onActiveIdChange(null)}
+        onKeyDown={handleKeyDown}
+      >
         <DialogTitle className="sr-only">{source.name}</DialogTitle>
 
         <SourceDetailToolbar
@@ -112,7 +116,7 @@ export function SourceDetailDialog({
           onTogglePanel={() => setIsPanelOpen((isOpen) => !isOpen)}
         />
 
-        <div className="relative flex min-h-0 flex-1 px-edge pb-4">
+        <div className="pointer-events-none relative flex min-h-0 flex-1 px-edge pb-4">
           <SourceDetailViewer key={`viewer-${source.id}`} source={source} />
           <SourceDetailPanel
             key={`panel-${source.id}`}
@@ -152,7 +156,7 @@ function SourceDetailToolbar({
   onTogglePanel: () => void;
 }) {
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 px-edge text-bg">
+    <header className="pointer-events-auto flex h-12 shrink-0 items-center gap-2 px-edge text-bg">
       <Button
         variant="ghost"
         size="icon-sm"
@@ -242,8 +246,8 @@ function SourceDetailViewer({ source }: { source: Source }) {
   if (source.kind === 'website' && source.site) {
     const embed = source.site.embed;
     return (
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-        <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-md bg-bg/10">
+      <div className="pointer-events-none flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+        <div className="pointer-events-auto flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-md bg-bg/10">
           {embed.mode !== 'none' ? (
             <iframe
               src={embed.src}
@@ -256,13 +260,13 @@ function SourceDetailViewer({ source }: { source: Source }) {
               allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               allowFullScreen
               referrerPolicy="no-referrer"
-              className="size-full border-0 bg-bg"
+              className="pointer-events-auto size-full border-0 bg-bg"
             />
           ) : objectUrl ? (
             <img
               src={objectUrl}
               alt={`Preview of ${source.name}`}
-              className="size-full object-contain"
+              className="pointer-events-auto size-full object-contain"
             />
           ) : (
             <p className="max-w-xs text-center text-sm text-bg/70">
@@ -274,7 +278,7 @@ function SourceDetailViewer({ source }: { source: Source }) {
           href={source.url ?? source.site.finalUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="self-start text-sm text-bg underline underline-offset-4"
+          className="pointer-events-auto self-start text-sm text-bg underline underline-offset-4"
         >
           Open original site
         </a>
@@ -283,7 +287,7 @@ function SourceDetailViewer({ source }: { source: Source }) {
   }
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1">
+    <div className="pointer-events-none flex min-h-0 min-w-0 flex-1">
       {objectUrl === null && source.storageKey && !isWaitingForVideo && (
         <div className="m-auto size-24 animate-pulse rounded-md bg-bg/10" />
       )}
@@ -314,7 +318,7 @@ function SourceDetailViewer({ source }: { source: Source }) {
         <img
           src={objectUrl}
           alt={source.name}
-          className="size-full object-contain"
+          className="pointer-events-auto size-full object-contain"
         />
       )}
 
@@ -329,7 +333,7 @@ function SourceDetailViewer({ source }: { source: Source }) {
             autoPlay
             loop
             playsInline
-            className="size-full object-contain"
+            className="pointer-events-auto m-auto max-h-full max-w-full object-contain"
           />
         )}
     </div>

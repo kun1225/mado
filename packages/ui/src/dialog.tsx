@@ -23,14 +23,19 @@ function DialogOverlay({ className, ...props }: Primitive.Backdrop.Props) {
 }
 
 /** Full-screen surface: the caller lays out what goes inside. */
-function DialogContent({ className, ...props }: Primitive.Popup.Props) {
+function DialogContent({
+  className,
+  onBackdropClick,
+  ...props
+}: Primitive.Popup.Props & { onBackdropClick?: () => void }) {
   return (
     <Primitive.Portal>
-      <DialogOverlay />
+      <DialogOverlay onClick={onBackdropClick} />
       <Primitive.Popup
         data-slot="dialog-content"
         className={cn(
           'fixed inset-0 z-modal text-bg outline-none',
+          onBackdropClick && 'pointer-events-none',
           'data-open:animate-in data-open:duration-slow data-open:ease-out data-open:fade-in-0',
           'data-closed:animate-out data-closed:duration-fast data-closed:ease-standard data-closed:fade-out-0',
           className,

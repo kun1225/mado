@@ -44,16 +44,21 @@ export async function fetchSitePreview(
   return (await response.json()) as SiteSourcePreview;
 }
 
-export async function fetchSiteCapture(url: string): Promise<File> {
-  const response = await fetch(`${SITES_API}/capture`, {
+/** The API downloads the image for us, because the browser cannot (CORS). */
+export async function fetchSiteImage(url: string): Promise<File> {
+  const response = await fetch(`${SITES_API}/image`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ url }),
   });
-  if (!response.ok) throw new Error('Could not capture this website.');
+  if (!response.ok) throw new Error('Could not download the website image.');
   const image = await response.blob();
-  if (image.type !== 'image/webp') throw new Error('Invalid website capture.');
-  return new File([image], 'website.webp', { type: image.type });
+  if (!image.type.startsWith('image/')) {
+    throw new Error('Invalid website image.');
+  }
+  return new File([image], `og-image.${image.type.split('/')[1]}`, {
+    type: image.type,
+  });
 }
 
 async function getMediaDirectory(): Promise<FileSystemDirectoryHandle> {

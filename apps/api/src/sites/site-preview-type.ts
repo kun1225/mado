@@ -24,6 +24,12 @@ export type SitePreviewHtmlMetadata = {
   ogImage: string | null;
 };
 
+export type SitePreviewImage = {
+  /** A MIME type such as `image/png`. */
+  type: string;
+  body: Buffer;
+};
+
 export type SitePreviewFramePolicy =
   { allowed: true } | { allowed: false; reason: 'csp' | 'x-frame-options' };
 
@@ -53,9 +59,4 @@ export type SitePreviewDependencies = {
   /** Origin of the web app that will show the iframe. */
   appOrigin: string;
   fetchPage?: (url: URL) => Promise<SitePreviewFetchedPage>;
-};
-
-export type SitePreviewCaptureOptions = {
-  /** Only for tests that capture a local page. */
-  allowPrivateAddresses?: boolean;
 };

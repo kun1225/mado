@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Website Source Flow</title>
+    <style>
+      :root {
+        --bg: #fafaf7;
+        --fg: #1d1d1b;
+        --muted: #6b6b66;
+        --card: #fff;
+        --line: #e3e3dc;
+        --web: #2563eb;
+        --api: #16a34a;
+        --store: #9333ea;
+        --warn: #d97706;
+        --bad: #dc2626;
+        --code: #f1f1ec;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #151514;
+          --fg: #ecece6;
+          --muted: #9a9a92;
+          --card: #1f1f1d;
+          --line: #33332f;
+          --code: #2a2a27;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          16px/1.6 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 32px 16px 80px;
+      }
+      h1 {
+        font-size: 28px;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 20px;
+        margin: 48px 0 12px;
+      }
+      p {
+        margin: 8px 0;
+      }
+      .sub {
+        color: var(--muted);
+        margin-bottom: 24px;
+      }
+      code {
+        background: var(--code);
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 16px;
+        margin: 12px 0;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 1px 8px;
+        border-radius: 99px;
+        color: #fff;
+      }
+      .web {
+        background: var(--web);
+      }
+      .api {
+        background: var(--api);
+      }
+      .store {
+        background: var(--store);
+      }
+      .steps {
+        list-style: none;
+        counter-reset: s;
+        padding: 0;
+        margin: 0;
+      }
+      .steps li {
+        counter-increment: s;
+        position: relative;
+        padding: 12px 12px 12px 52px;
+        margin: 8px 0;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      .steps li::before {
+        content: counter(s);
+        position: absolute;
+        left: 14px;
+        top: 12px;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--fg);
+        color: var(--bg);
+        text-align: center;
+        line-height: 26px;
+        font-weight: 700;
+        font-size: 14px;
+      }
+      .steps small {
+        display: block;
+        color: var(--muted);
+      }
+      .lanes {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+      .lane {
+        border: 2px solid;
+        border-radius: 10px;
+        padding: 12px;
+        background: var(--card);
+      }
+      .lane h3 {
+        margin: 0 0 6px;
+        font-size: 15px;
+      }
+      .lane ul {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 14px;
+      }
+      .lane.web {
+        border-color: var(--web);
+        background: var(--card);
+        color: var(--fg);
+      }
+      .lane.api {
+        border-color: var(--api);
+      }
+      .lane.store {
+        border-color: var(--store);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        background: var(--card);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      th {
+        background: var(--code);
+      }
+      .ok {
+        color: var(--api);
+        font-weight: 600;
+      }
+      .no {
+        color: var(--bad);
+        font-weight: 600;
+      }
+      pre {
+        background: var(--code);
+        padding: 12px;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      svg {
+        width: 100%;
+        height: auto;
+      }
+      svg text {
+        fill: var(--fg);
+        font:
+          13px system-ui,
+          sans-serif;
+      }
+      svg .box {
+        fill: var(--card);
+        stroke-width: 2;
+      }
+      svg .line {
+        stroke: var(--muted);
+        stroke-width: 1.5;
+        fill: none;
+      }
+      svg .dash {
+        stroke-dasharray: 5 4;
+      }
+      @media (max-width: 640px) {
+        .lanes {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Website Source: how it works</h1>
+      <p class="sub">
+        You paste a URL. Mado saves it as a source. Later, you see the site
+        inside the app.
+      </p>
+
+      <h2>1. The big picture</h2>
+      <div class="lanes">
+        <div class="lane web">
+          <h3><span class="tag web">Browser</span> apps/web</h3>
+          <ul>
+            <li>Asks for the URL</li>
+            <li>Checks the URL shape</li>
+            <li>Calls the API</li>
+            <li>Saves the result</li>
+            <li>Shows the iframe or image</li>
+          </ul>
+        </div>
+        <div class="lane api">
+          <h3><span class="tag api">Server</span> apps/api</h3>
+          <ul>
+            <li><code>POST /sites/preview</code> reads the site</li>
+            <li><code>POST /sites/image</code> downloads the OG image</li>
+            <li>Blocks private addresses</li>
+          </ul>
+        </div>
+        <div class="lane store">
+          <h3><span class="tag store">Local</span> in the browser</h3>
+          <ul>
+            <li>IndexedDB: the source record</li>
+            <li>OPFS: the cover image file</li>
+          </ul>
+        </div>
+      </div>
+      <p>
+        The server saves <b>nothing</b>. It only reads the site and answers. All
+        data lives in the user's browser.
+      </p>
+
+      <h2>2. Add a website: step by step</h2>
+      <svg
+        viewBox="0 0 860 330"
+        role="img"
+        aria-label="Sequence from browser to API to remote site and local storage"
+      >
+        <rect
+          class="box"
+          x="10"
+          y="10"
+          width="200"
+          height="40"
+          rx="8"
+          stroke="#2563eb"
+        />
+        <text x="110" y="35" text-anchor="middle">Web app</text>
+        <rect
+          class="box"
+          x="330"
+          y="10"
+          width="200"
+          height="40"
+          rx="8"
+          stroke="#16a34a"
+        />
+        <text x="430" y="35" text-anchor="middle">API server</text>
+        <rect
+          class="box"
+          x="650"
+          y="10"
+          width="200"
+          height="40"
+          rx="8"
+          stroke="#9333ea"
+        />
+        <text x="750" y="35" text-anchor="middle">Remote site</text>
+        <line class="line dash" x1="110" y1="50" x2="110" y2="320" />
+        <line class="line dash" x1="430" y1="50" x2="430" y2="320" />
+        <line class="line dash" x1="750" y1="50" x2="750" y2="320" />
+
+        <path class="line" d="M110 85 H425" />
+        <text x="118" y="78">① POST /preview {url}</text>
+        <path class="line" d="M430 120 H745" />
+        <text x="438" y="113">② safeFetch (GET page)</text>
+        <path class="line" d="M750 150 H435" />
+        <text x="520" y="143">③ headers + HTML</text>
+        <path class="line" d="M425 185 H115" />
+        <text x="130" y="178">④ SitePreview JSON (title, og, embed)</text>
+        <path class="line" d="M110 220 H425" />
+        <text x="118" y="213">⑤ POST /image {ogImage url} (if any)</text>
+        <path class="line" d="M430 255 H745" />
+        <text x="438" y="248">⑥ safeFetch (GET image)</text>
+        <path class="line" d="M425 290 H115" />
+        <text x="130" y="283">⑦ image bytes (png, jpeg, webp…)</text>
+      </svg>
+      <p style="color: var(--muted); font-size: 14px">
+        Then the web app writes the image to OPFS and the record to IndexedDB.
+      </p>
+
+      <ol class="steps">
+        <li>
+          <b>User pastes a URL</b> <span class="tag web">web</span>
+          <small
+            ><code>WebsiteUrlDialog</code> → <code>createWebsiteSource()</code>.
+            Zod checks: http(s) only, max 2048 chars, no user name or
+            password.</small
+          >
+        </li>
+        <li>
+          <b>Ask the API for a preview</b> <span class="tag web">web</span>
+          <small
+            ><code>fetchSitePreview(url)</code> sends
+            <code>POST /api/v1/sites/preview</code>.</small
+          >
+        </li>
+        <li>
+          <b>Server reads the page safely</b> <span class="tag api">api</span>
+          <small
+            ><code>safeFetch</code>: blocks private IPs, 8 s timeout, max 5
+            redirects, 1 MB body.</small
+          >
+        </li>
+        <li>
+          <b>Server builds the preview</b> <span class="tag api">api</span>
+          <small
+            >Title, description, favicon, OG image from the HTML. Then
+            <code>chooseEmbed</code> decides the embed mode (see section
+            3).</small
+          >
+        </li>
+        <li>
+          <b>Download the OG image</b> <span class="tag web">web</span> →
+          <span class="tag api">api</span>
+          <small
+            ><code>fetchSiteImage(ogImage)</code> →
+            <code>POST /sites/image</code>. The browser cannot do this itself
+            because of CORS. The server uses the same
+            <code>safeFetch</code> rules: max 5 MB, only png, jpeg, webp, gif,
+            avif (no SVG). No OG image, or a failed download, is fine: the card
+            shows the site name as text.</small
+          >
+        </li>
+        <li>
+          <b>Save the source</b> <span class="tag store">local</span>
+          <small
+            >Cover image → OPFS (key = source id). Record with
+            <code>kind: 'website'</code> and <code>site: {…}</code> → IndexedDB.
+            If the save fails, the image file is deleted.</small
+          >
+        </li>
+        <li>
+          <b>Show it</b> <span class="tag web">web</span>
+          <small
+            ><code>SourceDetailViewer</code> picks iframe, image, or a
+            message.</small
+          >
+        </li>
+      </ol>
+
+      <h2>3. Source control: can this site be embedded?</h2>
+      <p>
+        "Source control" here means: the server decides <b>how</b> a site may be
+        shown. It returns one <code>embed.mode</code>.
+      </p>
+
+      <svg
+        viewBox="0 0 860 360"
+        role="img"
+        aria-label="Decision tree for embed mode"
+      >
+        <rect
+          class="box"
+          x="320"
+          y="8"
+          width="220"
+          height="40"
+          rx="8"
+          stroke="#16a34a"
+        />
+        <text x="430" y="33" text-anchor="middle">chooseEmbed(url, page)</text>
+
+        <path class="line" d="M430 48 V70" />
+        <rect
+          class="box"
+          x="300"
+          y="70"
+          width="260"
+          height="38"
+          rx="8"
+          stroke="#d97706"
+        />
+        <text x="430" y="94" text-anchor="middle">
+          YouTube / Vimeo / Spotify / Figma?
+        </text>
+        <path class="line" d="M300 89 H150 V120" />
+        <text x="190" y="82">yes</text>
+        <rect
+          class="box"
+          x="30"
+          y="120"
+          width="240"
+          height="46"
+          rx="8"
+          stroke="#16a34a"
+        />
+        <text x="150" y="141" text-anchor="middle" font-weight="700">
+          provider
+        </text>
+        <text x="150" y="157" text-anchor="middle">official embed URL</text>
+
+        <path class="line" d="M430 108 V150" />
+        <text x="438" y="135">no</text>
+        <rect
+          class="box"
+          x="320"
+          y="150"
+          width="220"
+          height="38"
+          rx="8"
+          stroke="#d97706"
+        />
+        <text x="430" y="174" text-anchor="middle">
+          fetch failed or status ≥ 400?
+        </text>
+        <path class="line" d="M540 169 H660 V300" />
+        <text x="560" y="162">yes</text>
+
+        <path class="line" d="M430 188 V220" />
+        <text x="438" y="208">no</text>
+        <rect
+          class="box"
+          x="320"
+          y="220"
+          width="220"
+          height="38"
+          rx="8"
+          stroke="#d97706"
+        />
+        <text x="430" y="244" text-anchor="middle">response is not HTML?</text>
+        <path class="line" d="M540 239 H700 V300" />
+        <text x="560" y="232">yes</text>
+
+        <path class="line" d="M430 258 V285" />
+        <text x="438" y="276">no</text>
+        <rect
+          class="box"
+          x="300"
+          y="285"
+          width="260"
+          height="38"
+          rx="8"
+          stroke="#d97706"
+        />
+        <text x="430" y="309" text-anchor="middle">
+          getFramePolicy allows our app?
+        </text>
+        <path class="line" d="M300 304 H150 V330" />
+        <text x="190" y="297">yes</text>
+        <rect
+          class="box"
+          x="30"
+          y="330"
+          width="240"
+          height="26"
+          rx="8"
+          stroke="#16a34a"
+        />
+        <text x="150" y="348" text-anchor="middle" font-weight="700">
+          iframe
+        </text>
+
+        <rect
+          class="box"
+          x="590"
+          y="300"
+          width="250"
+          height="56"
+          rx="8"
+          stroke="#dc2626"
+        />
+        <text x="715" y="322" text-anchor="middle" font-weight="700">
+          none + reason
+        </text>
+        <text x="715" y="342" text-anchor="middle">
+          x-frame-options · csp · not-html · fetch-failed
+        </text>
+        <path class="line" d="M560 304 H590" />
+        <text x="565" y="297">no</text>
+      </svg>
+
+      <table>
+        <tr>
+          <th>Mode</th>
+          <th>Meaning</th>
+          <th>iframe <code>sandbox</code></th>
+        </tr>
+        <tr>
+          <td><span class="ok">provider</span></td>
+          <td>Known site with an official embed link.</td>
+          <td>
+            <code
+              >allow-scripts allow-same-origin allow-forms allow-popups</code
+            >
+          </td>
+        </tr>
+        <tr>
+          <td><span class="ok">iframe</span></td>
+          <td>The site did not forbid framing.</td>
+          <td>
+            <code>allow-scripts allow-forms allow-popups</code> (no
+            <code>same-origin</code>: stricter)
+          </td>
+        </tr>
+        <tr>
+          <td><span class="no">none</span></td>
+          <td>Cannot be framed. Show an image instead.</td>
+          <td>no iframe</td>
+        </tr>
+      </table>
+
+      <h3 style="margin-top: 24px">How framing is checked</h3>
+      <ul>
+        <li>
+          <code>Content-Security-Policy: frame-ancestors</code> must list our
+          app origin. If it does not → <code>csp</code>.
+        </li>
+        <li>
+          <code>X-Frame-Options: DENY</code> or <code>SAMEORIGIN</code> (or two
+          values that disagree) → <code>x-frame-options</code>.
+        </li>
+        <li>CSP is checked first. No rule at all means allowed.</li>
+      </ul>
+
+      <h2>4. What the viewer shows</h2>
+      <table>
+        <tr>
+          <th>Case</th>
+          <th>User sees</th>
+        </tr>
+        <tr>
+          <td>
+            <code>embed.mode</code> is <code>provider</code> or
+            <code>iframe</code>
+          </td>
+          <td>Live iframe</td>
+        </tr>
+        <tr>
+          <td>mode <code>none</code> and we saved a cover image</td>
+          <td>The cover image (from OPFS)</td>
+        </tr>
+        <tr>
+          <td>mode <code>none</code> and no image</td>
+          <td>"This website cannot be embedded and has no preview image."</td>
+        </tr>
+        <tr>
+          <td>Always</td>
+          <td>"Open original site" link (<code>noopener noreferrer</code>)</td>
+        </tr>
+      </table>
+
+      <h2>5. The data we save</h2>
+      <pre>
+Source {
+  kind: 'website',
+  url:  preview.finalUrl,            // after redirects
+  name: preview.title ?? domain,     // max 120 chars
+  site: {
+    url, finalUrl, domain, title, description, favicon, ogImage,
+    embed: { mode: 'provider'|'iframe', src } | { mode: 'none', reason },
+  },
+  storageKey: cover ? id : null,        // OPFS file name of the OG image
+  width, height, mimeType, sizeBytes    // read from the cover image, or empty
+}</pre>
+      <p>
+        Where it lives: record in <b>IndexedDB</b> (<code>sources</code> store),
+        cover image in <b>OPFS</b> under the same <code>id</code>.
+      </p>
+
+      <h2>6. Safety rules</h2>
+      <div class="card">
+        <ul style="margin: 0; padding-left: 20px">
+          <li>
+            <b>SSRF block:</b> <code>safeFetch</code> uses a guarded DNS lookup.
+            Private and local IPs are refused (<code>400 url-not-allowed</code
+            >).
+          </li>
+          <li>
+            <b>Limits:</b> 8 s timeout, 5 redirects. Page: 1 MB. Image: 5 MB.
+          </li>
+          <li>
+            <b>Image rules:</b> only png, jpeg, webp, gif, avif. No SVG (it can
+            hold scripts). Status must be 2xx.
+          </li>
+          <li>
+            <b>iframe:</b> <code>sandbox</code>, no top navigation,
+            <code>referrerPolicy="no-referrer"</code>.
+          </li>
+          <li>
+            <b>Errors:</b> bad URL → <code>400 invalid-url</code>. Other
+            failures → <code>500 internal</code> or
+            <code>502 image-failed</code>.
+          </li>
+        </ul>
+      </div>
+
+      <h2>7. Not done yet</h2>
+      <p>From <code>docs/site-preview-todo.md</code>:</p>
+      <ul>
+        <li>Rate limit on the endpoints</li>
+        <li>
+          A real page screenshot (needs a headless browser or a screenshot
+          service)
+        </li>
+        <li>
+          Read <code>&lt;meta charset&gt;</code> (some GBK / Shift_JIS titles
+          look broken)
+        </li>
+        <li>
+          More link shapes: YouTube <code>/live/ID</code>, unlisted Vimeo,
+          Spotify <code>/intl-xx/</code>
+        </li>
+        <li>If the API is down, still try the iframe</li>
+        <li>
+          Save <code>embedCheckedAt</code>, and a refresh endpoint to re-check a
+          site
+        </li>
+        <li>
+          Use the pasted-URL result (<code>detectPastedContent</code>) so paste
+          works, not only the dialog
+        </li>
+      </ul>
+
+      <h2>Key files</h2>
+      <table>
+        <tr>
+          <th>File</th>
+          <th>Job</th>
+        </tr>
+        <tr>
+          <td><code>apps/web/src/components/website-url-dialog.tsx</code></td>
+          <td>URL input</td>
+        </tr>
+        <tr>
+          <td><code>apps/web/src/features/sources/source-actions.ts</code></td>
+          <td><code>createWebsiteSource</code>: the main flow</td>
+        </tr>
+        <tr>
+          <td><code>apps/web/src/features/sources/source-media.ts</code></td>
+          <td>
+            <code>fetchSitePreview</code>, <code>fetchSiteImage</code>, OPFS
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <code
+              >apps/web/src/components/source-detail/source-detail-viewer.tsx</code
+            >
+          </td>
+          <td>iframe / image / message</td>
+        </tr>
+        <tr>
+          <td><code>apps/api/src/sites/site-preview-route.ts</code></td>
+          <td><code>/preview</code> and <code>/image</code> routes</td>
+        </tr>
+        <tr>
+          <td><code>apps/api/src/sites/site-preview.ts</code></td>
+          <td>safeFetch, image download, metadata, providers, frame policy</td>
+        </tr>
+      </table>
+    </main>
+  </body>
+</html>

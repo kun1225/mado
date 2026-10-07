@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   compressMedia,
   detectPastedContent,
-  fetchSiteCapture,
+  fetchSiteImage,
   fetchSitePreview,
   fitWithin,
 } from './source-media';
@@ -30,29 +30,48 @@ describe('site API helpers', () => {
     );
   });
 
-  it('returns a WebP file from the capture response', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(new Blob(['image'], { type: 'image/webp' }), {
-          headers: { 'content-type': 'image/webp' },
-        }),
-      ),
+  it('returns the downloaded image as a file', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(new Blob(['image'], { type: 'image/png' }), {
+        headers: { 'content-type': 'image/png' },
+      }),
     );
+    vi.stubGlobal('fetch', fetchMock);
 
-    const file = await fetchSiteCapture('https://example.com');
-    expect(file.name).toBe('website.webp');
-    expect(file.type).toBe('image/webp');
+    const file = await fetchSiteImage('https://example.com/og.png');
+    expect(file.name).toBe('og-image.png');
+    expect(file.type).toBe('image/png');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/sites/image',
+      expect.objectContaining({
+        body: JSON.stringify({ url: 'https://example.com/og.png' }),
+      }),
+    );
   });
 
-  it('rejects failed captures', async () => {
+  it('rejects a failed download', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(new Response(null, { status: 502 })),
     );
 
-    await expect(fetchSiteCapture('https://example.com')).rejects.toThrow(
-      'Could not capture this website.',
+    await expect(fetchSiteImage('https://example.com/og.png')).rejects.toThrow(
+      'Could not download the website image.',
+    );
+  });
+
+  it('rejects a response that is not an image', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response('<html>', { headers: { 'content-type': 'text/html' } }),
+        ),
+    );
+
+    await expect(fetchSiteImage('https://example.com/og.png')).rejects.toThrow(
+      'Invalid website image.',
     );
   });
 });

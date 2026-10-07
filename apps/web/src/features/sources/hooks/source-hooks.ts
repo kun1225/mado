@@ -180,11 +180,6 @@ export function useCreateWebsiteSource() {
   return useMutation({
     mutationKey: CREATE_MUTATION_KEY,
     mutationFn: (input: SiteSourceInput) => createWebsiteSource(input),
-    onSuccess: (source) => {
-      if (source.site?.captureStatus === 'failed') {
-        toast.warning('Website saved without a screenshot.');
-      }
-    },
     onError: (error) => toast.error(toCreateErrorMessage(error)),
     onSettled: (_data, _error, input) =>
       invalidateAfterSourceChange(queryClient, [input.collectionId]),

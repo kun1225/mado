@@ -10,7 +10,7 @@ import type { SiteSourceInput } from './site-source.type';
 import {
   compressMedia,
   deleteMediaFile,
-  fetchSiteCapture,
+  fetchSiteImage,
   fetchSitePreview,
   readMediaFile,
   writeMediaFile,
@@ -124,9 +124,13 @@ export async function createWebsiteSource(
 ): Promise<Source> {
   const { collectionId, url } = newWebsiteSourceSchema.parse(input);
   const preview = await fetchSitePreview(url);
-  const screenshot = preview.ogImage
-    ? null
-    : await fetchSiteCapture(preview.finalUrl).catch(() => null);
+  // The cover is optional: without it, the card shows the site name as text.
+  const cover = preview.ogImage
+    ? await fetchSiteImage(preview.ogImage).catch(() => null)
+    : null;
+  const metadata = cover
+    ? await readMediaMetadata(cover, 'image')
+    : UNKNOWN_METADATA;
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const source: Source = {
@@ -137,30 +141,25 @@ export async function createWebsiteSource(
     tags: [],
     collectionIds: collectionId ? [collectionId] : [],
     kind: 'website',
-    site: {
-      ...preview,
-      captureStatus: screenshot || preview.ogImage ? 'ready' : 'failed',
-    },
-    fileName: screenshot?.name ?? '',
-    mimeType: screenshot?.type ?? '',
-    sizeBytes: screenshot?.size ?? 0,
-    width: screenshot ? 1440 : null,
-    height: screenshot ? 900 : null,
-    durationSeconds: null,
-    storageKey: screenshot ? id : null,
+    site: preview,
+    fileName: cover?.name ?? '',
+    mimeType: cover?.type ?? '',
+    sizeBytes: cover?.size ?? 0,
+    ...metadata,
+    storageKey: cover ? id : null,
     createdAt: now,
     updatedAt: now,
     deletedAt: null,
   };
 
   try {
-    if (screenshot) await writeMediaFile(id, screenshot);
+    if (cover) await writeMediaFile(id, cover);
     const database = await openDatabase();
     const transaction = database.transaction(STORES.sources, 'readwrite');
     transaction.objectStore(STORES.sources).put(source);
     await toCompletion(transaction);
   } catch (error) {
-    if (screenshot) await deleteMediaFile(id);
+    if (cover) await deleteMediaFile(id);
     throw new Error(`Failed to save "${source.name}".`, { cause: error });
   }
 

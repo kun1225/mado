@@ -5,15 +5,14 @@ import https from 'node:https';
 import { BlockList, isIP } from 'node:net';
 import type { Readable } from 'node:stream';
 import zlib from 'node:zlib';
-import { chromium } from 'playwright';
 import type {
   SitePreview,
-  SitePreviewCaptureOptions,
   SitePreviewDependencies,
   SitePreviewEmbed,
   SitePreviewFetchedPage,
   SitePreviewFramePolicy,
   SitePreviewHtmlMetadata,
+  SitePreviewImage,
   SitePreviewSafeFetchErrorCode,
   SitePreviewSafeFetchOptions,
 } from './site-preview-type.js';
@@ -31,6 +30,11 @@ export class SafeFetchError extends Error {
 
 /** Errors that mean "this URL is not allowed", not "this site is down". */
 const REJECTED_CODES = new Set(['blocked-address', 'unsupported-protocol']);
+
+// *** isRejectedUrlError ***
+export function isRejectedUrlError(error: unknown): boolean {
+  return error instanceof SafeFetchError && REJECTED_CODES.has(error.code);
+}
 
 export async function getSitePreview(
   url: URL,
@@ -50,210 +54,76 @@ export async function getSitePreview(
   };
 }
 
-const CAPTURE_TIMEOUT_MS = 20000;
-const MAX_CAPTURE_REQUESTS = 60;
-const MAX_CAPTURE_CONCURRENT_REQUESTS = 8;
-const MAX_CAPTURE_RESOURCE_BYTES = 3 * 1024 * 1024;
-const MAX_CAPTURE_TOTAL_BYTES = 20 * 1024 * 1024;
-
-// *** captureSiteScreenshot ***
-export async function captureSiteScreenshot(
-  url: URL,
-  { allowPrivateAddresses = false }: SitePreviewCaptureOptions = {},
-): Promise<Buffer> {
-  if (
-    (url.protocol !== 'http:' && url.protocol !== 'https:') ||
-    url.username ||
-    url.password
-  ) {
-    throw new SafeFetchError(
-      'unsupported-protocol',
-      'Unsupported URL protocol',
-    );
-  }
-  const host = url.hostname.replace(/^\[|\]$/g, '');
-  if (!allowPrivateAddresses && isIP(host) && isPrivateAddress(host)) {
-    throw new SafeFetchError('blocked-address', 'Private address');
-  }
-
-  const signal = AbortSignal.timeout(CAPTURE_TIMEOUT_MS);
-  const browser = await chromium.launch({
-    channel: 'chromium',
-    headless: true,
-  });
-
-  try {
-    const context = await browser.newContext({
-      viewport: { width: 1440, height: 900 },
-      deviceScaleFactor: 1,
-      javaScriptEnabled: false,
-      serviceWorkers: 'block',
-    });
-    let requests = 0;
-    let activeRequests = 0;
-    let totalBytes = 0;
-    let navigationError: unknown;
-
-    await context.route('**/*', async (route) => {
-      if (
-        route.request().method() !== 'GET' ||
-        requests >= MAX_CAPTURE_REQUESTS ||
-        activeRequests >= MAX_CAPTURE_CONCURRENT_REQUESTS
-      ) {
-        await route.abort();
-        return;
-      }
-
-      requests++;
-      activeRequests++;
-      try {
-        const resource = await fetchCaptureResource(
-          new URL(route.request().url()),
-          signal,
-          allowPrivateAddresses,
-        );
-        totalBytes += resource.body.length;
-        if (totalBytes > MAX_CAPTURE_TOTAL_BYTES) {
-          await route.abort();
-          return;
-        }
-
-        await route.fulfill({
-          status: resource.status,
-          headers: Object.fromEntries(
-            ['content-type', 'location', 'access-control-allow-origin']
-              .map((name) => [name, resource.headers.get(name)])
-              .filter((entry): entry is [string, string] => entry[1] !== null),
-          ),
-          body: resource.body,
-        });
-      } catch (error) {
-        if (route.request().isNavigationRequest() && !navigationError) {
-          navigationError = error;
-        }
-        await route.abort();
-      } finally {
-        activeRequests--;
-      }
-    });
-
-    const page = await context.newPage();
-    const response = await page
-      .goto(url.href, {
-        waitUntil: 'domcontentloaded',
-        timeout: CAPTURE_TIMEOUT_MS,
-      })
-      .catch((error: unknown) => {
-        throw navigationError ?? error;
-      });
-    if (!response?.ok()) throw new Error('Website did not load');
-
-    await page
-      .waitForLoadState('load', { timeout: 2500 })
-      .catch(() => undefined);
-    return await page.screenshot({
-      type: 'webp',
-      quality: 75,
-      scale: 'css',
-      animations: 'disabled',
-      timeout: 3000,
-    });
-  } finally {
-    await browser.close();
-  }
-}
-
-// *** fetchCaptureResource ***
-async function fetchCaptureResource(
-  url: URL,
-  signal: AbortSignal,
-  allowPrivateAddresses: boolean,
-): Promise<{ status: number; headers: Headers; body: Buffer }> {
-  if (
-    (url.protocol !== 'http:' && url.protocol !== 'https:') ||
-    url.username ||
-    url.password
-  ) {
-    throw new SafeFetchError(
-      'unsupported-protocol',
-      'Unsupported URL protocol',
-    );
-  }
-
-  const response = await request(
-    url,
-    signal,
-    allowPrivateAddresses,
-    'identity',
-    '*/*',
-  );
-  const headers = toHeaders(response.headers);
-  const status = response.statusCode ?? 0;
-  const location = headers.get('location');
-  if (REDIRECT_STATUSES.has(status) && location) {
-    if (!URL.canParse(location, url)) {
-      response.destroy();
-      throw new SafeFetchError('unsupported-protocol', 'Unsafe redirect');
-    }
-    const next = new URL(location, url);
-    if (
-      (next.protocol !== 'http:' && next.protocol !== 'https:') ||
-      next.username ||
-      next.password
-    ) {
-      response.destroy();
-      throw new SafeFetchError('unsupported-protocol', 'Unsafe redirect');
-    }
-  }
-  const body = REDIRECT_STATUSES.has(status)
-    ? (response.destroy(), Buffer.alloc(0))
-    : await readCaptureBody(response, headers);
-
-  return { status, headers, body };
-}
-
-// *** readCaptureBody ***
-async function readCaptureBody(
-  response: IncomingMessage,
-  headers: Headers,
-): Promise<Buffer> {
-  const encoding = headers.get('content-encoding')?.trim().toLowerCase() ?? '';
-  const decoder = DECODERS[encoding]?.();
-  if (encoding && encoding !== 'identity' && !decoder) {
-    response.destroy();
-    throw new Error('Unsupported response encoding');
-  }
-
-  const source = decoder ? response.pipe(decoder) : response;
-  const chunks: Buffer[] = [];
-  let size = 0;
-
-  try {
-    for await (const chunk of source) {
-      size += chunk.length;
-      if (size > MAX_CAPTURE_RESOURCE_BYTES)
-        throw new Error('Resource too large');
-      chunks.push(chunk);
-    }
-    return Buffer.concat(chunks);
-  } finally {
-    response.destroy();
-  }
-}
-
 const TIMEOUT_MS = 8000;
 const MAX_REDIRECTS = 5;
 const MAX_BODY_BYTES = 1024 * 1024;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const IMAGE_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+  'image/avif',
+]);
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
 // *** safeFetch ***
 export async function safeFetch(
   startUrl: URL,
+  options: SitePreviewSafeFetchOptions = {},
+): Promise<SitePreviewFetchedPage> {
+  const { res, finalUrl, status, headers } = await followRedirects(
+    startUrl,
+    options,
+  );
+
+  const html = isHtml(headers.get('content-type'))
+    ? await readText(res, headers)
+    : null;
+  if (html === null) res.destroy();
+  return { finalUrl, status, headers, html };
+}
+
+// *** fetchSiteImage ***
+/** Downloads an image from a site, for the browser, which cannot do it because of CORS. */
+export async function fetchSiteImage(
+  startUrl: URL,
+  options: SitePreviewSafeFetchOptions = {},
+): Promise<SitePreviewImage> {
+  const { res, status, headers } = await followRedirects(startUrl, options, {
+    accept: 'image/*',
+    acceptEncoding: 'identity',
+  });
+
+  const type = (headers.get('content-type') ?? '').split(';')[0]!.trim();
+  const isUsable =
+    status >= 200 &&
+    status < 300 &&
+    IMAGE_TYPES.has(type.toLowerCase()) &&
+    !headers.has('content-encoding');
+  if (!isUsable) {
+    res.destroy();
+    throw new Error('Not a usable image');
+  }
+
+  return { type: type.toLowerCase(), body: await readBytes(res) };
+}
+
+// *** followRedirects ***
+/** Sends the request and follows redirects. Every hop passes the address check. */
+async function followRedirects(
+  startUrl: URL,
   {
     timeoutMs = TIMEOUT_MS,
     allowPrivateAddresses = false,
-  }: SitePreviewSafeFetchOptions = {},
-): Promise<SitePreviewFetchedPage> {
+  }: SitePreviewSafeFetchOptions,
+  requestHeaders: RequestHeaders = {},
+): Promise<{
+  res: IncomingMessage;
+  finalUrl: URL;
+  status: number;
+  headers: Headers;
+}> {
   const signal = AbortSignal.timeout(timeoutMs);
   let url = startUrl;
 
@@ -266,7 +136,12 @@ export async function safeFetch(
         );
       }
 
-      const res = await request(url, signal, allowPrivateAddresses);
+      const res = await request(
+        url,
+        signal,
+        allowPrivateAddresses,
+        requestHeaders,
+      );
       const status = res.statusCode ?? 0;
       const headers = toHeaders(res.headers);
 
@@ -280,11 +155,7 @@ export async function safeFetch(
         continue;
       }
 
-      const html = isHtml(headers.get('content-type'))
-        ? await readText(res, headers)
-        : null;
-      if (html === null) res.destroy();
-      return { finalUrl: url, status, headers, html };
+      return { res, finalUrl: url, status, headers };
     }
   } catch (error) {
     if (error instanceof SafeFetchError) throw error;
@@ -298,13 +169,17 @@ export async function safeFetch(
   }
 }
 
+type RequestHeaders = { accept?: string; acceptEncoding?: string };
+
 // *** request ***
 function request(
   url: URL,
   signal: AbortSignal,
   allowPrivate: boolean,
-  acceptEncoding = 'gzip, deflate, br',
-  accept = 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.5',
+  {
+    accept = 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.5',
+    acceptEncoding = 'gzip, deflate, br',
+  }: RequestHeaders,
 ): Promise<IncomingMessage> {
   const host = url.hostname.replace(/^\[|\]$/g, '');
   if (!allowPrivate && isIP(host) && isPrivateAddress(host)) {
@@ -475,6 +350,24 @@ async function readText(
     // Unknown charset label: use utf-8.
   }
   return new TextDecoder(decoderLabel).decode(Buffer.concat(chunks));
+}
+
+// *** readBytes ***
+/** Reads a whole body, and fails when it is over MAX_IMAGE_BYTES. */
+async function readBytes(res: IncomingMessage): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+
+  try {
+    for await (const chunk of res) {
+      size += (chunk as Buffer).length;
+      if (size > MAX_IMAGE_BYTES) throw new Error('Image is too large');
+      chunks.push(chunk as Buffer);
+    }
+    return Buffer.concat(chunks);
+  } finally {
+    res.destroy();
+  }
 }
 
 const EMPTY_METADATA: SitePreviewHtmlMetadata = {

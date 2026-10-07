@@ -4,6 +4,7 @@ import { brotliCompressSync, deflateSync, gzipSync } from 'node:zlib';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
+  fetchSiteImage,
   isPrivateAddress,
   safeFetch,
   SafeFetchError,
@@ -605,5 +606,72 @@ describe('safeFetch', () => {
     await expect(
       safeFetch(new URL('ftp://example.com/')),
     ).rejects.toMatchObject({ code: 'unsupported-protocol' });
+  });
+});
+
+describe('fetchSiteImage', () => {
+  let server: Server;
+  let base: string;
+  const local = { allowPrivateAddresses: true };
+
+  beforeAll(async () => {
+    server = createServer((request, response) => {
+      const path = request.url ?? '/';
+      if (path === '/image') {
+        response.setHeader('content-type', 'image/png');
+        response.end('png-bytes');
+      } else if (path === '/redirect') {
+        response.writeHead(302, { location: '/image' }).end();
+      } else if (path === '/svg') {
+        response.setHeader('content-type', 'image/svg+xml');
+        response.end('<svg></svg>');
+      } else if (path === '/html') {
+        response.setHeader('content-type', 'text/html');
+        response.end('<title>Not an image</title>');
+      } else if (path === '/missing') {
+        response.writeHead(404, { 'content-type': 'image/png' }).end('nope');
+      } else if (path === '/big') {
+        response.setHeader('content-type', 'image/png');
+        response.end(Buffer.alloc(6 * 1024 * 1024));
+      }
+    });
+    await new Promise<void>((resolve) =>
+      server.listen(0, '127.0.0.1', resolve),
+    );
+    base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterAll(() => {
+    server.closeAllConnections();
+    server.close();
+  });
+
+  it('returns the image type and bytes', async () => {
+    const image = await fetchSiteImage(new URL(`${base}/image`), local);
+    expect(image.type).toBe('image/png');
+    expect(image.body.toString()).toBe('png-bytes');
+  });
+
+  it('follows redirects', async () => {
+    const image = await fetchSiteImage(new URL(`${base}/redirect`), local);
+    expect(image.body.toString()).toBe('png-bytes');
+  });
+
+  it.each(['/svg', '/html', '/missing'])('rejects %s', async (path) => {
+    await expect(
+      fetchSiteImage(new URL(`${base}${path}`), local),
+    ).rejects.toThrow('Not a usable image');
+  });
+
+  it('rejects an image over the size limit', async () => {
+    await expect(fetchSiteImage(new URL(`${base}/big`), local)).rejects.toThrow(
+      'Image is too large',
+    );
+  });
+
+  it('refuses private addresses by default', async () => {
+    await expect(
+      fetchSiteImage(new URL(`${base}/image`)),
+    ).rejects.toMatchObject({ code: 'blocked-address' });
   });
 });
