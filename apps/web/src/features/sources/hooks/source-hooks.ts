@@ -248,6 +248,9 @@ export function useDeleteSources() {
   });
 }
 
+// Keeps the toast on one line so "deleted" and Undo stay visible.
+const TRASH_MESSAGE_NAME_MAX = 24;
+
 // *** showUndoDeleteToast ***
 function showUndoDeleteToast(queryClient: QueryClient, sources: Source[]) {
   if (sources.length === 0) return;
@@ -275,8 +278,15 @@ function showUndoDeleteToast(queryClient: QueryClient, sources: Source[]) {
 // *** toTrashMessage ***
 function toTrashMessage(sources: Pick<Source, 'name'>[]): string {
   return sources.length === 1
-    ? `"${sources[0].name}" deleted`
+    ? `"${truncateName(sources[0].name)}" deleted`
     : `${sources.length} saves deleted`;
+}
+
+// *** truncateName ***
+function truncateName(name: string): string {
+  return name.length > TRASH_MESSAGE_NAME_MAX
+    ? `${name.slice(0, TRASH_MESSAGE_NAME_MAX).trimEnd()}…`
+    : name;
 }
 
 export function useRestoreSources() {

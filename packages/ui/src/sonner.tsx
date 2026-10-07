@@ -9,8 +9,19 @@ const TOASTER_STYLE = {
   '--border-radius': 'var(--radius-md)',
 } as React.CSSProperties;
 
+const TOAST_OPTIONS: ToasterProps['toastOptions'] = {
+  style: { paddingBlock: '10px' },
+};
+
 function Toaster(props: ToasterProps) {
-  return <Sonner style={TOASTER_STYLE} position="bottom-center" {...props} />;
+  return (
+    <Sonner
+      style={TOASTER_STYLE}
+      toastOptions={TOAST_OPTIONS}
+      position="bottom-center"
+      {...props}
+    />
+  );
 }
 
 export { toast, Toaster };

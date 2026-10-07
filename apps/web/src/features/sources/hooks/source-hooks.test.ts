@@ -7,6 +7,12 @@ describe('toTrashMessage', () => {
     expect(toTrashMessage([{ name: 'Sunset' }])).toBe('"Sunset" deleted');
   });
 
+  it('shortens a long name with an ellipsis', () => {
+    expect(
+      toTrashMessage([{ name: 'Cole Derochie · Software Designer' }]),
+    ).toBe('"Cole Derochie · Software…" deleted');
+  });
+
   it('counts several sources', () => {
     expect(toTrashMessage([{ name: 'A' }, { name: 'B' }, { name: 'C' }])).toBe(
       '3 saves deleted',
