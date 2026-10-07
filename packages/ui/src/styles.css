@@ -156,6 +156,8 @@
   --z-index-action-bar: 150;
   --z-index-modal-overlay: 199;
   --z-index-modal: 200;
+  /* Menus open from inside a modal, so they sit above it. */
+  --z-index-popover: 205;
   /* Above the modal: a tooltip can label a control inside one. */
   --z-index-tooltip: 210;
   --z-index-router-overlay: 1000;

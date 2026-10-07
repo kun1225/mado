@@ -1,8 +1,19 @@
-import { useState } from 'react';
 import { Folder01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 
+import {
+  MorphDropdownMenu,
+  MorphDropdownMenuContent,
+  MorphDropdownMenuItem,
+  MorphDropdownMenuSeparator,
+  MorphDropdownMenuSub,
+  MorphDropdownMenuSubContent,
+  MorphDropdownMenuSubTrigger,
+  MorphDropdownMenuTrigger,
+} from '@repo/ui/morph-dropdown-menu';
+
 import { useCollections } from '#/features/collections/collection-hooks';
+import type { Collection } from '#/features/collections/collection-types';
 import { useUpdateSource } from '#/features/sources/hooks/source-hooks';
 import type {
   Source,
@@ -14,18 +25,19 @@ import { SourceDetailChip } from './source-detail-chip';
 export function SourceDetailCollections({ source }: { source: Source }) {
   const collectionsQuery = useCollections();
   const updateSourceMutation = useUpdateSource();
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   const collections = collectionsQuery.data ?? [];
   const joined = collections.filter(({ id }) =>
     source.collectionIds.includes(id),
   );
-  const available = collections.filter(
-    ({ id }) => !source.collectionIds.includes(id),
-  );
+  const nodes = buildAvailableTree(collections, source.collectionIds);
 
   function save(input: UpdateSourceInput) {
     updateSourceMutation.mutate({ id: source.id, input });
+  }
+
+  function add(id: string) {
+    save({ addCollectionIds: [id] });
   }
 
   return (
@@ -44,39 +56,97 @@ export function SourceDetailCollections({ source }: { source: Source }) {
           />
         ))}
 
-        <button
-          type="button"
-          aria-expanded={isPickerOpen}
-          onClick={() => setIsPickerOpen((isOpen) => !isOpen)}
-          className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-fg hover:text-fg"
-        >
-          + Add
-        </button>
+        <MorphDropdownMenu>
+          <MorphDropdownMenuTrigger className="h-auto rounded-full px-2.5 py-0.5 text-xs text-muted-fg hover:text-fg">
+            + Add
+          </MorphDropdownMenuTrigger>
+          <MorphDropdownMenuContent align="start">
+            {nodes.length === 0 && (
+              <p className="px-2 py-1.5 text-xs text-muted-fg">
+                {collections.length === 0
+                  ? 'No collections yet.'
+                  : 'In every collection already.'}
+              </p>
+            )}
+            {nodes.map((node) => (
+              <CollectionMenuNode
+                key={node.collection.id}
+                node={node}
+                onAdd={add}
+              />
+            ))}
+          </MorphDropdownMenuContent>
+        </MorphDropdownMenu>
       </div>
-
-      {isPickerOpen && (
-        <ul className="flex max-h-40 flex-col overflow-y-auto rounded-md border border-border p-1">
-          {available.length === 0 && (
-            <li className="px-2 py-1.5 text-xs text-muted-fg">
-              {collections.length === 0
-                ? 'No collections yet.'
-                : 'In every collection already.'}
-            </li>
-          )}
-
-          {available.map((collection) => (
-            <li key={collection.id}>
-              <button
-                type="button"
-                onClick={() => save({ addCollectionIds: [collection.id] })}
-                className="w-full truncate rounded px-2 py-1.5 text-left text-sm hover:bg-muted"
-              >
-                {collection.name}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
     </section>
   );
+}
+
+// *** CollectionMenuNode ***
+
+function CollectionMenuNode({
+  node,
+  onAdd,
+}: {
+  node: CollectionNode;
+  onAdd: (id: string) => void;
+}) {
+  const { collection, children, isAvailable } = node;
+
+  if (children.length === 0) {
+    return (
+      <MorphDropdownMenuItem onClick={() => onAdd(collection.id)}>
+        {collection.name}
+      </MorphDropdownMenuItem>
+    );
+  }
+
+  return (
+    <MorphDropdownMenuSub>
+      <MorphDropdownMenuSubTrigger>
+        {collection.name}
+      </MorphDropdownMenuSubTrigger>
+      <MorphDropdownMenuSubContent>
+        {isAvailable && (
+          <>
+            <MorphDropdownMenuItem onClick={() => onAdd(collection.id)}>
+              {collection.name}
+            </MorphDropdownMenuItem>
+            <MorphDropdownMenuSeparator />
+          </>
+        )}
+        {children.map((child) => (
+          <CollectionMenuNode
+            key={child.collection.id}
+            node={child}
+            onAdd={onAdd}
+          />
+        ))}
+      </MorphDropdownMenuSubContent>
+    </MorphDropdownMenuSub>
+  );
+}
+
+// *** buildAvailableTree ***
+
+type CollectionNode = {
+  collection: Collection;
+  isAvailable: boolean;
+  children: CollectionNode[];
+};
+
+/** Keeps a collection when it, or anything under it, can still be joined. */
+function buildAvailableTree(
+  collections: Collection[],
+  joinedIds: string[],
+  parentId: string | null = null,
+): CollectionNode[] {
+  return collections
+    .filter((collection) => collection.parentId === parentId)
+    .map((collection) => ({
+      collection,
+      isAvailable: !joinedIds.includes(collection.id),
+      children: buildAvailableTree(collections, joinedIds, collection.id),
+    }))
+    .filter((node) => node.isAvailable || node.children.length > 0);
 }

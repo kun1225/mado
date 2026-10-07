@@ -205,7 +205,7 @@ function MorphPopup({
         sideOffset={sideOffset}
         align={align}
         alignOffset={alignOffset}
-        className={cn('isolate z-40', positionerClassName)}
+        className={cn('isolate z-popover', positionerClassName)}
       >
         <Primitive.Popup
           className="group/morph pointer-events-none relative transition-[opacity,filter] duration-middle ease-in-out-circ outline-none data-ending-style:opacity-0 data-ending-style:blur-sm data-starting-style:blur-sm"
