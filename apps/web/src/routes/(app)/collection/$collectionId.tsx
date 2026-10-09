@@ -8,7 +8,10 @@ import { Separator } from '@repo/ui/separator';
 import { toast } from '@repo/ui/sonner';
 
 import { AddSourceButton } from '#/components/add-source-button';
-import { CollectionCard } from '#/components/collection-card';
+import {
+  CollectionCard,
+  CollectionCardSkeletons,
+} from '#/components/collection-card';
 import { CollectionNewCard } from '#/components/collection-new-card';
 import { SourceDropZone } from '#/components/source-drop-zone';
 import { SourceGrid, SourceGridSkeleton } from '#/components/source-grid';
@@ -39,9 +42,8 @@ function CollectionPage() {
   const sourcesQuery = useSources(collectionId);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  // The store is browser-only; reads are quick, so stay blank instead of
-  // flashing a loading line.
-  if (collectionQuery.isPending) return null;
+  // The store is browser-only: show the page shape while it loads.
+  if (collectionQuery.isPending) return <CollectionPageSkeleton />;
   if (collectionQuery.isError) {
     return <CollectionMissing message="Unable to load this collection." />;
   }
@@ -157,9 +159,13 @@ function CollectionPage() {
           onClick={handleCreateChild}
         />
 
-        {childCollectionsQuery.data?.map((child) => (
-          <CollectionCard key={child.id} collection={child} />
-        ))}
+        {childCollectionsQuery.isPending ? (
+          <CollectionCardSkeletons />
+        ) : (
+          childCollectionsQuery.data?.map((child) => (
+            <CollectionCard key={child.id} collection={child} />
+          ))
+        )}
       </section>
 
       <SourceDropZone
@@ -183,6 +189,27 @@ function CollectionPage() {
       </SourceDropZone>
 
       <AddSourceButton collectionId={collectionId} />
+    </div>
+  );
+}
+
+// *** CollectionPageSkeleton ***
+/** Mirrors the loaded page layout, so content replaces it in place. */
+function CollectionPageSkeleton() {
+  return (
+    <div aria-hidden className="flex min-h-svh flex-col pt-16 pb-6">
+      <div className="flex h-11 items-center gap-1">
+        <div className="size-8" />
+        <div className="h-7 w-40 animate-pulse rounded-md bg-muted motion-reduce:animate-none" />
+      </div>
+
+      <Separator className="mt-3" />
+
+      <section className="flex flex-row flex-nowrap gap-4 overflow-y-auto py-6 *:shrink-0">
+        <CollectionCardSkeletons />
+      </section>
+
+      <SourceGridSkeleton />
     </div>
   );
 }
