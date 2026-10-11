@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import type { Collection } from '#/features/collections/collection-types';
 import type { Source } from '#/features/sources/source-types';
+import { getStorageAccount } from '#/features/storage/storage-account';
 
 import type { SearchIndex, SearchResults } from './search-type';
 
@@ -57,7 +58,7 @@ export function searchLibrary(
 // Storage can be blocked (private mode, site data off); search still works without it.
 export function readStoredRecentSearches() {
   try {
-    return localStorage.getItem(RECENT_STORAGE_KEY);
+    return localStorage.getItem(getRecentStorageKey());
   } catch {
     return null;
   }
@@ -65,7 +66,7 @@ export function readStoredRecentSearches() {
 
 export function storeRecentSearches(queries: string[]) {
   try {
-    localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(queries));
+    localStorage.setItem(getRecentStorageKey(), JSON.stringify(queries));
   } catch (error) {
     console.error('Failed to save recent searches', error);
   }
@@ -96,4 +97,10 @@ export function parseRecentSearches(raw: string | null) {
   } catch {
     return EMPTY_RECENT;
   }
+}
+
+// *** getRecentStorageKey ***
+function getRecentStorageKey() {
+  const account = getStorageAccount();
+  return account ? `${RECENT_STORAGE_KEY}:${account}` : RECENT_STORAGE_KEY;
 }

@@ -1,3 +1,5 @@
+import { getStorageAccount } from './storage-account';
+
 const DATABASE_NAME = 'mado';
 const DATABASE_VERSION = 3;
 
@@ -9,9 +11,55 @@ export const STORES = {
 export const SOURCES_COLLECTION_INDEX = 'collectionIds';
 const LEGACY_SOURCES_COLLECTION_INDEX = 'collectionId';
 
-function openCurrentDatabase(): Promise<IDBDatabase> {
+const databases = new Map<string, Promise<IDBDatabase>>();
+
+export function openDatabase(): Promise<IDBDatabase> {
+  const name = getDatabaseName();
+  const existing = databases.get(name);
+  if (existing) return existing;
+
+  const databasePromise = new Promise<IDBDatabase>((resolve, reject) => {
+    const request = indexedDB.open(name, DATABASE_VERSION);
+
+    request.onupgradeneeded = (event) => {
+      const database = request.result;
+      const upgrade = request.transaction;
+
+      if (!database.objectStoreNames.contains(STORES.collections)) {
+        database.createObjectStore(STORES.collections, { keyPath: 'id' });
+      }
+
+      if (!database.objectStoreNames.contains(STORES.sources)) {
+        const sources = database.createObjectStore(STORES.sources, {
+          keyPath: 'id',
+        });
+        sources.createIndex(SOURCES_COLLECTION_INDEX, 'collectionIds', {
+          multiEntry: true,
+        });
+      } else if (upgrade && event.oldVersion < 3) {
+        migrateSourcesToV3(upgrade.objectStore(STORES.sources));
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => {
+      if (request.error?.name === 'VersionError') {
+        openCurrentDatabase(name).then(resolve, reject);
+        return;
+      }
+
+      reject(request.error);
+    };
+  });
+
+  databases.set(name, databasePromise);
+  void databasePromise.catch(() => databases.delete(name));
+  return databasePromise;
+}
+
+// *** openCurrentDatabase ***
+function openCurrentDatabase(name: string): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DATABASE_NAME);
+    const request = indexedDB.open(name);
 
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -22,6 +70,7 @@ function openCurrentDatabase(): Promise<IDBDatabase> {
  * v3: a source can sit in many collections and gains name, url, note and tags.
  * Runs inside the upgrade transaction, so it is all-or-nothing.
  */
+// *** migrateSourcesToV3 ***
 function migrateSourcesToV3(sources: IDBObjectStore) {
   if (sources.indexNames.contains(LEGACY_SOURCES_COLLECTION_INDEX)) {
     sources.deleteIndex(LEGACY_SOURCES_COLLECTION_INDEX);
@@ -57,47 +106,6 @@ function migrateSourcesToV3(sources: IDBObjectStore) {
   };
 }
 
-let databasePromise: Promise<IDBDatabase> | undefined;
-
-export function openDatabase(): Promise<IDBDatabase> {
-  if (databasePromise) return databasePromise;
-
-  databasePromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-
-    request.onupgradeneeded = (event) => {
-      const database = request.result;
-      const upgrade = request.transaction;
-
-      if (!database.objectStoreNames.contains(STORES.collections)) {
-        database.createObjectStore(STORES.collections, { keyPath: 'id' });
-      }
-
-      if (!database.objectStoreNames.contains(STORES.sources)) {
-        const sources = database.createObjectStore(STORES.sources, {
-          keyPath: 'id',
-        });
-        sources.createIndex(SOURCES_COLLECTION_INDEX, 'collectionIds', {
-          multiEntry: true,
-        });
-      } else if (upgrade && event.oldVersion < 3) {
-        migrateSourcesToV3(upgrade.objectStore(STORES.sources));
-      }
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => {
-      if (request.error?.name === 'VersionError') {
-        openCurrentDatabase().then(resolve, reject);
-        return;
-      }
-
-      reject(request.error);
-    };
-  });
-
-  return databasePromise;
-}
-
 export function toPromise<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
@@ -111,4 +119,10 @@ export function toCompletion(transaction: IDBTransaction): Promise<void> {
     transaction.onerror = () => reject(transaction.error);
     transaction.onabort = () => reject(transaction.error);
   });
+}
+
+// *** getDatabaseName ***
+function getDatabaseName() {
+  const account = getStorageAccount();
+  return account ? `${DATABASE_NAME}:account:${account}` : DATABASE_NAME;
 }
