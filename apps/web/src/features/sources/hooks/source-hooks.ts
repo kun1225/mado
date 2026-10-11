@@ -142,10 +142,13 @@ export function useCreateSources() {
 
 export function useCreateWebsiteSource() {
   const queryClient = useQueryClient();
+  const { mutate: compress } = useCompressSource();
 
   return useMutation({
     mutationKey: CREATE_MUTATION_KEY,
     mutationFn: (input: SiteSourceInput) => createWebsiteSource(input),
+    // A post can come back as a video, which is shrunk like any other video.
+    onSuccess: (source) => compress(source),
     onError: (error) => toast.error(toCreateErrorMessage(error)),
     onSettled: () => invalidateAfterSourceChange(queryClient),
   });

@@ -6,7 +6,7 @@ Status of the website embed feature. Branch: `feat/site-preview-api`.
 
 - `POST /api/v1/sites/preview` in `apps/api` (`src/sites/`)
 - Embed check: `X-Frame-Options` and CSP `frame-ancestors`
-- Official embeds: YouTube, Vimeo, Spotify, Figma
+- Official embeds: YouTube, Vimeo, Spotify, Figma, X (undocumented `Tweet.html`)
 - Page metadata: title, description, favicon, OG image
 - Safe fetch: blocks private addresses, limits time, size and redirects
 - `POST /api/v1/sites/image`: downloads the OG image for the browser (CORS), saved as the cover

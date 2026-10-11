@@ -15,7 +15,9 @@ import type {
   SitePreviewImage,
   SitePreviewSafeFetchErrorCode,
   SitePreviewSafeFetchOptions,
+  SitePreviewVideo,
 } from './site-preview-type.js';
+import { getXPostId, getXPostVideo } from './x-post.js';
 
 export class SafeFetchError extends Error {
   constructor(
@@ -38,9 +40,18 @@ export function isRejectedUrlError(error: unknown): boolean {
 
 export async function getSitePreview(
   url: URL,
-  { appOrigin, fetchPage = safeFetch }: SitePreviewDependencies,
+  {
+    appOrigin,
+    fetchPage = safeFetch,
+    fetchVideo = (postUrl) =>
+      getXPostVideo(postUrl, { fetchJson: fetchSiteJson }),
+  }: SitePreviewDependencies,
 ): Promise<SitePreview> {
-  const page = await fetchOrNull(url, fetchPage);
+  const [page, video] = await Promise.all([
+    fetchOrNull(url, fetchPage),
+    // The video is extra: without it the source is still a normal website.
+    fetchVideo(url).catch((): SitePreviewVideo | null => null),
+  ]);
   const finalUrl = page?.finalUrl ?? url;
   const metadata =
     page?.html != null ? readHtmlMetadata(page.html, finalUrl) : EMPTY_METADATA;
@@ -51,6 +62,7 @@ export async function getSitePreview(
     domain: finalUrl.hostname.replace(/^www\./, ''),
     ...metadata,
     embed: chooseEmbed(getProviderEmbed(url), page, appOrigin),
+    video,
   };
 }
 
@@ -107,6 +119,21 @@ export async function fetchSiteImage(
   }
 
   return { type: type.toLowerCase(), body: await readBytes(res) };
+}
+
+// *** fetchSiteJson ***
+export async function fetchSiteJson(
+  startUrl: URL,
+  options: SitePreviewSafeFetchOptions = {},
+): Promise<unknown> {
+  const { res, status, headers } = await followRedirects(startUrl, options, {
+    accept: 'application/json',
+  });
+  if (status < 200 || status >= 300) {
+    res.destroy();
+    throw new Error(`Request failed with status ${status}`);
+  }
+  return JSON.parse(await readText(res, headers));
 }
 
 // *** followRedirects ***
@@ -509,7 +536,19 @@ function figma(url: URL): string | null {
   return `https://www.figma.com/embed?embed_host=mado&url=${encodeURIComponent(url.href)}`;
 }
 
-const PROVIDERS = [youtube, vimeo, spotify, figma];
+// *** x ***
+/**
+ * Tweet.html is the page widgets.js puts in its iframe. It is undocumented,
+ * but x.com itself forbids framing, so this is the only way to embed a post.
+ */
+function x(url: URL): string | null {
+  const id = getXPostId(url);
+  return id
+    ? `https://platform.twitter.com/embed/Tweet.html?id=${id}&dnt=true`
+    : null;
+}
+
+const PROVIDERS = [youtube, vimeo, spotify, figma, x];
 
 // *** chooseEmbed ***
 function chooseEmbed(

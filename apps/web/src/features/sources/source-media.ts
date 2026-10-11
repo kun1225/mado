@@ -44,6 +44,22 @@ export async function fetchSitePreview(
   return (await response.json()) as SiteSourcePreview;
 }
 
+// Only hosts that allow CORS and that our API is known to return.
+const SITE_VIDEO_HOSTS = new Set(['video.twimg.com']);
+
+/** Unlike images, the browser downloads this itself: the host allows CORS. */
+export async function downloadSiteVideo(url: string): Promise<File> {
+  if (!SITE_VIDEO_HOSTS.has(new URL(url).hostname)) {
+    throw new Error('Unsupported video host.');
+  }
+  // video.twimg.com answers 403 when the Referer is another site.
+  const response = await fetch(url, { referrerPolicy: 'no-referrer' });
+  if (!response.ok) throw new Error('Could not download the video.');
+  const video = await response.blob();
+  if (video.type !== 'video/mp4') throw new Error('Invalid video.');
+  return new File([video], 'video.mp4', { type: video.type });
+}
+
 /** The API downloads the image for us, because the browser cannot (CORS). */
 export async function fetchSiteImage(url: string): Promise<File> {
   const response = await fetch(`${SITES_API}/image`, {

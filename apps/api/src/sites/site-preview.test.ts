@@ -49,7 +49,29 @@ describe('getSitePreview', () => {
       favicon: 'https://www.example.com/favicon.ico',
       ogImage: 'https://www.example.com/og.png',
       embed: { mode: 'iframe', src: 'https://www.example.com/home' },
+      video: null,
     });
+  });
+
+  it('adds the post video', async () => {
+    const video = { url: 'https://video.twimg.com/a.mp4', title: 'Post' };
+    const result = await getSitePreview(new URL('https://x.com/a/status/1'), {
+      appOrigin: APP,
+      fetchPage: page(),
+      fetchVideo: async () => video,
+    });
+    expect(result.video).toEqual(video);
+  });
+
+  it('keeps the preview when the video lookup fails', async () => {
+    const result = await getSitePreview(new URL('https://x.com/a/status/1'), {
+      appOrigin: APP,
+      fetchPage: page(),
+      fetchVideo: async () => {
+        throw new Error('down');
+      },
+    });
+    expect(result).toMatchObject({ title: 'Example', video: null });
   });
 
   it.each([
@@ -158,12 +180,28 @@ describe('getProviderEmbed', () => {
   });
 
   it.each([
+    ['https://x.com/jack/status/20'],
+    ['https://twitter.com/jack/status/20?s=20'],
+    ['https://www.twitter.com/jack/status/20'],
+    ['https://mobile.x.com/jack/status/20'],
+    ['https://x.com/jack/status/20/photo/1'],
+    ['https://x.com/i/web/status/20'],
+  ])('maps X %s', (url) => {
+    expect(embed(url)).toBe(
+      'https://platform.twitter.com/embed/Tweet.html?id=20&dnt=true',
+    );
+  });
+
+  it.each([
     ['https://www.youtube.com/'],
     ['https://www.youtube.com/watch'],
     ['https://www.youtube.com/watch?v=bad id'],
     ['https://vimeo.com/channels/staffpicks'],
     ['https://open.spotify.com/user/someone'],
     ['https://www.figma.com/community'],
+    ['https://x.com/jack'],
+    ['https://x.com/jack/status/abc'],
+    ['https://notx.com/jack/status/20'],
     ['https://notyoutube.com/watch?v=dQw4w9WgXcQ'],
     ['https://example.com/'],
   ])('returns null for %s', (url) => {

@@ -22,6 +22,9 @@ export const newSourceSchema = z.object({
       (file) => file.size <= MAX_FILE_BYTES,
       `File must be smaller than ${MAX_FILE_MB}MB`,
     ),
+  /** Defaults to the file name. */
+  name: z.string().trim().min(1).optional(),
+  url: z.url({ protocol: /^https?$/ }).optional(),
 });
 
 export type NewSourceInput = z.infer<typeof newSourceSchema>;

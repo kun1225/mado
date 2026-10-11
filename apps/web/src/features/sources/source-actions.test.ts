@@ -9,6 +9,7 @@ let readMediaFile: typeof import('./source-media').readMediaFile;
 let writeMediaFile: typeof import('./source-media').writeMediaFile;
 let fetchSitePreview: typeof import('./source-media').fetchSitePreview;
 let fetchSiteImage: typeof import('./source-media').fetchSiteImage;
+let downloadSiteVideo: typeof import('./source-media').downloadSiteVideo;
 let createWebsiteSource: typeof import('./source-actions').createWebsiteSource;
 let countSourcesByCollection: typeof import('./source-actions').countSourcesByCollection;
 let deleteSource: typeof import('./source-actions').deleteSource;
@@ -39,6 +40,7 @@ vi.mock('./source-media', () => ({
   writeMediaFile: vi.fn(() => Promise.resolve()),
   fetchSitePreview: vi.fn(),
   fetchSiteImage: vi.fn(),
+  downloadSiteVideo: vi.fn(),
 }));
 
 function buildSource(overrides: Partial<Source> & { id: string }): Source {
@@ -118,6 +120,7 @@ beforeEach(async () => {
   ({
     compressMedia,
     deleteMediaFile,
+    downloadSiteVideo,
     fetchSitePreview,
     fetchSiteImage,
     readMediaFile,
@@ -299,6 +302,76 @@ describe('createWebsiteSource', () => {
 
     expect(fetchSiteImage).not.toHaveBeenCalled();
     expect(source.storageKey).toBeNull();
+  });
+
+  describe('when the post has a video', () => {
+    const xPreview = {
+      ...preview,
+      url: 'https://x.com/someone/status/1',
+      finalUrl: 'https://x.com/someone/status/1',
+      domain: 'x.com',
+      video: { url: 'https://video.twimg.com/a.mp4', title: 'A flyout demo' },
+    };
+
+    beforeEach(() => {
+      vi.stubGlobal('document', {
+        createElement: () => ({
+          videoWidth: 1282,
+          videoHeight: 1080,
+          duration: 13.7,
+          onloadedmetadata: null as (() => void) | null,
+          set src(_value: string) {
+            queueMicrotask(() => this.onloadedmetadata?.());
+          },
+        }),
+      });
+      vi.mocked(downloadSiteVideo).mockReset();
+      vi.mocked(fetchSitePreview).mockResolvedValue(xPreview);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('saves the video instead of the website', async () => {
+      vi.mocked(downloadSiteVideo).mockResolvedValue(
+        new File(['video'], 'x-video.mp4', { type: 'video/mp4' }),
+      );
+
+      const source = await createWebsiteSource({
+        collectionId: COLLECTION_ID,
+        url: 'https://x.com/someone/status/1',
+      });
+
+      expect(downloadSiteVideo).toHaveBeenCalledWith(
+        'https://video.twimg.com/a.mp4',
+      );
+      expect(fetchSiteImage).not.toHaveBeenCalled();
+      expect(source).toMatchObject({
+        kind: 'video',
+        name: 'A flyout demo',
+        url: 'https://x.com/someone/status/1',
+        collectionIds: [COLLECTION_ID],
+        mimeType: 'video/mp4',
+        width: 1282,
+        height: 1080,
+        durationSeconds: 13.7,
+        storageKey: source.id,
+      });
+      expect(writeMediaFile).toHaveBeenCalledWith(source.id, expect.any(File));
+    });
+
+    it('keeps the website when the video download fails', async () => {
+      vi.mocked(downloadSiteVideo).mockRejectedValue(new Error('Too large'));
+      vi.mocked(fetchSiteImage).mockRejectedValue(new Error('No image'));
+
+      const source = await createWebsiteSource({
+        collectionId: null,
+        url: 'https://x.com/someone/status/1',
+      });
+
+      expect(source).toMatchObject({ kind: 'website', site: xPreview });
+    });
   });
 
   it('rejects a URL with embedded credentials', async () => {

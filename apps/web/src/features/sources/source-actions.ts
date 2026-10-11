@@ -11,6 +11,7 @@ import type { SiteSourceInput } from './site-source.type';
 import {
   compressMedia,
   deleteMediaFile,
+  downloadSiteVideo,
   fetchSiteImage,
   fetchSitePreview,
   readMediaFile,
@@ -79,7 +80,7 @@ async function readMediaMetadata(
 }
 
 export async function createSource(input: NewSourceInput): Promise<Source> {
-  const { collectionId, file } = newSourceSchema.parse(input);
+  const { collectionId, file, name, url } = newSourceSchema.parse(input);
   const kind = sourceKindSchema.parse(file.type.split('/')[0]);
   const metadata = await readMediaMetadata(file, kind);
   const id = crypto.randomUUID();
@@ -87,8 +88,11 @@ export async function createSource(input: NewSourceInput): Promise<Source> {
 
   const source: Source = {
     id,
-    name: file.name.replace(/\.[^.]+$/, '') || file.name,
-    url: null,
+    name: (name ?? (file.name.replace(/\.[^.]+$/, '') || file.name)).slice(
+      0,
+      MAX_NAME_LENGTH,
+    ),
+    url: url ?? null,
     note: null,
     tags: [],
     collectionIds: collectionId ? [collectionId] : [],
@@ -125,6 +129,18 @@ export async function createWebsiteSource(
 ): Promise<Source> {
   const { collectionId, url } = newWebsiteSourceSchema.parse(input);
   const preview = await fetchSitePreview(url);
+  // A post that cannot be embedded (X) is worth more as its video than as a link card.
+  if (preview.video) {
+    const video = await downloadSiteVideo(preview.video.url).catch(() => null);
+    if (video) {
+      return createSource({
+        collectionId,
+        file: video,
+        name: preview.video.title,
+        url: preview.url,
+      });
+    }
+  }
   // The cover is optional: without it, the card shows the site name as text.
   const cover = preview.ogImage
     ? await fetchSiteImage(preview.ogImage).catch(() => null)

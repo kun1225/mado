@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   compressMedia,
   detectPastedContent,
+  downloadSiteVideo,
   fetchSiteImage,
   fetchSitePreview,
   fitWithin,
@@ -11,6 +12,44 @@ import {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('site API helpers', () => {
+  it('downloads a post video straight from X', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(new Blob(['video'], { type: 'video/mp4' })),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const file = await downloadSiteVideo('https://video.twimg.com/a.mp4');
+
+    expect(fetchMock).toHaveBeenCalledWith('https://video.twimg.com/a.mp4', {
+      referrerPolicy: 'no-referrer',
+    });
+    expect(file.name).toBe('video.mp4');
+    expect(file.type).toBe('video/mp4');
+  });
+
+  it('refuses a video from another host', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      downloadSiteVideo('https://example.com/a.mp4'),
+    ).rejects.toThrow();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    new Response(null, { status: 404 }),
+    new Response(new Blob(['<html>'], { type: 'text/html' })),
+  ])('rejects a response that is not a video', async (response) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+
+    await expect(
+      downloadSiteVideo('https://video.twimg.com/a.mp4'),
+    ).rejects.toThrow();
+  });
+
   it('posts a URL and returns preview metadata', async () => {
     const preview = { title: 'Example', finalUrl: 'https://example.com/' };
     const fetchMock = vi.fn().mockResolvedValue(

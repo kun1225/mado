@@ -15,6 +15,14 @@ export type SitePreview = {
   favicon: string | null;
   ogImage: string | null;
   embed: SitePreviewEmbed;
+  /** The post's first video, for sites that block embedding but share their files (X). */
+  video: SitePreviewVideo | null;
+};
+
+export type SitePreviewVideo = {
+  /** A direct mp4 URL. */
+  url: string;
+  title: string;
 };
 
 export type SitePreviewHtmlMetadata = {
@@ -59,4 +67,9 @@ export type SitePreviewDependencies = {
   /** Origin of the web app that will show the iframe. */
   appOrigin: string;
   fetchPage?: (url: URL) => Promise<SitePreviewFetchedPage>;
+  fetchVideo?: (url: URL) => Promise<SitePreviewVideo | null>;
+};
+
+export type SitePreviewXPostDependencies = {
+  fetchJson: (url: URL) => Promise<unknown>;
 };

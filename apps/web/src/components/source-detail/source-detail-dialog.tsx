@@ -245,6 +245,7 @@ function SourceDetailViewer({ source }: { source: Source }) {
 
   if (source.kind === 'website' && source.site) {
     const embed = source.site.embed;
+    const isTweet = embed.mode !== 'none' && isTweetEmbed(embed.src);
     return (
       <div className="pointer-events-none flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="pointer-events-auto flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-md bg-bg/10">
@@ -263,7 +264,15 @@ function SourceDetailViewer({ source }: { source: Source }) {
               allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               allowFullScreen
               referrerPolicy="no-referrer"
-              className="pointer-events-auto size-full border-0 bg-bg"
+              // Tweet.html always shows a scrollbar track, but its card never scrolls.
+              // widgets.js hides it the same way.
+              scrolling={isTweet ? 'no' : undefined}
+              className={
+                isTweet
+                  ? // The post card is at most 550px wide and has a transparent page around it.
+                    'pointer-events-auto h-full w-full max-w-[550px] border-0'
+                  : 'pointer-events-auto size-full border-0 bg-bg'
+              }
             />
           ) : objectUrl ? (
             <img
@@ -333,4 +342,9 @@ function SourceDetailViewer({ source }: { source: Source }) {
         )}
     </div>
   );
+}
+
+// *** isTweetEmbed ***
+function isTweetEmbed(src: string): boolean {
+  return new URL(src).hostname === 'platform.twitter.com';
 }
