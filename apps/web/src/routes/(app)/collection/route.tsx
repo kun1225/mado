@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 
+import { SearchBar } from '#/components/search-bar';
 import { StorageUnsupportedNotice } from '#/components/storage-unsupported-notice';
 import { useIsSourceStorageSupported } from '#/features/sources/hooks/source-hooks';
 
@@ -13,6 +14,7 @@ function RouteComponent() {
   return (
     <main className="flex min-h-svh flex-col px-edge">
       {isStorageSupported ? <Outlet /> : <StorageUnsupportedNotice />}
+      {isStorageSupported && <SearchBar />}
     </main>
   );
 }

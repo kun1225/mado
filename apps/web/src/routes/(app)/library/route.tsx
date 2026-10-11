@@ -14,6 +14,7 @@ import {
 } from '@repo/ui/liquid-tab';
 import { Separator } from '@repo/ui/separator';
 
+import { SearchBar } from '#/components/search-bar';
 import { StorageUnsupportedNotice } from '#/components/storage-unsupported-notice';
 import { useIsSourceStorageSupported } from '#/features/sources/hooks/source-hooks';
 
@@ -39,7 +40,7 @@ function RouteComponent() {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col px-edge pt-16 pb-6">
+    <main className="flex min-h-dvh flex-col px-edge pt-16 pb-24">
       <LiquidTabs value={activeTab} onValueChange={handleTabChange}>
         <LiquidTabsList>
           <LiquidTabsTrigger
@@ -60,6 +61,7 @@ function RouteComponent() {
       <Separator className="mt-3" />
 
       {isStorageSupported ? <Outlet /> : <StorageUnsupportedNotice />}
+      {isStorageSupported && <SearchBar />}
     </main>
   );
 }

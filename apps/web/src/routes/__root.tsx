@@ -48,6 +48,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   },
 );
 
+const TOAST_OFFSET = { bottom: 88 };
+
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -56,7 +58,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
-        <Toaster />
+        <Toaster offset={TOAST_OFFSET} mobileOffset={TOAST_OFFSET} />
         <Scripts />
       </body>
     </html>

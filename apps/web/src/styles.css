@@ -3,6 +3,9 @@
 
 @source '../../../packages/ui/src';
 
+/* Matches while the bulk selection bar is on the page, so other bottom bars can step aside without sharing selection state. */
+@custom-variant selecting (body:has([data-source-selection-bar]) &);
+
 * {
   box-sizing: border-box;
 }

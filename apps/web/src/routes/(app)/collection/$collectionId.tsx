@@ -110,7 +110,7 @@ function CollectionPage() {
   }
 
   return (
-    <div className="flex min-h-svh flex-col pt-16 pb-6">
+    <div className="flex min-h-svh flex-col pt-16 pb-24">
       <div className="flex h-11 items-center gap-1">
         <Link
           {...(collection.parentId
@@ -197,7 +197,7 @@ function CollectionPage() {
 /** Mirrors the loaded page layout, so content replaces it in place. */
 function CollectionPageSkeleton() {
   return (
-    <div aria-hidden className="flex min-h-svh flex-col pt-16 pb-6">
+    <div aria-hidden className="flex min-h-svh flex-col pt-16 pb-24">
       <div className="flex h-11 items-center gap-1">
         <div className="size-8" />
         <div className="h-7 w-40 animate-pulse rounded-md bg-muted motion-reduce:animate-none" />

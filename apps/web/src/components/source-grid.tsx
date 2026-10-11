@@ -195,7 +195,11 @@ function SourceGridSelectionBar({
 }) {
   return (
     <TooltipProvider delay={120}>
-      <div className="pointer-events-none fixed inset-x-0 bottom-6 z-action-bar flex justify-center px-edge">
+      {/* The search bar watches for this attribute to step aside. */}
+      <div
+        data-source-selection-bar
+        className="pointer-events-none fixed inset-x-0 bottom-6 z-action-bar flex justify-center px-edge"
+      >
         <div className="pointer-events-auto relative flex animate-in items-center gap-1 rounded-full border border-border bg-bg py-1 pr-2 pl-4 shadow-md duration-slow ease-out-back fade-in-0 slide-in-from-bottom-2">
           <p className="text-sm font-medium text-fg">{count} selected</p>
 
