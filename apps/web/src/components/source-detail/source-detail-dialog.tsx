@@ -246,7 +246,7 @@ function SourceDetailViewer({ source }: { source: Source }) {
   if (source.kind === 'website' && source.site) {
     const embed = source.site.embed;
     return (
-      <div className="pointer-events-none flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+      <div className="pointer-events-none flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="pointer-events-auto flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-md bg-bg/10">
           {embed.mode !== 'none' ? (
             <iframe
@@ -274,14 +274,6 @@ function SourceDetailViewer({ source }: { source: Source }) {
             </p>
           )}
         </div>
-        <a
-          href={source.url ?? source.site.finalUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="pointer-events-auto self-start text-sm text-bg underline underline-offset-4"
-        >
-          Open original site
-        </a>
       </div>
     );
   }

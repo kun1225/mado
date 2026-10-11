@@ -1,12 +1,14 @@
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import {
   Cancel01Icon,
   Folder01Icon,
+  PencilEdit02Icon,
   Tag01Icon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from 'cn';
 
+import { Button } from '@repo/ui/button';
 import { Input } from '@repo/ui/input';
 import {
   MorphDropdownMenu,
@@ -86,7 +88,6 @@ function formatBytes(bytes: number): string {
 // *** SourceDetailFields ***
 function SourceDetailFields({ source }: { source: Source }) {
   const name = useSourceField(source, 'name');
-  const url = useSourceField(source, 'url');
   const note = useSourceField(source, 'note');
   const [isNoteOpen, setIsNoteOpen] = useState(false);
 
@@ -109,26 +110,7 @@ function SourceDetailFields({ source }: { source: Source }) {
         <FieldError message={name.error} />
       </label>
 
-      <label className="flex flex-col gap-1.5 text-xs text-muted-fg">
-        URL
-        <Input
-          type="url"
-          inputMode="url"
-          placeholder="https://..."
-          value={source.kind === 'website' ? (source.url ?? '') : url.draft}
-          onChange={
-            source.kind === 'website'
-              ? undefined
-              : (event) => url.setDraft(event.target.value)
-          }
-          onBlur={source.kind === 'website' ? undefined : url.commit}
-          onKeyDown={source.kind === 'website' ? undefined : blurOnEnter}
-          readOnly={source.kind === 'website'}
-          aria-invalid={source.kind !== 'website' && url.error !== null}
-          className="h-9 text-base text-fg md:text-sm"
-        />
-        <FieldError message={url.error} />
-      </label>
+      <SourceDetailUrlField source={source} onKeyDown={blurOnEnter} />
 
       {isNoteOpen || note.draft !== '' ? (
         <label className="flex flex-col gap-1.5 text-xs text-muted-fg">
@@ -157,6 +139,79 @@ function SourceDetailFields({ source }: { source: Source }) {
   );
 }
 
+// *** SourceDetailUrlField ***
+function SourceDetailUrlField({
+  source,
+  onKeyDown,
+}: {
+  source: Source;
+  onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+}) {
+  const inputId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const url = useSourceField(source, 'url');
+  const [isEditing, setIsEditing] = useState(false);
+  // Reads the draft, not `source.url`, so the link does not flash the old URL while the save is in flight.
+  const href = url.draft.trim();
+  const isLink = !isEditing && url.error === null && href !== '';
+
+  return (
+    <div className="flex flex-col gap-1.5 text-xs text-muted-fg">
+      <label htmlFor={inputId}>URL</label>
+      <div className="relative">
+        {/* One input in both modes, so padding and border can animate between them. */}
+        <Input
+          ref={inputRef}
+          id={inputId}
+          type="url"
+          inputMode="url"
+          placeholder="https://..."
+          readOnly={isLink}
+          tabIndex={isLink ? -1 : undefined}
+          value={url.draft}
+          onChange={(event) => url.setDraft(event.target.value)}
+          onFocus={() => setIsEditing(true)}
+          onBlur={() => {
+            url.commit();
+            setIsEditing(false);
+          }}
+          onKeyDown={onKeyDown}
+          aria-invalid={url.error !== null}
+          className={cn(
+            'h-9 text-base text-ellipsis text-fg underline underline-offset-2 transition-[padding,border-color,text-decoration-color] duration-base ease-standard motion-reduce:transition-none md:text-sm',
+            isLink ? 'border-transparent pr-10 pl-0' : 'decoration-transparent',
+          )}
+        />
+        {isLink && (
+          <>
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Open ${href}`}
+              className="absolute inset-y-0 right-10 left-0"
+            />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Edit URL"
+              onClick={() => inputRef.current?.focus()}
+              className="absolute top-1/2 right-0 -translate-y-1/2"
+            >
+              <HugeiconsIcon
+                icon={PencilEdit02Icon}
+                size={16}
+                strokeWidth={1.5}
+              />
+            </Button>
+          </>
+        )}
+      </div>
+      <FieldError message={url.error} />
+    </div>
+  );
+}
+
 // *** FieldError ***
 function FieldError({ message }: { message: string | null }) {
   if (message === null) return null;
@@ -178,6 +233,7 @@ function SourceDetailCollections({ source }: { source: Source }) {
     source.collectionIds.includes(id),
   );
   const nodes = buildAvailableTree(collections, source.collectionIds);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   function save(input: UpdateSourceInput) {
     updateSourceMutation.mutate({ id: source.id, input });
@@ -185,6 +241,7 @@ function SourceDetailCollections({ source }: { source: Source }) {
 
   function add(id: string) {
     save({ addCollectionIds: [id] });
+    setIsMenuOpen(false);
   }
 
   return (
@@ -203,7 +260,7 @@ function SourceDetailCollections({ source }: { source: Source }) {
           />
         ))}
 
-        <MorphDropdownMenu>
+        <MorphDropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
           <MorphDropdownMenuTrigger className="h-auto rounded-full px-2.5 py-0.5 text-xs text-muted-fg hover:text-fg">
             + Add
           </MorphDropdownMenuTrigger>
@@ -238,7 +295,7 @@ function CollectionMenuNode({
   node: CollectionNode;
   onAdd: (id: string) => void;
 }) {
-  const { collection, children } = node;
+  const { collection, isAvailable, children } = node;
 
   if (children.length === 0) {
     return (
@@ -250,7 +307,11 @@ function CollectionMenuNode({
 
   return (
     <MorphDropdownMenuSub>
-      <MorphDropdownMenuSubTrigger>
+      <MorphDropdownMenuSubTrigger
+        onClick={() => {
+          if (isAvailable) onAdd(collection.id);
+        }}
+      >
         {collection.name}
       </MorphDropdownMenuSubTrigger>
       <MorphDropdownMenuSubContent>
