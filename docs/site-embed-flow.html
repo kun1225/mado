@@ -527,8 +527,12 @@
           <td><span class="ok">iframe</span></td>
           <td>The site did not forbid framing.</td>
           <td>
-            <code>allow-scripts allow-forms allow-popups</code> (no
-            <code>same-origin</code>: stricter)
+            <code
+              >allow-scripts allow-same-origin allow-forms allow-popups</code
+            >
+            (without <code>same-origin</code> the page is origin
+            <code>null</code> and its <code>crossorigin</code> CSS/JS fail; our
+            own origin keeps the strict sandbox)
           </td>
         </tr>
         <tr>

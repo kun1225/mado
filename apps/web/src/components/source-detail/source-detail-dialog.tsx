@@ -252,10 +252,13 @@ function SourceDetailViewer({ source }: { source: Source }) {
             <iframe
               src={embed.src}
               title={source.name}
+              // Without allow-same-origin the page runs as origin "null", so its
+              // CORS assets (module scripts, crossorigin CSS) fail to load. It is
+              // only unsafe for a page on our own origin, which could lift the sandbox.
               sandbox={
-                embed.mode === 'provider'
-                  ? 'allow-scripts allow-same-origin allow-forms allow-popups'
-                  : 'allow-scripts allow-forms allow-popups'
+                new URL(embed.src).origin === window.location.origin
+                  ? 'allow-scripts allow-forms allow-popups'
+                  : 'allow-scripts allow-same-origin allow-forms allow-popups'
               }
               allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               allowFullScreen
