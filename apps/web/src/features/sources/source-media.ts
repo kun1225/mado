@@ -10,6 +10,8 @@ import {
   QUALITY_MEDIUM,
 } from 'mediabunny';
 
+import { getStorageAccount } from '#/features/storage/storage-account';
+
 import type { SiteSourcePreview } from './site-source.type';
 import type { Source } from './source-types';
 
@@ -78,7 +80,14 @@ export async function fetchSiteImage(url: string): Promise<File> {
 }
 
 async function getMediaDirectory(): Promise<FileSystemDirectoryHandle> {
-  const root = await navigator.storage.getDirectory();
+  const account = getStorageAccount();
+  let root = await navigator.storage.getDirectory();
+  if (account) {
+    root = await root.getDirectoryHandle(
+      `account-${encodeURIComponent(account)}`,
+      { create: true },
+    );
+  }
   return root.getDirectoryHandle(MEDIA_DIRECTORY, { create: true });
 }
 

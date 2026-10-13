@@ -1,0 +1,28 @@
+{
+  "name": "motion",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "pnpm render:4x5 && pnpm render:9x16",
+    "render:4x5": "remotion render src/index.ts MotionPost-4x5 out/mado-4x5.mp4",
+    "render:9x16": "remotion render src/index.ts MotionPost-9x16 out/mado-9x16.mp4",
+    "still": "remotion still src/index.ts MotionPost-4x5 out/still.png --frame=0",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.535",
+    "@remotion/tailwind-v4": "4.0.535",
+    "@repo/ui": "workspace:*",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "remotion": "4.0.535"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "tailwindcss": "^4.3.3",
+    "typescript": "7.0.2"
+  }
+}

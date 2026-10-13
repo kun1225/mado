@@ -5,6 +5,7 @@ import viteReact, { reactCompilerPreset } from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 const config = defineConfig({
+  server: { proxy: { '/api': 'http://localhost:4000' } },
   resolve: { tsconfigPaths: true },
   plugins: [
     tanstackStart(),
