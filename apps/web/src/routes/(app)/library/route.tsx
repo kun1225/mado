@@ -16,13 +16,9 @@ import { Separator } from '@repo/ui/separator';
 
 import { SearchBar } from '#/components/search-bar';
 import { StorageUnsupportedNotice } from '#/components/storage-unsupported-notice';
-import { loadPageSession } from '#/features/auth/auth-session';
-import { SignOutButton } from '#/features/auth/sign-out-button';
 import { useIsSourceStorageSupported } from '#/features/sources/hooks/source-hooks';
-import { setStorageAccount } from '#/features/storage/storage-account';
 
 export const Route = createFileRoute('/(app)/library')({
-  beforeLoad: ({ location }) => loadPageSession(location.href),
   component: RouteComponent,
 });
 
@@ -32,8 +28,6 @@ const ALL_TAB = '/library';
 type TabPath = typeof ALL_TAB | typeof DELETED_TAB;
 
 function RouteComponent() {
-  const { authUser } = Route.useRouteContext();
-  if (authUser && typeof window !== 'undefined') setStorageAccount(authUser.id);
   const navigate = useNavigate();
   const isStorageSupported = useIsSourceStorageSupported();
   const pathname = useRouterState({
@@ -66,7 +60,6 @@ function RouteComponent() {
 
       <Separator className="mt-3" />
 
-      {authUser && <SignOutButton userId={authUser.id} />}
       {isStorageSupported ? <Outlet /> : <StorageUnsupportedNotice />}
       {isStorageSupported && <SearchBar />}
     </main>

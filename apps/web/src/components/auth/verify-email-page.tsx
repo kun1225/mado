@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 
-import type { AuthVerifyEmailProps } from './auth.type';
+import type { AuthVerifyEmailProps } from '#/features/auth/auth.type';
 
 export function VerifyEmailPage({ verified, error }: AuthVerifyEmailProps) {
   const success = verified && !error;

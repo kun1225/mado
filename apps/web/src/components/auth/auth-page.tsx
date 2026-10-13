@@ -5,22 +5,23 @@ import type { FormEvent } from 'react';
 import { Button } from '@repo/ui/button';
 import { Input } from '@repo/ui/input';
 
-import type { AuthPageProps } from './auth.type';
-import { authClient } from './auth-client';
-import { safeReturnTo } from './auth-session';
+import type { AuthFormResult, AuthPageProps } from '#/features/auth/auth.type';
+import {
+  resendVerificationEmail,
+  submitAuthForm,
+} from '#/features/auth/auth-actions';
 
-const titles = {
-  'sign-in': 'Welcome back',
-  'sign-up': 'Create your account',
-  'forgot-password': 'Forgot your password?',
-  'reset-password': 'Choose a new password',
-};
-
-const labels = {
-  'sign-in': 'Sign in',
-  'sign-up': 'Create account',
-  'forgot-password': 'Send reset link',
-  'reset-password': 'Reset password',
+const copy = {
+  'sign-in': { title: 'Welcome back', submit: 'Sign in' },
+  'sign-up': { title: 'Create your account', submit: 'Create account' },
+  'forgot-password': {
+    title: 'Forgot your password?',
+    submit: 'Send reset link',
+  },
+  'reset-password': {
+    title: 'Choose a new password',
+    submit: 'Reset password',
+  },
 };
 
 export function AuthPage({
@@ -49,77 +50,32 @@ export function AuthPage({
     event.preventDefault();
     if (pending) return;
     const form = new FormData(event.currentTarget);
-    const password = String(form.get('password') ?? '');
+    setNeedsVerification(false);
+    const result = await runAction(() =>
+      submitAuthForm(mode, {
+        name: String(form.get('name') ?? '').trim(),
+        email,
+        password: String(form.get('password') ?? ''),
+        token,
+        returnTo,
+      }),
+    );
+    setNeedsVerification(Boolean(result?.needsVerification));
+  }
+
+  // *** runAction ***
+  async function runAction(action: () => Promise<AuthFormResult>) {
     setPending(true);
     setError('');
     setMessage('');
-    setNeedsVerification(false);
-
     try {
-      if (mode === 'sign-in') {
-        const result = await authClient.signIn.email({ email, password });
-        if (result.error) {
-          setNeedsVerification(result.error.code === 'EMAIL_NOT_VERIFIED');
-          throw new Error(
-            result.error.status === 429
-              ? 'Too many tries. Please wait a minute.'
-              : 'Check your email and password. Verify your email before signing in.',
-          );
-        }
-        window.location.assign(safeReturnTo(returnTo));
-      } else if (mode === 'sign-up') {
-        const result = await authClient.signUp.email({
-          name: String(form.get('name') ?? '').trim(),
-          email,
-          password,
-          callbackURL: `${window.location.origin}/verify-email?verified=true`,
-        });
-        if (
-          result.error &&
-          result.error.code !== 'USER_ALREADY_EXISTS' &&
-          result.error.code !== 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL'
-        ) {
-          throw new Error(
-            result.error.status === 429
-              ? 'Too many tries. Please wait a minute.'
-              : 'Could not create your account. Please try again.',
-          );
-        }
-        setNeedsVerification(true);
-        setMessage(
-          'If this email can be registered, a verification link is on its way. Check your inbox, then sign in.',
-        );
-      } else if (mode === 'forgot-password') {
-        const result = await authClient.requestPasswordReset({
-          email,
-          redirectTo: `${window.location.origin}/reset-password`,
-        });
-        if (result.error)
-          throw new Error(
-            result.error.status === 429
-              ? 'Please wait a minute before requesting another link.'
-              : 'Could not send the link. Please try again.',
-          );
-        setMessage(
-          'If an account uses this email, a reset link is on its way.',
-        );
-      } else {
-        const result = await authClient.resetPassword({
-          newPassword: password,
-          token,
-        });
-        if (result.error)
-          throw new Error(
-            'This reset link may have expired. Please request a new one.',
-          );
-        window.location.replace('/sign-in');
-      }
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : 'Could not connect. Please try again.',
-      );
+      const result = await action();
+      setError(result.error ?? '');
+      setMessage(result.message ?? '');
+      return result;
+    } catch {
+      setError('Could not connect. Please try again.');
+      return undefined;
     } finally {
       setPending(false);
     }
@@ -128,30 +84,8 @@ export function AuthPage({
   // *** resendVerification ***
   async function resendVerification() {
     if (pending || resendCooldown) return;
-    setPending(true);
-    setError('');
-    try {
-      const result = await authClient.sendVerificationEmail({
-        email,
-        callbackURL: `${window.location.origin}/verify-email?verified=true`,
-      });
-      if (result.error)
-        throw new Error(
-          'Could not send the link. Please wait a minute and try again.',
-        );
-      setResendCooldown(true);
-      setMessage(
-        'If this account needs verification, a new link is on its way. You can request another in one minute.',
-      );
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : 'Could not connect. Please try again.',
-      );
-    } finally {
-      setPending(false);
-    }
+    const result = await runAction(() => resendVerificationEmail(email));
+    if (result && !result.error) setResendCooldown(true);
   }
 
   return (
@@ -163,7 +97,7 @@ export function AuthPage({
         <div className="space-y-2">
           <p className="text-sm text-muted-fg">Mado</p>
           <h1 id="auth-title" className="text-2xl font-medium">
-            {titles[mode]}
+            {copy[mode].title}
           </h1>
           <p className="text-sm text-muted-fg">
             {mode === 'sign-up'
@@ -250,7 +184,7 @@ export function AuthPage({
                 </div>
               )}
               <Button type="submit" disabled={pending} className="h-11 w-full">
-                {pending ? 'Please wait…' : labels[mode]}
+                {pending ? 'Please wait…' : copy[mode].submit}
               </Button>
             </fieldset>
           </form>

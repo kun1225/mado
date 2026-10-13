@@ -1,17 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@repo/ui/button';
 
-import type { AuthSignOutButtonProps } from './auth.type';
-import { authClient } from './auth-client';
+import { authClient } from '#/features/auth/auth-client';
 
-export function SignOutButton({ userId }: AuthSignOutButtonProps) {
-  const session = authClient.useSession();
-  useEffect(() => {
-    if (session.isPending || session.error) return;
-    if (session.data?.user.id !== userId) window.location.replace('/sign-in');
-  }, [session.data, session.isPending, session.error, userId]);
+const SIGN_OUT_ERROR = 'Could not sign out. Please try again.';
+
+export function SignOutButton() {
   const queryClient = useQueryClient();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
@@ -23,13 +19,12 @@ export function SignOutButton({ userId }: AuthSignOutButtonProps) {
     setError('');
     try {
       const result = await authClient.signOut();
-      if (result.error)
-        throw new Error('Could not sign out. Please try again.');
+      if (result.error) throw new Error(SIGN_OUT_ERROR);
       await queryClient.cancelQueries();
       queryClient.clear();
       window.location.replace('/sign-in');
     } catch {
-      setError('Could not sign out. Please try again.');
+      setError(SIGN_OUT_ERROR);
       setPending(false);
     }
   }

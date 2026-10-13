@@ -64,6 +64,12 @@ export function readStoredRecentSearches() {
   }
 }
 
+// *** getRecentStorageKey ***
+function getRecentStorageKey() {
+  const account = getStorageAccount();
+  return account ? `${RECENT_STORAGE_KEY}:${account}` : RECENT_STORAGE_KEY;
+}
+
 export function storeRecentSearches(queries: string[]) {
   try {
     localStorage.setItem(getRecentStorageKey(), JSON.stringify(queries));
@@ -97,10 +103,4 @@ export function parseRecentSearches(raw: string | null) {
   } catch {
     return EMPTY_RECENT;
   }
-}
-
-// *** getRecentStorageKey ***
-function getRecentStorageKey() {
-  const account = getStorageAccount();
-  return account ? `${RECENT_STORAGE_KEY}:${account}` : RECENT_STORAGE_KEY;
 }

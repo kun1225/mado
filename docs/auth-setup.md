@@ -5,6 +5,23 @@ Mado uses Express + Better Auth + PostgreSQL + Drizzle. Auth routes live in
 Drizzle tables live in `auth.model.ts`. Better Auth handles its own built-in
 sign-up, sign-in, verification, session, and password-reset endpoints.
 
+## Where the code lives
+
+API (`apps/api/src`):
+
+- `auth/auth.ts` — Better Auth setup and env config (`createAuth`, `readAuthConfig`)
+- `auth/auth.route.ts` + `auth.controller.ts` — Express routes and handlers
+- `auth/auth.model.ts` — Drizzle tables; `database/schema.ts` collects all tables
+
+Web (`apps/web/src`):
+
+- `routes/(auth)/` — sign-in, sign-up, forgot/reset password, verify email pages
+- `routes/(app)/route.tsx` — session check for every app page, sign-out button
+- `features/auth/auth-session.ts` — loads the session, `safeReturnTo`
+- `features/auth/auth-actions.ts` — calls Better Auth for each form
+- `features/storage/storage-account.ts` — current account; scopes local data
+- `components/auth/` — auth page UI
+
 ## Run locally
 
 Use Node.js 24 or later and pnpm. From the project root:

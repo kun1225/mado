@@ -4,11 +4,7 @@ import nodemailer from 'nodemailer';
 import { z } from 'zod';
 
 import * as schema from './auth.model.js';
-import type {
-  AuthConfig,
-  AuthDependencies,
-  AuthEmailInput,
-} from './auth.type.js';
+import type { AuthConfig, AuthDependencies } from './auth.type.js';
 
 export function createAuth({ database, config, mailer }: AuthDependencies) {
   const transport =
@@ -23,9 +19,7 @@ export function createAuth({ database, config, mailer }: AuthDependencies) {
     });
 
   // *** sendAuthEmail ***
-  async function sendAuthEmail({ recipient, url, kind }: AuthEmailInput) {
-    const action =
-      kind === 'verification' ? 'Verify your email' : 'Reset your password';
+  async function sendAuthEmail(recipient: string, url: string, action: string) {
     await transport.sendMail({
       from: config.smtp.from,
       to: recipient,
@@ -53,7 +47,7 @@ export function createAuth({ database, config, mailer }: AuthDependencies) {
       resetPasswordTokenExpiresIn: 1800,
       revokeSessionsOnPasswordReset: true,
       sendResetPassword: ({ user, url }) =>
-        sendAuthEmail({ recipient: user.email, url, kind: 'reset' }),
+        sendAuthEmail(user.email, url, 'Reset your password'),
     },
     emailVerification: {
       sendOnSignUp: true,
@@ -61,7 +55,7 @@ export function createAuth({ database, config, mailer }: AuthDependencies) {
       autoSignInAfterVerification: false,
       expiresIn: 3600,
       sendVerificationEmail: ({ user, url }) =>
-        sendAuthEmail({ recipient: user.email, url, kind: 'verification' }),
+        sendAuthEmail(user.email, url, 'Verify your email'),
     },
     session: { expiresIn: 60 * 60 * 24 * 7, updateAge: 60 * 60 * 24 },
     rateLimit: {

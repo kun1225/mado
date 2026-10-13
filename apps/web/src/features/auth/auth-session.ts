@@ -11,47 +11,59 @@ import {
   setStorageAccount,
 } from '#/features/storage/storage-account';
 
-const authUserSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string(),
-});
-
-export const getAuthSession = createServerFn({ method: 'GET' }).handler(
-  async () => {
-    setResponseHeader('Cache-Control', 'private, no-store');
-    // Development runs as a guest so it works without the auth API.
-    if (isDevAuthBypass()) return null;
-    const origin = process.env.API_ORIGIN ?? 'http://localhost:4000';
-    const response = await fetch(
-      `${origin}/api/auth/get-session?disableRefresh=true`,
-      {
-        headers: { cookie: getRequestHeader('cookie') ?? '' },
-        signal: AbortSignal.timeout(10_000),
-      },
-    );
-    if (!response.ok)
-      throw new Error('Could not check your session. Please try again.');
-    const session: unknown = await response.json();
-    if (session === null) return null;
-    return z.object({ user: authUserSchema }).parse(session).user;
-  },
-);
-
-// *** loadPageSession ***
 // Guests are not sent to sign-in: they keep using this device's local data.
 export async function loadPageSession(returnTo: string) {
   const user = await getAuthSession();
+
   if (typeof window !== 'undefined') {
     const previousAccount = getStorageAccount();
     if (previousAccount && previousAccount !== user?.id) {
       // Reload so pending local writes cannot cross account boundaries.
       throw redirect({ href: safeReturnTo(returnTo), reloadDocument: true });
     }
+
     if (user) setStorageAccount(user.id);
   }
+
   return { authUser: user };
 }
+
+// *** getAuthSession ***
+const getAuthSession = createServerFn({ method: 'GET' }).handler(async () => {
+  setResponseHeader('Cache-Control', 'private, no-store');
+
+  // Development runs as a guest so it works without the auth API.
+  if (isDevAuthBypass()) return null;
+
+  const origin = process.env.API_ORIGIN ?? 'http://localhost:4000';
+  const response = await fetch(
+    `${origin}/api/auth/get-session?disableRefresh=true`,
+    {
+      headers: { cookie: getRequestHeader('cookie') ?? '' },
+      signal: AbortSignal.timeout(10_000),
+    },
+  );
+  if (!response.ok)
+    throw new Error('Could not check your session. Please try again.');
+  const session: unknown = await response.json();
+  if (session === null) return null;
+  return z.object({ user: authUserSchema }).parse(session).user;
+});
+
+// *** isDevAuthBypass ***
+function isDevAuthBypass() {
+  return (
+    import.meta.env.DEV === true &&
+    import.meta.env.VITE_DEV_AUTH_BYPASS !== 'false'
+  );
+}
+
+// *** authUserSchema ***
+const authUserSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+});
 
 // *** safeReturnTo ***
 export function safeReturnTo(value: unknown): string {
@@ -68,10 +80,4 @@ export function safeReturnTo(value: unknown): string {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-// *** isDevAuthBypass ***
-export function isDevAuthBypass() {
-  return (
-    import.meta.env.DEV === true &&
-    import.meta.env.VITE_DEV_AUTH_BYPASS !== 'false'
-  );
-}
+export { isDevAuthBypass };

@@ -33,12 +33,6 @@ export type AuthDependencies = {
   };
 };
 
-export type AuthEmailInput = {
-  recipient: string;
-  url: string;
-  kind: 'verification' | 'reset';
-};
-
 export type AuthLocals = {
   auth: NonNullable<Awaited<ReturnType<AuthInstance['api']['getSession']>>>;
 };

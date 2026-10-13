@@ -56,14 +56,10 @@ export function openDatabase(): Promise<IDBDatabase> {
   return databasePromise;
 }
 
-// *** openCurrentDatabase ***
-function openCurrentDatabase(name: string): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(name);
-
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
+// *** getDatabaseName ***
+function getDatabaseName() {
+  const account = getStorageAccount();
+  return account ? `${DATABASE_NAME}:account:${account}` : DATABASE_NAME;
 }
 
 /**
@@ -106,6 +102,16 @@ function migrateSourcesToV3(sources: IDBObjectStore) {
   };
 }
 
+// *** openCurrentDatabase ***
+function openCurrentDatabase(name: string): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(name);
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
 export function toPromise<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
@@ -119,10 +125,4 @@ export function toCompletion(transaction: IDBTransaction): Promise<void> {
     transaction.onerror = () => reject(transaction.error);
     transaction.onabort = () => reject(transaction.error);
   });
-}
-
-// *** getDatabaseName ***
-function getDatabaseName() {
-  const account = getStorageAccount();
-  return account ? `${DATABASE_NAME}:account:${account}` : DATABASE_NAME;
 }

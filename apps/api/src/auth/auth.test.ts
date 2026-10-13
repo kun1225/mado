@@ -53,7 +53,7 @@ beforeAll(async () => {
     migrationsFolder: fileURLToPath(new URL('../../drizzle', import.meta.url)),
   });
   auth = createAuth({ database, config, mailer: { sendMail } });
-  server = createApp(auth).listen(0);
+  server = createApp({ auth, webOrigin: config.webOrigin }).listen(0);
   await new Promise<void>((resolve, reject) => {
     server.once('listening', resolve);
     server.once('error', reject);
