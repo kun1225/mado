@@ -3,6 +3,7 @@ import {
   countSourcesByCollection,
   softDeleteSourcesInCollection,
 } from '#/features/sources/source-actions';
+import type { Source } from '#/features/sources/source-types';
 import {
   openDatabase,
   STORES,
@@ -139,4 +140,20 @@ export async function deleteCollection(id: string): Promise<Collection> {
   await toCompletion(transaction);
 
   return existing;
+}
+
+const PREVIEW_COUNT = 3;
+
+/** A folder also shows what its child folders hold, the same as its page does. */
+export function pickPreviewSources(
+  collections: Collection[],
+  sources: Source[],
+  collectionId: string,
+): Source[] {
+  const branchIds = new Set(collectBranchIds(collections, collectionId));
+
+  return sources
+    .filter((source) => source.collectionIds.some((id) => branchIds.has(id)))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, PREVIEW_COUNT);
 }

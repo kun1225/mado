@@ -8,6 +8,7 @@ let deleteCollection: typeof import('./collection-actions').deleteCollection;
 let fetchAllCollections: typeof import('./collection-actions').fetchAllCollections;
 let fetchCollection: typeof import('./collection-actions').fetchCollection;
 let updateCollection: typeof import('./collection-actions').updateCollection;
+let pickPreviewSources: typeof import('./collection-actions').pickPreviewSources;
 let openDatabase: typeof import('../storage/database').openDatabase;
 
 beforeEach(async () => {
@@ -20,6 +21,7 @@ beforeEach(async () => {
     fetchAllCollections,
     fetchCollection,
     updateCollection,
+    pickPreviewSources,
   } = await import('./collection-actions'));
 
   ({ openDatabase } = await import('../storage/database'));
@@ -268,5 +270,57 @@ describe('deleteCollection', () => {
 
     expect(source.deletedAt).not.toBeNull();
     expect(source.collectionIds).toEqual([]);
+  });
+});
+
+describe('pickPreviewSources', () => {
+  const collection = (id: string, parentId: string | null = null) => ({
+    id,
+    name: id,
+    parentId,
+    saveCount: 0,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  });
+
+  const source = (id: string, collectionIds: string[], createdAt: string) =>
+    ({ id, collectionIds, createdAt }) as Source;
+
+  it('returns the newest sources first, up to three', () => {
+    const sources = [
+      source('a', ['c1'], '2026-01-01T00:00:00.000Z'),
+      source('b', ['c1'], '2026-01-04T00:00:00.000Z'),
+      source('c', ['c1'], '2026-01-02T00:00:00.000Z'),
+      source('d', ['c1'], '2026-01-03T00:00:00.000Z'),
+    ];
+
+    const ids = pickPreviewSources([collection('c1')], sources, 'c1').map(
+      ({ id }) => id,
+    );
+
+    expect(ids).toEqual(['b', 'd', 'c']);
+  });
+
+  it('includes sources from nested collections and skips other ones', () => {
+    const collections = [
+      collection('c1'),
+      collection('child', 'c1'),
+      collection('c2'),
+    ];
+    const sources = [
+      source('nested', ['child'], '2026-01-02T00:00:00.000Z'),
+      source('other', ['c2'], '2026-01-03T00:00:00.000Z'),
+      source('own', ['c1'], '2026-01-01T00:00:00.000Z'),
+    ];
+
+    const ids = pickPreviewSources(collections, sources, 'c1').map(
+      ({ id }) => id,
+    );
+
+    expect(ids).toEqual(['nested', 'own']);
+  });
+
+  it('returns an empty list for a collection without sources', () => {
+    expect(pickPreviewSources([collection('c1')], [], 'c1')).toEqual([]);
   });
 });

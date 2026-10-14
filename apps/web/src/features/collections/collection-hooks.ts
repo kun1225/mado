@@ -1,12 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { sourceKeys } from '#/features/sources/hooks/source-hooks';
+import {
+  sourceKeys,
+  useAllSources,
+} from '#/features/sources/hooks/source-hooks';
+import type { Source } from '#/features/sources/source-types';
 
 import {
   createCollection,
   deleteCollection,
   fetchAllCollections,
   fetchCollection,
+  pickPreviewSources,
   updateCollection,
 } from './collection-actions';
 import type { Collection, UpdateCollectionInput } from './collection-types';
@@ -44,6 +49,16 @@ export function useCollection(id: string) {
     queryFn: () => fetchCollection(id),
     enabled: isBrowser && Boolean(id),
   });
+}
+
+/** The newest saves in a folder, for its card. Empty while either list loads. */
+export function useCollectionPreviews(collectionId: string): Source[] {
+  const collections = useCollections().data;
+  const sources = useAllSources().data;
+
+  if (!collections || !sources) return [];
+
+  return pickPreviewSources(collections, sources, collectionId);
 }
 
 export function useCreateCollection() {
