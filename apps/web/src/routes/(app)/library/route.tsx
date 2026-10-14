@@ -14,7 +14,7 @@ import {
 } from '@repo/ui/liquid-tab';
 import { Separator } from '@repo/ui/separator';
 
-import { SearchBar } from '#/components/search-bar';
+import { ActionDock } from '#/components/action-dock';
 import { StorageUnsupportedNotice } from '#/components/storage-unsupported-notice';
 import { useIsSourceStorageSupported } from '#/features/sources/hooks/source-hooks';
 
@@ -24,6 +24,9 @@ export const Route = createFileRoute('/(app)/library')({
 
 const DELETED_TAB = '/library/deleted';
 const ALL_TAB = '/library';
+
+// Library saves belong to no collection.
+const LIBRARY_ADD_SOURCE = { collectionId: null };
 
 type TabPath = typeof ALL_TAB | typeof DELETED_TAB;
 
@@ -61,7 +64,11 @@ function RouteComponent() {
       <Separator className="mt-3" />
 
       {isStorageSupported ? <Outlet /> : <StorageUnsupportedNotice />}
-      {isStorageSupported && <SearchBar />}
+      {isStorageSupported && (
+        <ActionDock
+          addSource={activeTab === ALL_TAB ? LIBRARY_ADD_SOURCE : undefined}
+        />
+      )}
     </main>
   );
 }

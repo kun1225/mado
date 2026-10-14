@@ -26,9 +26,10 @@ import {
 import { usePasteSource } from '#/features/sources/hooks/source-interaction-hooks';
 import { ACCEPTED_FILE_TYPES } from '#/features/sources/source-media';
 
-const TOGGLE_SIZE = 56;
-const ACTION_SIZE = 48;
-const ACTION_GAP = 16;
+// Matches the search bar and selection bar height.
+const TOGGLE_SIZE = 48;
+const ACTION_SIZE = 40;
+const ACTION_GAP = 14;
 // Centers each action over the toggle, whatever the sizes.
 const ACTION_INSET = (TOGGLE_SIZE - ACTION_SIZE) / 2;
 
@@ -49,7 +50,7 @@ const ACTIONS = [
 
 type ActionKey = (typeof ACTIONS)[number]['key'];
 
-export function AddSourceButton({
+export function ActionDockAddSource({
   collectionId,
 }: {
   collectionId: string | null;
@@ -134,7 +135,7 @@ export function AddSourceButton({
         className="hidden"
       />
 
-      <div ref={rootRef} className="fixed bottom-6 left-edge z-action-bar">
+      <div ref={rootRef} className="relative shrink-0">
         <Liquid
           blur={8}
           contrast={20}
@@ -171,7 +172,7 @@ export function AddSourceButton({
                           onClick={() => handleAction(action.key)}
                           className={cn(
                             CIRCLE_BUTTON,
-                            'size-12 transition-[scale,opacity]',
+                            'size-10 transition-[scale,opacity]',
                             open ? 'opacity-100' : 'opacity-0',
                           )}
                           style={{
@@ -188,7 +189,7 @@ export function AddSourceButton({
                     >
                       <HugeiconsIcon
                         icon={action.icon}
-                        size={20}
+                        size={18}
                         strokeWidth={1.8}
                         className={cn(ICON_HOVER, 'duration-fast')}
                       />
@@ -210,17 +211,17 @@ export function AddSourceButton({
               aria-expanded={open}
               onClick={() => setOpen((value) => !value)}
               disabled={isCreating}
-              className={cn(CIRCLE_BUTTON, 'size-14 transition-[scale]')}
+              className={cn(CIRCLE_BUTTON, 'size-12 transition-[scale]')}
             >
               {isCreating ? (
                 <span
                   aria-hidden
-                  className="size-6 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none"
+                  className="size-5 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none"
                 />
               ) : (
                 <HugeiconsIcon
                   icon={Add01Icon}
-                  size={32}
+                  size={26}
                   strokeWidth={1.5}
                   className={cn(
                     ICON_HOVER,

@@ -1,6 +1,6 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { createFileRoute, Outlet, useParams } from '@tanstack/react-router';
 
-import { SearchBar } from '#/components/search-bar';
+import { ActionDock } from '#/components/action-dock';
 import { StorageUnsupportedNotice } from '#/components/storage-unsupported-notice';
 import { useIsSourceStorageSupported } from '#/features/sources/hooks/source-hooks';
 
@@ -10,11 +10,14 @@ export const Route = createFileRoute('/(app)/collection')({
 
 function RouteComponent() {
   const isStorageSupported = useIsSourceStorageSupported();
+  const { collectionId } = useParams({ strict: false });
 
   return (
     <main className="flex min-h-svh flex-col px-edge">
       {isStorageSupported ? <Outlet /> : <StorageUnsupportedNotice />}
-      {isStorageSupported && <SearchBar />}
+      {isStorageSupported && (
+        <ActionDock addSource={collectionId ? { collectionId } : undefined} />
+      )}
     </main>
   );
 }

@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 import { toast } from '@repo/ui/sonner';
 
-import { AddSourceButton } from '#/components/add-source-button';
 import {
   CollectionCard,
   CollectionCardSkeletons,
@@ -74,8 +73,6 @@ function Library() {
           </div>
         )}
       </SourceDropZone>
-
-      <AddSourceButton collectionId={null} />
     </>
   );
 }

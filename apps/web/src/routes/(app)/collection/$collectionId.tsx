@@ -7,7 +7,6 @@ import { Input } from '@repo/ui/input';
 import { Separator } from '@repo/ui/separator';
 import { toast } from '@repo/ui/sonner';
 
-import { AddSourceButton } from '#/components/add-source-button';
 import {
   CollectionCard,
   CollectionCardSkeletons,
@@ -187,8 +186,6 @@ function CollectionPage() {
           </div>
         )}
       </SourceDropZone>
-
-      <AddSourceButton collectionId={collectionId} />
     </div>
   );
 }

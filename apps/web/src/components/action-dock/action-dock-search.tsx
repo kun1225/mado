@@ -42,13 +42,13 @@ import {
 import { SOURCE_SEARCH_KEY } from '#/features/sources/hooks/source-interaction-hooks';
 import type { Source } from '#/features/sources/source-types';
 
-const GLASS = 'border border-border bg-bg/80 shadow-md backdrop-blur-xl';
+import { FLOATING_BAR, FLOATING_SURFACE } from '.';
 
 // A destructuring default (`data = []`) makes React Compiler skip the whole component.
 const NO_COLLECTIONS: Collection[] = [];
 const NO_SOURCES: Source[] = [];
 
-export function SearchBar() {
+export function ActionDockSearch() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const rootRef = useRef<HTMLDivElement>(null);
@@ -102,72 +102,56 @@ export function SearchBar() {
   }
 
   return (
-    <div
+    <Command
       ref={rootRef}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
-      className={cn(
-        'pointer-events-none fixed inset-x-0 bottom-6 z-action-bar flex justify-center px-edge',
-        // Phones have no room beside the add button, so the bar starts after it.
-        'max-sm:pl-[calc(var(--spacing-edge)+4.5rem)]',
-        'transition-[translate,opacity,visibility] duration-slow ease-out-quart motion-reduce:duration-fast',
-        // The bulk selection bar takes this spot, so the search bar steps aside while it is on the page.
-        'selecting:invisible selecting:translate-y-[calc(100%+1.5rem)] selecting:opacity-0 motion-reduce:selecting:translate-y-0',
-      )}
+      shouldFilter={false}
+      loop
+      label="Search collections and saves"
+      data-open={isOpen}
+      className="pointer-events-auto relative w-88 max-w-full min-w-0 transition-[width] duration-slow ease-out-quart data-[open=true]:w-120 motion-reduce:transition-none"
     >
-      <Command
-        shouldFilter={false}
-        loop
-        label="Search collections and saves"
-        data-open={isOpen}
-        className="pointer-events-auto relative w-88 max-w-full transition-[width] duration-slow ease-out-quart data-[open=true]:w-120 motion-reduce:transition-none"
-      >
-        {showPanel && (
-          <CommandList
-            onMouseDown={keepInputFocus}
-            className={cn(
-              GLASS,
-              'absolute inset-x-0 bottom-full mb-2 max-h-[min(24rem,60dvh)] origin-bottom animate-in rounded-2xl p-1.5 duration-base ease-out-quart fade-in-0 zoom-in-95 slide-in-from-bottom-2 motion-reduce:animate-none',
-            )}
-          >
-            {hasQuery ? (
-              <SearchBarResults
-                query={query}
-                results={results}
-                onCollection={openCollection}
-                onSource={openSource}
-              />
-            ) : (
-              <SearchBarRecent
-                queries={recent.queries}
-                onPick={setQuery}
-                onRemove={recent.remove}
-                onClear={recent.clear}
-              />
-            )}
-          </CommandList>
-        )}
-
-        <div
+      {showPanel && (
+        <CommandList
+          onMouseDown={keepInputFocus}
           className={cn(
-            GLASS,
-            'flex h-12 items-center gap-1 rounded-full pr-1.5 pl-4',
+            FLOATING_SURFACE,
+            'absolute inset-x-0 bottom-full mb-2 max-h-[min(24rem,60dvh)] origin-bottom animate-in rounded-2xl p-1.5 duration-base ease-out-quart fade-in-0 zoom-in-95 slide-in-from-bottom-2 motion-reduce:animate-none',
           )}
         >
-          <CommandInput
-            ref={inputRef}
-            value={query}
-            onValueChange={setQuery}
-            onFocus={() => setIsOpen(true)}
-            placeholder="Search"
-          />
+          {hasQuery ? (
+            <ActionDockSearchResults
+              query={query}
+              results={results}
+              onCollection={openCollection}
+              onSource={openSource}
+            />
+          ) : (
+            <ActionDockSearchRecent
+              queries={recent.queries}
+              onPick={setQuery}
+              onRemove={recent.remove}
+              onClear={recent.clear}
+            />
+          )}
+        </CommandList>
+      )}
 
-          <Separator orientation="vertical" className="mx-1 h-5" />
+      <div className={FLOATING_BAR}>
+        <CommandInput
+          ref={inputRef}
+          value={query}
+          onValueChange={setQuery}
+          onFocus={() => setIsOpen(true)}
+          placeholder="Search"
+        />
 
-          <SearchBarSettingsButton />
-        </div>
-      </Command>
-    </div>
+        <Separator orientation="vertical" className="mx-1 h-5" />
+
+        <ActionDockSearchSettingsButton />
+      </div>
+    </Command>
   );
 }
 
@@ -195,8 +179,8 @@ function keepInputFocus(event: React.MouseEvent) {
   event.preventDefault();
 }
 
-// *** SearchBarResults ***
-function SearchBarResults({
+// *** ActionDockSearchResults ***
+function ActionDockSearchResults({
   query,
   results,
   onCollection,
@@ -242,7 +226,7 @@ function SearchBarResults({
       {hasSources && (
         <CommandGroup heading="Saves">
           {results.sources.map((source) => (
-            <SearchBarSourceItem
+            <ActionDockSearchSourceItem
               key={source.id}
               source={source}
               onSelect={() => onSource(source)}
@@ -254,8 +238,8 @@ function SearchBarResults({
   );
 }
 
-// *** SearchBarSourceItem ***
-function SearchBarSourceItem({
+// *** ActionDockSearchSourceItem ***
+function ActionDockSearchSourceItem({
   source,
   onSelect,
 }: {
@@ -296,8 +280,8 @@ function SearchBarSourceItem({
   );
 }
 
-// *** SearchBarRecent ***
-function SearchBarRecent({
+// *** ActionDockSearchRecent ***
+function ActionDockSearchRecent({
   queries,
   onPick,
   onRemove,
@@ -352,9 +336,9 @@ function SearchBarRecent({
   );
 }
 
-// *** SearchBarSettingsButton ***
+// *** ActionDockSearchSettingsButton ***
 // Settings do not exist yet; the button holds the spot until they do.
-function SearchBarSettingsButton() {
+function ActionDockSearchSettingsButton() {
   return (
     <TooltipProvider delay={200}>
       <Tooltip>
