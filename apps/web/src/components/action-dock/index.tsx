@@ -6,7 +6,6 @@ import { ActionDockSearch } from './action-dock-search';
 export function ActionDock({
   addSource,
 }: {
-  /** Absent where nothing can be added, such as the trash. */
   addSource?: { collectionId: string | null };
 }) {
   return (
