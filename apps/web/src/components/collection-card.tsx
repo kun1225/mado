@@ -60,26 +60,36 @@ const PREVIEW_OFFSETS: Record<number, number[]> = {
   3: [-1, 0, 1],
 };
 
-/** A folder drawing; the saves sit in its pocket and slide up on hover. */
 function CollectionCardPocket({ previews }: { previews: Source[] }) {
   const offsets = PREVIEW_OFFSETS[previews.length] ?? [];
 
   return (
-    <div aria-hidden className="relative h-24 w-32">
-      {/* The tab joins the back panel at its top-left corner, so that corner stays square. */}
-      <div className="absolute inset-x-0 bottom-0 h-20 rounded-md rounded-tl-none bg-border" />
-      <div className="absolute bottom-20 left-0 h-3 w-12 rounded-t-md bg-border" />
+    <div
+      aria-hidden
+      className="relative h-24 w-28 drop-shadow-md perspective-[400px]"
+    >
+      <div className="absolute inset-x-0 bottom-0 h-18 rounded-md rounded-tl-none bg-border" />
+      <div className="absolute bottom-18 left-0 h-2 w-10 rounded-t-md bg-border" />
 
-      {previews.map((source, index) => (
-        <CollectionCardPreview
-          key={source.id}
-          source={source}
-          offset={offsets[index]}
-          delayMs={index * 40}
-        />
-      ))}
+      <div className="absolute inset-0 [clip-path:inset(-100%_-100%_0_-100%)]">
+        {previews.map((source, index) => (
+          <CollectionCardPreview
+            key={source.id}
+            source={source}
+            offset={offsets[index]}
+            delayMs={index * 40}
+          />
+        ))}
+      </div>
 
-      <div className="absolute inset-x-0 bottom-0 h-14 rounded-md bg-muted shadow-[0_-1px_0_rgb(255_255_255/0.6)_inset,0_-2px_6px_-2px_rgb(0_0_0/0.12)] dark:shadow-[0_0_0_1px_rgb(255_255_255/0.09)]" />
+      <div
+        className={cn(
+          'absolute inset-x-0 bottom-0 h-16 origin-bottom transform-[rotateX(0deg)] rounded-md bg-muted',
+          'transition-transform duration-fast ease-out-quart motion-reduce:transition-none',
+          'group-hover:transform-[rotateX(-28deg)] group-hover:duration-middle',
+          'group-focus-visible:transform-[rotateX(-28deg)]',
+        )}
+      />
     </div>
   );
 }
@@ -108,21 +118,20 @@ function CollectionCardPreview({
           width: size.width,
           height: size.height,
           marginLeft: -size.width / 2,
+          marginBottom: -size.height / 2,
           '--offset': offset,
           '--delay': `${delayMs}ms`,
         } as CSSProperties
       }
       className={cn(
-        // Top-aligned, so every save shows the same strip above the flap whatever its shape.
-        'absolute top-3 left-1/2 overflow-hidden rounded-sm bg-muted outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10',
-        'origin-bottom [translate:calc(var(--offset)*30px)_0] [rotate:calc(var(--offset)*5deg)]',
+        'absolute bottom-16 left-1/2 overflow-hidden rounded-sm border bg-muted outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10',
+        'origin-bottom [translate:calc(var(--offset)*30px)_0] rotate-[calc(var(--offset)*5deg)]',
         'transition-[translate,rotate] duration-fast ease-out-quart motion-reduce:transition-none',
-        'group-hover:[translate:calc(var(--offset)*34px)_-16px] group-hover:[rotate:calc(var(--offset)*9deg)] group-hover:delay-(--delay) group-hover:duration-middle',
-        'group-focus-visible:[translate:calc(var(--offset)*34px)_-16px] group-focus-visible:[rotate:calc(var(--offset)*9deg)]',
+        'group-hover:[translate:calc(var(--offset)*34px)_-25%] group-hover:rotate-[calc(var(--offset)*9deg)] group-hover:delay-(--delay) group-hover:duration-middle',
+        'group-focus-visible:[translate:calc(var(--offset)*34px)_-25%] group-focus-visible:rotate-[calc(var(--offset)*9deg)]',
       )}
     >
       {objectUrl && source.kind === 'video' ? (
-        // A still first frame: a row of folders full of playing videos is noise.
         <video
           src={`${objectUrl}#t=0.1`}
           muted
@@ -142,8 +151,7 @@ function CollectionCardPreview({
 }
 
 // *** fitPreview ***
-const PREVIEW_BOX = { width: 72, height: 64 };
-// A full-page screenshot is a thin strip at its true ratio, so clamp it.
+const PREVIEW_BOX = { width: 64, height: 56 };
 const PREVIEW_RATIO = { min: 0.6, max: 1.8, fallback: 0.75 };
 
 function fitPreview(source: Source): { width: number; height: number } {
