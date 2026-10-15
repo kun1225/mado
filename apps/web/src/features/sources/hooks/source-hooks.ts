@@ -25,6 +25,7 @@ import {
   fetchSourcesByCollection,
   hardDeleteSource,
   hardDeleteSources,
+  replaceSourceFile,
   restoreSources,
   updateSource,
 } from '../source-actions';
@@ -176,6 +177,32 @@ export function useUpdateSource() {
       updateSource(id, input),
     onSuccess: () => invalidateAfterSourceChange(queryClient),
   });
+}
+
+const REPLACE_MUTATION_KEY = ['sources', 'replace'] as const;
+
+export function useReplaceSourceFile() {
+  const queryClient = useQueryClient();
+  const { mutate: compress } = useCompressSource();
+
+  return useMutation({
+    mutationKey: REPLACE_MUTATION_KEY,
+    mutationFn: ({ id, file }: { id: string; file: File }) =>
+      replaceSourceFile(id, file),
+    onSuccess: (source) => compress(source),
+    onError: (error) => toast.error(toCreateErrorMessage(error)),
+    onSettled: () => invalidateAfterSourceChange(queryClient),
+  });
+}
+
+// The toolbar, the viewer and the panel each start replaces, so they must share one pending state.
+export function useIsReplacingSource(id: string | undefined): boolean {
+  const ids = useMutationState({
+    filters: { mutationKey: REPLACE_MUTATION_KEY, status: 'pending' },
+    select: (mutation) => (mutation.state.variables as { id: string }).id,
+  });
+
+  return id !== undefined && ids.includes(id);
 }
 
 export function useDeleteSource() {

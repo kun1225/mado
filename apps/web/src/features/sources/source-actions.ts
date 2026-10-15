@@ -24,9 +24,11 @@ import type {
   UpdateSourceInput,
 } from './source-types';
 import {
+  canEmbedSite,
   MAX_NAME_LENGTH,
   newSourceSchema,
   newWebsiteSourceSchema,
+  replaceSourceFileSchema,
   sourceKindSchema,
   tagsSchema,
   updateSourceSchema,
@@ -201,8 +203,7 @@ export async function createSources(
 // Compression is heavy, so each file waits for the previous file to finish.
 let previousTask: Promise<unknown> = Promise.resolve();
 export function compressSource(source: Source): Promise<Source> {
-  if (source.kind === 'website' || !source.storageKey)
-    return Promise.resolve(source);
+  if (!source.storageKey) return Promise.resolve(source);
   const currentTask = previousTask.then(() => {
     return runCompression(source);
   });
@@ -215,7 +216,7 @@ export function compressSource(source: Source): Promise<Source> {
 
 // *** runCompression ***
 async function runCompression(source: Source): Promise<Source> {
-  if (source.kind === 'website' || !source.storageKey) return source;
+  if (!source.storageKey) return source;
   const storageKey = source.storageKey;
   const stored = await readMediaFile(storageKey);
   // OPFS does not keep MIME type or name, and the compressor needs both.
@@ -226,7 +227,10 @@ async function runCompression(source: Source): Promise<Source> {
 
   if (compressed === original) return source;
 
-  const metadata = await readMediaMetadata(compressed, source.kind);
+  const metadata = await readMediaMetadata(
+    compressed,
+    toStoredMediaKind(source.kind),
+  );
 
   await writeMediaFile(storageKey, compressed);
 
@@ -235,10 +239,11 @@ async function runCompression(source: Source): Promise<Source> {
   const store = transaction.objectStore(STORES.sources);
   const existing = await toPromise<Source | undefined>(store.get(source.id));
 
-  if (!existing) {
-    // Deleted for good while compressing: the new file would be left behind.
+  if (!existing || existing.storageKey !== storageKey) {
+    // Deleted for good, or replaced, while compressing: nothing points at this
+    // file anymore, so it would be left behind.
     await deleteMediaFile(storageKey);
-    return source;
+    return existing ?? source;
   }
 
   const updated: Source = {
@@ -254,6 +259,12 @@ async function runCompression(source: Source): Promise<Source> {
   await toCompletion(transaction);
 
   return updated;
+}
+
+// *** toStoredMediaKind ***
+// A website's stored file is always its thumbnail image.
+function toStoredMediaKind(kind: SourceKind): Exclude<SourceKind, 'website'> {
+  return kind === 'website' ? 'image' : kind;
 }
 
 function toVisibleSources(sources: Source[]): Source[] {
@@ -418,6 +429,114 @@ export async function updateSource(
   await toCompletion(transaction);
 
   return source;
+}
+
+/**
+ * Swaps the stored file but keeps everything the user typed. A site that can
+ * be embedded stays a website and only its thumbnail changes. A site that
+ * cannot is only a picture with a link, so the new file turns it into media.
+ *
+ * The file goes under a new key so a failed save leaves the old file intact,
+ * and so `useMediaObjectUrl` reloads even when the new file has the same size.
+ */
+export async function replaceSourceFile(
+  id: string,
+  input: File,
+): Promise<Source> {
+  const { file } = replaceSourceFileSchema.parse({ file: input });
+  const mediaKind = sourceKindSchema.parse(file.type.split('/')[0]);
+  const existing = await readSource(id);
+  // Fail before writing the file; the save checks again on fresh data.
+  toReplacementKind(existing, mediaKind);
+  const metadata = await readMediaMetadata(file, mediaKind);
+  const storageKey = crypto.randomUUID();
+
+  await writeMediaFile(storageKey, file);
+
+  const { previous, source } = await saveReplacedFile(id, mediaKind, {
+    fileName: file.name,
+    mimeType: file.type,
+    sizeBytes: file.size,
+    ...metadata,
+    storageKey,
+  }).catch(async (error: unknown) => {
+    await deleteMediaFile(storageKey);
+    throw new Error(`Failed to replace "${existing.name}".`, { cause: error });
+  });
+
+  // The replace already worked, so a leftover old file only wastes space.
+  if (previous.storageKey) {
+    await deleteMediaFile(previous.storageKey).catch((error: unknown) => {
+      console.error(
+        `Failed to delete old media file: ${previous.storageKey}`,
+        error,
+      );
+    });
+  }
+
+  return source;
+}
+
+// *** readSource ***
+async function readSource(id: string): Promise<Source> {
+  const database = await openDatabase();
+  const store = database
+    .transaction(STORES.sources)
+    .objectStore(STORES.sources);
+  const existing = await toPromise<Source | undefined>(store.get(id));
+
+  if (!existing) throw new Error(`Source not found: ${id}`);
+  return existing;
+}
+
+// *** toReplacementKind ***
+function toReplacementKind(
+  current: Source,
+  kind: Exclude<SourceKind, 'website'>,
+): SourceKind {
+  if (!canEmbedSite(current)) return kind;
+  if (kind !== 'image') throw new Error('A website thumbnail must be an image');
+  return 'website';
+}
+
+// *** saveReplacedFile ***
+async function saveReplacedFile(
+  id: string,
+  mediaKind: Exclude<SourceKind, 'website'>,
+  fields: Pick<
+    Source,
+    | 'fileName'
+    | 'mimeType'
+    | 'sizeBytes'
+    | 'width'
+    | 'height'
+    | 'durationSeconds'
+    | 'storageKey'
+  >,
+): Promise<{ previous: Source; source: Source }> {
+  const database = await openDatabase();
+  const transaction = database.transaction(STORES.sources, 'readwrite');
+  const store = transaction.objectStore(STORES.sources);
+  // Read again: the user may have edited the name or tags while the file was saving.
+  const previous = await toPromise<Source | undefined>(store.get(id));
+
+  if (!previous) throw new Error(`Source not found: ${id}`);
+
+  // Decided here, not from the first read, so the kind matches the record we write over.
+  const kind = toReplacementKind(previous, mediaKind);
+  // A leftover site preview would make the viewer show media as a website.
+  const { site: _site, ...media } = previous;
+  const source: Source = {
+    ...(kind === 'website' ? previous : media),
+    ...fields,
+    kind,
+    updatedAt: new Date().toISOString(),
+  };
+
+  store.put(source);
+  await toCompletion(transaction);
+
+  return { previous, source };
 }
 
 function applyListChange(

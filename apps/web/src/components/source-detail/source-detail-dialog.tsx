@@ -5,10 +5,12 @@ import {
   Cancel01Icon,
   Delete02Icon,
   Download01Icon,
+  ImageUpload01Icon,
   SidebarRightIcon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import type { KeyboardEvent } from 'react';
+import { cn } from 'cn';
+import type { DragEvent, KeyboardEvent } from 'react';
 
 import { Button } from '@repo/ui/button';
 import {
@@ -23,12 +25,17 @@ import {
   useDeleteSource,
   useMediaObjectUrl,
 } from '#/features/sources/hooks/source-hooks';
-import { resolveSourceDetail } from '#/features/sources/hooks/source-interaction-hooks';
+import {
+  resolveSourceDetail,
+  useIsDraggingFile,
+  useReplaceSourceDropzone,
+} from '#/features/sources/hooks/source-interaction-hooks';
 import {
   downloadSource,
   isEditablePasteTarget,
 } from '#/features/sources/source-media';
 import type { Source } from '#/features/sources/source-types';
+import { canEmbedSite } from '#/features/sources/source-types';
 
 import { SourceDetailPanel } from './source-detail-panel';
 
@@ -52,11 +59,21 @@ export function SourceDetailDialog({
   const lastSource = useRef<Source | undefined>(undefined);
   if (view.source) lastSource.current = view.source;
   const source = view.source ?? lastSource.current;
+  const replace = useReplaceSourceDropzone(source);
+  const isDraggingFile = useIsDraggingFile();
+  // Read once here: the viewer and the panel thumbnail show the same file.
+  const objectUrl = useMediaObjectUrl(
+    source?.storageKey ?? null,
+    source?.mimeType ?? '',
+    source?.sizeBytes ?? 0,
+  );
 
   const previousId = view.previous?.id;
   const nextId = view.next?.id;
 
   if (source === undefined) return null;
+  const isEmbedded = canEmbedSite(source);
+  const replaceLabel = isEmbedded ? 'Replace thumbnail' : 'Replace file';
 
   function handleKeyDown(event: KeyboardEvent) {
     if (view.source === undefined || isEditablePasteTarget(event.target))
@@ -89,43 +106,94 @@ export function SourceDetailDialog({
   }
 
   return (
-    <Dialog
-      open={view.source !== undefined}
-      onOpenChange={(isOpen) => {
-        if (!isOpen) onActiveIdChange(null);
-      }}
-    >
-      <DialogContent
-        className="flex flex-col"
-        onBackdropClick={() => onActiveIdChange(null)}
-        onKeyDown={handleKeyDown}
+    <div className="contents" {...DROP_BLOCKER}>
+      <Dialog
+        open={view.source !== undefined}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) onActiveIdChange(null);
+        }}
       >
-        <DialogTitle className="sr-only">{source.name}</DialogTitle>
+        <DialogContent
+          className="flex flex-col"
+          onBackdropClick={() => onActiveIdChange(null)}
+          onKeyDown={handleKeyDown}
+        >
+          <DialogTitle className="sr-only">{source.name}</DialogTitle>
 
-        <SourceDetailToolbar
-          position={view.index + 1}
-          total={sources.length}
-          onPrevious={
-            previousId ? () => onActiveIdChange(previousId) : undefined
-          }
-          onNext={nextId ? () => onActiveIdChange(nextId) : undefined}
-          onDownload={source.kind === 'website' ? undefined : handleDownload}
-          onDelete={handleDelete}
-          isDeleting={deleteSourceMutation.isPending}
-          isPanelOpen={isPanelOpen}
-          onTogglePanel={() => setIsPanelOpen((isOpen) => !isOpen)}
-        />
-
-        <div className="pointer-events-none relative flex min-h-0 flex-1 px-edge pb-4">
-          <SourceDetailViewer key={`viewer-${source.id}`} source={source} />
-          <SourceDetailPanel
-            key={`panel-${source.id}`}
-            source={source}
-            isOpen={isPanelOpen}
+          <SourceDetailToolbar
+            position={view.index + 1}
+            total={sources.length}
+            onPrevious={
+              previousId ? () => onActiveIdChange(previousId) : undefined
+            }
+            onNext={nextId ? () => onActiveIdChange(nextId) : undefined}
+            onReplace={replace.open}
+            replaceLabel={replaceLabel}
+            isReplacing={replace.isBusy}
+            onDownload={source.kind === 'website' ? undefined : handleDownload}
+            onDelete={handleDelete}
+            isDeleting={deleteSourceMutation.isPending}
+            isPanelOpen={isPanelOpen}
+            onTogglePanel={() => setIsPanelOpen((isOpen) => !isOpen)}
           />
-        </div>
-      </DialogContent>
-    </Dialog>
+
+          <div className="pointer-events-none relative flex min-h-0 flex-1 px-edge pb-4">
+            {/* Only the viewer takes drops, so a file dropped on the panel's fields does not replace the media. */}
+            <div
+              {...replace.getRootProps({
+                className: 'relative flex min-h-0 min-w-0 flex-1',
+              })}
+            >
+              <input {...replace.getInputProps()} />
+              <SourceDetailViewer
+                key={`viewer-${source.id}`}
+                source={source}
+                objectUrl={objectUrl}
+                onAddImage={replace.open}
+              />
+              {(replace.isDragActive || (isEmbedded && isDraggingFile)) && (
+                <SourceDetailDropOverlay
+                  label={`Drop to ${replaceLabel.toLowerCase()}`}
+                />
+              )}
+            </div>
+            <SourceDetailPanel
+              key={`panel-${source.id}`}
+              source={source}
+              thumbnailUrl={objectUrl}
+              isOpen={isPanelOpen}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// The dialog sits inside the library drop zone, which would add any file dropped
+// on it as a new source. preventDefault stops the browser from opening the file.
+const DROP_BLOCKER = {
+  onDragEnter: blockDrag,
+  onDragOver: blockDrag,
+  onDrop: blockDrag,
+};
+
+// *** blockDrag ***
+function blockDrag(event: DragEvent) {
+  event.preventDefault();
+  event.stopPropagation();
+  event.dataTransfer.dropEffect = 'none';
+}
+
+// *** SourceDetailDropOverlay ***
+function SourceDetailDropOverlay({ label }: { label: string }) {
+  return (
+    // Catches the drag over an embedded page, which would otherwise swallow the drop.
+    <div className="pointer-events-auto absolute inset-0 flex items-center justify-center rounded-md border-2 border-dashed border-accent bg-accent/10">
+      <p className="rounded-full bg-accent px-4 py-2 text-sm text-accent-fg">
+        {label}
+      </p>
+    </div>
   );
 }
 
@@ -139,6 +207,9 @@ function SourceDetailToolbar({
   total,
   onPrevious,
   onNext,
+  onReplace,
+  replaceLabel,
+  isReplacing,
   onDownload,
   onDelete,
   isDeleting,
@@ -149,6 +220,9 @@ function SourceDetailToolbar({
   total: number;
   onPrevious?: () => void;
   onNext?: () => void;
+  onReplace: () => void;
+  replaceLabel: string;
+  isReplacing: boolean;
   onDownload?: () => void;
   onDelete: () => void;
   isDeleting: boolean;
@@ -182,6 +256,17 @@ function SourceDetailToolbar({
       </Button>
 
       <div className="ml-auto flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className={TOOLBAR_BUTTON}
+          aria-label={replaceLabel}
+          title={replaceLabel}
+          disabled={isReplacing}
+          onClick={onReplace}
+        >
+          <HugeiconsIcon icon={ImageUpload01Icon} size={18} strokeWidth={1.5} />
+        </Button>
         {onDownload && (
           <Button
             variant="ghost"
@@ -231,15 +316,19 @@ function SourceDetailToolbar({
 }
 
 // *** SourceDetailViewer ***
-function SourceDetailViewer({ source }: { source: Source }) {
-  const objectUrl = useMediaObjectUrl(
-    source.storageKey,
-    source.mimeType,
-    source.sizeBytes,
-  );
+function SourceDetailViewer({
+  source,
+  objectUrl,
+  onAddImage,
+}: {
+  source: Source;
+  objectUrl: string | null;
+  onAddImage: () => void;
+}) {
   // Compression swaps the stored file, which breaks a video that is playing.
   const isCompressing = useCompressingSourceIds().has(source.id);
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const [isEmbedLoaded, setIsEmbedLoaded] = useState(false);
   const isUnplayable = objectUrl !== null && failedUrl === objectUrl;
   const isWaitingForVideo = isCompressing && source.kind === 'video';
 
@@ -248,9 +337,16 @@ function SourceDetailViewer({ source }: { source: Source }) {
     const isTweet = embed.mode !== 'none' && isTweetEmbed(embed.src);
     return (
       <div className="pointer-events-none flex min-h-0 min-w-0 flex-1 flex-col">
-        <div className="pointer-events-auto flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-md bg-bg/10">
+        <div className="pointer-events-auto relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-md bg-bg/10">
+          {embed.mode !== 'none' && !isEmbedLoaded && (
+            <SourceDetailSpinner
+              label={`Loading ${source.name}`}
+              className="absolute inset-0 m-auto"
+            />
+          )}
           {embed.mode !== 'none' ? (
             <iframe
+              onLoad={() => setIsEmbedLoaded(true)}
               src={embed.src}
               title={source.name}
               // Without allow-same-origin the page runs as origin "null", so its
@@ -267,12 +363,14 @@ function SourceDetailViewer({ source }: { source: Source }) {
               // Tweet.html always shows a scrollbar track, but its card never scrolls.
               // widgets.js hides it the same way.
               scrolling={isTweet ? 'no' : undefined}
-              className={
+              className={cn(
+                'transition-opacity duration-300 motion-reduce:transition-none',
+                !isEmbedLoaded && 'opacity-0',
                 isTweet
                   ? // The post card is at most 550px wide and has a transparent page around it.
                     'pointer-events-auto h-full w-full max-w-[550px] border-0'
-                  : 'pointer-events-auto size-full border-0 bg-bg'
-              }
+                  : 'pointer-events-auto size-full border-0 bg-bg',
+              )}
             />
           ) : objectUrl ? (
             <img
@@ -281,9 +379,25 @@ function SourceDetailViewer({ source }: { source: Source }) {
               className="pointer-events-auto size-full object-contain"
             />
           ) : (
-            <p className="max-w-xs text-center text-sm text-bg/70">
-              This website cannot be embedded and has no preview image.
-            </p>
+            <div className="flex max-w-xs flex-col items-center gap-3 text-center text-sm text-bg/70">
+              <p>
+                This website can't be embedded. Add an image or video to show
+                instead.
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={TOOLBAR_BUTTON}
+                onClick={onAddImage}
+              >
+                <HugeiconsIcon
+                  icon={ImageUpload01Icon}
+                  size={16}
+                  strokeWidth={1.5}
+                />
+                Add a file
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -297,16 +411,10 @@ function SourceDetailViewer({ source }: { source: Source }) {
       )}
 
       {isWaitingForVideo && (
-        <div
-          role="status"
-          aria-label={`Optimizing ${source.name}`}
-          className="m-auto flex size-24 items-center justify-center rounded-md bg-bg/10"
-        >
-          <span
-            aria-hidden
-            className="size-6 animate-spin rounded-full border-2 border-bg border-t-transparent motion-reduce:animate-none"
-          />
-        </div>
+        <SourceDetailSpinner
+          label={`Optimizing ${source.name}`}
+          className="m-auto"
+        />
       )}
 
       {isUnplayable && !isCompressing && (
@@ -340,6 +448,31 @@ function SourceDetailViewer({ source }: { source: Source }) {
             className="pointer-events-auto m-auto max-h-full max-w-full object-contain"
           />
         )}
+    </div>
+  );
+}
+
+// *** SourceDetailSpinner ***
+function SourceDetailSpinner({
+  label,
+  className,
+}: {
+  label: string;
+  className?: string;
+}) {
+  return (
+    <div
+      role="status"
+      aria-label={label}
+      className={cn(
+        'flex size-24 items-center justify-center rounded-md bg-bg/10',
+        className,
+      )}
+    >
+      <span
+        aria-hidden
+        className="size-6 animate-spin rounded-full border-2 border-bg border-t-transparent motion-reduce:animate-none"
+      />
     </div>
   );
 }

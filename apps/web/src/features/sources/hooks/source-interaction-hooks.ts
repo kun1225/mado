@@ -12,12 +12,18 @@ import {
 } from '../source-media';
 import type { Source } from '../source-types';
 import {
+  canEmbedSite,
   MAX_FILE_BYTES,
   MAX_FILE_MB,
   updateSourceSchema,
 } from '../source-types';
 
-import { useCreateSources, useUpdateSource } from './source-hooks';
+import {
+  useCreateSources,
+  useIsReplacingSource,
+  useReplaceSourceFile,
+  useUpdateSource,
+} from './source-hooks';
 
 export const SOURCE_SEARCH_KEY = 'source';
 
@@ -28,7 +34,6 @@ export type SourceDetailView = {
   next: Source | undefined;
 };
 
-/** Finds the open source and its neighbours in the list the grid is showing. */
 export function resolveSourceDetail(
   sources: Source[],
   activeId: string | null,
@@ -310,6 +315,90 @@ export function useSourceDropzone(collectionId: string | null) {
   });
 
   return { getRootProps, isDragActive };
+}
+
+const THUMBNAIL_ACCEPT = { 'image/*': [] };
+
+export function useReplaceSourceDropzone(source: Source | undefined) {
+  const { mutate: replaceFile } = useReplaceSourceFile();
+  const isBusy = useIsReplacingSource(source?.id) || source === undefined;
+  // Only an embedded site keeps its page; anything else is swapped for media.
+  const isThumbnail = source !== undefined && canEmbedSite(source);
+
+  function handleDrop(files: File[], rejections: FileRejection[]) {
+    if (isBusy) {
+      toast.error('Wait for the current replace to finish.');
+      return;
+    }
+    if (rejections.length > 0) {
+      toast.error(toReplaceRejectionMessage(isThumbnail));
+    }
+    if (files.length > 0) {
+      replaceFile({ id: source.id, file: files[0] });
+    }
+  }
+
+  const { getRootProps, getInputProps, open, isDragActive } = useDropzone({
+    accept: isThumbnail ? THUMBNAIL_ACCEPT : DROP_ACCEPT,
+    maxSize: MAX_FILE_BYTES,
+    multiple: false,
+    // Not `disabled`: that removes the drag handlers, so the drop would reach the library zone.
+    onDrop: handleDrop,
+    noClick: true,
+    noKeyboard: true,
+    noPaste: true,
+    // The dialog renders inside the library drop zone, which would add the file too.
+    noDragEventsBubbling: true,
+  });
+
+  return { getRootProps, getInputProps, open, isDragActive, isBusy };
+}
+
+// Drag events keep firing while a drag is alive, so a quiet gap means it ended
+// (dropped, cancelled with Esc, or left the window).
+const DRAG_IDLE_MS = 300;
+
+/**
+ * True while a file is dragged anywhere over the window. An iframe swallows
+ * drag events, so a drop zone over it must appear before the drag gets there.
+ */
+export function useIsDraggingFile(): boolean {
+  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    let idleTimer: ReturnType<typeof setTimeout> | undefined;
+
+    function handleDrag(event: DragEvent) {
+      if (!event.dataTransfer?.types.includes('Files')) return;
+      setIsDragging(true);
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => setIsDragging(false), DRAG_IDLE_MS);
+    }
+    function handleDrop() {
+      clearTimeout(idleTimer);
+      setIsDragging(false);
+    }
+
+    // Capture, because drop zones stop these events from bubbling up to window.
+    window.addEventListener('dragenter', handleDrag, true);
+    window.addEventListener('dragover', handleDrag, true);
+    window.addEventListener('drop', handleDrop, true);
+    return () => {
+      clearTimeout(idleTimer);
+      window.removeEventListener('dragenter', handleDrag, true);
+      window.removeEventListener('dragover', handleDrag, true);
+      window.removeEventListener('drop', handleDrop, true);
+    };
+  }, []);
+
+  return isDragging;
+}
+
+// *** toReplaceRejectionMessage ***
+function toReplaceRejectionMessage(isThumbnail: boolean): string {
+  const allowed = isThumbnail ? 'one image' : 'one image or video';
+
+  return `Drop ${allowed} up to ${MAX_FILE_MB}MB to replace it.`;
 }
 
 // *** toRejectionMessage ***

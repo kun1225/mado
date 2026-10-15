@@ -20,6 +20,7 @@ let fetchSourcesByCollection: typeof import('./source-actions').fetchSourcesByCo
 let hardDeleteSource: typeof import('./source-actions').hardDeleteSource;
 let hardDeleteSources: typeof import('./source-actions').hardDeleteSources;
 let restoreSources: typeof import('./source-actions').restoreSources;
+let replaceSourceFile: typeof import('./source-actions').replaceSourceFile;
 let updateSource: typeof import('./source-actions').updateSource;
 let updateSourceSchema: typeof import('./source-types').updateSourceSchema;
 let deleteMediaFile: typeof import('./source-media').deleteMediaFile;
@@ -114,6 +115,7 @@ beforeEach(async () => {
     fetchSourcesByCollection,
     hardDeleteSource,
     hardDeleteSources,
+    replaceSourceFile,
     restoreSources,
     updateSource,
   } = await import('./source-actions'));
@@ -861,5 +863,243 @@ describe('compressSource', () => {
     await compressSource(buildSource({ id: 'gone' }));
 
     expect(deleteMediaFile).toHaveBeenCalledWith('gone');
+  });
+
+  it('shrinks a website thumbnail and keeps it a website', async () => {
+    const source = buildSource({ id: 'w', kind: 'website' });
+    await seedSources([source]);
+    vi.mocked(compressMedia).mockResolvedValue(smaller);
+
+    const result = await compressSource(source);
+
+    expect(writeMediaFile).toHaveBeenCalledWith('w', smaller);
+    expect(result).toMatchObject({
+      kind: 'website',
+      mimeType: 'image/webp',
+      width: 1280,
+      height: 960,
+    });
+  });
+});
+
+describe('replaceSourceFile', () => {
+  const NEW_KEY = '22222222-2222-4222-8222-222222222222';
+  const photo = new File(['new photo'], 'new.jpg', { type: 'image/jpeg' });
+
+  beforeEach(() => {
+    vi.mocked(writeMediaFile).mockReset();
+    vi.mocked(writeMediaFile).mockResolvedValue(undefined);
+    vi.mocked(deleteMediaFile).mockClear();
+    vi.spyOn(crypto, 'randomUUID').mockReturnValue(NEW_KEY);
+    vi.stubGlobal(
+      'Image',
+      class {
+        naturalWidth = 1920;
+        naturalHeight = 1080;
+        onload: (() => void) | null = null;
+        set src(_value: string) {
+          queueMicrotask(() => this.onload?.());
+        }
+      },
+    );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('swaps the file under a new key and keeps the user fields', async () => {
+    await seedSources([
+      buildSource({ id: 'a', name: 'kept', tags: ['blue'], note: 'hi' }),
+    ]);
+
+    const result = await replaceSourceFile('a', photo);
+
+    expect(writeMediaFile).toHaveBeenCalledWith(NEW_KEY, photo);
+    expect(deleteMediaFile).toHaveBeenCalledWith('a');
+    expect(result).toMatchObject({
+      name: 'kept',
+      tags: ['blue'],
+      note: 'hi',
+      collectionIds: [COLLECTION_ID],
+      kind: 'image',
+      storageKey: NEW_KEY,
+      fileName: 'new.jpg',
+      mimeType: 'image/jpeg',
+      sizeBytes: photo.size,
+      width: 1920,
+      height: 1080,
+    });
+    expect((await fetchAllSources())[0]).toEqual(result);
+  });
+
+  it('turns an image into a video', async () => {
+    vi.stubGlobal('document', {
+      createElement: () => {
+        const video = {
+          videoWidth: 640,
+          videoHeight: 360,
+          duration: 12,
+          onloadedmetadata: null as (() => void) | null,
+          set src(_value: string) {
+            queueMicrotask(() => video.onloadedmetadata?.());
+          },
+        };
+        return video;
+      },
+    });
+    await seedSources([buildSource({ id: 'a' })]);
+    const clip = new File(['clip'], 'clip.mp4', { type: 'video/mp4' });
+
+    const result = await replaceSourceFile('a', clip);
+
+    expect(result).toMatchObject({
+      kind: 'video',
+      width: 640,
+      height: 360,
+      durationSeconds: 12,
+    });
+  });
+
+  const site = {
+    url: 'https://example.com',
+    finalUrl: 'https://example.com/',
+    domain: 'example.com',
+    title: 'Example',
+    description: null,
+    favicon: null,
+    ogImage: null,
+    embed: { mode: 'iframe' as const, src: 'https://example.com/' },
+  };
+
+  it('replaces the thumbnail of a site that can be embedded', async () => {
+    await seedSources([
+      buildSource({ id: 'w', kind: 'website', site, storageKey: null }),
+    ]);
+
+    const result = await replaceSourceFile('w', photo);
+
+    expect(result).toMatchObject({
+      kind: 'website',
+      site,
+      storageKey: NEW_KEY,
+    });
+    expect(deleteMediaFile).not.toHaveBeenCalled();
+  });
+
+  it('rejects a video as the thumbnail of a site that can be embedded', async () => {
+    await seedSources([buildSource({ id: 'w', kind: 'website', site })]);
+    const clip = new File(['clip'], 'clip.mp4', { type: 'video/mp4' });
+
+    await expect(replaceSourceFile('w', clip)).rejects.toThrow(
+      'A website thumbnail must be an image',
+    );
+    expect(writeMediaFile).not.toHaveBeenCalled();
+  });
+
+  it('turns a site that cannot be embedded into media and keeps its link', async () => {
+    const blocked = { ...site, embed: { mode: 'none' as const, reason: 'x' } };
+    await seedSources([
+      buildSource({
+        id: 'w',
+        kind: 'website',
+        site: blocked,
+        url: 'https://example.com/',
+      }),
+    ]);
+
+    const result = await replaceSourceFile('w', photo);
+
+    expect(result).toMatchObject({
+      kind: 'image',
+      url: 'https://example.com/',
+      storageKey: NEW_KEY,
+    });
+    expect(result.site).toBeUndefined();
+    expect((await fetchAllSources())[0]).not.toHaveProperty('site');
+  });
+
+  it('treats a website saved without a preview as media', async () => {
+    await seedSources([buildSource({ id: 'w', kind: 'website' })]);
+    const clip = new File(['clip'], 'clip.mp4', { type: 'video/mp4' });
+    vi.stubGlobal('document', {
+      createElement: () => {
+        const video = {
+          videoWidth: 640,
+          videoHeight: 360,
+          duration: 12,
+          onloadedmetadata: null as (() => void) | null,
+          set src(_value: string) {
+            queueMicrotask(() => video.onloadedmetadata?.());
+          },
+        };
+        return video;
+      },
+    });
+
+    const result = await replaceSourceFile('w', clip);
+
+    expect(result.kind).toBe('video');
+  });
+
+  it('rejects an empty file', async () => {
+    await seedSources([buildSource({ id: 'a' })]);
+
+    await expect(
+      replaceSourceFile('a', new File([], 'empty.png', { type: 'image/png' })),
+    ).rejects.toThrow('File is empty');
+  });
+
+  it('throws for a missing source', async () => {
+    await expect(replaceSourceFile('nope', photo)).rejects.toThrow(
+      'Source not found: nope',
+    );
+  });
+
+  it('keeps the old file when the new one cannot be stored', async () => {
+    await seedSources([buildSource({ id: 'a' })]);
+    vi.mocked(writeMediaFile).mockRejectedValue(new Error('disk full'));
+
+    await expect(replaceSourceFile('a', photo)).rejects.toThrow('disk full');
+    expect(deleteMediaFile).not.toHaveBeenCalled();
+    expect((await fetchAllSources())[0]).toMatchObject({ storageKey: 'a' });
+  });
+});
+
+describe('compressSource after a replace', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.mocked(readMediaFile).mockReset();
+    vi.mocked(compressMedia).mockReset();
+    vi.mocked(compressMedia).mockImplementation((file: File) =>
+      Promise.resolve(file),
+    );
+  });
+
+  it('drops its result when the file was replaced meanwhile', async () => {
+    vi.mocked(writeMediaFile).mockResolvedValue(undefined);
+    vi.mocked(deleteMediaFile).mockClear();
+    vi.mocked(readMediaFile).mockResolvedValue(new File(['original'], 'a'));
+    vi.mocked(compressMedia).mockResolvedValue(
+      new File(['x'], 'shot.webp', { type: 'image/webp' }),
+    );
+    vi.stubGlobal(
+      'Image',
+      class {
+        onload: (() => void) | null = null;
+        set src(_value: string) {
+          queueMicrotask(() => this.onload?.());
+        }
+      },
+    );
+    const replaced = buildSource({ id: 'a', storageKey: 'new-key' });
+    await seedSources([replaced]);
+
+    const result = await compressSource(buildSource({ id: 'a' }));
+
+    expect(deleteMediaFile).toHaveBeenCalledWith('a');
+    expect(result).toEqual(replaced);
+    expect((await fetchAllSources())[0]).toEqual(replaced);
   });
 });

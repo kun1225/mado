@@ -2,6 +2,7 @@ import { useId, useRef, useState } from 'react';
 import {
   Cancel01Icon,
   Folder01Icon,
+  ImageUpload01Icon,
   PencilEdit02Icon,
   Tag01Icon,
 } from '@hugeicons/core-free-icons';
@@ -26,18 +27,27 @@ import {
   useAllTags,
   useUpdateSource,
 } from '#/features/sources/hooks/source-hooks';
-import { useSourceField } from '#/features/sources/hooks/source-interaction-hooks';
+import {
+  useReplaceSourceDropzone,
+  useSourceField,
+} from '#/features/sources/hooks/source-interaction-hooks';
 import type {
   Source,
   UpdateSourceInput,
 } from '#/features/sources/source-types';
-import { MAX_TAG_LENGTH, normalizeTag } from '#/features/sources/source-types';
+import {
+  canEmbedSite,
+  MAX_TAG_LENGTH,
+  normalizeTag,
+} from '#/features/sources/source-types';
 
 export function SourceDetailPanel({
   source,
+  thumbnailUrl,
   isOpen,
 }: {
   source: Source;
+  thumbnailUrl: string | null;
   isOpen: boolean;
 }) {
   return (
@@ -59,6 +69,9 @@ export function SourceDetailPanel({
           <p className="text-xs text-muted-fg">{describe(source)}</p>
         </header>
 
+        {canEmbedSite(source) && (
+          <SourceDetailThumbnail source={source} objectUrl={thumbnailUrl} />
+        )}
         <SourceDetailFields source={source} />
         <SourceDetailCollections source={source} />
         <SourceDetailTags source={source} />
@@ -83,6 +96,67 @@ function describe(source: Source): string {
 function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// *** SourceDetailThumbnail ***
+// The live page hides the thumbnail, so this is the only place to see and swap it.
+function SourceDetailThumbnail({
+  source,
+  objectUrl,
+}: {
+  source: Source;
+  objectUrl: string | null;
+}) {
+  const replace = useReplaceSourceDropzone(source);
+  const label = objectUrl ? 'Replace thumbnail' : 'Add thumbnail';
+
+  return (
+    <div className="flex flex-col gap-1.5 text-xs text-muted-fg">
+      Thumbnail
+      <div
+        {...replace.getRootProps({
+          className: cn(
+            'relative aspect-video overflow-hidden rounded-md border border-border bg-muted transition-colors',
+            !objectUrl && 'border-dashed',
+            replace.isDragActive && 'border-accent bg-accent/10',
+            replace.isBusy && 'animate-pulse motion-reduce:animate-none',
+          ),
+        })}
+      >
+        <input {...replace.getInputProps()} />
+        <button
+          type="button"
+          aria-label={label}
+          disabled={replace.isBusy}
+          onClick={replace.open}
+          className="group flex size-full items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          {objectUrl && (
+            <img
+              src={objectUrl}
+              alt=""
+              className="absolute inset-0 size-full object-cover"
+            />
+          )}
+          <span
+            className={cn(
+              'relative flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-opacity',
+              objectUrl &&
+                'bg-fg/70 text-bg opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100',
+              replace.isDragActive && 'opacity-100',
+            )}
+          >
+            <HugeiconsIcon
+              icon={ImageUpload01Icon}
+              size={14}
+              strokeWidth={1.5}
+            />
+            {replace.isDragActive ? 'Drop to replace' : label}
+          </span>
+        </button>
+      </div>
+    </div>
+  );
 }
 
 // *** SourceDetailFields ***

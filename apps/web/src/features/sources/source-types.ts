@@ -12,22 +12,26 @@ export const sourceKindSchema = z.enum(['image', 'video'], {
 
 export type SourceKind = z.infer<typeof sourceKindSchema> | 'website';
 
+const sourceFileSchema = z
+  .instanceof(File)
+  .refine((file) => file.size > 0, 'File is empty')
+  .refine(
+    (file) => file.size <= MAX_FILE_BYTES,
+    `File must be smaller than ${MAX_FILE_MB}MB`,
+  );
+
 export const newSourceSchema = z.object({
   /** Null means the source was added at the library level, outside any collection. */
   collectionId: z.uuid().nullable(),
-  file: z
-    .instanceof(File)
-    .refine((file) => file.size > 0, 'File is empty')
-    .refine(
-      (file) => file.size <= MAX_FILE_BYTES,
-      `File must be smaller than ${MAX_FILE_MB}MB`,
-    ),
+  file: sourceFileSchema,
   /** Defaults to the file name. */
   name: z.string().trim().min(1).optional(),
   url: z.url({ protocol: /^https?$/ }).optional(),
 });
 
 export type NewSourceInput = z.infer<typeof newSourceSchema>;
+
+export const replaceSourceFileSchema = z.object({ file: sourceFileSchema });
 
 export const MAX_NAME_LENGTH = 120;
 export const MAX_NOTE_LENGTH = 2000;
@@ -47,6 +51,14 @@ export const newWebsiteSourceSchema = z.object({
       return !username && !password;
     }, 'URL must not contain a user name or password'),
 });
+
+export function canEmbedSite(source: Source): boolean {
+  return (
+    source.kind === 'website' &&
+    source.site !== undefined &&
+    source.site.embed.mode !== 'none'
+  );
+}
 
 /** "#Brand Kit " -> "brand kit" */
 export function normalizeTag(raw: string): string {
