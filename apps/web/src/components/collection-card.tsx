@@ -41,7 +41,7 @@ export function CollectionCard({ collection }: { collection: Collection }) {
 
 const SKELETON_COUNT = 3;
 
-/** Same size as `CollectionCard`, so real cards replace it in place. */
+/** Same size as `CollectionCard`, so real cards replace it without a jump. */
 export function CollectionCardSkeletons() {
   return Array.from({ length: SKELETON_COUNT }, (_, index) => (
     <div
@@ -53,7 +53,7 @@ export function CollectionCardSkeletons() {
 }
 
 // *** CollectionCardPocket ***
-// Spread from -1 to 1, so one, two, or three saves all sit centered.
+// Spread around 0, so one, two, or three saves all stay centered.
 const PREVIEW_OFFSETS: Record<number, number[]> = {
   1: [0],
   2: [-0.5, 0.5],

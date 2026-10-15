@@ -6,11 +6,7 @@ import turboPlugin from 'eslint-plugin-turbo';
 
 import { importSortConfig } from './import-sort.js';
 
-/**
- * A shared ESLint configuration for the repository.
- *
- * @type {import("eslint").Linter.Config[]}
- * */
+/** @type {import("eslint").Linter.Config[]} */
 export const config = [
   js.configs.recommended,
   eslintConfigPrettier,

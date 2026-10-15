@@ -191,7 +191,7 @@ function CollectionPage() {
 }
 
 // *** CollectionPageSkeleton ***
-/** Mirrors the loaded page layout, so content replaces it in place. */
+/** Same layout as the loaded page, so content replaces it without a jump. */
 function CollectionPageSkeleton() {
   return (
     <div aria-hidden className="flex min-h-svh flex-col pt-16 pb-24">

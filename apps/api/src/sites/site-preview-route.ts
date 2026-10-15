@@ -17,7 +17,7 @@ const urlBodySchema = z.object({
     .pipe(z.url({ protocol: /^https?$/ }))
     .refine(
       (value) => {
-        if (!URL.canParse(value)) return true; // already reported above
+        if (!URL.canParse(value)) return true; // the URL check above already reports this
         const { username, password } = new URL(value);
         return !username && !password;
       },

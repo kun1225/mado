@@ -1,9 +1,8 @@
 export type Collection = {
   id: string;
   name: string;
-  /** Null means a top-level collection. */
   parentId: string | null;
-  /** Derived from the sources on read, so it can never drift. */
+  /** Counted from the sources on each read, so it never goes out of sync. */
   saveCount: number;
   createdAt: string;
   updatedAt: string;

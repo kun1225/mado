@@ -225,7 +225,7 @@ function SourceDetailUrlField({
   const inputRef = useRef<HTMLInputElement>(null);
   const url = useSourceField(source, 'url');
   const [isEditing, setIsEditing] = useState(false);
-  // Reads the draft, not `source.url`, so the link does not flash the old URL while the save is in flight.
+  // Use the draft, not `source.url`, so the link does not flash the old URL while saving.
   const href = url.draft.trim();
   const isLink = !isEditing && url.error === null && href !== '';
 
@@ -409,7 +409,6 @@ type CollectionNode = {
   children: CollectionNode[];
 };
 
-/** Keeps a collection when it, or anything under it, can still be joined. */
 function buildAvailableTree(
   collections: Collection[],
   joinedIds: string[],

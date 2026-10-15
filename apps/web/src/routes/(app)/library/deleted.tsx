@@ -19,12 +19,12 @@ function Deleted() {
   const deletedSourcesQuery = useDeletedSources();
   const hardDeleteSourcesMutation = useHardDeleteSources();
   const restoreSourcesMutation = useRestoreSources();
-  // Kept after the dialog closes so the names stay put while it animates out.
+  // Keep the names after the dialog closes so they stay while it fades out.
   const [pendingSources, setPendingSources] = useState<Source[]>([]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  // The store is browser-only, so the first paint has nothing to show yet -
-  // a skeleton beats flashing "nothing deleted" at someone with a full bin.
+  // The store is browser-only, so the first paint is empty.
+  // A skeleton beats flashing "nothing deleted" at someone with a full trash.
   if (deletedSourcesQuery.isPending) {
     return (
       <div className="py-6">

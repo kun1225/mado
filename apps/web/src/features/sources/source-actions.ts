@@ -42,10 +42,7 @@ const UNKNOWN_METADATA: MediaMetadata = {
   durationSeconds: null,
 };
 
-/**
- * Metadata is a nice-to-have, so a file the browser cannot decode still gets
- * stored — it just keeps null dimensions.
- */
+/** Metadata is a bonus, so a file the browser cannot read is still saved, just without a size. */
 async function readMediaMetadata(
   file: File,
   kind: Exclude<SourceKind, 'website'>,
@@ -185,9 +182,7 @@ export async function createWebsiteSource(
   return source;
 }
 
-/**
- * Saves each file on its own, so one bad file does not lose the others.
- */
+/** Save each file on its own, so one bad file does not lose the others. */
 export async function createSources(
   inputs: NewSourceInput[],
 ): Promise<{ sources: Source[]; error: unknown }> {
@@ -200,7 +195,7 @@ export async function createSources(
   return { sources, error: failed?.reason };
 }
 
-// Compression is heavy, so each file waits for the previous file to finish.
+// Compression is heavy, so files wait in line one at a time.
 let previousTask: Promise<unknown> = Promise.resolve();
 export function compressSource(source: Source): Promise<Source> {
   if (!source.storageKey) return Promise.resolve(source);
@@ -208,7 +203,7 @@ export function compressSource(source: Source): Promise<Source> {
     return runCompression(source);
   });
 
-  // Keep the queue usable after failure, while returning the real error to the caller.
+  // Swallow the error here so the next task still runs. The caller still gets it.
   previousTask = currentTask.catch(() => undefined);
 
   return currentTask;
@@ -240,8 +235,7 @@ async function runCompression(source: Source): Promise<Source> {
   const existing = await toPromise<Source | undefined>(store.get(source.id));
 
   if (!existing || existing.storageKey !== storageKey) {
-    // Deleted for good, or replaced, while compressing: nothing points at this
-    // file anymore, so it would be left behind.
+    // The source was deleted or replaced while compressing, so nothing uses this file now.
     await deleteMediaFile(storageKey);
     return existing ?? source;
   }
@@ -287,7 +281,7 @@ export async function fetchSourcesByCollection(
   const index = transaction
     .objectStore(STORES.sources)
     .index(SOURCES_COLLECTION_INDEX);
-  // All reads start in the same tick, so the transaction stays open.
+  // Start all reads in the same tick, or the transaction closes.
   const lists = await Promise.all(
     collectBranchIds(collections, collectionId).map((id) =>
       toPromise<Source[]>(index.getAll(id)),
@@ -372,7 +366,6 @@ export async function countSourcesByCollection(): Promise<Map<string, number>> {
 }
 
 // *** collectAncestorIds ***
-/** The given collections and every collection above them, each once. */
 function collectAncestorIds(
   parentById: Map<string, string | null>,
   ids: string[],
@@ -391,9 +384,6 @@ function collectAncestorIds(
   return ancestorIds;
 }
 
-/**
- * Edits the user-facing fields. Only the keys in `input` change.
- */
 export async function updateSource(
   id: string,
   input: UpdateSourceInput,
@@ -432,12 +422,12 @@ export async function updateSource(
 }
 
 /**
- * Swaps the stored file but keeps everything the user typed. A site that can
- * be embedded stays a website and only its thumbnail changes. A site that
- * cannot is only a picture with a link, so the new file turns it into media.
+ * Keep everything the user typed. A site that can be embedded stays a website and
+ * only its thumbnail changes. A site that cannot is just a picture with a link, so
+ * it becomes media.
  *
- * The file goes under a new key so a failed save leaves the old file intact,
- * and so `useMediaObjectUrl` reloads even when the new file has the same size.
+ * Use a new key so a failed save keeps the old file, and so `useMediaObjectUrl`
+ * reloads even when the new file has the same size.
  */
 export async function replaceSourceFile(
   id: string,
@@ -446,7 +436,7 @@ export async function replaceSourceFile(
   const { file } = replaceSourceFileSchema.parse({ file: input });
   const mediaKind = sourceKindSchema.parse(file.type.split('/')[0]);
   const existing = await readSource(id);
-  // Fail before writing the file; the save checks again on fresh data.
+  // Fail early, before writing the file. The save checks again on fresh data.
   toReplacementKind(existing, mediaKind);
   const metadata = await readMediaMetadata(file, mediaKind);
   const storageKey = crypto.randomUUID();
@@ -522,7 +512,7 @@ async function saveReplacedFile(
 
   if (!previous) throw new Error(`Source not found: ${id}`);
 
-  // Decided here, not from the first read, so the kind matches the record we write over.
+  // Decide here, not from the first read, so the kind matches the record we overwrite.
   const kind = toReplacementKind(previous, mediaKind);
   // A leftover site preview would make the viewer show media as a website.
   const { site: _site, ...media } = previous;
@@ -551,9 +541,7 @@ function applyListChange(
   );
 }
 
-/**
- * Soft delete: the OPFS file stays so a future Deleted tab can restore it.
- */
+/** Soft delete: keep the file so it can be restored from the trash. */
 export async function deleteSource(id: string): Promise<Source> {
   const database = await openDatabase();
   const transaction = database.transaction(STORES.sources, 'readwrite');
@@ -572,10 +560,7 @@ export async function deleteSource(id: string): Promise<Source> {
   return source;
 }
 
-/**
- * Hard delete, for a source that is already in the trash: the record and the
- * stored bytes both go, so the caller must confirm with the user first.
- */
+/** The record and the file are both gone for good, so ask the user first. */
 export async function hardDeleteSource(id: string): Promise<Source> {
   const database = await openDatabase();
   const transaction = database.transaction(STORES.sources, 'readwrite');
@@ -588,19 +573,18 @@ export async function hardDeleteSource(id: string): Promise<Source> {
   store.delete(id);
   await toCompletion(transaction);
 
-  // The record goes first: a leftover file only wastes space, while a record
-  // pointing at missing bytes would show up as a card that never loads.
+  // Delete the record first. A leftover file only wastes space, but a record
+  // with no file shows a card that never loads.
   if (existing.storageKey) await deleteMediaFile(existing.storageKey);
 
   return existing;
 }
 
 /**
- * Detaches a collection from its sources, inside the caller's transaction so
- * the collection and its sources change together.
+ * Uses the caller's transaction so the collection and its sources change together.
  *
- * A source that lived only in this collection goes to the trash, as before.
- * One that is also in another collection just loses this one and stays visible.
+ * A source only in this collection goes to the trash. A source also in another
+ * collection just leaves this one.
  */
 export async function softDeleteSourcesInCollection(
   store: IDBObjectStore,
@@ -628,9 +612,7 @@ export async function softDeleteSourcesInCollection(
   }
 }
 
-/**
- * Moves many sources to the trash. One transaction: all of them move, or none.
- */
+/** One transaction, so all of them move to the trash or none do. */
 export async function deleteSources(ids: string[]): Promise<Source[]> {
   const database = await openDatabase();
   const transaction = database.transaction(STORES.sources, 'readwrite');
@@ -653,12 +635,8 @@ export async function deleteSources(ids: string[]): Promise<Source[]> {
 }
 
 /**
- * Brings many sources back out of the trash. Nothing has to be rewritten to
- * OPFS: a soft delete never removed the bytes, so clearing `deletedAt` is the
- * whole restore.
- *
- * A source that was never deleted is left out rather than touched, so its
- * `updatedAt` does not move for no reason.
+ * A soft delete never removed the file, so clearing `deletedAt` is the whole restore.
+ * Sources that were never deleted are skipped, so their `updatedAt` does not change.
  */
 export async function restoreSources(ids: string[]): Promise<Source[]> {
   const database = await openDatabase();
@@ -680,9 +658,6 @@ export async function restoreSources(ids: string[]): Promise<Source[]> {
   return sources;
 }
 
-/**
- * Deletes many sources for good. Only for sources already in the trash.
- */
 export async function hardDeleteSources(ids: string[]): Promise<Source[]> {
   const database = await openDatabase();
   const transaction = database.transaction(STORES.sources, 'readwrite');

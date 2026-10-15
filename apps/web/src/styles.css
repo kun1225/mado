@@ -3,7 +3,7 @@
 
 @source '../../../packages/ui/src';
 
-/* Matches while the bulk selection bar is on the page, so other bottom bars can step aside without sharing selection state. */
+/* Lets other bottom bars move aside when the selection bar shows, without sharing selection state. */
 @custom-variant selecting (body:has([data-source-selection-bar]) &);
 
 * {

@@ -15,13 +15,9 @@ const COLUMN_CLASS = cn(
 );
 
 /**
- * Wraps the `masonry-layout` package, which positions items imperatively and
- * knows nothing about React.
- *
- * Items keep whatever height their content asks for, so `columnClassName` only
- * sets the width of one column. It has to leave room for the gutters, which
- * sit between columns but not outside them: four columns with a 10px gutter
- * need `w-[calc((100%-30px)/4)]`, since three gaps fall between four columns.
+ * `columnClassName` sets only the width, and must leave room for the gaps
+ * between columns: 4 columns with a 10px gap need `w-[calc((100%-30px)/4)]`,
+ * because 3 gaps sit between 4 columns.
  */
 export function Masonry<TItem>({
   items,
@@ -47,7 +43,7 @@ export function Masonry<TItem>({
   );
 
   const enteringKeys = keys.filter((key) => !seenKeys.has(key));
-  // For `useEffect` dependency
+  // A string, so `useEffect` reruns only when the entering keys change.
   const enteringSignature = enteringKeys.join('\n');
 
   useEffect(() => {
@@ -63,10 +59,7 @@ export function Masonry<TItem>({
     return () => clearTimeout(timer);
   }, [enteringSignature]);
 
-  /**
-   * `masonry-layout` reads `window` while it loads, so it can only be imported
-   * once we are in the browser.
-   */
+  // `masonry-layout` reads `window` when it loads, so import it only in the browser.
   useEffect(() => {
     const container = containerRef.current;
     const sizer = sizerRef.current;

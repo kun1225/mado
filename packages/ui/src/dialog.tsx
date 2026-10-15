@@ -22,7 +22,6 @@ function DialogOverlay({ className, ...props }: Primitive.Backdrop.Props) {
   );
 }
 
-/** Full-screen surface: the caller lays out what goes inside. */
 function DialogContent({
   className,
   onBackdropClick,

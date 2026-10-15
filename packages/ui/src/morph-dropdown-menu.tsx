@@ -8,16 +8,12 @@ import { cn } from 'cn';
 import { motion } from 'motion/react';
 import * as React from 'react';
 
-/** The four physical sides a popup can grow out from. */
 type MorphSide = 'top' | 'bottom' | 'left' | 'right';
 
-/** The scroll box every item measures against. */
 const LIST_SLOT = 'morph-dropdown-menu-list';
 
 type MorphAnchorContextValue = {
-  /** Lets the popup unmount itself once the closing animation settles. */
   actionsRef: React.RefObject<Primitive.Root.Actions | null>;
-  /** The element the popup grows out of: the trigger, or a submenu's row. */
   anchorRef: React.RefObject<HTMLElement | null>;
 };
 
@@ -34,12 +30,11 @@ function useMorphAnchor(part: string) {
   return context;
 }
 
-/** How an item hands itself to the overlay that follows the highlight. */
 const MorphOverlayContext = React.createContext<
   React.Dispatch<React.SetStateAction<HTMLElement | null>> | undefined
 >(undefined);
 
-/** Points every ref at one element - a row can be both anchor and surface. */
+/** A row can be both anchor and surface, so it needs more than one ref. */
 const mergeRefs =
   <T,>(...refs: (React.Ref<T> | undefined)[]) =>
   (element: T | null) => {
@@ -57,9 +52,8 @@ function toPhysicalSide(side: Primitive.Popup.State['side']): MorphSide {
 }
 
 /**
- * The card's box while it is still wearing the anchor's shape. Measured off the
- * anchor rather than `--anchor-width` / `--anchor-height`: custom properties
- * read back unresolved, and Motion needs a number.
+ * Measure the anchor itself, because `--anchor-width` reads back as text
+ * and Motion needs a number.
  */
 function collapsedPose(
   anchor: HTMLElement | null,
@@ -81,7 +75,6 @@ function collapsedPose(
   }
 }
 
-/** Pins the growing card to the edge that faces the anchor. */
 function anchoredEdge(side: MorphSide) {
   switch (side) {
     case 'top':
@@ -95,10 +88,7 @@ function anchoredEdge(side: MorphSide) {
 
 export type MorphDropdownMenuProps = Omit<Primitive.Root.Props, 'actionsRef'>;
 
-/**
- * `actionsRef` lets the popup unmount itself once the closing animation
- * settles. The popup's CSS fade gives Base UI an exit animation to observe.
- */
+/** The popup's CSS fade gives Base UI an exit animation to wait for. */
 function MorphDropdownMenu(props: MorphDropdownMenuProps) {
   const actionsRef = React.useRef<Primitive.Root.Actions | null>(null);
   const anchorRef = React.useRef<HTMLElement | null>(null);
@@ -140,20 +130,15 @@ type MorphPopupProps = Omit<Primitive.Popup.Props, 'className' | 'render'> & {
   align?: Primitive.Positioner.Props['align'];
   alignOffset?: number;
   className?: string;
-  /** Names the measured card, so a demo or test can reach for one level. */
+  /** Lets a demo or test find this level's card. */
   contentSlot: string;
-  /** The spring the card grows on. Submenus open far more often, so they
-   * settle on a tighter one. */
+  /** Submenus open much more often, so they use a tighter spring. */
   openTransition: Spring;
   positionerClassName?: string;
   side?: MorphSide;
   sideOffset?: number;
 };
 
-/**
- * The card shared by the menu and every submenu: it starts out wearing the
- * anchor's box and grows into the size the content wants.
- */
 function MorphPopup({
   align = 'start',
   alignOffset = 0,
@@ -355,8 +340,8 @@ function MorphDropdownMenuSubContent({
   return (
     <MorphPopup
       contentSlot="morph-dropdown-menu-sub-content"
-      // A submenu rides the pointer down the list, so it lands rather than
-      // rings the way the menu below the trigger can afford to.
+      // Submenus open while the pointer moves down the list, so they settle fast
+      // instead of bouncing like the main menu.
       openTransition={springs.snappy}
       side={side}
       sideOffset={sideOffset}
@@ -367,10 +352,7 @@ function MorphDropdownMenuSubContent({
 
 export type MorphItemVariant = 'default' | 'danger';
 
-/**
- * Rows paint no background of their own: the one overlay behind the list does,
- * so it can slide from row to row.
- */
+/** Rows have no background, so the one overlay behind the list can slide between them. */
 const itemClassName = (variant: MorphItemVariant = 'default') =>
   cn(
     'relative flex h-9 cursor-default items-center gap-2 rounded-sm px-2 text-sm text-fg outline-none select-none',
@@ -387,7 +369,6 @@ const indicatorClassName = cn(
   'data-ending-style:scale-50 data-ending-style:opacity-0',
 );
 
-/** Hands the row's element to the overlay for as long as it is highlighted. */
 function MorphItemSurface({
   children,
   highlighted,
@@ -417,11 +398,7 @@ function MorphItemSurface({
   );
 }
 
-/**
- * One background block shared by every row. It slides to whichever item is
- * highlighted instead of each row painting its own, so hovering down the menu
- * reads as a single moving surface.
- */
+/** One shared block slides to the highlighted row, so moving down the menu feels like one surface. */
 function MorphItemOverlay({
   popupRef,
   item,
@@ -477,8 +454,7 @@ function MorphItemOverlay({
       className={cn(
         'pointer-events-none absolute z-0 rounded-sm',
         item?.dataset.variant === 'danger' ? 'bg-danger/15' : 'bg-muted',
-        // Held in place while nothing is highlighted, so the pointer leaving
-        // fades the block out rather than snapping it away.
+        // Stay in place when nothing is highlighted, so it fades out instead of jumping away.
         item ? 'opacity-100' : 'opacity-0',
         'transition-[background-color,height,left,opacity,top,width] duration-fast ease-standard',
       )}

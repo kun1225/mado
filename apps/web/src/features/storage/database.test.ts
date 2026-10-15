@@ -6,7 +6,6 @@ beforeEach(() => {
   indexedDB = new IDBFactory();
 });
 
-/** Builds a v2 database holding one source in the old single-collection shape. */
 function seedV2Database(): Promise<void> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('mado', 2);

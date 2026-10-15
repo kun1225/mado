@@ -41,10 +41,7 @@ export const sourceKeys = {
 
 const isSupported = typeof indexedDB !== 'undefined' && isMediaStorageSupported;
 
-/**
- * The server cannot see browser storage, so it assumes support; the client
- * corrects that after hydration instead of mismatching the server HTML.
- */
+/** The server cannot see browser storage, so it says yes. The client fixes it after hydration. */
 export function useIsSourceStorageSupported(): boolean {
   return useSyncExternalStore(
     subscribeToNothing,
@@ -67,7 +64,6 @@ export function useAllSources() {
   });
 }
 
-/** Every tag in use, for suggestions. */
 export function useAllTags() {
   const { data } = useAllSources();
 
@@ -90,8 +86,7 @@ export function useSources(collectionId: string) {
   });
 }
 
-// A source also shows in every folder above its own, so refresh every source
-// list and every collection count instead of only the folders it is in.
+// A source also shows in every parent folder, so refresh all source lists and counts.
 function invalidateAfterSourceChange(queryClient: QueryClient) {
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: sourceKeys.all }),
@@ -111,7 +106,6 @@ function useCompressSource() {
   });
 }
 
-/** Ids of sources whose stored file is still being shrunk in the background. */
 export function useCompressingSourceIds(): ReadonlySet<string> {
   const ids = useMutationState({
     filters: { mutationKey: COMPRESS_MUTATION_KEY, status: 'pending' },
@@ -130,8 +124,7 @@ export function useCreateSources() {
   return useMutation({
     mutationKey: CREATE_MUTATION_KEY,
     mutationFn: createSources,
-    // The sources are already visible at this point; shrinking them happens
-    // afterwards so the upload feels instant.
+    // Shrink files after they show up, so the upload feels instant.
     onSuccess: ({ sources, error }) => {
       sources.forEach((source) => compress(source));
       if (error) toast.error(toCreateErrorMessage(error));
@@ -148,7 +141,7 @@ export function useCreateWebsiteSource() {
   return useMutation({
     mutationKey: CREATE_MUTATION_KEY,
     mutationFn: (input: SiteSourceInput) => createWebsiteSource(input),
-    // A post can come back as a video, which is shrunk like any other video.
+    // A post can come back as a video, so shrink it too.
     onSuccess: (source) => compress(source),
     onError: (error) => toast.error(toCreateErrorMessage(error)),
     onSettled: () => invalidateAfterSourceChange(queryClient),
@@ -164,7 +157,6 @@ function toCreateErrorMessage(error: unknown) {
   return 'Something went wrong while adding the file.';
 }
 
-/** True while any upload is saving, from the + button, paste, or a drop. */
 export function useIsCreatingSources(): boolean {
   return useIsMutating({ mutationKey: CREATE_MUTATION_KEY }) > 0;
 }
@@ -195,7 +187,7 @@ export function useReplaceSourceFile() {
   });
 }
 
-// The toolbar, the viewer and the panel each start replaces, so they must share one pending state.
+// The toolbar, viewer and panel can each start a replace, so they share one pending state.
 export function useIsReplacingSource(id: string | undefined): boolean {
   const ids = useMutationState({
     filters: { mutationKey: REPLACE_MUTATION_KEY, status: 'pending' },
@@ -279,7 +271,7 @@ export function useHardDeleteSource() {
 
   return useMutation({
     mutationFn: hardDeleteSource,
-    // Settled, not success: a failed media delete still leaves the record gone.
+    // Refresh even on failure: a failed file delete still removes the record.
     onSettled: () => invalidateAfterSourceChange(queryClient),
   });
 }
@@ -289,17 +281,15 @@ export function useHardDeleteSources() {
 
   return useMutation({
     mutationFn: hardDeleteSources,
-    // Settled, not success: a failed media delete still leaves the records gone.
+    // Refresh even on failure: a failed file delete still removes the records.
     onSettled: () => invalidateAfterSourceChange(queryClient),
   });
 }
 
 /**
- * Reads the stored file and hands back a blob URL, revoked on unmount so the
- * browser can free the bytes.
+ * Revoke the URL on unmount so the browser can free the bytes.
  *
- * OPFS does not keep the MIME type, so `slice` re-attaches it. Slicing a file
- * is lazy, so this does not copy the bytes.
+ * OPFS loses the MIME type, so `slice` adds it back. `slice` does not copy the bytes.
  */
 export function useMediaObjectUrl(
   storageKey: string | null,

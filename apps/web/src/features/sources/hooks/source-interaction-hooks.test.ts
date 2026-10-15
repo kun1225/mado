@@ -43,7 +43,6 @@ const SOURCES = ['1', '2', '3', '4', '5', '6'].map(buildSource);
 const CLICK: ToggleSelectOptions = { isRange: false };
 const SHIFT_CLICK: ToggleSelectOptions = { isRange: true };
 
-/** Replays a run of clicks and reports what ends up selected, in grid order. */
 function click(
   ...steps: [id: string, options: ToggleSelectOptions][]
 ): string[] {

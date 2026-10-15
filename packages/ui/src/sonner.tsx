@@ -1,7 +1,6 @@
 import { toast, Toaster as Sonner, type ToasterProps } from 'sonner';
 
-// The app sets its theme with a `.dark` class, so the toast colors come from
-// the theme tokens instead of sonner's own light/dark switch.
+// The app uses a `.dark` class, so toasts use our theme tokens, not sonner's own light/dark switch.
 const TOASTER_STYLE = {
   '--normal-bg': 'var(--color-bg)',
   '--normal-text': 'var(--color-fg)',

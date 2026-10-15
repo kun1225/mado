@@ -29,11 +29,10 @@ export function SourceGrid({
 }: {
   sources: Source[];
   showCollection?: boolean;
-  /** The trash turns this off: a deleted source is not editable. */
+  /** Off in the trash, because a deleted source cannot be edited. */
   canOpenDetail?: boolean;
   onDelete?: (id: string) => void;
   onBulkDelete?: (ids: string[]) => void;
-  /** Only the trash passes this, so the bar hides the button everywhere else. */
   onBulkRestore?: (ids: string[]) => void;
   deletingIds?: readonly string[];
   isBulkPending?: boolean;
@@ -125,7 +124,7 @@ export function SourceGrid({
   );
 }
 
-// Varied heights so the placeholder reads as a masonry wall, not a table.
+// Mixed heights so the placeholder looks like a masonry wall, not a table.
 const TILE_ASPECTS = [
   'aspect-[4/5]',
   'aspect-square',
@@ -141,7 +140,7 @@ const TILE_ASPECTS = [
   'aspect-[3/4]',
 ];
 
-/** Same column widths as `Masonry`, so the real grid lands without a jump. */
+/** Same columns as `Masonry`, so the real grid shows up without a jump. */
 export function SourceGridSkeleton() {
   return (
     <div aria-hidden className="columns-2 gap-2.5 md:columns-3 lg:columns-4">

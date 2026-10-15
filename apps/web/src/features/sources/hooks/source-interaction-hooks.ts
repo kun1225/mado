@@ -284,15 +284,11 @@ export function usePasteSource(
   }, [onMedia, onWebsite]);
 }
 
-// 'image/*,video/*' -> { 'image/*': [], 'video/*': [] }, the shape react-dropzone wants.
+// react-dropzone wants `{ 'image/*': [] }`, not a comma list.
 const DROP_ACCEPT = Object.fromEntries(
   ACCEPTED_FILE_TYPES.split(',').map((type) => [type, []]),
 );
 
-/**
- * Turns an element into a drop target that adds the dropped media to
- * `collectionId`, or to the library alone when it is null.
- */
 export function useSourceDropzone(collectionId: string | null) {
   const { mutate: createSources } = useCreateSources();
 
@@ -354,14 +350,10 @@ export function useReplaceSourceDropzone(source: Source | undefined) {
   return { getRootProps, getInputProps, open, isDragActive, isBusy };
 }
 
-// Drag events keep firing while a drag is alive, so a quiet gap means it ended
-// (dropped, cancelled with Esc, or left the window).
+// Drag events fire nonstop during a drag, so a short quiet gap means it ended.
 const DRAG_IDLE_MS = 300;
 
-/**
- * True while a file is dragged anywhere over the window. An iframe swallows
- * drag events, so a drop zone over it must appear before the drag gets there.
- */
+/** An iframe swallows drag events, so a drop zone over it must show before the drag gets there. */
 export function useIsDraggingFile(): boolean {
   const [isDragging, setIsDragging] = useState(false);
 

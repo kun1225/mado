@@ -63,7 +63,7 @@ function useLiquidRoot(part: string) {
 const clamp = (value: number, max: number) =>
   Math.min(Math.max(value, 0), Math.max(max, 0));
 
-/** Horizontal only - the stretch has no meaning stacked. */
+/** Horizontal only, because the stretch makes no sense in a column. */
 export type LiquidTabsProps = Omit<
   Primitive.Root.Props,
   'render' | 'orientation'
@@ -85,8 +85,8 @@ function LiquidTabs({
   const [isPlaced, setIsPlaced] = useState(false);
   const reduced = useReducedMotion() ?? false;
 
-  // Switching tabs deactivates one and activates another in the same commit,
-  // so a tab may only clear the slot it still holds.
+  // Switching tabs turns one off and one on in the same commit,
+  // so a tab may only clear the slot if it still holds it.
   const reportActive = useCallback((element: HTMLElement, active: boolean) => {
     setActiveElement((current) => {
       if (active) return current === element ? current : element;
@@ -116,8 +116,8 @@ function LiquidTabs({
     placed.current = true;
     setIsPlaced(true);
 
-    // A ResizeObserver reports once on observe, and that call is the
-    // measurement just taken - letting it through would cut the stretch short.
+    // ResizeObserver fires once right away with the size we just measured.
+    // Skipping it keeps the stretch from being cut short.
     let observed = false;
     const observer = new ResizeObserver(() => {
       if (!observed) {
@@ -191,7 +191,7 @@ const liquidTabTrigger = cn(
 );
 
 export type LiquidTabsTriggerProps = Omit<Primitive.Tab.Props, 'render'> & {
-  /** Decorative - the label names the tab. */
+  /** Only decoration, because the label already names the tab. */
   icon?: ReactNode;
 };
 
@@ -213,8 +213,8 @@ function LiquidTabsTrigger({
 }
 
 /**
- * `onAnimationStart` and the drag handlers mean something else on a `motion`
- * element. Base UI never passes them, so assert past the overlap.
+ * `motion` gives `onAnimationStart` and the drag handlers other types.
+ * Base UI never passes them, so the cast is safe.
  */
 const asMotionProps = (props: ComponentProps<'button'>) =>
   props as HTMLMotionProps<'button'>;
@@ -234,12 +234,10 @@ type LiquidTabContentProps = {
 };
 
 /**
- * Both copies of the label render this, so the accent copy travels with the
- * plain one and the pill keeps clipping the same shape.
+ * Both label copies render this, so the accent copy moves with the plain one.
  *
- * The icon only ever scales, fades and blurs, and the label only translates -
- * nothing here touches layout, so the tab box stays the size it was measured
- * at.
+ * The icon only scales, fades and blurs, and the label only moves. Nothing
+ * changes layout, so the tab keeps its measured size.
  */
 function LiquidTabContent({
   icon,
@@ -267,8 +265,7 @@ function LiquidTabContent({
               x: position === 'start' ? LABEL_SHIFT : -LABEL_SHIFT,
             }
       }
-      // Renders the target on the server and on mount, so a hidden icon is
-      // never painted sharp for a frame before hydration reaches it.
+      // Start at the end state, so a hidden icon never flashes sharp before hydration.
       initial={false}
       transition={transition}
     >
@@ -309,8 +306,7 @@ function LiquidTabSurface({
   const reduced = useReducedMotion() ?? false;
   const elementRef = useRef<HTMLButtonElement>(null);
 
-  // Base UI's composite list re-registers the item whenever the ref detaches,
-  // so the callback has to keep its identity across renders.
+  // Base UI re-registers the item when the ref changes, so the callback must stay the same.
   const forwarded = useRef<Ref<HTMLButtonElement> | undefined>(ref);
   forwarded.current = ref;
   const setRef = useCallback((element: HTMLButtonElement | null) => {
@@ -320,15 +316,13 @@ function LiquidTabSurface({
     else if (next) next.current = element;
   }, []);
 
-  // The clip runs on frames of its own, and would otherwise read whichever
-  // render built it.
+  // The clip runs in its own frames, so it must read the latest value, not an old render's.
   const activeRef = useRef(active);
   useLayoutEffect(() => {
     activeRef.current = active;
   });
 
-  // Layout, not passive: the report has to land before paint, or the pill
-  // would start moving a frame late.
+  // useLayoutEffect so the report lands before paint. Otherwise the pill moves a frame late.
   useLayoutEffect(() => {
     const element = elementRef.current;
     if (!active || !element) return;

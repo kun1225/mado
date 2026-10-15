@@ -24,14 +24,11 @@ type AsyncButtonProps = ButtonPrimitive.Props &
   VariantProps<typeof buttonVariants> &
   (
     | {
-        /** Uncontrolled: the button tracks the promise itself. */
         state?: never;
         onAsyncClick: () => Promise<void>;
-        /** Go back to idle a moment after success. */
         resetAfterSuccess?: boolean;
       }
     | {
-        /** Controlled: the parent owns the state. */
         state: AsyncButtonState;
         onAsyncClick?: never;
         resetAfterSuccess?: never;

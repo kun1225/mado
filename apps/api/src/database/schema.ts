@@ -1,2 +1,2 @@
-// One place for every Drizzle table, so the database layer and drizzle-kit don't depend on a single feature.
+// All tables live here so the database and drizzle-kit do not depend on one feature.
 export * from '../auth/auth.model.js';

@@ -26,7 +26,7 @@ const EMPTY_RECENT: string[] = [];
 
 const recentSearchesSchema = z.array(z.string()).catch(EMPTY_RECENT);
 
-/** Build once per data change; searching the index is the cheap part. */
+/** Build once per data change, because building is slow and searching is cheap. */
 export function createSearchIndex(
   collections: Collection[],
   sources: Source[],

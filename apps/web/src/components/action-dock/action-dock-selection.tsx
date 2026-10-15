@@ -17,11 +17,9 @@ import { FLOATING_BAR } from '.';
 const selectionTooltip = createTooltipHandle<string>();
 
 /**
- * Floats over the grid, so the wrapper has to let clicks through to the cards
- * behind it - only the pill itself takes pointer events.
+ * It floats over the grid, so only the pill takes clicks. Other clicks reach the cards below.
  *
- * The labels name tools the user is already reaching for, so they open on
- * arrival rather than after the usual reading pause.
+ * Tooltips open right away, because the user is already reaching for these tools.
  */
 export function ActionDockSelection({
   count,
@@ -33,13 +31,13 @@ export function ActionDockSelection({
   count: number;
   onClear: () => void;
   onDelete: () => void;
-  /** Only the trash offers this, so the button is absent everywhere else. */
+  /** Only the trash passes this, so the button is hidden everywhere else. */
   onRestore?: () => void;
   isPending?: boolean;
 }) {
   return (
     <TooltipProvider delay={120}>
-      {/* The dock watches for this attribute to step aside. */}
+      {/* The dock looks for this attribute to move out of the way. */}
       <div
         data-source-selection-bar
         className="pointer-events-none fixed inset-x-0 bottom-6 z-action-bar flex justify-center px-edge"

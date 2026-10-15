@@ -11,14 +11,14 @@ import {
   setStorageAccount,
 } from '#/features/storage/storage-account';
 
-// Guests are not sent to sign-in: they keep using this device's local data.
+// Guests are not sent to sign-in, because they use this device's local data.
 export async function loadPageSession(returnTo: string) {
   const user = await getAuthSession();
 
   if (typeof window !== 'undefined') {
     const previousAccount = getStorageAccount();
     if (previousAccount && previousAccount !== user?.id) {
-      // Reload so pending local writes cannot cross account boundaries.
+      // Reload so unsaved local writes cannot leak into another account.
       throw redirect({ href: safeReturnTo(returnTo), reloadDocument: true });
     }
 

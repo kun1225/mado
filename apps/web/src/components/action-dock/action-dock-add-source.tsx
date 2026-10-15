@@ -26,11 +26,10 @@ import {
 import { usePasteSource } from '#/features/sources/hooks/source-interaction-hooks';
 import { ACCEPTED_FILE_TYPES } from '#/features/sources/source-media';
 
-// Matches the search bar and selection bar height.
+// Same height as the search and selection bars, so the dock lines up.
 const TOGGLE_SIZE = 48;
 const ACTION_SIZE = 40;
 const ACTION_GAP = 14;
-// Centers each action over the toggle, whatever the sizes.
 const ACTION_INSET = (TOGGLE_SIZE - ACTION_SIZE) / 2;
 
 const STAGGER_MS = 50;
@@ -103,7 +102,7 @@ export function ActionDockAddSource({
       file,
     }));
 
-    // Reset so picking the same file again still fires a change event.
+    // Without this, picking the same file again fires no change event.
     fileInput.value = '';
 
     if (inputs.length > 0) createSources(inputs);

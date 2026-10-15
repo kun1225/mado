@@ -30,7 +30,6 @@ export class SafeFetchError extends Error {
   }
 }
 
-/** Errors that mean "this URL is not allowed", not "this site is down". */
 const REJECTED_CODES = new Set(['blocked-address', 'unsupported-protocol']);
 
 // *** isRejectedUrlError ***
@@ -49,7 +48,7 @@ export async function getSitePreview(
 ): Promise<SitePreview> {
   const [page, video] = await Promise.all([
     fetchOrNull(url, fetchPage),
-    // The video is extra: without it the source is still a normal website.
+    // The video is a bonus. Without it, the source is still a normal website.
     fetchVideo(url).catch((): SitePreviewVideo | null => null),
   ]);
   const finalUrl = page?.finalUrl ?? url;
@@ -97,7 +96,7 @@ export async function safeFetch(
 }
 
 // *** fetchSiteImage ***
-/** Downloads an image from a site, for the browser, which cannot do it because of CORS. */
+/** The browser cannot download it because of CORS, so the server does. */
 export async function fetchSiteImage(
   startUrl: URL,
   options: SitePreviewSafeFetchOptions = {},
@@ -137,7 +136,7 @@ export async function fetchSiteJson(
 }
 
 // *** followRedirects ***
-/** Sends the request and follows redirects. Every hop passes the address check. */
+/** Check the address on every redirect, so a redirect cannot lead into our private network. */
 async function followRedirects(
   startUrl: URL,
   {
@@ -222,9 +221,9 @@ function request(
       {
         method: 'GET',
         signal,
-        // A new connection every time: a reused one would skip the address check.
+        // Always a new connection, because a reused one skips the address check.
         agent: false,
-        // Node's lookup type is wider than what we need.
+        // Node's lookup type is wider than ours, so we cast it.
         lookup: createGuardedLookup(allowPrivate) as never,
         headers: {
           'user-agent': 'Mozilla/5.0 (compatible; MadoBot/1.0)',
@@ -285,7 +284,7 @@ for (const [address, prefix] of [
 ] as const) {
   privateRanges.addSubnet(address, prefix, 'ipv4');
 }
-// Teredo and 6to4 sit inside the public IPv6 range but carry a hidden IPv4 address.
+// Teredo and 6to4 look public but hide an IPv4 address inside, so block them.
 for (const [address, prefix] of [
   ['2001::', 32],
   ['2002::', 16],
@@ -304,9 +303,8 @@ export function isPrivateAddress(address: string): boolean {
 
 // *** isPrivateIpv6 ***
 /**
- * Only 2000::/3 (global unicast) is public. Everything else is blocked: that
- * covers loopback, local ranges, NAT64 (64:ff9b::/96) and IPv4-mapped forms.
- * (BlockList cannot say "outside 2000::/3": it maps IPv4 into ::ffff:0:0/96.)
+ * Only 2000::/3 is public IPv6, so we block everything else.
+ * We check the first group by hand because BlockList cannot say "outside 2000::/3".
  */
 function isPrivateIpv6(address: string): boolean {
   const firstGroup = Number.parseInt(address.split(':')[0] ?? '', 16);
@@ -340,7 +338,7 @@ const DECODERS: Record<
 };
 
 // *** readText ***
-/** Reads up to MAX_BODY_BYTES. If the stream breaks half way, keeps what it has. */
+/** A page cut off half way still has useful tags, so keep what arrived. */
 async function readText(
   res: IncomingMessage,
   headers: Headers,
@@ -380,7 +378,6 @@ async function readText(
 }
 
 // *** readBytes ***
-/** Reads a whole body, and fails when it is over MAX_IMAGE_BYTES. */
 async function readBytes(res: IncomingMessage): Promise<Buffer> {
   const chunks: Buffer[] = [];
   let size = 0;
@@ -462,7 +459,6 @@ function cleanText(value: string | undefined, max: number): string | null {
 }
 
 // *** resolveHttpUrl ***
-/** Resolve against the page URL. Only http(s) results are kept. */
 function resolveHttpUrl(value: string | undefined, base: URL): string | null {
   if (!value?.trim()) return null;
   try {
@@ -476,7 +472,6 @@ function resolveHttpUrl(value: string | undefined, base: URL): string | null {
 }
 
 // *** getProviderEmbed ***
-/** The official embed URL for a known site, or null. No network needed. */
 export function getProviderEmbed(url: URL): string | null {
   for (const provider of PROVIDERS) {
     const src = provider(url);
@@ -538,8 +533,8 @@ function figma(url: URL): string | null {
 
 // *** x ***
 /**
- * Tweet.html is the page widgets.js puts in its iframe. It is undocumented,
- * but x.com itself forbids framing, so this is the only way to embed a post.
+ * x.com blocks framing, so this undocumented page (the one widgets.js uses)
+ * is the only way to embed a post.
  */
 function x(url: URL): string | null {
   const id = getXPostId(url);
@@ -627,7 +622,6 @@ function checkCsp(
 }
 
 // *** readFrameAncestors ***
-/** The first frame-ancestors source list in one policy, or null if it has none. */
 function readFrameAncestors(policy: string): string[] | null {
   for (const directive of policy.split(';')) {
     const [name, ...sources] = directive.trim().split(/\s+/);
@@ -651,7 +645,7 @@ function sourceMatches(
 }
 
 // *** schemeMatches ***
-/** "http" also matches "https": the spec lets a page upgrade. */
+/** The spec lets a page upgrade to https, so "http" matches both. */
 function schemeMatches(sourceScheme: string, origin: URL): boolean {
   const scheme = origin.protocol.slice(0, -1);
   return (

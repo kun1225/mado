@@ -10,10 +10,7 @@ import {
 
 const SERVER_RECENT_SEARCHES: string[] = [];
 
-/**
- * The server has no storage, so it renders an empty list and the client fills
- * it in after hydration instead of mismatching the server HTML.
- */
+/** The server has no storage, so it starts empty and the client fills it in after hydration. */
 export function useRecentSearches() {
   const queries = useSyncExternalStore(
     subscribe,
@@ -34,7 +31,7 @@ const listeners = new Set<() => void>();
 // *** subscribe ***
 function subscribe(listener: () => void) {
   listeners.add(listener);
-  // Keeps the list in step when another tab searches.
+  // So the list updates when another tab searches.
   window.addEventListener('storage', listener);
 
   return () => {
@@ -47,7 +44,7 @@ let cachedRaw: string | null = null;
 let cachedQueries = parseRecentSearches(null);
 
 // *** getSnapshot ***
-// useSyncExternalStore needs the same array back until the stored value changes.
+// useSyncExternalStore needs the same array until the stored value changes.
 function getSnapshot() {
   const raw = readStoredRecentSearches();
 

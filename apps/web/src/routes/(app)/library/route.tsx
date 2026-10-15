@@ -25,7 +25,6 @@ export const Route = createFileRoute('/(app)/library')({
 const DELETED_TAB = '/library/deleted';
 const ALL_TAB = '/library';
 
-// Library saves belong to no collection.
 const LIBRARY_ADD_SOURCE = { collectionId: null };
 
 type TabPath = typeof ALL_TAB | typeof DELETED_TAB;

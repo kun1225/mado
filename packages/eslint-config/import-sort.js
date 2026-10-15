@@ -9,21 +9,13 @@ export const importSortConfig = {
       'error',
       {
         groups: [
-          // Side-effect imports.
           ['^\\u0000'],
-          // Node.js built-ins.
           ['^node:'],
-          // External packages.
           ['^react$', '^react-dom$', '^@?\\w'],
-          // Monorepo internal aliases.
           ['^@repo(/.*|$)'],
-          // Internal aliases.
           ['^#/'],
-          // Parent imports.
           ['^\\.\\.(?!/?$)', '^\\.\\./?$'],
-          // Same-folder imports.
           ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
-          // Style imports.
           ['^.+\\.css$'],
         ],
       },

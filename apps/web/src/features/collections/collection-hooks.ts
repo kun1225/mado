@@ -51,7 +51,6 @@ export function useCollection(id: string) {
   });
 }
 
-/** The newest saves in a folder, for its card. Empty while either list loads. */
 export function useCollectionPreviews(collectionId: string): Source[] {
   const collections = useCollections().data;
   const sources = useAllSources().data;
@@ -120,7 +119,7 @@ export function useDeleteCollection() {
       });
 
       return Promise.all([
-        // Nested collections went with it, so refresh every collection query.
+        // Child collections were deleted too, so refresh every collection query.
         queryClient.invalidateQueries({ queryKey: collectionKeys.all }),
         queryClient.invalidateQueries({
           queryKey: sourceKeys.all,

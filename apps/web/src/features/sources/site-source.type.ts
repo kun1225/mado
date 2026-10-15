@@ -14,7 +14,6 @@ export type SiteSourcePreview = {
 };
 
 export type SiteSourceVideo = {
-  /** A direct mp4 URL. */
   url: string;
   title: string;
 };

@@ -111,9 +111,8 @@ export async function updateCollection(
 }
 
 /**
- * Hard delete: unlike a source, a collection cannot be restored, so its sources
- * land in the trash on their own and come back to the library if restored.
- * Collections nested inside go with it, and so do their sources.
+ * A collection cannot be restored, so its sources go to the trash on their own
+ * and can come back to the library. Child collections and their sources go too.
  */
 export async function deleteCollection(id: string): Promise<Collection> {
   const database = await openDatabase();
@@ -144,7 +143,7 @@ export async function deleteCollection(id: string): Promise<Collection> {
 
 const PREVIEW_COUNT = 3;
 
-/** A folder also shows what its child folders hold, the same as its page does. */
+/** A folder card also shows its child folders' saves, like its page does. */
 export function pickPreviewSources(
   collections: Collection[],
   sources: Source[],

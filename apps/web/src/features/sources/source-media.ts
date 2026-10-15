@@ -24,7 +24,7 @@ const IMAGE_OUTPUT_TYPE = 'image/webp';
 const IMAGE_OUTPUT_QUALITY = 0.85;
 const VIDEO_OUTPUT_TYPE = 'video/mp4';
 
-// Animated or vector formats lose their meaning when drawn onto a canvas.
+// Drawing GIFs or SVGs on a canvas would lose the animation or the sharpness.
 const UNTOUCHED_IMAGE_TYPES = new Set(['image/gif', 'image/svg+xml']);
 
 export const isMediaStorageSupported =
@@ -285,8 +285,7 @@ async function compressVideo(file: File): Promise<File> {
           MAX_VIDEO_SIDE,
         );
 
-        // Setting only `width` keeps the aspect ratio, and a video that is
-        // already small enough is never scaled up.
+        // Set only `width` to keep the aspect ratio, and never make a small video bigger.
         return {
           codec: 'avc',
           bitrate: QUALITY_MEDIUM,

@@ -21,10 +21,8 @@ const sourceFileSchema = z
   );
 
 export const newSourceSchema = z.object({
-  /** Null means the source was added at the library level, outside any collection. */
   collectionId: z.uuid().nullable(),
   file: sourceFileSchema,
-  /** Defaults to the file name. */
   name: z.string().trim().min(1).optional(),
   url: z.url({ protocol: /^https?$/ }).optional(),
 });
@@ -60,7 +58,6 @@ export function canEmbedSite(source: Source): boolean {
   );
 }
 
-/** "#Brand Kit " -> "brand kit" */
 export function normalizeTag(raw: string): string {
   return raw.trim().replace(/^#+/, '').trim().toLowerCase();
 }
@@ -122,8 +119,7 @@ export const updateSourceSchema = z
     tags: tagsSchema,
     collectionIds: collectionIdListSchema,
     /**
-     * Changes to a list, applied to the stored value inside the save. Prefer
-     * these over `tags` and `collectionIds`: a full list built from stale props
+     * Prefer these over `tags` and `collectionIds`. A full list built from old props
      * can undo an edit that has not shown up yet.
      */
     addTags: tagListSchema,
@@ -137,12 +133,10 @@ export type UpdateSourceInput = z.input<typeof updateSourceSchema>;
 
 export type Source = {
   id: string;
-  /** Display name, editable. `fileName` is the stored file's name and only changes when compression changes its format. */
   name: string;
   url: string | null;
   note: string | null;
   tags: string[];
-  /** Empty means the source lives only in the library. */
   collectionIds: string[];
   kind: SourceKind;
   site?: SiteSourcePreview;
@@ -152,7 +146,6 @@ export type Source = {
   width: number | null;
   height: number | null;
   durationSeconds: number | null;
-  /** Name of the file inside the OPFS media directory. */
   storageKey: string | null;
   createdAt: string;
   updatedAt: string;

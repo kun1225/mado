@@ -57,8 +57,7 @@ function Library() {
         label="Library"
         className="flex flex-1 flex-col"
       >
-        {/* The store is browser-only: show a skeleton while it loads rather
-            than flash "Nothing here yet" at someone with a full library. */}
+        {/* The store is browser-only, so show a skeleton instead of flashing "Nothing here yet". */}
         {sourcesQuery.isPending ? (
           <SourceGridSkeleton />
         ) : sourcesQuery.isError ? (

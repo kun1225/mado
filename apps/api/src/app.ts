@@ -6,7 +6,7 @@ import type { AuthInstance } from './auth/auth.type.js';
 import { createSitesRouter } from './sites/site-preview-route.js';
 import { invalidJsonHandler } from './invalid-json-handler.js';
 
-// webOrigin comes from the validated config in server.ts, so CORS and auth trust the same origin.
+// CORS and auth must trust the same origin, so both use the checked config.
 export function createApp({
   auth,
   webOrigin = 'http://localhost:3100',

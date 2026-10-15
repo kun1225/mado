@@ -19,7 +19,6 @@ export function SourceCard({
 }: {
   source: Source;
   collectionName?: string;
-  /** The stored file is still being shrunk; the card shows it as busy. */
   isCompressing?: boolean;
   deletion: {
     isPending?: boolean;
@@ -30,7 +29,6 @@ export function SourceCard({
     isActive: boolean;
     onToggle: (options: ToggleSelectOptions) => void;
   };
-  /** Leave out where a card should not open the detail dialog. */
   onOpen?: () => void;
 }) {
   const objectUrl = useMediaObjectUrl(
@@ -45,7 +43,7 @@ export function SourceCard({
   const aspectRatio =
     source.width && source.height ? source.width / source.height : 1;
 
-  // Compression swaps the stored file, which breaks a video that is playing.
+  // Compression swaps the file, which would break a playing video.
   const isWaitingForVideo = isCompressing && source.kind === 'video';
 
   return (
@@ -213,10 +211,8 @@ function SourceCardCheckbox({
 
 // *** SourceCardProgressBlur ***
 /**
- * A progressive blur: each layer blurs harder than the one before it, and its
- * mask only lets it show further down the strip. Stacked, they ramp the blur
- * from sharp at the top to heavy at the bottom, so the label on top stays
- * readable without a hard edge cutting across the media.
+ * Each layer blurs more and shows lower down. Together they go from sharp to
+ * blurry, so the label stays readable without a hard edge across the media.
  */
 const BLUR_LAYERS = [
   'backdrop-blur-[1px] [mask-image:linear-gradient(to_bottom,transparent_0%,black_16.7%)]',
@@ -231,12 +227,10 @@ const LAYER_BASE =
   'duration-base ease-standard absolute inset-0 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100';
 
 /**
- * The knobs for the tint. Change these and the gradient below rebuilds itself.
- *
- * - `alpha` is how dark it gets at the very bottom.
- * - `curve` is a cubic-bezier, read exactly like a CSS one. Pulling the first
- *   pair down holds the tint longer before it fades.
- * - `steps` is resolution. Fewer stops band, more stops cost bytes.
+ * Change these and the gradient rebuilds itself.
+ * - `alpha`: how dark the very bottom gets.
+ * - `curve`: a CSS cubic-bezier. A lower first pair keeps the tint longer.
+ * - `steps`: fewer stops show bands, more stops cost bytes.
  */
 const TINT = {
   alpha: 0.5,
@@ -260,10 +254,8 @@ function SourceCardProgressBlur() {
 
 // *** buildEasedTint ***
 /**
- * A straight `to top` fade leaves a faint band where it meets the media,
- * because alpha falling at a constant rate does not match how the eye reads
- * brightness. Easing only the alpha — positions stay evenly spaced — gives a
- * tint that holds near the label and then drops away quickly.
+ * A straight fade shows a faint band, because the eye does not see brightness
+ * change evenly. Easing only the alpha keeps the tint near the label, then drops it fast.
  */
 function buildEasedTint({ alpha, curve, steps }: typeof TINT): string {
   const stops = Array.from({ length: steps }, (_, index) => {
@@ -279,10 +271,7 @@ function buildEasedTint({ alpha, curve, steps }: typeof TINT): string {
 // *** sampleCurve ***
 type Curve = readonly [number, number, number, number];
 
-/**
- * Reads a cubic-bezier at `x` the way CSS does. Newton's method lands within a
- * rounding error in a few passes for curves this gentle.
- */
+/** Newton's method is close enough after a few passes for gentle curves. */
 function sampleCurve([p1x, p1y, p2x, p2y]: Curve, x: number): number {
   const cx = 3 * p1x;
   const bx = 3 * (p2x - p1x) - cx;

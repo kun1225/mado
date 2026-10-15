@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 
-// Bad JSON bodies would otherwise get Express's default page with a stack trace.
+// Without this, bad JSON gets Express's default page with a stack trace.
 export function invalidJsonHandler(
   error: Error & { type?: string },
   _request: Request,

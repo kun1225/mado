@@ -7,7 +7,7 @@ import type { AuthInstance } from './auth.type.js';
 export function createAuthRouter(auth: AuthInstance): Router {
   const router = Router();
   router.use((request, _response, next) => {
-    // Overwrite the header so clients cannot choose their rate-limit identity.
+    // Set it ourselves so a client cannot pick its own rate-limit identity.
     request.headers['x-mado-client-ip'] = request.ip;
     next();
   });

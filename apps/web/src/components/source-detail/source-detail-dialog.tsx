@@ -49,19 +49,19 @@ export function SourceDetailDialog({
   onActiveIdChange: (id: string | null) => void;
 }) {
   const deleteSourceMutation = useDeleteSource();
-  // On a phone the panel covers the image, so it starts closed there.
+  // On a phone the panel covers the image, so it starts closed.
   const [isPanelOpen, setIsPanelOpen] = useState(
     () => window.matchMedia('(min-width: 768px)').matches,
   );
   const view = resolveSourceDetail(sources, activeId);
 
-  // Keeps the last source on screen while the dialog fades out.
+  // Keep the last source so the dialog is not empty while it fades out.
   const lastSource = useRef<Source | undefined>(undefined);
   if (view.source) lastSource.current = view.source;
   const source = view.source ?? lastSource.current;
   const replace = useReplaceSourceDropzone(source);
   const isDraggingFile = useIsDraggingFile();
-  // Read once here: the viewer and the panel thumbnail show the same file.
+  // Read once here, because the viewer and the panel thumbnail show the same file.
   const objectUrl = useMediaObjectUrl(
     source?.storageKey ?? null,
     source?.mimeType ?? '',
@@ -138,7 +138,7 @@ export function SourceDetailDialog({
           />
 
           <div className="pointer-events-none relative flex min-h-0 flex-1 px-edge pb-4">
-            {/* Only the viewer takes drops, so a file dropped on the panel's fields does not replace the media. */}
+            {/* Only the viewer takes drops, so dropping on the panel fields does not replace the media. */}
             <div
               {...replace.getRootProps({
                 className: 'relative flex min-h-0 min-w-0 flex-1',
@@ -170,8 +170,8 @@ export function SourceDetailDialog({
   );
 }
 
-// The dialog sits inside the library drop zone, which would add any file dropped
-// on it as a new source. preventDefault stops the browser from opening the file.
+// The dialog sits inside the library drop zone, which would add a dropped file as a new source.
+// preventDefault also stops the browser from opening the file.
 const DROP_BLOCKER = {
   onDragEnter: blockDrag,
   onDragOver: blockDrag,
@@ -188,7 +188,7 @@ function blockDrag(event: DragEvent) {
 // *** SourceDetailDropOverlay ***
 function SourceDetailDropOverlay({ label }: { label: string }) {
   return (
-    // Catches the drag over an embedded page, which would otherwise swallow the drop.
+    // An embedded page would swallow the drop, so this layer catches it first.
     <div className="pointer-events-auto absolute inset-0 flex items-center justify-center rounded-md border-2 border-dashed border-accent bg-accent/10">
       <p className="rounded-full bg-accent px-4 py-2 text-sm text-accent-fg">
         {label}
@@ -197,7 +197,7 @@ function SourceDetailDropOverlay({ label }: { label: string }) {
   );
 }
 
-// Hover must stay light-on-dark: the default ghost hover assumes a light page.
+// The default ghost hover expects a light page, but this toolbar sits on dark.
 const TOOLBAR_BUTTON =
   'text-bg hover:bg-bg/15 hover:text-bg aria-expanded:bg-bg/15 aria-expanded:text-bg';
 
@@ -349,9 +349,8 @@ function SourceDetailViewer({
               onLoad={() => setIsEmbedLoaded(true)}
               src={embed.src}
               title={source.name}
-              // Without allow-same-origin the page runs as origin "null", so its
-              // CORS assets (module scripts, crossorigin CSS) fail to load. It is
-              // only unsafe for a page on our own origin, which could lift the sandbox.
+              // Without allow-same-origin the page's CORS files fail to load.
+              // It is only unsafe for our own origin, which could break out of the sandbox.
               sandbox={
                 new URL(embed.src).origin === window.location.origin
                   ? 'allow-scripts allow-forms allow-popups'
@@ -360,14 +359,13 @@ function SourceDetailViewer({
               allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               allowFullScreen
               referrerPolicy="no-referrer"
-              // Tweet.html always shows a scrollbar track, but its card never scrolls.
-              // widgets.js hides it the same way.
+              // Tweet.html shows a scrollbar track but never scrolls. widgets.js hides it too.
               scrolling={isTweet ? 'no' : undefined}
               className={cn(
                 'transition-opacity duration-300 motion-reduce:transition-none',
                 !isEmbedLoaded && 'opacity-0',
                 isTweet
-                  ? // The post card is at most 550px wide and has a transparent page around it.
+                  ? // The post card is at most 550px wide, with empty space around it.
                     'pointer-events-auto h-full w-full max-w-[550px] border-0'
                   : 'pointer-events-auto size-full border-0 bg-bg',
               )}

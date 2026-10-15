@@ -3,7 +3,6 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Neutrals are Tailwind's `neutral` scale verbatim - chroma 0, no hue cast. */
   --poise-color-bg: oklch(0.96 0 0);
   --poise-color-fg: oklch(0.205 0 0);
   --poise-color-muted: oklch(0.94 0 0);
@@ -74,15 +73,14 @@
   --poise-color-muted: oklch(0.269 0 0);
   --poise-color-muted-fg: oklch(0.7 0 0);
   --poise-color-border: oklch(0.269 0 0);
-  /* Lifted for contrast on the dark ground; the dark foreground keeps it readable. */
+  /* Lighter so it stands out on dark. The dark text on it stays readable. */
   --poise-color-accent: oklch(0.72 0.05 245);
   --poise-color-accent-fg: oklch(0.145 0 0);
   --poise-color-danger: oklch(0.7 0.08 30);
   --poise-color-danger-fg: oklch(0.145 0 0);
   --poise-color-ring: oklch(0.72 0.05 245);
 
-  /* Dropped in lightness and desaturated ~35% so the cover sits on the dark
-     canvas instead of vibrating off it. */
+  /* Darker and less colorful, so the cover sits calmly on the dark page. */
   --poise-gradient-danger-cover:
     radial-gradient(
       120% 100% at 18% 0%,
@@ -149,7 +147,6 @@
     calc((100vw - var(--spacing-contain-max)) / 2)
   );
 
-  /* Z-index */
   --z-index-header: 100;
   --z-index-announcement: 101;
   --z-index-toast: 102;
@@ -162,7 +159,7 @@
   --z-index-tooltip: 210;
   --z-index-router-overlay: 1000;
 
-  /* The namespace is `--transition-duration-*`; `--duration-*` emits no utility. */
+  /* Tailwind only makes utilities from `--transition-duration-*`, not `--duration-*`. */
   --transition-duration-instant: var(--poise-duration-instant);
   --transition-duration-fast: var(--poise-duration-fast);
   --transition-duration-base: var(--poise-duration-base);

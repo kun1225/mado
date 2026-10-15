@@ -63,8 +63,8 @@ function getDatabaseName() {
 }
 
 /**
- * v3: a source can sit in many collections and gains name, url, note and tags.
- * Runs inside the upgrade transaction, so it is all-or-nothing.
+ * v3: sources can be in many collections and get name, url, note and tags.
+ * It runs inside the upgrade transaction, so it all works or nothing changes.
  */
 // *** migrateSourcesToV3 ***
 function migrateSourcesToV3(sources: IDBObjectStore) {

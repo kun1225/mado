@@ -2,10 +2,6 @@ import { cn } from 'cn';
 
 import { useSourceDropzone } from '#/features/sources/hooks/source-interaction-hooks';
 
-/**
- * Drop media anywhere inside to add it to `collectionId`, or to the library
- * alone when it is null.
- */
 export function SourceDropZone({
   collectionId,
   label,
@@ -13,7 +9,6 @@ export function SourceDropZone({
   children,
 }: {
   collectionId: string | null;
-  /** Where the files go, shown while dragging: "Drop to add to {label}". */
   label: string;
   className?: string;
   children: React.ReactNode;

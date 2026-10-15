@@ -7,7 +7,7 @@ import { authClient } from '#/features/auth/auth-client';
 import { loadPageSession } from '#/features/auth/auth-session';
 import { setStorageAccount } from '#/features/storage/storage-account';
 
-// Every page under (app) shares one session check, so new pages get account-scoped storage for free.
+// One session check for every page under (app), so new pages get per-account storage for free.
 export const Route = createFileRoute('/(app)')({
   beforeLoad: ({ location }) => loadPageSession(location.href),
   component: RouteComponent,
@@ -15,7 +15,7 @@ export const Route = createFileRoute('/(app)')({
 
 function RouteComponent() {
   const { authUser } = Route.useRouteContext();
-  // beforeLoad skips the browser branch on SSR hydration, so bind the account here too.
+  // beforeLoad does not run in the browser after SSR, so set the account here too.
   if (authUser && typeof window !== 'undefined') setStorageAccount(authUser.id);
 
   return (
@@ -27,7 +27,7 @@ function RouteComponent() {
 }
 
 // *** SignedInGuard ***
-// Another tab may sign out or switch accounts; leave so local data stays with its owner.
+// Another tab may sign out or switch accounts. Leave, so local data stays with its owner.
 function SignedInGuard({ userId }: AuthSignedInGuardProps) {
   const session = authClient.useSession();
   useEffect(() => {

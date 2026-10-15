@@ -6,8 +6,8 @@ import type {
 } from './site-preview-type.js';
 
 /**
- * x.com forbids framing, but the syndication API behind its official embeds
- * shares the post's mp4 files. It is undocumented, so any surprise means "no video".
+ * x.com blocks framing, but its embed API shares the mp4 files.
+ * The API is undocumented, so anything strange means "no video".
  */
 export async function getXPostVideo(
   url: URL,
@@ -66,7 +66,7 @@ type SyndicationVariant = NonNullable<
 >['variants'][number];
 
 // *** getSyndicationUrl ***
-/** The token is not a secret: it is the same math react-tweet and widgets.js use. */
+/** Not a secret: react-tweet and widgets.js make the same token. */
 function getSyndicationUrl(id: string): URL {
   const token = ((Number(id) / 1e15) * Math.PI)
     .toString(36)
@@ -86,7 +86,7 @@ function pickBestMp4(variants: SyndicationVariant[]): string | null {
 }
 
 // *** getPostTitle ***
-/** X appends t.co links for the attached media; they are noise in a title. */
+/** X adds t.co links for media. They are noise in a title. */
 function getPostTitle(post: SyndicationPost): string {
   const text = post.text.replace(/(\s*https:\/\/t\.co\/\w+)+\s*$/, '').trim();
   return text || `@${post.user.screen_name}`;

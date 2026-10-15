@@ -44,7 +44,7 @@ import type { Source } from '#/features/sources/source-types';
 
 import { FLOATING_BAR, FLOATING_SURFACE } from '.';
 
-// A destructuring default (`data = []`) makes React Compiler skip the whole component.
+// A default like `data = []` makes React Compiler skip the whole component.
 const NO_COLLECTIONS: Collection[] = [];
 const NO_SOURCES: Source[] = [];
 
@@ -71,12 +71,12 @@ export function ActionDockSearch() {
 
   useDismissOnPointerDownOutside(rootRef, isOpen, close);
 
-  // Tabbing away must close the panel too, or its pointerdown listener outlives it.
+  // Tabbing away must close the panel too, or its pointerdown listener stays alive.
   function handleBlur(event: React.FocusEvent) {
     if (!rootRef.current?.contains(event.relatedTarget)) close();
   }
 
-  // Focus never leaves the root while open (see handleBlur), so Escape always lands here.
+  // Focus stays inside the root while open, so Escape always lands here.
   function handleKeyDown(event: React.KeyboardEvent) {
     if (event.key === 'Escape') close();
   }
@@ -93,8 +93,7 @@ export function ActionDockSearch() {
   function openSource(source: Source) {
     recent.add(query);
     close();
-    // Only the library grid holds every source, so the detail dialog can
-    // always find this one there.
+    // Only the library grid has every source, so the detail dialog can always find it there.
     void navigate({
       to: '/library',
       search: { [SOURCE_SEARCH_KEY]: source.id },
@@ -174,7 +173,7 @@ function useDismissOnPointerDownOutside(
 }
 
 // *** keepInputFocus ***
-// Clicking a row would blur the input, and arrow keys and Enter only work while it has focus.
+// Clicking a row would blur the input, and arrow keys and Enter need the input focused.
 function keepInputFocus(event: React.MouseEvent) {
   event.preventDefault();
 }
@@ -294,7 +293,7 @@ function ActionDockSearchRecent({
 }) {
   return (
     <>
-      {/* cmdk hides group headings from screen readers, so the Clear button lives outside the group. */}
+      {/* cmdk hides group headings from screen readers, so Clear lives outside the group. */}
       <div className="flex items-center justify-between px-2.5 pt-1.5 pb-1 text-xs text-muted-fg">
         <span>Recent</span>
         <button
@@ -316,12 +315,12 @@ function ActionDockSearchRecent({
             <span className="min-w-0 flex-1 truncate">{query}</span>
             <button
               type="button"
-              // A button inside an option is unreachable by arrow keys and confuses
-              // screen readers, so it is mouse-only; Clear covers keyboard users.
+              // Arrow keys cannot reach a button inside an option, and it confuses screen readers.
+              // So it is mouse-only. Keyboard users have Clear.
               tabIndex={-1}
               aria-hidden
               onClick={(event) => {
-                // Removing must not also fill the input via the row's onSelect.
+                // Stop the row's onSelect, or removing would also fill the input.
                 event.stopPropagation();
                 onRemove(query);
               }}
@@ -337,7 +336,7 @@ function ActionDockSearchRecent({
 }
 
 // *** ActionDockSearchSettingsButton ***
-// Settings do not exist yet; the button holds the spot until they do.
+// Settings do not exist yet. The button holds the spot until they do.
 function ActionDockSearchSettingsButton() {
   return (
     <TooltipProvider delay={200}>

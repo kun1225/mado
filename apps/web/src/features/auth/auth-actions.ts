@@ -51,7 +51,7 @@ const submitByMode: Record<
   },
 
   // *** signUp ***
-  // An existing email gets the same reply as a new one, so sign-up cannot reveal who has an account.
+  // A used email gets the same reply as a new one, so nobody can learn who has an account.
   'sign-up': async ({ name, email, password }) => {
     const result = await authClient.signUp.email({
       name,
