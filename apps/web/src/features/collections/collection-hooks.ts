@@ -89,12 +89,17 @@ export function useUpdateCollection() {
         collectionKeys.detail(collection.id),
         collection,
       );
+      // Sorted again, so a renamed card moves to the front right away.
       queryClient.setQueryData<Collection[]>(
         collectionKeys.all,
         (collections = []) =>
-          collections.map((current) =>
-            current.id === collection.id ? collection : current,
-          ),
+          collections
+            .map((current) =>
+              current.id === collection.id ? collection : current,
+            )
+            .sort((first, second) =>
+              second.updatedAt.localeCompare(first.updatedAt),
+            ),
       );
     },
   });

@@ -15,6 +15,15 @@
   --poise-color-danger-fg: oklch(0.985 0 0);
   --poise-color-ring: oklch(0.305 0 0);
 
+  /* Soft enough that previews in the pocket stay easy to see. */
+  --poise-color-folder-red: oklch(0.82 0.1 25);
+  --poise-color-folder-orange: oklch(0.85 0.1 60);
+  --poise-color-folder-yellow: oklch(0.9 0.11 95);
+  --poise-color-folder-green: oklch(0.85 0.1 150);
+  --poise-color-folder-blue: oklch(0.83 0.08 245);
+  --poise-color-folder-purple: oklch(0.8 0.09 300);
+  --poise-color-folder-pink: oklch(0.84 0.09 350);
+
   --poise-gradient-danger-cover:
     radial-gradient(
       120% 100% at 18% 0%,
@@ -79,6 +88,14 @@
   --poise-color-danger: oklch(0.7 0.08 30);
   --poise-color-danger-fg: oklch(0.145 0 0);
   --poise-color-ring: oklch(0.72 0.05 245);
+
+  --poise-color-folder-red: oklch(0.5 0.12 25);
+  --poise-color-folder-orange: oklch(0.56 0.11 60);
+  --poise-color-folder-yellow: oklch(0.62 0.1 95);
+  --poise-color-folder-green: oklch(0.52 0.1 150);
+  --poise-color-folder-blue: oklch(0.5 0.1 245);
+  --poise-color-folder-purple: oklch(0.48 0.11 300);
+  --poise-color-folder-pink: oklch(0.54 0.1 350);
 
   /* Darker and less colorful, so the cover sits calmly on the dark page. */
   --poise-gradient-danger-cover:

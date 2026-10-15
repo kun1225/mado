@@ -22,6 +22,7 @@ import {
   useDeleteCollection,
   useUpdateCollection,
 } from '#/features/collections/collection-hooks';
+import { MAX_COLLECTION_NAME_LENGTH } from '#/features/collections/collection-types';
 import { useSources } from '#/features/sources/hooks/source-hooks';
 
 import { CollectionMenu } from './-components/collection-menu';
@@ -128,6 +129,7 @@ function CollectionPage() {
           ref={nameInputRef}
           key={collectionName}
           defaultValue={collectionName}
+          maxLength={MAX_COLLECTION_NAME_LENGTH}
           onBlur={handleNameBlur}
           onKeyDown={handleNameKeyDown}
           aria-invalid={updateCollectionMutation.isError}

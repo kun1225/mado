@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Source } from '../sources/source-types';
 
+import type { UpdateCollectionInput } from './collection-types';
+
 let createCollection: typeof import('./collection-actions').createCollection;
 let deleteCollection: typeof import('./collection-actions').deleteCollection;
 let fetchAllCollections: typeof import('./collection-actions').fetchAllCollections;
@@ -179,6 +181,103 @@ describe('updateCollection', () => {
       'Collection not found: missing-id',
     );
   });
+
+  it('trims the name', async () => {
+    const created = await createCollection();
+
+    const updated = await updateCollection(created.id, {
+      name: '  Moodboard ',
+    });
+
+    expect(updated.name).toBe('Moodboard');
+  });
+
+  it.each([
+    ['an empty name', { name: '   ' }],
+    ['a name over 100 characters', { name: 'a'.repeat(101) }],
+    ['an unknown color', { color: 'teal' }],
+    ['an unknown field', { parentId: null }],
+  ])('rejects %s and stores nothing', async (_, input) => {
+    const created = await createCollection({ name: 'Keep me' });
+
+    await expect(
+      updateCollection(created.id, input as UpdateCollectionInput),
+    ).rejects.toThrow();
+    expect(await fetchCollection(created.id)).toEqual(created);
+  });
+
+  it('ignores keys set to undefined', async () => {
+    const created = await createCollection({ name: 'Keep me' });
+
+    const updated = await updateCollection(created.id, {
+      name: undefined,
+      color: 'red',
+    });
+
+    expect(updated.name).toBe('Keep me');
+    expect(updated.updatedAt).toBe(created.updatedAt);
+  });
+
+  it('saves a color and reads it back', async () => {
+    const created = await createCollection();
+
+    await updateCollection(created.id, { color: 'blue' });
+
+    expect((await fetchCollection(created.id))?.color).toBe('blue');
+    expect((await fetchAllCollections())[0].color).toBe('blue');
+  });
+
+  it('clears the color with null', async () => {
+    const created = await createCollection();
+    await updateCollection(created.id, { color: 'red' });
+
+    const updated = await updateCollection(created.id, { color: null });
+
+    expect(updated.color).toBeNull();
+  });
+
+  it('keeps updatedAt when only the color changes', async () => {
+    const created = await createCollection();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    const updated = await updateCollection(created.id, { color: 'green' });
+
+    expect(updated.updatedAt).toBe(created.updatedAt);
+  });
+
+  it('bumps updatedAt when the name changes with the color', async () => {
+    const created = await createCollection();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    const updated = await updateCollection(created.id, {
+      name: 'Renamed',
+      color: 'green',
+    });
+
+    expect(updated.updatedAt > created.updatedAt).toBe(true);
+  });
+});
+
+describe('color on old records', () => {
+  it('reads a record saved without a color as null', async () => {
+    const database = await openDatabase();
+    const transaction = database.transaction('collections', 'readwrite');
+    transaction.objectStore('collections').put({
+      id: 'old',
+      name: 'Old',
+      parentId: null,
+      saveCount: 0,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+    await new Promise((resolve) => {
+      transaction.oncomplete = resolve;
+    });
+
+    expect((await fetchCollection('old'))?.color).toBeNull();
+    expect((await fetchAllCollections())[0].color).toBeNull();
+    expect((await updateCollection('old', { name: 'New' })).color).toBeNull();
+  });
 });
 
 describe('deleteCollection', () => {
@@ -278,6 +377,7 @@ describe('pickPreviewSources', () => {
     id,
     name: id,
     parentId,
+    color: null,
     saveCount: 0,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',

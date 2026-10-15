@@ -13,9 +13,8 @@ import {
   MorphDropdownMenuTrigger,
 } from '@repo/ui/morph-dropdown-menu';
 
+import { CollectionDeleteDialog } from '#/components/collection-context-menu/collection-delete-dialog';
 import type { Collection } from '#/features/collections/collection-types';
-
-import { CollectionDeleteDialog } from './collection-delete-dialog';
 
 export function CollectionMenu({
   collection,

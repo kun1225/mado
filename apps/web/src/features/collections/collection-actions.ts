@@ -16,6 +16,7 @@ import type {
   CreateCollectionInput,
   UpdateCollectionInput,
 } from './collection-types';
+import { updateCollectionSchema } from './collection-types';
 
 export async function fetchAllCollections(): Promise<Collection[]> {
   const database = await openDatabase();
@@ -29,7 +30,7 @@ export async function fetchAllCollections(): Promise<Collection[]> {
 
   return collections
     .map((collection) => ({
-      ...collection,
+      ...normalizeCollection(collection),
       saveCount: counts.get(collection.id) ?? 0,
     }))
     .sort((first, second) => second.updatedAt.localeCompare(first.updatedAt));
@@ -48,7 +49,7 @@ export async function fetchCollection(id: string): Promise<Collection | null> {
 
   const counts = await countSourcesByCollection();
 
-  return { ...collection, saveCount: counts.get(id) ?? 0 };
+  return { ...normalizeCollection(collection), saveCount: counts.get(id) ?? 0 };
 }
 
 export async function createCollection(
@@ -59,6 +60,7 @@ export async function createCollection(
     id: crypto.randomUUID(),
     name: input.name ?? 'New collection',
     parentId: input.parentId ?? null,
+    color: null,
     saveCount: 0,
     createdAt: now,
     updatedAt: now,
@@ -86,8 +88,9 @@ export async function createCollection(
 
 export async function updateCollection(
   id: string,
-  input: UpdateCollectionInput,
+  rawInput: UpdateCollectionInput,
 ): Promise<Collection> {
+  const input = withoutUndefined(updateCollectionSchema.parse(rawInput));
   const database = await openDatabase();
   const transaction = database.transaction(STORES.collections, 'readwrite');
   const store = transaction.objectStore(STORES.collections);
@@ -96,10 +99,12 @@ export async function updateCollection(
 
   if (!existing) throw new Error(`Collection not found: ${id}`);
 
+  const isColorOnly = Object.keys(input).every((key) => key === 'color');
   const collection: Collection = {
-    ...existing,
+    ...normalizeCollection(existing),
     ...input,
-    updatedAt: new Date().toISOString(),
+    // Lists sort by updatedAt, so a recolored card would jump away.
+    updatedAt: isColorOnly ? existing.updatedAt : new Date().toISOString(),
   };
 
   store.put(collection);
@@ -139,6 +144,20 @@ export async function deleteCollection(id: string): Promise<Collection> {
   await toCompletion(transaction);
 
   return existing;
+}
+
+// *** withoutUndefined ***
+/** zod keeps a key set to `undefined`, and spreading it would erase the saved value. */
+function withoutUndefined<T extends object>(input: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(input).filter(([, value]) => value !== undefined),
+  ) as Partial<T>;
+}
+
+// *** normalizeCollection ***
+/** Records saved before colors existed have no `color` field. */
+function normalizeCollection(collection: Collection): Collection {
+  return { ...collection, color: collection.color ?? null };
 }
 
 const PREVIEW_COUNT = 3;

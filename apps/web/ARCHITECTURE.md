@@ -85,12 +85,24 @@ toolbar / viewer / panel thumbnail
 ### Delete a collection
 
 ```text
-collection menu → confirm → useDeleteCollection → deleteCollection
+collection page "…" menu  or  card context menu
+  → confirm dialog → useDeleteCollection → deleteCollection
   → one transaction over collections + sources:
       for the collection and every folder below it:
         softDeleteSourcesInCollection   trash the sources only here, detach the rest
         delete the collection
-  → navigate to /library, refresh collections + sources + trash
+  → refresh collections + sources + trash
+  → from the collection page: navigate to /library. From a card: stay.
+```
+
+### Edit a collection from its card
+
+```text
+right-click / long-press a CollectionCard
+  → CollectionContextMenu (MorphContextMenu from @repo/ui)
+  → Rename / Change color / Delete → its dialog
+  → useUpdateCollection → updateCollection (zod-checked)   or   the delete flow above
+  → update the list and detail caches in place
 ```
 
 ### Account switch
