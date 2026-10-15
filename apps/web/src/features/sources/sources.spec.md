@@ -58,3 +58,8 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 ## Known gaps
 
 - If a compression is reading a file at the moment a replace deletes it, the compression fails silently. There's no toast, and the new file still gets its own compression.
+
+## Planned
+
+- **Import a folder.** Drop a folder, or pick one with a file input. Every image and video inside becomes a source. Each subfolder becomes a folder (nested collection) with the same layout. Other files are skipped. Touches `collections`.
+- **A more fun embed loading state.** While an embedded site loads in the detail dialog, show something friendly and human instead of a plain wait. Idea: two drawn eyes that look around, as if searching for the page.

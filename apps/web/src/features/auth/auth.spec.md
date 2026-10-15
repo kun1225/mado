@@ -28,3 +28,7 @@ Signing in is optional. Guests use the app fully with data on this device. An ac
 ## Known gaps
 
 - There's no way yet to move guest data into an account after signing up.
+
+## Planned
+
+- **A settings panel.** One place for app settings. Users can sign in (and later sign out or switch accounts) from this panel.

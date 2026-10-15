@@ -38,3 +38,7 @@ Collections group sources. They can nest: a collection inside another one is cal
 ## Known gaps
 
 - Folders can't be moved to another parent yet. `UpdateCollectionInput` only allows `name`.
+
+## Planned
+
+- **Export all sources.** Download every source as one archive. Each top-level collection is a folder at the second level, and its folders become subfolders. Sources in no collection still need a place (for example a `library/` folder). See "Export" in `docs/prd.md`.

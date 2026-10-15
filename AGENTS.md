@@ -18,6 +18,7 @@
 | Doc                                                                                                              | Purpose                                                                                               |
 | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | [`apps/web/ARCHITECTURE.md`](apps/web/ARCHITECTURE.md)                                                           | Layers, domain dependencies, external API calls, and key flows across domains                         |
+| [`docs/roadmap.md`](docs/roadmap.md)                                                                             | Planned features and their order: near-term items, then permissions, collaboration and whiteboards    |
 | [`apps/web/src/features/sources/sources.spec.md`](apps/web/src/features/sources/sources.spec.md)                 | Saved images, videos and websites: adding, compression, the detail dialog, replacing files, the trash |
 | [`apps/web/src/features/collections/collections.spec.md`](apps/web/src/features/collections/collections.spec.md) | Collections and nested folders: naming, what a collection shows, counts, previews, deleting           |
 | [`apps/web/src/features/search/search.spec.md`](apps/web/src/features/search/search.spec.md)                     | Name search over collections and sources, and recent searches                                         |
