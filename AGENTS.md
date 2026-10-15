@@ -7,3 +7,9 @@
 - Keep feature-specific implementation details in the feature module when they have no independent reuse.
 - Extract feature types into a dedicated `<feature>.type.ts` file.
 - Prefix feature types with the feature name and use PascalCase, such as `SitePreviewHtmlMetadata`.
+
+## Feature Specs
+
+- Each feature folder may have a `<feature>.spec.md` (for example `features/sources/sources.spec.md`). It records user-facing behavior, decisions with their reasons, and known gaps.
+- Read the spec before you change a feature.
+- When you change behavior or make a decision, update the spec in the same commit. A wrong spec is worse than no spec.
