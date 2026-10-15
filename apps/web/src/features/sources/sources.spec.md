@@ -5,6 +5,8 @@
 A source is one saved piece of inspiration: an image, a video, or a website.
 Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 
+**Depends on:** `storage`, `collections`. **Used by:** `collections`, `search`. See `apps/web/ARCHITECTURE.md`.
+
 ## Behavior
 
 ### Adding

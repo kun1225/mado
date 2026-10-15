@@ -4,6 +4,8 @@
 
 Find a collection, folder or source by its name, fast and on the device.
 
+**Depends on:** `collections`, `sources` (types only), `storage`. **Used by:** the action dock. See `apps/web/ARCHITECTURE.md`.
+
 ## Behavior
 
 - Search matches names only, with Fuse.js. A typo or two still matches, and the word can be anywhere in the name.

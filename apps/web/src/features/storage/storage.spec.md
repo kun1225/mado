@@ -4,6 +4,8 @@
 
 The local database under every feature. Records go in IndexedDB, and media files go in OPFS (see `sources`).
 
+**Depends on:** nothing. **Used by:** every domain. See `apps/web/ARCHITECTURE.md`.
+
 ## Behavior
 
 - Guests use the `mado` database and the OPFS root.

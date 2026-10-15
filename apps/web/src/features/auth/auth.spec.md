@@ -4,6 +4,8 @@
 
 Signing in is optional. Guests use the app fully with data on this device. An account keeps each user's local data apart now, and is the base for cloud backup later.
 
+**Depends on:** `storage`. **Used by:** every `(app)` page. See `apps/web/ARCHITECTURE.md`.
+
 ## Behavior
 
 - Guests are never sent to sign-in.
