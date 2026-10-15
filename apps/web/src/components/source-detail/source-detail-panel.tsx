@@ -52,6 +52,7 @@ export function SourceDetailPanel({
 }) {
   return (
     <div
+      data-flip-chrome
       className={cn(
         'motion-reduce:transition-none md:shrink-0 md:overflow-hidden md:transition-[width] md:duration-300 md:ease-in-out-circ',
         isOpen ? 'md:w-88' : 'md:w-0',

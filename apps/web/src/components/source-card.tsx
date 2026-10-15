@@ -49,6 +49,7 @@ export function SourceCard({
   return (
     <figure
       ref={figureRef}
+      data-source-card={source.id}
       style={{ aspectRatio }}
       aria-busy={isCompressing}
       className={cn(

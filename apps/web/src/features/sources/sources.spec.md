@@ -28,6 +28,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - Arrow keys move to the previous/next source, except while typing in a field.
 - Website sources that can be embedded show the live page in an iframe. Their stored image is a **thumbnail**, shown only in the details panel.
 - Websites that cannot be embedded show their image. With no image, the viewer offers "Add a file".
+- Opening an image or video grows it out of its grid card (FLIP), and closing shrinks it back into the card of the source shown last. Only the first source after opening flies; arrow keys swap without it. With no card on screen, a website, or reduced motion on, the dialog just fades.
 
 ### Replacing the file
 
@@ -61,6 +62,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **2026-10 — The iframe drop overlay shows when a file drag starts anywhere in the window (`useIsDraggingFile`).** An iframe swallows drag events, so the overlay has to be in place before the drag reaches it.
 - **2026-10 — The whole detail dialog blocks drops.** The dialog renders inside the library drop zone, and React events from portals bubble to React parents.
 - **2026-10 — Website thumbnails are compressed like images.**
+- **2026-10 — The FLIP moves the viewer media, not the dialog.** The dialog covers the whole screen, so only the picture has a card to fly from. The popup's own CSS fade is turned off while it flies, because it would fade the media too; the toolbar and panel (`data-flip-chrome`) fade on their own. Base UI only waits for the popup's own animations before it unmounts, so the close adds an empty animation on the popup to hold it until the media lands.
 - **2026-10 — Far grid cards unmount their media instead of hiding it.** Unmounting frees the decoded image, the video decoder and the blob URL. `display: none` on the card would break the grid, because `masonry-layout` would measure it as 0px tall. Cards stay in the DOM, so this is not full virtual scrolling.
 - **2026-10 — `useInView` shares one `IntersectionObserver` per option set**, because hundreds of cards each owning one is much slower.
 

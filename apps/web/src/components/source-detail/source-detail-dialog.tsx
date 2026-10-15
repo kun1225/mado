@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
@@ -37,6 +37,7 @@ import {
 import type { Source } from '#/features/sources/source-types';
 import { canEmbedSite } from '#/features/sources/source-types';
 
+import { flipSourceDetail } from './source-detail-flip';
 import { SourceDetailPanel } from './source-detail-panel';
 
 export function SourceDetailDialog({
@@ -71,6 +72,50 @@ export function SourceDetailDialog({
   const previousId = view.previous?.id;
   const nextId = view.next?.id;
 
+  const [media, setMedia] = useState<HTMLElement | null>(null);
+  const [isFlipClosing, setIsFlipClosing] = useState(false);
+  // A new object on every open, so reopening the same source flies again.
+  const [opening, setOpening] = useState<{ id: string } | null>(null);
+  const [wasOpen, setWasOpen] = useState(false);
+  const isDialogOpen = view.source !== undefined;
+  if (isDialogOpen !== wasOpen) {
+    setWasOpen(isDialogOpen);
+    if (view.source) {
+      setOpening({ id: view.source.id });
+      setIsFlipClosing(false);
+    }
+  }
+  const aspectRatio =
+    source?.width && source.height ? source.width / source.height : null;
+
+  // Only the source shown first after opening flies from its card; arrow keys
+  // swap sources without it. A layout effect, so the media never paints at
+  // rest before it jumps to the card.
+  const flippedOpening = useRef<{ id: string } | null>(null);
+  useLayoutEffect(() => {
+    if (!isDialogOpen || media === null || opening === null) return;
+    if (opening.id !== source?.id || flippedOpening.current === opening) return;
+
+    const flipOpen = () => {
+      flippedOpening.current = opening;
+      flipSourceDetail({
+        media,
+        sourceId: opening.id,
+        aspectRatio,
+        direction: 'open',
+      });
+    };
+    // Before its metadata a video has a 300×150 box, which is not where it lands.
+    if (
+      media instanceof HTMLVideoElement &&
+      media.readyState < HTMLMediaElement.HAVE_METADATA
+    ) {
+      media.addEventListener('loadedmetadata', flipOpen, { once: true });
+      return () => media.removeEventListener('loadedmetadata', flipOpen);
+    }
+    flipOpen();
+  }, [isDialogOpen, media, opening, source?.id, aspectRatio]);
+
   if (source === undefined) return null;
   const isEmbedded = canEmbedSite(source);
   const replaceLabel = isEmbedded ? 'Replace thumbnail' : 'Replace file';
@@ -87,6 +132,21 @@ export function SourceDetailDialog({
           : undefined;
 
     if (targetId !== undefined) onActiveIdChange(targetId);
+  }
+
+  // Runs before the dialog closes, so Base UI's exit wait sees the animations.
+  function close() {
+    const didFlip =
+      media !== null &&
+      source !== undefined &&
+      flipSourceDetail({
+        media,
+        sourceId: source.id,
+        aspectRatio,
+        direction: 'close',
+      });
+    setIsFlipClosing(didFlip);
+    onActiveIdChange(null);
   }
 
   function handleDelete() {
@@ -108,14 +168,18 @@ export function SourceDetailDialog({
   return (
     <div className="contents" {...DROP_BLOCKER}>
       <Dialog
-        open={view.source !== undefined}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) onActiveIdChange(null);
+        open={isDialogOpen}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) close();
         }}
       >
         <DialogContent
-          className="flex flex-col"
-          onBackdropClick={() => onActiveIdChange(null)}
+          // The popup's fade would also fade the media flying back to its card.
+          className={cn(
+            'flex flex-col',
+            isFlipClosing && 'data-closed:animate-none!',
+          )}
+          onBackdropClick={close}
           onKeyDown={handleKeyDown}
         >
           <DialogTitle className="sr-only">{source.name}</DialogTitle>
@@ -150,6 +214,7 @@ export function SourceDetailDialog({
                 source={source}
                 objectUrl={objectUrl}
                 onAddImage={replace.open}
+                mediaRef={setMedia}
               />
               {(replace.isDragActive || (isEmbedded && isDraggingFile)) && (
                 <SourceDetailDropOverlay
@@ -230,7 +295,10 @@ function SourceDetailToolbar({
   onTogglePanel: () => void;
 }) {
   return (
-    <header className="pointer-events-auto flex h-12 shrink-0 items-center gap-2 px-edge text-bg">
+    <header
+      data-flip-chrome
+      className="pointer-events-auto flex h-12 shrink-0 items-center gap-2 px-edge text-bg"
+    >
       <Button
         variant="ghost"
         size="icon-sm"
@@ -320,10 +388,12 @@ function SourceDetailViewer({
   source,
   objectUrl,
   onAddImage,
+  mediaRef,
 }: {
   source: Source;
   objectUrl: string | null;
   onAddImage: () => void;
+  mediaRef: (media: HTMLElement | null) => void;
 }) {
   // Compression swaps the stored file, which breaks a video that is playing.
   const isCompressing = useCompressingSourceIds().has(source.id);
@@ -426,6 +496,7 @@ function SourceDetailViewer({
 
       {objectUrl !== null && source.kind === 'image' && (
         <img
+          ref={mediaRef}
           src={objectUrl}
           alt={source.name}
           className="pointer-events-auto size-full object-contain"
@@ -437,6 +508,7 @@ function SourceDetailViewer({
         !isCompressing &&
         !isUnplayable && (
           <video
+            ref={mediaRef}
             src={objectUrl}
             onError={() => setFailedUrl(objectUrl)}
             controls
