@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Delete02Icon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from 'cn';
@@ -8,6 +8,15 @@ import { Button } from '@repo/ui/button';
 import { useMediaObjectUrl } from '#/features/sources/hooks/source-hooks';
 import type { ToggleSelectOptions } from '#/features/sources/hooks/source-interaction-hooks';
 import type { Source } from '#/features/sources/source-types';
+import { useInView } from '#/hooks/use-in-view';
+import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
+
+// One screen above and below, so media is ready before it scrolls in.
+// Outside this box a card is "far" and its media unmounts.
+const NEAR_VIEWPORT = { rootMargin: '100% 0px', threshold: 0 };
+
+// Half visible, so a sliver at the edge doesn't start playback.
+const PLAYING_VIEWPORT = { rootMargin: '0px', threshold: 0.5 };
 
 export function SourceCard({
   source,
@@ -31,23 +40,15 @@ export function SourceCard({
   };
   onOpen?: () => void;
 }) {
-  const objectUrl = useMediaObjectUrl(
-    source.storageKey,
-    source.mimeType,
-    source.sizeBytes,
-  );
-
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const isUnplayable = objectUrl !== null && failedUrl === objectUrl;
+  const figureRef = useRef<HTMLElement>(null);
+  const isNear = useInView(figureRef, NEAR_VIEWPORT);
 
   const aspectRatio =
     source.width && source.height ? source.width / source.height : 1;
 
-  // Compression swaps the file, which would break a playing video.
-  const isWaitingForVideo = isCompressing && source.kind === 'video';
-
   return (
     <figure
+      ref={figureRef}
       style={{ aspectRatio }}
       aria-busy={isCompressing}
       className={cn(
@@ -56,57 +57,11 @@ export function SourceCard({
         selection.isSelected && 'ring-2 ring-fg ring-offset-2 ring-offset-bg',
       )}
     >
-      {((objectUrl === null && source.storageKey) || isWaitingForVideo) && (
-        <div className="size-full animate-pulse bg-muted" />
-      )}
-
-      {objectUrl !== null && source.kind === 'image' && (
-        <img
-          src={objectUrl}
-          alt={source.name}
-          className="size-full object-cover"
-        />
-      )}
-
-      {source.kind === 'website' &&
-        (objectUrl ? (
-          <img src={objectUrl} alt="" className="size-full object-cover" />
-        ) : (
-          <div className="flex size-full min-h-40 flex-col justify-end bg-muted p-4">
-            {source.site?.domain && (
-              <p className="truncate text-xs text-muted-fg">
-                {source.site.domain}
-              </p>
-            )}
-            <p className="mt-1 line-clamp-2 text-sm font-medium">
-              {source.name}
-            </p>
-          </div>
-        ))}
-
-      {objectUrl !== null &&
-        source.kind === 'video' &&
-        !isCompressing &&
-        !isUnplayable && (
-          <video
-            src={objectUrl}
-            onError={() => setFailedUrl(objectUrl)}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="size-full object-cover"
-          />
-        )}
-
-      {isUnplayable && !isCompressing && (
-        <p
-          role="alert"
-          className="flex size-full items-center justify-center bg-muted p-2 text-center text-xs text-muted-fg"
-        >
-          This video format can't be played in this browser.
-        </p>
-      )}
+      <SourceCardBody
+        source={source}
+        isNear={isNear}
+        isCompressing={isCompressing}
+      />
 
       {isCompressing && (
         <div
@@ -172,6 +127,200 @@ export function SourceCard({
         </div>
       </figcaption>
     </figure>
+  );
+}
+
+// *** SourceCardBody ***
+/** Stays mounted while the media comes and goes, so it remembers a failed file. */
+function SourceCardBody({
+  source,
+  isNear,
+  isCompressing,
+}: {
+  source: Source;
+  isNear: boolean;
+  isCompressing: boolean;
+}) {
+  // A blob URL changes on every remount, so the file is keyed by what's stored.
+  const fileKey = `${source.storageKey}:${source.sizeBytes}`;
+  const [failedFileKey, setFailedFileKey] = useState<string | null>(null);
+
+  // Compression swaps the file, which would break a playing video.
+  if (isCompressing && source.kind === 'video') {
+    return <div className="size-full animate-pulse bg-muted" />;
+  }
+
+  if (failedFileKey === fileKey) {
+    return (
+      <p
+        role="alert"
+        className="flex size-full items-center justify-center bg-muted p-2 text-center text-xs text-muted-fg"
+      >
+        This video format can't be played in this browser.
+      </p>
+    );
+  }
+
+  // Without a stored file there is nothing heavy to unload.
+  if (!isNear || source.storageKey === null) {
+    return <SourceCardBackdrop source={source} isVisible />;
+  }
+
+  return (
+    <SourceCardMedia
+      source={source}
+      onUnplayable={() => setFailedFileKey(fileKey)}
+    />
+  );
+}
+
+// *** SourceCardBackdrop ***
+/**
+ * Absolute, so it keeps the card's size and can sit under fading media.
+ * A website shows its name and domain, which costs nothing to render.
+ */
+function SourceCardBackdrop({
+  source,
+  isVisible,
+}: {
+  source: Source;
+  isVisible: boolean;
+}) {
+  return (
+    <div
+      aria-hidden={source.kind !== 'website'}
+      className={cn(
+        'pointer-events-none absolute inset-0 transition-opacity duration-slow ease-standard motion-reduce:transition-none',
+        source.kind !== 'website' && 'bg-muted/50',
+        isVisible ? 'opacity-100' : 'opacity-0',
+      )}
+    >
+      {source.kind === 'website' && <SourceCardWebsiteTile source={source} />}
+    </div>
+  );
+}
+
+// *** SourceCardWebsiteTile ***
+function SourceCardWebsiteTile({ source }: { source: Source }) {
+  return (
+    <div className="flex size-full min-h-40 flex-col justify-end bg-muted p-4">
+      {source.site?.domain && (
+        <p className="truncate text-xs text-muted-fg">{source.site.domain}</p>
+      )}
+      <p className="mt-1 line-clamp-2 text-sm font-medium">{source.name}</p>
+    </div>
+  );
+}
+
+// *** SourceCardMedia ***
+function SourceCardMedia({
+  source,
+  onUnplayable,
+}: {
+  source: Source;
+  onUnplayable: () => void;
+}) {
+  const objectUrl = useMediaObjectUrl(
+    source.storageKey,
+    source.mimeType,
+    source.sizeBytes,
+  );
+
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
+  const isLoaded = objectUrl !== null && loadedUrl === objectUrl;
+
+  const mediaClass = cn(
+    'relative size-full object-cover transition-opacity duration-slow ease-standard motion-reduce:transition-none',
+    isLoaded ? 'opacity-100' : 'opacity-0',
+  );
+
+  return (
+    <>
+      <SourceCardBackdrop source={source} isVisible={!isLoaded} />
+
+      {objectUrl !== null && source.kind === 'video' && (
+        <SourceCardVideo
+          src={objectUrl}
+          className={mediaClass}
+          onReady={() => setLoadedUrl(objectUrl)}
+          onError={onUnplayable}
+        />
+      )}
+
+      {objectUrl !== null && source.kind !== 'video' && (
+        <img
+          src={objectUrl}
+          alt={source.kind === 'image' ? source.name : ''}
+          onLoad={() => setLoadedUrl(objectUrl)}
+          className={mediaClass}
+        />
+      )}
+    </>
+  );
+}
+
+// *** SourceCardVideo ***
+function SourceCardVideo({
+  src,
+  className,
+  onReady,
+  onError,
+}: {
+  src: string;
+  className: string;
+  onReady: () => void;
+  onError: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const isVisible = useInView(videoRef, PLAYING_VIEWPORT);
+  const prefersReducedMotion = usePrefersReducedMotion();
+
+  // Set here, not as a prop, so the cleanup can clear it: a removed <video>
+  // keeps its decoder until garbage collection, and Chrome caps how many a
+  // page may hold. A prop would not come back after StrictMode reruns this.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.src = src;
+
+    return () => {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+    };
+  }, [src]);
+
+  // `src` is a dependency because a new file resets the element to paused.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (!isVisible || prefersReducedMotion) {
+      video.pause();
+      return;
+    }
+
+    // `play()` rejects when a pause or unmount interrupts it, which is expected while scrolling.
+    video.play().catch(() => undefined);
+  }, [isVisible, prefersReducedMotion, src]);
+
+  // The ref is null after unmount, so the release above can't count as a failure.
+  function handleError() {
+    if (videoRef.current) onError();
+  }
+
+  return (
+    <video
+      ref={videoRef}
+      muted
+      loop
+      playsInline
+      preload="auto"
+      onLoadedData={onReady}
+      onError={handleError}
+      className={className}
+    />
   );
 }
 

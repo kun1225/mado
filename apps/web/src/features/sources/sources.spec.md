@@ -38,6 +38,13 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - Only one replace per source at a time. A second drop shows "Wait for the current replace to finish."
 - Dropping a file on the panel, the toolbar or the backdrop does nothing. It never replaces the file and never adds a new source.
 
+### Grid
+
+- A card more than one screen above or below the visible area is **far**. Its image or video is removed, and only a box with the same size and a soft background stays.
+- A card within one screen loads its media and fades it in once it has loaded.
+- A video plays while at least half of it is on screen, and pauses otherwise. With reduced motion on, it never plays by itself.
+- A video that went far and comes back starts again from the beginning.
+
 ### Deleting
 
 - Deleting moves a source to the trash, with an undo toast. The file stays in OPFS.
@@ -54,9 +61,12 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **2026-10 — The iframe drop overlay shows when a file drag starts anywhere in the window (`useIsDraggingFile`).** An iframe swallows drag events, so the overlay has to be in place before the drag reaches it.
 - **2026-10 — The whole detail dialog blocks drops.** The dialog renders inside the library drop zone, and React events from portals bubble to React parents.
 - **2026-10 — Website thumbnails are compressed like images.**
+- **2026-10 — Far grid cards unmount their media instead of hiding it.** Unmounting frees the decoded image, the video decoder and the blob URL. `display: none` on the card would break the grid, because `masonry-layout` would measure it as 0px tall. Cards stay in the DOM, so this is not full virtual scrolling.
+- **2026-10 — `useInView` shares one `IntersectionObserver` per option set**, because hundreds of cards each owning one is much slower.
 
 ## Known gaps
 
+- Every card stays in the DOM. With many thousands of sources, the DOM itself gets slow. The fix is our own column math from the aspect ratios, rendering only visible cards.
 - If a compression is reading a file at the moment a replace deletes it, the compression fails silently. There's no toast, and the new file still gets its own compression.
 
 ## Planned
