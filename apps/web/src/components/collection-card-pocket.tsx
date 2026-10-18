@@ -43,7 +43,8 @@ export function CollectionCardPocket({
 
       <div
         className={cn(
-          'absolute inset-x-0 bottom-0 h-16 origin-bottom transform-[rotateX(0deg)] rounded-md bg-[var(--pocket-front,var(--color-muted))]',
+          'absolute inset-x-0 bottom-0 h-16 origin-bottom transform-[rotateX(0deg)] rounded-md bg-(--pocket-front,var(--color-muted))',
+          'bg-linear-to-b from-white/25 to-black/5 shadow-[inset_0_1px_0_rgb(255_255_255/0.35)] dark:from-white/10 dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.1)]',
           'transition-[transform,background-color] duration-fast ease-out-quart motion-reduce:transition-none',
           'group-hover:transform-[rotateX(-28deg)] group-hover:duration-middle',
           'group-focus-visible:transform-[rotateX(-28deg)]',
@@ -88,14 +89,14 @@ function CollectionCardPreview({
           width: size.width,
           height: size.height,
           marginLeft: -size.width / 2,
-          marginBottom: -size.height / 2,
+          marginBottom: PREVIEW_PEEK - size.height,
           '--offset': offset,
           '--delay': `${delayMs}ms`,
         } as CSSProperties
       }
       className={cn(
         'absolute bottom-16 left-1/2 overflow-hidden rounded-sm border bg-muted outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10',
-        'origin-bottom [translate:calc(var(--offset)*30px)_0] rotate-[calc(var(--offset)*5deg)]',
+        'origin-bottom [translate:calc(var(--offset)*14px)_0] rotate-[calc(var(--offset)*3deg)]',
         'transition-[translate,rotate] duration-fast ease-out-quart motion-reduce:transition-none',
         'group-hover:[translate:calc(var(--offset)*34px)_-25%] group-hover:rotate-[calc(var(--offset)*9deg)] group-hover:delay-(--delay) group-hover:duration-middle',
         'group-focus-visible:[translate:calc(var(--offset)*34px)_-25%] group-focus-visible:rotate-[calc(var(--offset)*9deg)]',
@@ -119,6 +120,9 @@ function CollectionCardPreview({
     </div>
   );
 }
+
+// Only the top of each card rises above the front, so the back of the folder still shows.
+const PREVIEW_PEEK = 22;
 
 // *** fitPreview ***
 const PREVIEW_BOX = { width: 64, height: 56 };
