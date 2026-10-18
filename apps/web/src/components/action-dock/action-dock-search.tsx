@@ -42,6 +42,7 @@ import {
   searchLibrary,
 } from '#/features/search/search-action';
 import type { SearchResults } from '#/features/search/search-type';
+import { useSettingsSearch } from '#/features/settings/settings-hooks';
 import {
   useAllSources,
   useMediaObjectUrl,
@@ -479,8 +480,8 @@ function ActionDockSearchRecent({
 }
 
 // *** ActionDockSearchSettingsButton ***
-// Settings do not exist yet. The button holds the spot until they do.
 function ActionDockSearchSettingsButton() {
+  const settings = useSettingsSearch();
   return (
     <TooltipProvider delay={200}>
       <Tooltip>
@@ -491,6 +492,7 @@ function ActionDockSearchSettingsButton() {
               variant="ghost"
               size="icon"
               className="rounded-full text-muted-fg hover:text-fg"
+              onClick={() => settings.open('account')}
             />
           }
         >

@@ -104,7 +104,7 @@ async function verifiedAccount(email: string) {
     name: 'Mado User',
     email,
     password,
-    callbackURL: `${config.webOrigin}/verify-email?verified=true`,
+    callbackURL: `${config.webOrigin}/library?settings=account&verified=true`,
   });
   expect(result.status).toBe(200);
   const link = emailLink(email);
@@ -129,7 +129,7 @@ describe('authentication integration', () => {
       name: 'Test User',
       email,
       password,
-      callbackURL: `${config.webOrigin}/verify-email?verified=true`,
+      callbackURL: `${config.webOrigin}/library?settings=account&verified=true`,
     });
     expect(signup.status).toBe(200);
     expect(signup.headers.get('set-cookie')).toBeNull();
@@ -146,7 +146,7 @@ describe('authentication integration', () => {
     );
     expect(verification.status).toBe(302);
     expect(verification.headers.get('location')).toBe(
-      `${config.webOrigin}/verify-email?verified=true`,
+      `${config.webOrigin}/library?settings=account&verified=true`,
     );
     expect(
       (await post('sign-in/email', { email, password: 'wrong password' }))
@@ -182,7 +182,7 @@ describe('authentication integration', () => {
     const cookie = await verifiedAccount(email);
     const reset = await post('request-password-reset', {
       email,
-      redirectTo: `${config.webOrigin}/reset-password`,
+      redirectTo: `${config.webOrigin}/library?settings=account&auth=reset-password`,
     });
     expect(reset.status).toBe(200);
     const link = emailLink(email);
@@ -190,7 +190,9 @@ describe('authentication integration', () => {
       redirect: 'manual',
     });
     const destination = new URL(callback.headers.get('location')!);
-    expect(destination.pathname).toBe('/reset-password');
+    expect(destination.pathname).toBe('/library');
+    expect(destination.searchParams.get('settings')).toBe('account');
+    expect(destination.searchParams.get('auth')).toBe('reset-password');
     const token = destination.searchParams.get('token');
     const newPassword = 'a different long password';
     expect((await post('reset-password', { token, newPassword })).status).toBe(
@@ -217,7 +219,7 @@ describe('authentication integration', () => {
     ).toBe(401);
     await post('request-password-reset', {
       email,
-      redirectTo: `${config.webOrigin}/reset-password`,
+      redirectTo: `${config.webOrigin}/library?settings=account&auth=reset-password`,
     });
     const link = emailLink(email);
     const token = link.pathname.split('/').at(-1);
@@ -247,11 +249,11 @@ describe('authentication integration', () => {
     expect(duplicate.status).toBe(first.status);
     const existing = await post('request-password-reset', {
       email,
-      redirectTo: `${config.webOrigin}/reset-password`,
+      redirectTo: `${config.webOrigin}/library?settings=account&auth=reset-password`,
     });
     const missing = await post('request-password-reset', {
       email: 'missing@example.com',
-      redirectTo: `${config.webOrigin}/reset-password`,
+      redirectTo: `${config.webOrigin}/library?settings=account&auth=reset-password`,
     });
     expect(missing.status).toBe(existing.status);
     expect(await missing.json()).toEqual(await existing.json());

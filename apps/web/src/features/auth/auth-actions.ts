@@ -82,7 +82,7 @@ const submitByMode: Record<
   'forgot-password': async ({ email }) => {
     const result = await authClient.requestPasswordReset({
       email,
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}/library?settings=account&auth=reset-password`,
     });
     if (result.error) {
       return {
@@ -108,8 +108,10 @@ const submitByMode: Record<
         error: 'This reset link may have expired. Please request a new one.',
       };
     }
-    window.location.replace('/sign-in');
-    return {};
+    return {
+      message: 'Your password is changed. Sign in with the new one.',
+      nextMode: 'sign-in',
+    };
   },
 };
 
@@ -120,5 +122,5 @@ function rateLimitedOr(status: number, fallback: string) {
 
 // *** verifyEmailCallbackUrl ***
 function verifyEmailCallbackUrl() {
-  return `${window.location.origin}/verify-email?verified=true`;
+  return `${window.location.origin}/library?settings=account&verified=true`;
 }

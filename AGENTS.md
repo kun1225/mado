@@ -23,4 +23,5 @@
 | [`apps/web/src/features/collections/collections.spec.md`](apps/web/src/features/collections/collections.spec.md) | Collections and nested folders: naming, what a collection shows, counts, previews, deleting           |
 | [`apps/web/src/features/search/search.spec.md`](apps/web/src/features/search/search.spec.md)                     | Name search over collections and sources, and recent searches                                         |
 | [`apps/web/src/features/auth/auth.spec.md`](apps/web/src/features/auth/auth.spec.md)                             | Optional accounts, guest mode, sign-in flows, safe redirects, account switching                       |
+| [`apps/web/src/features/settings/settings.spec.md`](apps/web/src/features/settings/settings.spec.md)             | The settings dialog: tabs, the account tab, sign in/out, and the URL params email links use           |
 | [`apps/web/src/features/storage/storage.spec.md`](apps/web/src/features/storage/storage.spec.md)                 | IndexedDB and OPFS per account, migrations, rules for schema changes                                  |

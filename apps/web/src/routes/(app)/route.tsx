@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 
-import { SignOutButton } from '#/components/auth/sign-out-button';
+import { SettingsDialog } from '#/components/settings/settings-dialog';
 import type { AuthSignedInGuardProps } from '#/features/auth/auth.type';
 import { authClient } from '#/features/auth/auth-client';
 import { loadPageSession } from '#/features/auth/auth-session';
@@ -22,6 +22,7 @@ function RouteComponent() {
     <>
       {authUser && <SignedInGuard userId={authUser.id} />}
       <Outlet />
+      <SettingsDialog authUser={authUser} />
     </>
   );
 }
@@ -32,8 +33,8 @@ function SignedInGuard({ userId }: AuthSignedInGuardProps) {
   const session = authClient.useSession();
   useEffect(() => {
     if (session.isPending || session.error) return;
-    if (session.data?.user.id !== userId) window.location.replace('/sign-in');
+    if (session.data?.user.id !== userId) window.location.replace('/library');
   }, [session.data, session.isPending, session.error, userId]);
 
-  return <SignOutButton />;
+  return null;
 }
