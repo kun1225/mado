@@ -59,14 +59,9 @@ const MotionCommand = motion.create(Command);
 
 const DOCK_WIDTH = { closed: '22rem', open: '30rem' };
 
-// One spring for the bar and the panel, both ways, so they move as one piece.
 const DOCK_SPRING = springs.bouncy;
 
-// Hidden, the panel is a strip half as wide, pushed down behind the bar, so it rises out of the bar.
-// The box and the rows move apart: clipping the box would cut off its border and shadow,
-// and its background alone barely shows against the page.
 const PANEL_VARIANTS = {
-  // 8px gap + 8px into the 48px bar centers the 32px strip inside the bar.
   hidden: { y: 48, transition: DOCK_SPRING },
   shown: { y: 0, transition: DOCK_SPRING },
 };
@@ -74,7 +69,6 @@ const PANEL_BOX_VARIANTS = {
   hidden: { left: '25%', right: '25%', height: 32, transition: DOCK_SPRING },
   shown: { left: '0%', right: '0%', height: '100%', transition: DOCK_SPRING },
 };
-// Both clip paths share one shape so motion can tween every number in them.
 const PANEL_ROWS_VARIANTS = {
   hidden: {
     clipPath: 'inset(calc(100% - 32px) 25% 0% 25% round 16px)',
@@ -158,7 +152,6 @@ export function ActionDockSearch() {
       transition={reduceMotion ? NO_MOTION : DOCK_SPRING}
       className="pointer-events-auto relative max-w-full min-w-0"
     >
-      {/* AnimatePresence keeps the last rendered rows while the panel exits, though close() clears the query. */}
       <AnimatePresence>
         {showPanel && (
           <ActionDockSearchPanel key="panel" reduceMotion={reduceMotion}>
@@ -181,7 +174,6 @@ export function ActionDockSearch() {
         )}
       </AnimatePresence>
 
-      {/* `relative` paints the bar above the panel, so the panel can start hidden behind it. */}
       <div className={cn(FLOATING_BAR, 'relative')}>
         <CommandInput
           ref={inputRef}
@@ -234,12 +226,14 @@ function ActionDockSearchPanel({
   // An exiting panel must not take clicks, or a row could still navigate.
   const isPresent = useIsPresent();
   const list = (
-    <CommandList
-      onMouseDown={keepInputFocus}
-      className="max-h-[min(24rem,60dvh)] p-1.5"
-    >
-      {children}
-    </CommandList>
+    <ActionDockSearchAutoHeight reduceMotion={reduceMotion}>
+      <CommandList
+        onMouseDown={keepInputFocus}
+        className="max-h-[min(24rem,60dvh)] p-1.5"
+      >
+        {children}
+      </CommandList>
+    </ActionDockSearchAutoHeight>
   );
 
   if (reduceMotion) {
@@ -282,6 +276,49 @@ function ActionDockSearchPanel({
       </motion.div>
     </motion.div>
   );
+}
+
+// *** ActionDockSearchAutoHeight ***
+// CSS cannot animate to `height: auto`, so the rows are measured and the wrapper springs to that number.
+function ActionDockSearchAutoHeight({
+  reduceMotion,
+  children,
+}: {
+  reduceMotion: boolean | null;
+  children: React.ReactNode;
+}) {
+  const [contentRef, height] = useElementHeight<HTMLDivElement>();
+
+  return (
+    // Rows sit at the bottom so the top edge, away from the bar, is the one that bounces.
+    <motion.div
+      initial={false}
+      animate={{ height }}
+      transition={reduceMotion ? NO_MOTION : DOCK_SPRING}
+      className="flex flex-col justify-end overflow-hidden"
+    >
+      <div ref={contentRef}>{children}</div>
+    </motion.div>
+  );
+}
+
+// *** useElementHeight ***
+function useElementHeight<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [height, setHeight] = useState<number | 'auto'>('auto');
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+
+    const observer = new ResizeObserver(([entry]) => {
+      setHeight(entry.borderBoxSize[0]?.blockSize ?? 'auto');
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  return [ref, height] as const;
 }
 
 // *** ActionDockSearchResults ***
