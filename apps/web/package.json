@@ -30,6 +30,7 @@
     "liquid-gooey": "^0.2.2",
     "masonry-layout": "^4.2.2",
     "mediabunny": "^1.61.0",
+    "motion": "^13.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-dropzone": "^20.1.2",

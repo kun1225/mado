@@ -8,6 +8,12 @@ import {
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from 'cn';
+import {
+  AnimatePresence,
+  motion,
+  useIsPresent,
+  useReducedMotion,
+} from 'motion/react';
 
 import { Button } from '@repo/ui/button';
 import {
@@ -19,6 +25,7 @@ import {
   CommandList,
   CommandSeparator,
 } from '@repo/ui/command';
+import { springs } from '@repo/ui/motion';
 import { Separator } from '@repo/ui/separator';
 import {
   Tooltip,
@@ -48,20 +55,58 @@ import { FLOATING_BAR, FLOATING_SURFACE } from '.';
 const NO_COLLECTIONS: Collection[] = [];
 const NO_SOURCES: Source[] = [];
 
+const MotionCommand = motion.create(Command);
+
+const DOCK_WIDTH = { closed: '22rem', open: '30rem' };
+
+// One spring for the bar and the panel, both ways, so they move as one piece.
+const DOCK_SPRING = springs.bouncy;
+
+// Hidden, the panel is a strip half as wide, pushed down behind the bar, so it rises out of the bar.
+// The box and the rows move apart: clipping the box would cut off its border and shadow,
+// and its background alone barely shows against the page.
+const PANEL_VARIANTS = {
+  // 8px gap + 8px into the 48px bar centers the 32px strip inside the bar.
+  hidden: { y: 48, transition: DOCK_SPRING },
+  shown: { y: 0, transition: DOCK_SPRING },
+};
+const PANEL_BOX_VARIANTS = {
+  hidden: { left: '25%', right: '25%', height: 32, transition: DOCK_SPRING },
+  shown: { left: '0%', right: '0%', height: '100%', transition: DOCK_SPRING },
+};
+// Both clip paths share one shape so motion can tween every number in them.
+const PANEL_ROWS_VARIANTS = {
+  hidden: {
+    clipPath: 'inset(calc(100% - 32px) 25% 0% 25% round 16px)',
+    transition: DOCK_SPRING,
+  },
+  shown: {
+    clipPath: 'inset(calc(0% - 0px) 0% 0% 0% round 16px)',
+    transition: DOCK_SPRING,
+  },
+};
+const PANEL_FADE_VARIANTS = {
+  hidden: { opacity: 0 },
+  shown: { opacity: 1 },
+};
+const NO_MOTION = { duration: 0 };
+
 export function ActionDockSearch() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const reduceMotion = useReducedMotion();
   const recent = useRecentSearches();
   const collections = useCollections().data ?? NO_COLLECTIONS;
   const sources = useAllSources().data ?? NO_SOURCES;
 
-  const index = createSearchIndex(collections, sources);
-  const results = searchLibrary(index, query);
   const hasQuery = query.trim() !== '';
   const showPanel = isOpen && (hasQuery || recent.queries.length > 0);
+
+  const index = createSearchIndex(collections, sources);
+  const results = searchLibrary(index, query);
 
   function close() {
     setIsOpen(false);
@@ -101,43 +146,43 @@ export function ActionDockSearch() {
   }
 
   return (
-    <Command
+    <MotionCommand
       ref={rootRef}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
       shouldFilter={false}
       loop
       label="Search collections and saves"
-      data-open={isOpen}
-      className="pointer-events-auto relative w-88 max-w-full min-w-0 transition-[width] duration-slow ease-out-quart data-[open=true]:w-120 motion-reduce:transition-none"
+      initial={false}
+      animate={{ width: isOpen ? DOCK_WIDTH.open : DOCK_WIDTH.closed }}
+      transition={reduceMotion ? NO_MOTION : DOCK_SPRING}
+      className="pointer-events-auto relative max-w-full min-w-0"
     >
-      {showPanel && (
-        <CommandList
-          onMouseDown={keepInputFocus}
-          className={cn(
-            FLOATING_SURFACE,
-            'absolute inset-x-0 bottom-full mb-2 max-h-[min(24rem,60dvh)] origin-bottom animate-in rounded-2xl p-1.5 duration-base ease-out-quart fade-in-0 zoom-in-95 slide-in-from-bottom-2 motion-reduce:animate-none',
-          )}
-        >
-          {hasQuery ? (
-            <ActionDockSearchResults
-              query={query}
-              results={results}
-              onCollection={openCollection}
-              onSource={openSource}
-            />
-          ) : (
-            <ActionDockSearchRecent
-              queries={recent.queries}
-              onPick={setQuery}
-              onRemove={recent.remove}
-              onClear={recent.clear}
-            />
-          )}
-        </CommandList>
-      )}
+      {/* AnimatePresence keeps the last rendered rows while the panel exits, though close() clears the query. */}
+      <AnimatePresence>
+        {showPanel && (
+          <ActionDockSearchPanel key="panel" reduceMotion={reduceMotion}>
+            {hasQuery ? (
+              <ActionDockSearchResults
+                query={query}
+                results={results}
+                onCollection={openCollection}
+                onSource={openSource}
+              />
+            ) : (
+              <ActionDockSearchRecent
+                queries={recent.queries}
+                onPick={setQuery}
+                onRemove={recent.remove}
+                onClear={recent.clear}
+              />
+            )}
+          </ActionDockSearchPanel>
+        )}
+      </AnimatePresence>
 
-      <div className={FLOATING_BAR}>
+      {/* `relative` paints the bar above the panel, so the panel can start hidden behind it. */}
+      <div className={cn(FLOATING_BAR, 'relative')}>
         <CommandInput
           ref={inputRef}
           value={query}
@@ -150,7 +195,7 @@ export function ActionDockSearch() {
 
         <ActionDockSearchSettingsButton />
       </div>
-    </Command>
+    </MotionCommand>
   );
 }
 
@@ -176,6 +221,67 @@ function useDismissOnPointerDownOutside(
 // Clicking a row would blur the input, and arrow keys and Enter need the input focused.
 function keepInputFocus(event: React.MouseEvent) {
   event.preventDefault();
+}
+
+// *** ActionDockSearchPanel ***
+function ActionDockSearchPanel({
+  reduceMotion,
+  children,
+}: {
+  reduceMotion: boolean | null;
+  children: React.ReactNode;
+}) {
+  // An exiting panel must not take clicks, or a row could still navigate.
+  const isPresent = useIsPresent();
+  const list = (
+    <CommandList
+      onMouseDown={keepInputFocus}
+      className="max-h-[min(24rem,60dvh)] p-1.5"
+    >
+      {children}
+    </CommandList>
+  );
+
+  if (reduceMotion) {
+    return (
+      <motion.div
+        inert={!isPresent}
+        variants={PANEL_FADE_VARIANTS}
+        initial="hidden"
+        animate="shown"
+        exit="hidden"
+        className={cn(
+          FLOATING_SURFACE,
+          'absolute inset-x-0 bottom-full mb-2 rounded-2xl bg-bg/95',
+        )}
+      >
+        {list}
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      inert={!isPresent}
+      variants={PANEL_VARIANTS}
+      initial="hidden"
+      animate="shown"
+      exit="hidden"
+      className="absolute inset-x-0 bottom-full mb-2"
+    >
+      {/* Only the rows are clipped. On a clipped element's child, Chrome blurs a square box. */}
+      <motion.div
+        variants={PANEL_BOX_VARIANTS}
+        className={cn(
+          FLOATING_SURFACE,
+          'absolute bottom-0 rounded-2xl bg-bg/95',
+        )}
+      />
+      <motion.div variants={PANEL_ROWS_VARIANTS} className="relative">
+        {list}
+      </motion.div>
+    </motion.div>
+  );
 }
 
 // *** ActionDockSearchResults ***

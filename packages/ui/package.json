@@ -4,6 +4,7 @@
   "private": true,
   "exports": {
     "./*": "./src/*.tsx",
+    "./motion": "./src/motion.ts",
     "./styles.css": "./src/styles.css"
   },
   "scripts": {
