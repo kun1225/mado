@@ -13,7 +13,7 @@ features/<x>/…-hooks.ts      React Query: cache keys, mutations, toasts
         │  calls actions
 features/<x>/…-actions.ts    Domain logic: validate (zod), read and write records
         │
-features/storage/            IndexedDB (records)  ·  OPFS (media files, in sources/source-media.ts)
+features/storage/            IndexedDB (records)  ·  OPFS (account folder in storage-directory.ts, media in sources/source-media.ts)
 ```
 
 - The UI never touches IndexedDB or OPFS directly.
@@ -26,6 +26,10 @@ features/storage/            IndexedDB (records)  ·  OPFS (media files, in sour
 graph LR
   auth -->|sets the account| storage
   settings -->|auth forms, sign-out| auth
+  settings -->|Data tab| export
+  export -->|records, media files| sources
+  export -->|records| collections
+  export -->|account folder| storage
   sources --> storage
   collections --> storage
   sources -->|collectionKeys, Collection type| collections
@@ -39,10 +43,11 @@ graph LR
 | ------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `auth`        | `storage`                           | Sets the account, which picks the database and the OPFS folder                                                                             |
 | `storage`     | none                                | The base layer                                                                                                                             |
-| `settings`    | `auth`                              | The panel hosts sign-in, sign-up, password reset and sign-out; it owns no data                                                             |
+| `settings`    | `auth`, `export`                    | The panel hosts sign-in, sign-up, password reset and sign-out, and the Data tab starts an export; it owns no data                          |
 | `sources`     | `storage`, `collections`            | Stores records and files; uses `collectionKeys` to refresh counts and the `Collection` type for nesting                                    |
 | `collections` | `storage`, `sources`                | Counts, previews and deletes go through `source-actions` (`countSourcesByCollection`, `collectBranchIds`, `softDeleteSourcesInCollection`) |
 | `search`      | `collections`, `sources`, `storage` | Types only for the data; the account keys the recent-search list                                                                           |
+| `export`      | `collections`, `sources`, `storage` | Reads every record and media file; builds the zip in the account's OPFS folder when there is no save picker                                |
 
 **Known coupling:** `collections` and `sources` import each other, in both actions and hooks. It works because nesting rules (`collectBranchIds`) live in `sources`. If this grows, move the shared nesting helpers into `collections` or a small shared module.
 
@@ -116,6 +121,22 @@ every (app) page: beforeLoad → loadPageSession
             else setStorageAccount(user.id)
   → openDatabase() and getMediaDirectory() now use that account's database and folder
 sign-out → clear the query cache → full reload to /library (the guest library)
+```
+
+### Export the library
+
+```text
+Settings → Data → Export
+  → useExportLibrary → openExportTarget          picker first: browsers allow it only right after a click
+      Chrome/Edge: showSaveFilePicker → the user's file
+      others:      remove zips over an hour old → new random-named zip in the account's exports/
+  → exportLibrary
+      → waitForCompressions                        compression rewrites files in place
+      → fetchAllCollections + fetchAllSources     one snapshot, trash left out
+      → buildExportLayout                          pure: folders, safe unique names, library.json
+      → makeZip(readZipEntries).pipeTo(file)       one file at a time; a missing file is skipped and listed
+      → finish: nothing, or download the OPFS file
+  → toast: "Exported N sources." or the error
 ```
 
 ### Settings panel and email links

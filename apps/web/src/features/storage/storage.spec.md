@@ -10,6 +10,7 @@ The local database under every feature. Records go in IndexedDB, and media files
 
 - Guests use the `mado` database and the OPFS root.
 - A signed-in user uses `mado:account:<id>` and the OPFS folder `account-<id>`. Accounts on the same device never see each other's data.
+- `getAccountDirectory()` returns that OPFS folder. Inside it, `media/` holds source files (see `sources`) and `exports/` holds export zips on browsers without a save picker, removed by a later export once they are an hour old (see `export`).
 - Stores: `collections` and `sources`. `sources` has a multi-entry index on `collectionIds`.
 - If the browser has no IndexedDB or OPFS, the app shows a "storage unsupported" notice instead of breaking.
 
@@ -23,4 +24,4 @@ The local database under every feature. Records go in IndexedDB, and media files
 ## Rules for changes
 
 - Changing a store or index means raising `DATABASE_VERSION` and adding a migration step guarded by `event.oldVersion`.
-- Never read data across accounts. Always go through `openDatabase()` and `getMediaDirectory()`.
+- Never read data across accounts. Always go through `openDatabase()` and `getAccountDirectory()`.

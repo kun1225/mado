@@ -10,7 +10,7 @@ import {
   QUALITY_MEDIUM,
 } from 'mediabunny';
 
-import { getStorageAccount } from '#/features/storage/storage-account';
+import { getAccountDirectory } from '#/features/storage/storage-directory';
 
 import type { SiteSourcePreview } from './site-source.type';
 import type { Source } from './source-types';
@@ -80,15 +80,8 @@ export async function fetchSiteImage(url: string): Promise<File> {
 }
 
 async function getMediaDirectory(): Promise<FileSystemDirectoryHandle> {
-  const account = getStorageAccount();
-  let root = await navigator.storage.getDirectory();
-  if (account) {
-    root = await root.getDirectoryHandle(
-      `account-${encodeURIComponent(account)}`,
-      { create: true },
-    );
-  }
-  return root.getDirectoryHandle(MEDIA_DIRECTORY, { create: true });
+  const account = await getAccountDirectory();
+  return account.getDirectoryHandle(MEDIA_DIRECTORY, { create: true });
 }
 
 export async function writeMediaFile(key: string, file: File): Promise<void> {
@@ -126,11 +119,15 @@ export async function deleteMediaFile(key: string): Promise<void> {
 export async function downloadSource(source: Source): Promise<void> {
   if (!source.storageKey) throw new Error('This source has no file.');
   const file = await readMediaFile(source.storageKey);
-  const url = URL.createObjectURL(file.slice(0, file.size, source.mimeType));
+  saveBlobToDevice(file.slice(0, file.size, source.mimeType), source.fileName);
+}
+
+export function saveBlobToDevice(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
 
   link.href = url;
-  link.download = source.fileName;
+  link.download = fileName;
   link.click();
 }
 

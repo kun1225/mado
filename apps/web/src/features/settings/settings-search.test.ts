@@ -31,6 +31,10 @@ describe('parseSettingsSearch', () => {
     });
   });
 
+  it('opens the data tab', () => {
+    expect(parseSettingsSearch({ settings: 'data' }).tab).toBe('data');
+  });
+
   it('accepts verified as a string or a boolean', () => {
     expect(parseSettingsSearch({ verified: 'true' }).verified).toBe(true);
     expect(parseSettingsSearch({ verified: true }).verified).toBe(true);

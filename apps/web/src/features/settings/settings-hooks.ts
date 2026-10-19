@@ -32,15 +32,19 @@ export function useSettingsSearch() {
 
   const close = () => setSettingsSearch({}, { replace: true });
 
+  const selectTab = (tab: SettingsTab) =>
+    setSettingsSearch({ settings: tab }, { replace: true });
+
   // Switching forms drops the link's token and status, so a used link can't be replayed.
+  // Always the account tab, because the auth form lives only there.
   const setAuthMode = (mode: AuthFormMode) =>
     setSettingsSearch(
       {
-        settings: search.tab ?? 'account',
+        settings: 'account',
         auth: mode === 'sign-in' ? undefined : mode,
       },
       { replace: true },
     );
 
-  return { search, open, close, setAuthMode };
+  return { search, open, close, selectTab, setAuthMode };
 }

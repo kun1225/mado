@@ -61,7 +61,3 @@ Collections group sources. They can nest: a collection inside another one is cal
 - Folders can't be moved to another parent yet. `UpdateCollectionInput` only allows `name` and `color`.
 - The card menu has no keyboard shortcut. Keyboard users can open the card and use the "…" menu on the collection page, or press the context-menu key / Shift+F10.
 - The collection page's "…" menu has no "Change color" item yet.
-
-## Planned
-
-- **Export all sources.** Download every source as one archive. Each top-level collection is a folder at the second level, and its folders become subfolders. Sources in no collection still need a place (for example a `library/` folder). See "Export" in `docs/prd.md`.
