@@ -33,7 +33,7 @@ import { SettingsDataTab } from './settings-data-tab';
 const EMAIL_FIELD_ID = 'settings-auth-email';
 
 // The active layer copies the tab list, so both must share one layout.
-const TAB_LIST_CLASS = 'flex items-center gap-2 sm:flex-col sm:items-stretch';
+const TAB_LIST_CLASS = 'flex items-center gap-0.5 sm:flex-col sm:items-stretch';
 const TAB_CLASS =
   'flex h-9.5 items-center gap-2 rounded-md px-4 text-sm font-medium';
 
@@ -59,7 +59,7 @@ export function SettingsDialog({ authUser }: SettingsDialogProps) {
       onOpenChange={(open) => !open && close()}
     >
       <DialogContent
-        className="flex items-stretch justify-center sm:items-center sm:p-4"
+        className="flex items-stretch justify-center data-closed:zoom-out-95 data-open:zoom-in-95 sm:items-center sm:p-4"
         onBackdropClick={close}
       >
         <div className="pointer-events-auto flex h-full w-full flex-col overflow-hidden bg-bg text-fg shadow-xl sm:h-[min(36rem,100%)] sm:max-w-3xl sm:flex-row sm:rounded-xl">

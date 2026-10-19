@@ -12,7 +12,7 @@ One place for app settings. Today it holds the account (sign in, sign up, reset 
 - The sidebar lists the tabs: **Account** and **Data**. Switching tabs replaces the URL, so Back closes the panel instead of stepping through tabs.
 - The bottom of the sidebar shows **Sign out** when signed in, or **Sign in** for a guest. Sign in opens the Account tab, from any tab, and moves focus to the email field.
 - **Account, signed in:** name and email.
-- **Account, guest:** a short note that saves stay on this device, then the auth form. The form switches between sign-in, sign-up, forgot password and reset password without leaving the panel.
+- **Account, guest:** a short note that saves stay on this device, then the auth form. The form switches between sign-in, sign-up, forgot password and reset password without leaving the panel. On a switch, the old form fades out and the new one fades in and rises a little. With reduced motion it switches at once.
 - **Data:** how many sources and collections there are, and **Export** (see `export.spec.md`).
 - Esc, the close button and a click outside close the panel. Closing removes every settings param from the URL and keeps the rest (for example `?source=`).
 - Switching forms drops the link's `token`, `verified` and `error`, so an old status message doesn't follow you to another form.

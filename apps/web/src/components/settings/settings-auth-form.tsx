@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { FormEvent } from 'react';
 
 import { Button } from '@repo/ui/button';
@@ -19,6 +20,9 @@ import { hrefWithoutSettings } from '#/features/settings/settings-search';
 
 const RESEND_COOLDOWN_MS = 60_000;
 const CONNECT_ERROR = 'Could not connect. Please try again.';
+const MODE_ENTER = { duration: 0.2, ease: 'easeOut', delay: 0.1 } as const;
+const MODE_EXIT = { duration: 0.12, ease: 'easeIn' } as const;
+const NO_MOTION = { duration: 0 };
 
 const copy: Record<AuthFormMode, { title: string; submit: string }> = {
   'sign-in': { title: 'Sign in', submit: 'Sign in' },
@@ -42,6 +46,7 @@ export function SettingsAuthForm({
 }: SettingsAuthFormProps) {
   const [email, setEmail] = useState('');
   const auth = useAuthFormState();
+  const reduceMotion = useReducedMotion();
   const invalidResetLink =
     mode === 'reset-password' && (!token || Boolean(linkError));
 
@@ -69,42 +74,60 @@ export function SettingsAuthForm({
   }
 
   return (
-    <section className="space-y-5" aria-labelledby="settings-auth-title">
-      <h3 id="settings-auth-title" className="text-base font-medium">
-        {copy[mode].title}
-      </h3>
-      <SettingsAuthLinkStatus
-        mode={mode}
-        verified={verified}
-        linkError={linkError}
-      />
-      {invalidResetLink ? (
-        <p role="alert" className="text-sm">
-          This reset link is missing or expired.{' '}
-          <button
-            type="button"
-            className="underline underline-offset-4"
-            onClick={() => changeMode('forgot-password')}
-          >
-            Request a new link
-          </button>
-          .
-        </p>
-      ) : (
-        <form onSubmit={handleSubmit} aria-busy={auth.pending}>
-          <SettingsAuthFields
+    <section className="relative" aria-labelledby="settings-auth-title">
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.div
+          key={mode}
+          className="space-y-5"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{
+            opacity: 1,
+            y: 0,
+            transition: reduceMotion ? NO_MOTION : MODE_ENTER,
+          }}
+          exit={{
+            opacity: 0,
+            y: -4,
+            transition: reduceMotion ? NO_MOTION : MODE_EXIT,
+          }}
+        >
+          <h3 id="settings-auth-title" className="text-base font-medium">
+            {copy[mode].title}
+          </h3>
+          <SettingsAuthLinkStatus
             mode={mode}
-            email={email}
-            pending={auth.pending}
-            onEmailChange={(value) => {
-              setEmail(value);
-              auth.clearVerification();
-            }}
+            verified={verified}
+            linkError={linkError}
           />
-        </form>
-      )}
-      <SettingsAuthFeedback auth={auth} email={email} />
-      <SettingsAuthModeLinks mode={mode} onModeChange={changeMode} />
+          {invalidResetLink ? (
+            <p role="alert" className="text-sm">
+              This reset link is missing or expired.{' '}
+              <button
+                type="button"
+                className="underline underline-offset-4"
+                onClick={() => changeMode('forgot-password')}
+              >
+                Request a new link
+              </button>
+              .
+            </p>
+          ) : (
+            <form onSubmit={handleSubmit} aria-busy={auth.pending}>
+              <SettingsAuthFields
+                mode={mode}
+                email={email}
+                pending={auth.pending}
+                onEmailChange={(value) => {
+                  setEmail(value);
+                  auth.clearVerification();
+                }}
+              />
+            </form>
+          )}
+          <SettingsAuthFeedback auth={auth} email={email} />
+          <SettingsAuthModeLinks mode={mode} onModeChange={changeMode} />
+        </motion.div>
+      </AnimatePresence>
     </section>
   );
 }
