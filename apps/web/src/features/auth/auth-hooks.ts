@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { Button } from '@repo/ui/button';
-
-import { authClient } from '#/features/auth/auth-client';
+import { authClient } from './auth-client';
 
 const SIGN_OUT_ERROR = 'Could not sign out. Please try again.';
 
-export function SignOutButton() {
+// Signing out lands on the guest library, because guest data stays on this device.
+export function useSignOut() {
   const queryClient = useQueryClient();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
@@ -22,23 +21,12 @@ export function SignOutButton() {
       if (result.error) throw new Error(SIGN_OUT_ERROR);
       await queryClient.cancelQueries();
       queryClient.clear();
-      window.location.replace('/sign-in');
+      window.location.replace('/library');
     } catch {
       setError(SIGN_OUT_ERROR);
       setPending(false);
     }
   }
 
-  return (
-    <div className="fixed top-3 right-4 z-40 text-right">
-      <Button variant="ghost" disabled={pending} onClick={() => void signOut()}>
-        {pending ? 'Signing out…' : 'Sign out'}
-      </Button>
-      {error && (
-        <p role="alert" className="text-sm text-danger">
-          {error}
-        </p>
-      )}
-    </div>
-  );
+  return { signOut, pending, error };
 }

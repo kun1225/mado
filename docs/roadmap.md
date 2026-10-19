@@ -11,8 +11,8 @@ Small enough to build on the local-first app we have today.
 | Import a folder (subfolders become nested collections)   | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md)             |
 | Export all sources (collections become folders)          | [`collections.spec.md`](../apps/web/src/features/collections/collections.spec.md) |
 | A more fun embed loading state (two eyes looking around) | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md)             |
-| Settings panel with sign-in                              | [`auth.spec.md`](../apps/web/src/features/auth/auth.spec.md)                      |
-| Dark mode (follow the system, with a switch in settings) | —                                                                                 |
+| Google sign-in in the settings panel                     | [`auth.spec.md`](../apps/web/src/features/auth/auth.spec.md)                      |
+| Dark mode (follow the system, with a switch in settings) | [`settings.spec.md`](../apps/web/src/features/settings/settings.spec.md)          |
 
 ## Later
 

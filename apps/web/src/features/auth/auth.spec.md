@@ -4,17 +4,17 @@
 
 Signing in is optional. Guests use the app fully with data on this device. An account keeps each user's local data apart now, and is the base for cloud backup later.
 
-**Depends on:** `storage`. **Used by:** every `(app)` page. See `apps/web/ARCHITECTURE.md`.
+**Depends on:** `storage`. **Used by:** every `(app)` page, and the `settings` panel, which hosts every auth form. See `apps/web/ARCHITECTURE.md`.
 
 ## Behavior
 
-- Guests are never sent to sign-in.
-- Sign up → a verification email → verify → sign in. Signing in before verifying offers to resend the link, at most once a minute.
-- Forgot password → a reset link → set a new password → go to sign-in.
-- After sign-in, the user goes back to `returnTo`, but only if it's a safe `/library…` or `/collection…` path. Otherwise they go to `/library`.
+- Guests are never sent to sign-in. There are no auth pages. Sign-in, sign-up and password reset live in the settings panel (see `settings.spec.md`).
+- Sign up → a verification email → its link opens the panel with "Your email is verified" → sign in. Signing in before verifying offers to resend the link, at most once a minute.
+- Forgot password → a reset link → the link opens the panel on "Choose a new password" → the form switches to sign-in.
+- After sign-in, the current page fully reloads without the settings params, but only if it's a safe `/library…` or `/collection…` path. Otherwise it goes to `/library`.
 - A 429 reply shows "Too many tries. Please wait a minute."
-- Sign-out clears the query cache and fully reloads to `/sign-in`.
-- If the account changes in any other way (for example in another tab), the next page load fully reloads.
+- Sign-out clears the query cache and fully reloads to `/library`, which shows the guest library.
+- If the account changes in any other way (for example in another tab), the page fully reloads to `/library`.
 
 ## Decisions
 
@@ -23,6 +23,8 @@ Signing in is optional. Guests use the app fully with data on this device. An ac
 - **2026-10 — `safeReturnTo` allows only app paths** and rejects `//`, `\`, control characters and paths that climb out with `..`. This blocks open redirects.
 - **2026-10 — An account change forces a full reload**, so pending local writes can't land in the wrong account's database.
 - **2026-10 — The session is checked on the server** with `Cache-Control: private, no-store`, so a shared cache never serves one user's session to another.
+- **2026-10 — Auth forms live in the settings panel, not on their own pages.** Signing in is optional, so it should not take the user away from their library.
+- **2026-10 — Email links point at `/library?settings=account&…`.** These params must stay stable, because links in old emails still use them. Links from before this change (`/verify-email`, `/reset-password`) now 404. They expired within an hour anyway.
 - **2026-10 — In development, the app runs as a guest by default** (`VITE_DEV_AUTH_BYPASS`), so it works without the auth API. Set it to `false` to test real login. It can never be on in production.
 
 ## Known gaps
@@ -31,4 +33,4 @@ Signing in is optional. Guests use the app fully with data on this device. An ac
 
 ## Planned
 
-- **A settings panel.** One place for app settings. Users can sign in (and later sign out or switch accounts) from this panel.
+- **Google sign-in.** It goes in the same panel form, above the email fields.

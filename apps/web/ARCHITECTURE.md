@@ -25,6 +25,7 @@ features/storage/            IndexedDB (records)  ·  OPFS (media files, in sour
 ```mermaid
 graph LR
   auth -->|sets the account| storage
+  settings -->|auth forms, sign-out| auth
   sources --> storage
   collections --> storage
   sources -->|collectionKeys, Collection type| collections
@@ -38,6 +39,7 @@ graph LR
 | ------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `auth`        | `storage`                           | Sets the account, which picks the database and the OPFS folder                                                                             |
 | `storage`     | none                                | The base layer                                                                                                                             |
+| `settings`    | `auth`                              | The panel hosts sign-in, sign-up, password reset and sign-out; it owns no data                                                             |
 | `sources`     | `storage`, `collections`            | Stores records and files; uses `collectionKeys` to refresh counts and the `Collection` type for nesting                                    |
 | `collections` | `storage`, `sources`                | Counts, previews and deletes go through `source-actions` (`countSourcesByCollection`, `collectBranchIds`, `softDeleteSourcesInCollection`) |
 | `search`      | `collections`, `sources`, `storage` | Types only for the data; the account keys the recent-search list                                                                           |
@@ -113,5 +115,16 @@ every (app) page: beforeLoad → loadPageSession
   → client: if the account changed → full reload (stops cross-account writes)
             else setStorageAccount(user.id)
   → openDatabase() and getMediaDirectory() now use that account's database and folder
-sign-out → clear the query cache → full reload to /sign-in
+sign-out → clear the query cache → full reload to /library (the guest library)
+```
+
+### Settings panel and email links
+
+```text
+⚙ button → ?settings=account → (app)/route.tsx renders SettingsDialog
+  → useSettingsSearch parses settings, auth, token, verified, error (zod, bad values dropped)
+  → guest: SettingsAuthForm (mode from ?auth)   signed in: name, email, Sign out
+verify-email link → /library?settings=account&verified=true
+reset link        → /library?settings=account&auth=reset-password&token=…
+sign-in OK → full reload of the current page without the settings params
 ```

@@ -1,5 +1,17 @@
-export type AuthFormMode =
-  'sign-in' | 'sign-up' | 'forgot-password' | 'reset-password';
+export const AUTH_FORM_MODES = [
+  'sign-in',
+  'sign-up',
+  'forgot-password',
+  'reset-password',
+] as const;
+
+export type AuthFormMode = (typeof AUTH_FORM_MODES)[number];
+
+export type AuthUser = {
+  id: string;
+  name: string;
+  email: string;
+};
 
 export type AuthFormInput = {
   name: string;
@@ -13,18 +25,7 @@ export type AuthFormResult = {
   error?: string;
   message?: string;
   needsVerification?: boolean;
-};
-
-export type AuthPageProps = {
-  mode: AuthFormMode;
-  returnTo?: string;
-  token?: string;
-  error?: string;
-};
-
-export type AuthVerifyEmailProps = {
-  verified: boolean;
-  error?: string;
+  nextMode?: AuthFormMode;
 };
 
 export type AuthSignedInGuardProps = {
