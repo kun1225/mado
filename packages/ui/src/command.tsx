@@ -1,8 +1,11 @@
 import type { ComponentProps } from 'react';
+import { useRef } from 'react';
 import { Search01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Command as CommandPrimitive } from 'cmdk';
+import { Command as CommandPrimitive, useCommandState } from 'cmdk';
 import { cn } from 'cn';
+
+import { useClipHighlight } from './clip-highlight';
 
 function Command({
   className,
@@ -44,13 +47,41 @@ function CommandInput({
 
 function CommandList({
   className,
+  children,
   ...props
 }: ComponentProps<typeof CommandPrimitive.List>) {
   return (
     <CommandPrimitive.List
       data-slot="command-list"
-      className={cn('overflow-x-hidden overflow-y-auto', className)}
+      className={cn(
+        'overflow-x-hidden overflow-y-auto [&>[cmdk-list-sizer]]:relative [&>[cmdk-list-sizer]]:isolate',
+        className,
+      )}
       {...props}
+    >
+      <CommandHighlight />
+      {children}
+    </CommandPrimitive.List>
+  );
+}
+
+// *** CommandHighlight ***
+function CommandHighlight() {
+  const layerRef = useRef<HTMLDivElement>(null);
+  const selected = useCommandState((state) => state.value);
+  useClipHighlight(
+    layerRef,
+    // Not CSS.escape, because it does not exist during server render.
+    selected
+      ? `[cmdk-item][data-value="${selected.replace(/["\\]/g, '\\$&')}"]`
+      : null,
+  );
+
+  return (
+    <div
+      ref={layerRef}
+      aria-hidden
+      className="pointer-events-none absolute inset-0 -z-10 bg-muted"
     />
   );
 }
@@ -105,7 +136,7 @@ function CommandItem({
     <CommandPrimitive.Item
       data-slot="command-item"
       className={cn(
-        'relative flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm outline-none select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-muted',
+        'relative flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm outline-none select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50',
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4.5",
         className,
       )}
