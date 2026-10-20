@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Download the whole library as one `.zip`, so users always have a copy of their saves outside the browser. A future import reads the same zip back.
+Download the whole library as one `.zip`, so users always have a copy of their saves outside the browser. Import reads the unzipped folder back (see `import.spec.md`).
 
-**Depends on:** `collections`, `sources`, `storage`. **Used by:** `settings` (the Data tab). See `apps/web/ARCHITECTURE.md`.
+**Depends on:** `collections`, `sources`, `storage`. **Used by:** `settings` (the Data tab), `import` (the `library.json` schema). See `apps/web/ARCHITECTURE.md`.
 
 ## Behavior
 
@@ -73,7 +73,4 @@ mado-export-2026-10-19.zip
 - Very deep nesting can still pass 260 characters on Windows; only each name is capped.
 - On Safari and Firefox, the zip takes disk space twice: once in OPFS, once in Downloads. The OPFS copy stays until an export at least an hour later.
 - No component tests for the Data tab (the web app has no `@testing-library` yet).
-
-## Planned
-
-- **Import.** Settings → Data → Import a folder. A folder with a valid `library.json` is rebuilt from it: nesting, colors, notes, tags, links, and one source for files copied into several folders. A folder without one uses the folder rule in `sources.spec.md`. Open questions: skip records whose id already exists, and when to also accept a `.zip`.
+- Import reads an unzipped folder only, not the `.zip` itself (see `import.spec.md`).

@@ -5,7 +5,7 @@
 A source is one saved piece of inspiration: an image, a video, or a website.
 Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 
-**Depends on:** `storage`, `collections`. **Used by:** `collections`, `search`. See `apps/web/ARCHITECTURE.md`.
+**Depends on:** `storage`, `collections`. **Used by:** `collections`, `search`, `export`, `import`. See `apps/web/ARCHITECTURE.md`.
 
 ## Behavior
 
@@ -15,6 +15,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - Pasting a file or a URL adds it, unless the focus is in a text field.
 - Only images and videos, up to `MAX_FILE_MB`.
 - A pasted URL becomes a website source with a preview. An X/Twitter post that has a video becomes a video source instead. If that download fails, it stays a website.
+- A whole folder can be imported from Settings → Data (see `import.spec.md`).
 
 ### Compression
 
@@ -73,5 +74,5 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 
 ## Planned
 
-- **Import a folder.** Drop a folder, or pick one with a file input. Every image and video inside becomes a source. Each subfolder becomes a folder (nested collection) with the same layout. Other files are skipped. Touches `collections`. A folder made by export has a `library.json`; import rebuilds from it instead (see `export.spec.md`).
+- **Drop a folder.** Dropping a folder on the library runs the same import as Settings → Data (see `import.spec.md`). It needs `webkitGetAsEntry` to read the folder from the drop.
 - **A more fun embed loading state.** While an embedded site loads in the detail dialog, show something friendly and human instead of a plain wait. Idea: two drawn eyes that look around, as if searching for the page.

@@ -2,9 +2,9 @@
 
 ## Purpose
 
-One place for app settings. Today it holds the account (sign in, sign up, reset a password, see who you are, sign out) and your data (export all sources).
+One place for app settings. Today it holds the account (sign in, sign up, reset a password, see who you are, sign out) and your data (export all sources, import a folder).
 
-**Depends on:** `auth`, `export`. **Used by:** every `(app)` page, opened from the settings button next to the search bar. See `apps/web/ARCHITECTURE.md`.
+**Depends on:** `auth`, `export`, `import`. **Used by:** every `(app)` page, opened from the settings button next to the search bar. See `apps/web/ARCHITECTURE.md`.
 
 ## Behavior
 
@@ -13,7 +13,7 @@ One place for app settings. Today it holds the account (sign in, sign up, reset 
 - The bottom of the sidebar shows **Sign out** when signed in, or **Sign in** for a guest. Sign in opens the Account tab, from any tab, and moves focus to the email field.
 - **Account, signed in:** name and email.
 - **Account, guest:** a short note that saves stay on this device, then the auth form. The form switches between sign-in, sign-up, forgot password and reset password without leaving the panel. On a switch, the old form fades out and the new one fades in and rises a little. With reduced motion it switches at once.
-- **Data:** how many sources and collections there are, and **Export** (see `export.spec.md`).
+- **Data:** how many sources and collections there are, **Export** (see `export.spec.md`) and **Import a folder** (see `import.spec.md`). Only one of the two runs at a time.
 - Esc, the close button and a click outside close the panel. Closing removes every settings param from the URL and keeps the rest (for example `?source=`).
 - Switching forms drops the link's `token`, `verified` and `error`, so an old status message doesn't follow you to another form.
 
@@ -45,5 +45,5 @@ Unknown values fall back to closed, or to the sign-in form.
 ## Planned
 
 - **Appearance tab** with the dark mode switch (see `docs/roadmap.md`).
-- **Data tab:** storage used, import a folder.
+- **Data tab:** storage used.
 - **Google sign-in** in the account form (see `auth.spec.md`).

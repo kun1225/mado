@@ -27,9 +27,14 @@ graph LR
   auth -->|sets the account| storage
   settings -->|auth forms, sign-out| auth
   settings -->|Data tab| export
+  settings -->|Data tab| import
   export -->|records, media files| sources
   export -->|records| collections
   export -->|account folder| storage
+  import -->|library.json schema| export
+  import -->|createSource, media files, compression| sources
+  import -->|types only| collections
+  import -->|ids, records| storage
   sources --> storage
   collections --> storage
   sources -->|collectionKeys, Collection type| collections
@@ -39,15 +44,16 @@ graph LR
   search -->|account for recent searches| storage
 ```
 
-| Domain        | Depends on                          | Why                                                                                                                                        |
-| ------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `auth`        | `storage`                           | Sets the account, which picks the database and the OPFS folder                                                                             |
-| `storage`     | none                                | The base layer                                                                                                                             |
-| `settings`    | `auth`, `export`                    | The panel hosts sign-in, sign-up, password reset and sign-out, and the Data tab starts an export; it owns no data                          |
-| `sources`     | `storage`, `collections`            | Stores records and files; uses `collectionKeys` to refresh counts and the `Collection` type for nesting                                    |
-| `collections` | `storage`, `sources`                | Counts, previews and deletes go through `source-actions` (`countSourcesByCollection`, `collectBranchIds`, `softDeleteSourcesInCollection`) |
-| `search`      | `collections`, `sources`, `storage` | Types only for the data; the account keys the recent-search list                                                                           |
-| `export`      | `collections`, `sources`, `storage` | Reads every record and media file; builds the zip in the account's OPFS folder when there is no save picker                                |
+| Domain        | Depends on                                    | Why                                                                                                                                        |
+| ------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `auth`        | `storage`                                     | Sets the account, which picks the database and the OPFS folder                                                                             |
+| `storage`     | none                                          | The base layer                                                                                                                             |
+| `settings`    | `auth`, `export`, `import`                    | The panel hosts sign-in, sign-up, password reset and sign-out, and the Data tab starts an export or an import; it owns no data             |
+| `sources`     | `storage`, `collections`                      | Stores records and files; uses `collectionKeys` to refresh counts and the `Collection` type for nesting                                    |
+| `collections` | `storage`, `sources`                          | Counts, previews and deletes go through `source-actions` (`countSourcesByCollection`, `collectBranchIds`, `softDeleteSourcesInCollection`) |
+| `search`      | `collections`, `sources`, `storage`           | Types only for the data; the account keys the recent-search list                                                                           |
+| `export`      | `collections`, `sources`, `storage`           | Reads every record and media file; builds the zip in the account's OPFS folder when there is no save picker                                |
+| `import`      | `export`, `sources`, `collections`, `storage` | Reads `library.json` with export's schema; saves files through `sources`; writes records with their own ids                                |
 
 **Known coupling:** `collections` and `sources` import each other, in both actions and hooks. It works because nesting rules (`collectBranchIds`) live in `sources`. If this grows, move the shared nesting helpers into `collections` or a small shared module.
 
@@ -137,6 +143,25 @@ Settings → Data → Export
       → makeZip(readZipEntries).pipeTo(file)       one file at a time; a missing file is skipped and listed
       → finish: nothing, or download the OPFS file
   → toast: "Exported N sources." or the error
+```
+
+### Import a folder
+
+```text
+Settings → Data → Import a folder → <input webkitdirectory> → File[]
+  → useImportLibrary → importLibrary
+      → readManifest: library.json at the top, checked by exportManifestSchema (broken → plain folder)
+      → readExistingIds: every collection and source key, trash included
+      → buildImportPlan                     pure
+          export folder: keep ids, skip ids already here, any copy of a file will do
+          plain folder:  the picked folder and each subfolder → a new collection
+      → saveCollections                      one transaction
+      → each item, one at a time:
+          export folder: writeMediaFile under a new key → add the record (never put)
+          plain folder:  createSource
+        one failure is counted, a full disk stops it
+  → plain-folder sources go to the compression queue
+  → refresh sources + collections, toast: "Imported N sources and M collections."
 ```
 
 ### Settings panel and email links

@@ -4,7 +4,7 @@
 
 Collections group sources. They can nest: a collection inside another one is called a **folder** in the UI. A source can be in many collections, or in none (then it lives only in the library).
 
-**Depends on:** `storage`, `sources`. **Used by:** `sources`, `search`. See `apps/web/ARCHITECTURE.md`.
+**Depends on:** `storage`, `sources`. **Used by:** `sources`, `search`, `export`, `import`. See `apps/web/ARCHITECTURE.md`.
 
 ## Behavior
 

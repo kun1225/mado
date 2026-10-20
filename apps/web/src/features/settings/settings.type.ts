@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import type { AuthFormMode, AuthUser } from '#/features/auth/auth.type';
 import type { ExportProgress } from '#/features/export/export.type';
+import type { ImportProgress } from '#/features/import/import.type';
 
 export const SETTINGS_TABS = ['account', 'data'] as const;
 
@@ -68,6 +69,16 @@ export type SettingsAuthModeLinksProps = {
   onModeChange: (mode: AuthFormMode) => void;
 };
 
-export type SettingsExportProgressProps = {
-  progress: ExportProgress;
+export type SettingsProgressProps = {
+  /** Read by screen readers as the bar's name. */
+  name: string;
+  label: string;
+  progress: ExportProgress | ImportProgress;
+};
+
+export type SettingsImportSectionProps = {
+  disabled: boolean;
+  importing: boolean;
+  progress: ImportProgress | null;
+  onImport: (files: File[]) => void;
 };

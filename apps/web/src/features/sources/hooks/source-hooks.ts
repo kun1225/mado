@@ -96,7 +96,7 @@ function invalidateAfterSourceChange(queryClient: QueryClient) {
 
 const COMPRESS_MUTATION_KEY = ['sources', 'compress'] as const;
 
-function useCompressSource() {
+export function useCompressSource() {
   const queryClient = useQueryClient();
 
   return useMutation({
