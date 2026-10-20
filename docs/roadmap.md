@@ -6,13 +6,12 @@ What we plan to build, in rough order. Details for near-term work live in each f
 
 Small enough to build on the local-first app we have today.
 
-| Feature                                                  | Spec                                                                              |
-| -------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Import a folder (subfolders become nested collections)   | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md)             |
-| Export all sources (collections become folders)          | [`collections.spec.md`](../apps/web/src/features/collections/collections.spec.md) |
-| A more fun embed loading state (two eyes looking around) | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md)             |
-| Google sign-in in the settings panel                     | [`auth.spec.md`](../apps/web/src/features/auth/auth.spec.md)                      |
-| Dark mode (follow the system, with a switch in settings) | [`settings.spec.md`](../apps/web/src/features/settings/settings.spec.md)          |
+| Feature                                                  | Spec                                                                     |
+| -------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Import a folder (subfolders become nested collections)   | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md)    |
+| A more fun embed loading state (two eyes looking around) | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md)    |
+| Google sign-in in the settings panel                     | [`auth.spec.md`](../apps/web/src/features/auth/auth.spec.md)             |
+| Dark mode (follow the system, with a switch in settings) | [`settings.spec.md`](../apps/web/src/features/settings/settings.spec.md) |
 
 ## Later
 

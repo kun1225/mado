@@ -25,7 +25,7 @@ import {
   CommandList,
   CommandSeparator,
 } from '@repo/ui/command';
-import { springs } from '@repo/ui/motion';
+import { eases, springs } from '@repo/ui/motion';
 import { Separator } from '@repo/ui/separator';
 import {
   Tooltip,
@@ -85,6 +85,8 @@ const PANEL_FADE_VARIANTS = {
   shown: { opacity: 1 },
 };
 const NO_MOTION = { duration: 0 };
+// Growing in place does not move the bar across the screen, so it is safe with reduced motion.
+const REDUCED_DOCK_WIDTH = eases.inOut;
 
 export function ActionDockSearch() {
   const [isOpen, setIsOpen] = useState(false);
@@ -150,7 +152,7 @@ export function ActionDockSearch() {
       label="Search collections and saves"
       initial={false}
       animate={{ width: isOpen ? DOCK_WIDTH.open : DOCK_WIDTH.closed }}
-      transition={reduceMotion ? NO_MOTION : DOCK_SPRING}
+      transition={reduceMotion ? REDUCED_DOCK_WIDTH : DOCK_SPRING}
       className="pointer-events-auto relative max-w-full min-w-0"
     >
       <AnimatePresence>
@@ -355,9 +357,6 @@ function ActionDockSearchResults({
                 className="text-muted-fg"
               />
               <span className="min-w-0 flex-1 truncate">{collection.name}</span>
-              <span className="text-xs text-muted-fg">
-                {collection.parentId ? 'Folder' : 'Collection'}
-              </span>
             </CommandItem>
           ))}
         </CommandGroup>
@@ -418,7 +417,6 @@ function ActionDockSearchSourceItem({
         )}
       </span>
       <span className="min-w-0 flex-1 truncate">{source.name}</span>
-      <span className="text-xs text-muted-fg">Save</span>
     </CommandItem>
   );
 }

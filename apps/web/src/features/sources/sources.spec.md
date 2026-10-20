@@ -73,5 +73,5 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 
 ## Planned
 
-- **Import a folder.** Drop a folder, or pick one with a file input. Every image and video inside becomes a source. Each subfolder becomes a folder (nested collection) with the same layout. Other files are skipped. Touches `collections`.
+- **Import a folder.** Drop a folder, or pick one with a file input. Every image and video inside becomes a source. Each subfolder becomes a folder (nested collection) with the same layout. Other files are skipped. Touches `collections`. A folder made by export has a `library.json`; import rebuilds from it instead (see `export.spec.md`).
 - **A more fun embed loading state.** While an embedded site loads in the detail dialog, show something friendly and human instead of a plain wait. Idea: two drawn eyes that look around, as if searching for the page.

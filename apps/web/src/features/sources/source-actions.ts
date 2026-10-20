@@ -209,6 +209,11 @@ export function compressSource(source: Source): Promise<Source> {
   return currentTask;
 }
 
+/** Resolves once every compression queued so far has finished. */
+export function waitForCompressions(): Promise<void> {
+  return previousTask.then(() => undefined);
+}
+
 // *** runCompression ***
 async function runCompression(source: Source): Promise<Source> {
   if (!source.storageKey) return source;

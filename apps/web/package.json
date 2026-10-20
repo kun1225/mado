@@ -25,6 +25,7 @@
     "@tanstack/react-router-ssr-query": "^1.167.2",
     "@tanstack/react-start": "latest",
     "better-auth": "^1.7.7",
+    "client-zip": "^2.5.1",
     "cn": "^0.2.6",
     "fuse.js": "^7.5.0",
     "liquid-gooey": "^0.2.2",
