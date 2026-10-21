@@ -28,7 +28,7 @@ function createSource(kind: Source['kind'], sizeBytes: number): Source {
 
 describe('toStorageBreakdown', () => {
   it('splits the usage by source kind and puts the rest in other', () => {
-    const breakdown = toStorageBreakdown(1000, [
+    const breakdown = toStorageBreakdown({ usage: 1000, quota: 5000 }, [
       createSource('video', 500),
       createSource('video', 100),
       createSource('image', 300),
@@ -36,6 +36,7 @@ describe('toStorageBreakdown', () => {
     ]);
 
     expect(breakdown.total).toBe(1000);
+    expect(breakdown.quota).toBe(5000);
     expect(breakdown.parts.map(({ kind, bytes }) => [kind, bytes])).toEqual([
       ['videos', 600],
       ['images', 300],
@@ -44,14 +45,16 @@ describe('toStorageBreakdown', () => {
   });
 
   it('grows the total when the files add up to more than the estimate', () => {
-    const breakdown = toStorageBreakdown(100, [createSource('image', 250)]);
+    const breakdown = toStorageBreakdown({ usage: 100, quota: null }, [
+      createSource('image', 250),
+    ]);
 
     expect(breakdown.total).toBe(250);
     expect(breakdown.parts[2].bytes).toBe(0);
   });
 
   it('shows only other for an empty library', () => {
-    const breakdown = toStorageBreakdown(40, []);
+    const breakdown = toStorageBreakdown({ usage: 40, quota: null }, []);
 
     expect(breakdown.parts.map((part) => part.bytes)).toEqual([0, 0, 40]);
   });

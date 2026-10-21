@@ -1,10 +1,11 @@
 import type { Source, SourceKind } from '#/features/sources/source-types';
+import type { StorageUsage } from '#/features/storage/storage-usage';
 
 import type { SettingsStorageBreakdown } from './settings.type';
 
 /** Other is what the browser counts beyond source files: thumbnails, previews and the database. */
 export function toStorageBreakdown(
-  usage: number,
+  { usage, quota }: StorageUsage,
   sources: readonly Source[],
 ): SettingsStorageBreakdown {
   const videos = sumBytes(sources, 'video');
@@ -14,6 +15,7 @@ export function toStorageBreakdown(
 
   return {
     total,
+    quota,
     parts: [
       { kind: 'videos', label: 'Videos', bytes: videos },
       { kind: 'images', label: 'Images', bytes: images },

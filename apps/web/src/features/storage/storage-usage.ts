@@ -1,13 +1,20 @@
-/** Bytes this site stores on the device, or null when the browser cannot say. */
-export async function readStorageUsage(): Promise<number | null> {
+export type StorageUsage = {
+  usage: number;
+  /** Null when the browser gives no limit. */
+  quota: number | null;
+};
+
+/** Bytes this site uses and may use, or null when the browser cannot say. */
+export async function readStorageUsage(): Promise<StorageUsage | null> {
   if (typeof navigator === 'undefined') return null;
   // Insecure pages have no `navigator.storage` at all, which the DOM types don't show.
   if (!('storage' in navigator)) return null;
   if (typeof navigator.storage.estimate !== 'function') return null;
 
   try {
-    const { usage } = await navigator.storage.estimate();
-    return usage ?? null;
+    const { usage, quota } = await navigator.storage.estimate();
+    if (usage == null) return null;
+    return { usage, quota: quota ?? null };
   } catch (error) {
     // A missing number only hides the storage section, so it should not break the tab.
     console.error('Failed to read the storage usage', error);

@@ -24,6 +24,11 @@ export function SettingsStorageSection({
       </h3>
       <p className="text-2xl font-medium tabular-nums">
         {formatBytes(breakdown.total)}
+        {breakdown.quota != null && (
+          <span className="ml-2 text-sm font-normal text-muted-fg">
+            of {formatBytes(breakdown.quota)} available
+          </span>
+        )}
       </p>
       <div
         aria-hidden

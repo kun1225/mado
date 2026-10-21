@@ -22,9 +22,12 @@ describe('readStorageUsage', () => {
 
   it('returns the usage from the browser estimate', async () => {
     vi.stubGlobal('navigator', {
-      storage: { estimate: () => Promise.resolve({ usage: 42 }) },
+      storage: { estimate: () => Promise.resolve({ usage: 42, quota: 1000 }) },
     });
-    await expect(readStorageUsage()).resolves.toBe(42);
+    await expect(readStorageUsage()).resolves.toEqual({
+      usage: 42,
+      quota: 1000,
+    });
   });
 
   it('returns null when the browser has no estimate', async () => {

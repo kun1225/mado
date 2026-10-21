@@ -11,7 +11,7 @@ The local database under every feature. Records go in IndexedDB, and media files
 - Guests use the `mado` database and the OPFS root.
 - A signed-in user uses `mado:account:<id>` and the OPFS folder `account-<id>`. Accounts on the same device never see each other's data.
 - `getAccountDirectory()` returns that OPFS folder. Inside it, `media/` holds source files (see `sources`) and `exports/` holds export zips on browsers without a save picker, removed by a later export once they are an hour old (see `export`).
-- `readStorageUsage()` returns the bytes this site uses from `navigator.storage.estimate()`, or null if the browser can't say. The number covers the whole site, not one account, and the browser rounds it. `formatBytes()` turns bytes into B, KB, MB, GB or TB (see `settings`).
+- `readStorageUsage()` returns the bytes this site uses and the most it may use (`quota`, null if the browser gives none) from `navigator.storage.estimate()`, or null if the browser can't say. The numbers cover the whole site, not one account, and the browser rounds it. `formatBytes()` turns bytes into B, KB, MB, GB or TB (see `settings`).
 - Stores: `collections` and `sources`. `sources` has a multi-entry index on `collectionIds`.
 - If the browser has no IndexedDB or OPFS, the app shows a "storage unsupported" notice instead of breaking.
 

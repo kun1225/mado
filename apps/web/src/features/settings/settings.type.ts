@@ -84,6 +84,8 @@ export type SettingsStoragePart = {
 
 export type SettingsStorageBreakdown = {
   total: number;
+  /** Null when the browser gives no limit. */
+  quota: number | null;
   parts: SettingsStoragePart[];
 };
 

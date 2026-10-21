@@ -60,7 +60,7 @@ export function useSettingsSearch() {
 export function useStorageBreakdown() {
   const { data: sources } = useAllSources();
   const { data: deleted } = useDeletedSources();
-  const { data: usage } = useQuery({
+  const { data: estimate } = useQuery({
     // Counts in the key, so an import or a delete reads the usage again.
     queryKey: ['storage-usage', sources?.length, deleted?.length],
     queryFn: readStorageUsage,
@@ -70,6 +70,6 @@ export function useStorageBreakdown() {
     placeholderData: keepPreviousData,
   });
 
-  if (usage == null || !sources || !deleted) return null;
-  return toStorageBreakdown(usage, [...sources, ...deleted]);
+  if (estimate == null || !sources || !deleted) return null;
+  return toStorageBreakdown(estimate, [...sources, ...deleted]);
 }
