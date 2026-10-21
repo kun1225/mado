@@ -60,6 +60,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **2026-10 — The replace kind is decided inside the save transaction**, not from an earlier read. Another replace or compression could change the record in between.
 - **2026-10 — Compression does not block replace.** `runCompression` checks that the `storageKey` is still the same before it writes, so a stale result is dropped.
 - **2026-10 — The replace drop zone does not use react-dropzone's `disabled`.** `disabled` removes the drag handlers, so the drop would bubble up to the library zone and be added as a new source. Busy state is checked in `onDrop` instead.
+- **2026-10 — The drop highlight also needs recent drag events (`useIsDragOver`).** react-dropzone reads the dragged files after `dragenter`. If that finishes after the drop, it sets the active state again and the "Drop to add" overlay never goes away. The highlight now shows only while `dragenter`/`dragover` fired in the last 500 ms, and a drop clears it at once.
 - **2026-10 — The iframe drop overlay shows when a file drag starts anywhere in the window (`useIsDraggingFile`).** An iframe swallows drag events, so the overlay has to be in place before the drag reaches it.
 - **2026-10 — The whole detail dialog blocks drops.** The dialog renders inside the library drop zone, and React events from portals bubble to React parents.
 - **2026-10 — Website thumbnails are compressed like images.**

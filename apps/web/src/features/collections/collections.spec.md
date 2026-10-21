@@ -14,6 +14,10 @@ Collections group sources. They can nest: a collection inside another one is cal
 - To rename, edit the title on the collection page. Enter saves, and Escape or an empty name restores the old name. If the save fails, the old name comes back.
 - A name is trimmed and must be 1 to 100 characters.
 
+### Card row
+
+- The row of cards on the library and collection pages scrolls sideways with no scrollbar. Its edges fade where more cards are hidden, and the fade goes away at the start and end.
+
 ### Card menu
 
 - Right-click a collection or folder card to open its menu. On touch screens, press and hold (500ms). The menu grows out of the point you pressed.

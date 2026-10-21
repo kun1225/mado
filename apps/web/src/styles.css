@@ -17,3 +17,72 @@ body {
   color: var(--color-fg);
   font-family: Geist, ui-sans-serif, system-ui, sans-serif;
 }
+
+/* Fades the row edges only where there is more to scroll to. */
+@property --scroll-fade-start {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --scroll-fade-end {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes scroll-fade-start {
+  to {
+    --scroll-fade-start: var(--scroll-fade-size);
+  }
+}
+
+@keyframes scroll-fade-end {
+  from {
+    --scroll-fade-end: var(--scroll-fade-size);
+  }
+  to {
+    --scroll-fade-end: 0px;
+  }
+}
+
+.scroll-fade-x {
+  --scroll-fade-size: 2rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--scroll-fade-start),
+    #000 calc(100% - var(--scroll-fade-end)),
+    transparent
+  );
+  animation:
+    scroll-fade-start linear both,
+    scroll-fade-end linear both;
+  animation-timeline: scroll(self x), scroll(self x);
+  animation-range:
+    0 var(--scroll-fade-size),
+    calc(100% - var(--scroll-fade-size)) 100%;
+}
+
+.scroll-fade-x::-webkit-scrollbar {
+  display: none;
+}
+
+/* Same look, driven by the data attributes that ScrollFade sets. */
+@supports not (animation-timeline: scroll()) {
+  .scroll-fade-x {
+    animation: none;
+    --scroll-fade-start: var(--scroll-fade-size);
+    --scroll-fade-end: var(--scroll-fade-size);
+  }
+
+  .scroll-fade-x[data-scroll-start] {
+    --scroll-fade-start: 0px;
+  }
+
+  .scroll-fade-x[data-scroll-end] {
+    --scroll-fade-end: 0px;
+  }
+}

@@ -7,6 +7,7 @@ import {
   CollectionCardSkeletons,
 } from '#/components/collection-card';
 import { CollectionNewCard } from '#/components/collection-new-card';
+import { ScrollFade } from '#/components/scroll-fade';
 import { SourceDropZone } from '#/components/source-drop-zone';
 import { SourceGrid, SourceGridSkeleton } from '#/components/source-grid';
 import { SourcesEmptyState } from '#/components/sources-empty-state';
@@ -37,7 +38,10 @@ function Library() {
 
   return (
     <>
-      <section className="flex flex-row flex-nowrap gap-4 overflow-y-auto pt-6 pb-1 *:shrink-0">
+      <ScrollFade
+        className="pt-6 pb-1"
+        contentClassName="flex flex-row gap-4 *:shrink-0"
+      >
         <CollectionNewCard
           disabled={createCollectionMutation.isPending}
           onClick={handleCreateCollection}
@@ -50,7 +54,7 @@ function Library() {
             <CollectionCard key={collection.id} collection={collection} />
           ))
         )}
-      </section>
+      </ScrollFade>
 
       <SourceDropZone
         collectionId={null}

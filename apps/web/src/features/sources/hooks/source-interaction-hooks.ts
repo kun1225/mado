@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import type { FileRejection } from 'react-dropzone';
 import { useDropzone } from 'react-dropzone';
@@ -309,8 +309,44 @@ export function useSourceDropzone(collectionId: string | null) {
     noKeyboard: true,
     noPaste: true,
   });
+  const { isOver, dragHandlers } = useIsDragOver();
 
-  return { getRootProps, isDragActive };
+  return {
+    getRootProps: (props: Parameters<typeof getRootProps>[0] = {}) =>
+      getRootProps({ ...props, ...dragHandlers }),
+    isDragActive: isDragActive && isOver,
+  };
+}
+
+// *** useIsDragOver ***
+const DRAG_OVER_IDLE_MS = 500;
+function useIsDragOver() {
+  const [isOver, setIsOver] = useState(false);
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+
+  useEffect(() => () => clearTimeout(idleTimer.current), []);
+
+  function markOver() {
+    setIsOver(true);
+    clearTimeout(idleTimer.current);
+    idleTimer.current = setTimeout(() => setIsOver(false), DRAG_OVER_IDLE_MS);
+  }
+
+  function markDropped() {
+    clearTimeout(idleTimer.current);
+    setIsOver(false);
+  }
+
+  return {
+    isOver,
+    dragHandlers: {
+      onDragEnter: markOver,
+      onDragOver: markOver,
+      onDrop: markDropped,
+    },
+  };
 }
 
 const THUMBNAIL_ACCEPT = { 'image/*': [] };
