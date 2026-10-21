@@ -1,11 +1,13 @@
 import { useRef } from 'react';
-import {
-  ArrowRight01Icon,
-  FolderExportIcon,
-  FolderImportIcon,
-} from '@hugeicons/core-free-icons';
+import { FolderExportIcon, FolderImportIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@repo/ui/accordion';
 import { Button } from '@repo/ui/button';
 
 import type { SettingsBackupSectionProps } from '#/features/settings/settings.type';
@@ -84,27 +86,23 @@ export function SettingsBackupSection({
           progress={importProgress}
         />
       )}
-      <details className="group text-sm text-muted-fg">
-        <summary className="flex cursor-pointer list-none items-center gap-1 rounded-sm py-2 outline-none select-none hover:text-fg focus-visible:ring-3 focus-visible:ring-ring/50 [&::-webkit-details-marker]:hidden">
-          <HugeiconsIcon
-            icon={ArrowRight01Icon}
-            size={14}
-            strokeWidth={1.5}
-            className="transition-transform duration-150 ease-out group-open:rotate-90"
-          />
-          How it works
-        </summary>
-        <ul className="list-disc space-y-1 pl-9">
-          <li>
-            Export downloads every source as a .zip. Collections become folders.
-            The trash is not included.
-          </li>
-          <li>
-            Import turns images and videos into sources and folders into
-            collections. A folder from Export comes back just as it was.
-          </li>
-        </ul>
-      </details>
+      <Accordion className="text-muted-fg">
+        <AccordionItem value="how-it-works">
+          <AccordionTrigger>How it works</AccordionTrigger>
+          <AccordionContent>
+            <ul className="list-disc space-y-1 pl-9">
+              <li>
+                Export downloads every source as a .zip. Collections become
+                folders. The trash is not included.
+              </li>
+              <li>
+                Import turns images and videos into sources and folders into
+                collections. A folder from Export comes back just as it was.
+              </li>
+            </ul>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </section>
   );
 }
