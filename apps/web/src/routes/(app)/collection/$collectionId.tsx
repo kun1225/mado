@@ -153,7 +153,7 @@ function CollectionPage() {
 
       <Separator className="mt-3" />
 
-      <section className="flex flex-row flex-nowrap gap-4 overflow-y-auto py-6 *:shrink-0">
+      <section className="flex flex-row flex-nowrap gap-4 overflow-y-auto pt-6 pb-1 *:shrink-0">
         <CollectionNewCard
           label="New folder"
           disabled={createCollectionMutation.isPending}
@@ -172,7 +172,7 @@ function CollectionPage() {
       <SourceDropZone
         collectionId={collectionId}
         label={collectionName}
-        className="flex grow flex-col"
+        className="flex grow flex-col pt-5"
       >
         {sourcesQuery.isPending ? (
           <SourceGridSkeleton />
@@ -204,11 +204,13 @@ function CollectionPageSkeleton() {
 
       <Separator className="mt-3" />
 
-      <section className="flex flex-row flex-nowrap gap-4 overflow-y-auto py-6 *:shrink-0">
+      <section className="flex flex-row flex-nowrap gap-4 overflow-y-auto pt-6 pb-1 *:shrink-0">
         <CollectionCardSkeletons />
       </section>
 
-      <SourceGridSkeleton />
+      <div className="pt-5">
+        <SourceGridSkeleton />
+      </div>
     </div>
   );
 }
