@@ -12,6 +12,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 ### Adding
 
 - Drop files on the library or on a collection card to add them there. Many files at once is fine; each one saves on its own, so one bad file does not lose the others.
+- While files are dragged over the library or a collection's grid, the grid shrinks a little behind a frosted veil, and a card in the middle of the visible part says "Add 3 files to Library" (or "Drop to add to …" for one file) with the size limit. With reduced motion on, nothing scales; the veil and card only fade.
 - Pasting a file or a URL adds it, unless the focus is in a text field.
 - Only images and videos, up to `MAX_FILE_MB`.
 - A pasted URL becomes a website source with a preview. An X/Twitter post that has a video becomes a video source instead. If that download fails, it stays a website.
@@ -67,11 +68,14 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **2026-10 — The FLIP moves the viewer media, not the dialog.** The dialog covers the whole screen, so only the picture has a card to fly from. The popup's own CSS fade is turned off while it flies, because it would fade the media too; the toolbar and panel (`data-flip-chrome`) fade on their own. Base UI only waits for the popup's own animations before it unmounts, so the close adds an empty animation on the popup to hold it until the media lands.
 - **2026-10 — Far grid cards unmount their media instead of hiding it.** Unmounting frees the decoded image, the video decoder and the blob URL. `display: none` on the card would break the grid, because `masonry-layout` would measure it as 0px tall. Cards stay in the DOM, so this is not full virtual scrolling.
 - **2026-10 — `useInView` shares one `IntersectionObserver` per option set**, because hundreds of cards each owning one is much slower.
+- **2026-10 — Drop feedback is "Stage": the grid sinks, a card steps forward.** Picked from a prototype round. Scale `0.96` from the center of the visible part, veil `bg/55` with a 4px blur, card scales `0.96 → 1`; enter `duration-slow`, exit `duration-base`, `ease-out-quart`. The spacing between the collection bar and the grid is the bar's `mb-5`, not padding on the drop zone, so the veil hugs the grid. Rejected: the old dashed border (it sat on the card edges and its pill covered the action dock), a cursor-following chip (easy to miss while looking at the grid), a top pill or label row (covered the first row of cards, and never says the size limit).
 - **2026-10 — Tags are removed from the UI.** A source can be in many collections, so tags were a second way to group the same things, and nothing read them (no search, no filter). The `tags` field stays on the record, always `[]` for new sources, so old data and old exports still load without a migration. Bring tags back only with a way to use them, such as filtering inside a collection.
 
 ## Known gaps
 
 - Every card stays in the DOM. With many thousands of sources, the DOM itself gets slow. The fix is our own column math from the aspect ratios, rendering only visible cards.
+- While a file drag scales the grid, fixed elements inside it (like the selection bar) move with the grid until the drag ends.
+- The drop card is placed once when the drag enters. If the page scrolls during the drag, the card does not follow the visible center.
 - If a compression is reading a file at the moment a replace deletes it, the compression fails silently. There's no toast, and the new file still gets its own compression.
 
 ## Planned

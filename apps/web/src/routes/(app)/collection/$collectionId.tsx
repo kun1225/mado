@@ -157,7 +157,7 @@ function CollectionPage() {
       <Separator className="mt-3" />
 
       <ScrollFade
-        className="pt-6 pb-1"
+        className="mb-5 pt-6 pb-1"
         contentClassName="flex flex-row gap-4 *:shrink-0"
       >
         <CollectionNewCard
@@ -178,7 +178,7 @@ function CollectionPage() {
       <SourceDropZone
         collectionId={collectionId}
         label={collectionName}
-        className="flex grow flex-col pt-5"
+        className="flex grow flex-col"
       >
         {sourcesQuery.isPending ? (
           <SourceGridSkeleton />
@@ -211,15 +211,13 @@ function CollectionPageSkeleton() {
       <Separator className="mt-3" />
 
       <ScrollFade
-        className="pt-6 pb-1"
+        className="mb-5 pt-6 pb-1"
         contentClassName="flex flex-row gap-4 *:shrink-0"
       >
         <CollectionCardSkeletons />
       </ScrollFade>
 
-      <div className="pt-5">
-        <SourceGridSkeleton />
-      </div>
+      <SourceGridSkeleton />
     </div>
   );
 }

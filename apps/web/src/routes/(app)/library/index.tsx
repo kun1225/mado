@@ -39,7 +39,7 @@ function Library() {
   return (
     <>
       <ScrollFade
-        className="pt-6 pb-1"
+        className="mb-5 pt-6 pb-1"
         contentClassName="flex flex-row gap-4 *:shrink-0"
       >
         <CollectionNewCard
@@ -59,7 +59,7 @@ function Library() {
       <SourceDropZone
         collectionId={null}
         label="Library"
-        className="flex flex-1 flex-col pt-5"
+        className="flex flex-1 flex-col"
       >
         {/* The store is browser-only, so show a skeleton instead of flashing "Nothing here yet". */}
         {sourcesQuery.isPending ? (
