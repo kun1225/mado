@@ -58,6 +58,7 @@ Collections group sources. They can nest: a collection inside another one is cal
 - **2026-10 — Every card action opens a dialog.** A menu item that changes data at once is too easy to hit by mistake, especially after a long press.
 - **2026-10 — Colors are stored as names, not hex values.** Each name maps to theme tokens, so a color looks right in light and dark mode and can be tuned later without a migration.
 - **2026-10 — `color` is optional on the record.** Old records read as no color, so no database migration is needed (no store or index changes).
+- **2026-10 — The collection page remounts when the collection changes.** A parent and its folders share sources. A reused page made the masonry slide those shared cards from their old spots, so moving between a folder and its parent looked like a jump.
 - **2026-10 — Changing the color keeps `updatedAt`.** Lists sort by `updatedAt`, so the card would jump away right after you colored it. Renaming still moves it to the front, as before.
 
 ## Known gaps

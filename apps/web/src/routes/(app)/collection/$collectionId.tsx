@@ -30,6 +30,8 @@ import { CollectionMenu } from './-components/collection-menu';
 
 export const Route = createFileRoute('/(app)/collection/$collectionId')({
   component: CollectionPage,
+  // A parent and its folder share sources. If the page is reused, the masonry slides the shared cards from their old spots, so start fresh per collection.
+  remountDeps: ({ params }) => params.collectionId,
 });
 
 function CollectionPage() {
