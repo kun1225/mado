@@ -37,7 +37,7 @@ function Library() {
 
   return (
     <>
-      <section className="flex flex-row flex-nowrap gap-4 overflow-y-auto py-6 *:shrink-0">
+      <section className="flex flex-row flex-nowrap gap-4 overflow-y-auto pt-6 pb-1 *:shrink-0">
         <CollectionNewCard
           disabled={createCollectionMutation.isPending}
           onClick={handleCreateCollection}
@@ -55,7 +55,7 @@ function Library() {
       <SourceDropZone
         collectionId={null}
         label="Library"
-        className="flex flex-1 flex-col"
+        className="flex flex-1 flex-col pt-5"
       >
         {/* The store is browser-only, so show a skeleton instead of flashing "Nothing here yet". */}
         {sourcesQuery.isPending ? (
