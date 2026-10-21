@@ -76,9 +76,29 @@ export type SettingsProgressProps = {
   progress: ExportProgress | ImportProgress;
 };
 
-export type SettingsImportSectionProps = {
-  disabled: boolean;
+export type SettingsStoragePart = {
+  kind: 'videos' | 'images' | 'other';
+  label: string;
+  bytes: number;
+};
+
+export type SettingsStorageBreakdown = {
+  total: number;
+  parts: SettingsStoragePart[];
+};
+
+export type SettingsStorageSectionProps = {
+  breakdown: SettingsStorageBreakdown;
+};
+
+export type SettingsBackupSectionProps = {
+  /** Missing while the library is still loading. */
+  summary?: string;
+  canExport: boolean;
+  exporting: boolean;
   importing: boolean;
-  progress: ImportProgress | null;
+  exportProgress: ExportProgress | null;
+  importProgress: ImportProgress | null;
+  onExport: () => void;
   onImport: (files: File[]) => void;
 };

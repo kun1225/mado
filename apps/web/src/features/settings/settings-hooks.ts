@@ -1,9 +1,16 @@
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 
 import type { AuthFormMode } from '#/features/auth/auth.type';
+import {
+  useAllSources,
+  useDeletedSources,
+} from '#/features/sources/hooks/source-hooks';
+import { readStorageUsage } from '#/features/storage/storage-usage';
 
 import type { SettingsTab } from './settings.type';
 import { parseSettingsSearch, withoutSettingsSearch } from './settings-search';
+import { toStorageBreakdown } from './settings-storage';
 
 // The panel lives in the URL, so email links can open it on the right form.
 export function useSettingsSearch() {
@@ -47,4 +54,22 @@ export function useSettingsSearch() {
     );
 
   return { search, open, close, selectTab, setAuthMode };
+}
+
+/** Null while loading, or when the browser cannot report its storage. */
+export function useStorageBreakdown() {
+  const { data: sources } = useAllSources();
+  const { data: deleted } = useDeletedSources();
+  const { data: usage } = useQuery({
+    // Counts in the key, so an import or a delete reads the usage again.
+    queryKey: ['storage-usage', sources?.length, deleted?.length],
+    queryFn: readStorageUsage,
+    enabled: sources !== undefined && deleted !== undefined,
+    // Reading the estimate never touches the network, so offline must not pause it.
+    networkMode: 'always',
+    placeholderData: keepPreviousData,
+  });
+
+  if (usage == null || !sources || !deleted) return null;
+  return toStorageBreakdown(usage, [...sources, ...deleted]);
 }
