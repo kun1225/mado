@@ -25,8 +25,7 @@ export function SettingsAccountTab({
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-fg">
-        You are using Mado as a guest. Your saves stay on this device. Each
-        account has its own library.
+        You are using Mado as a guest. Your saves only stay on this device.
       </p>
       <SettingsAuthForm
         mode={search.authMode}
