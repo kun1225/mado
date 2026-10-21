@@ -34,8 +34,6 @@ export const replaceSourceFileSchema = z.object({ file: sourceFileSchema });
 export const MAX_NAME_LENGTH = 120;
 export const MAX_NOTE_LENGTH = 2000;
 export const MAX_URL_LENGTH = 2048;
-export const MAX_TAG_LENGTH = 40;
-export const MAX_TAGS = 20;
 
 export const newWebsiteSourceSchema = z.object({
   collectionId: z.uuid().nullable(),
@@ -58,10 +56,6 @@ export function canEmbedSite(source: Source): boolean {
   );
 }
 
-export function normalizeTag(raw: string): string {
-  return raw.trim().replace(/^#+/, '').trim().toLowerCase();
-}
-
 function isHttpUrl(value: string): boolean {
   try {
     const { protocol } = new URL(value);
@@ -73,21 +67,9 @@ function isHttpUrl(value: string): boolean {
 
 const emptyToNull = (value: string) => (value === '' ? null : value);
 
-const tagLimitsSchema = z
-  .array(z.string().max(MAX_TAG_LENGTH, 'Tag is too long'))
-  .max(MAX_TAGS, `Use ${MAX_TAGS} tags or fewer`);
-
-const tagListSchema = z
-  .array(z.string())
-  .transform((tags) => [
-    ...new Set(tags.map(normalizeTag).filter((tag) => tag !== '')),
-  ]);
-
 const collectionIdListSchema = z
   .array(z.uuid())
   .transform((ids) => [...new Set(ids)]);
-
-export const tagsSchema = tagListSchema.pipe(tagLimitsSchema);
 
 export const updateSourceSchema = z
   .object({
@@ -116,14 +98,11 @@ export const updateSourceSchema = z
         `Note must be ${MAX_NOTE_LENGTH} characters or fewer`,
       )
       .transform(emptyToNull),
-    tags: tagsSchema,
     collectionIds: collectionIdListSchema,
     /**
-     * Prefer these over `tags` and `collectionIds`. A full list built from old props
+     * Prefer these over `collectionIds`. A full list built from old props
      * can undo an edit that has not shown up yet.
      */
-    addTags: tagListSchema,
-    removeTags: tagListSchema,
     addCollectionIds: collectionIdListSchema,
     removeCollectionIds: collectionIdListSchema,
   })

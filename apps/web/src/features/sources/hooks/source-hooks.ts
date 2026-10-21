@@ -64,12 +64,6 @@ export function useAllSources() {
   });
 }
 
-export function useAllTags() {
-  const { data } = useAllSources();
-
-  return [...new Set((data ?? []).flatMap((source) => source.tags))].sort();
-}
-
 export function useDeletedSources() {
   return useQuery({
     queryKey: sourceKeys.deleted,

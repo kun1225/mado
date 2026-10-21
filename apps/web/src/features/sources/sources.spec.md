@@ -34,7 +34,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 ### Replacing the file
 
 - Use the toolbar button, the viewer's "Add a file" button, a drop on the viewer, or the panel thumbnail.
-- The name, note, tags, link and collections never change.
+- The name, note, link and collections never change.
 - A site that can be embedded stays a website, and only its thumbnail changes. Only images are allowed.
 - A site that cannot be embedded turns into an image or video source and loses its `site` preview, but keeps its link.
 - Only one replace per source at a time. A second drop shows "Wait for the current replace to finish."
@@ -67,6 +67,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **2026-10 — The FLIP moves the viewer media, not the dialog.** The dialog covers the whole screen, so only the picture has a card to fly from. The popup's own CSS fade is turned off while it flies, because it would fade the media too; the toolbar and panel (`data-flip-chrome`) fade on their own. Base UI only waits for the popup's own animations before it unmounts, so the close adds an empty animation on the popup to hold it until the media lands.
 - **2026-10 — Far grid cards unmount their media instead of hiding it.** Unmounting frees the decoded image, the video decoder and the blob URL. `display: none` on the card would break the grid, because `masonry-layout` would measure it as 0px tall. Cards stay in the DOM, so this is not full virtual scrolling.
 - **2026-10 — `useInView` shares one `IntersectionObserver` per option set**, because hundreds of cards each owning one is much slower.
+- **2026-10 — Tags are removed from the UI.** A source can be in many collections, so tags were a second way to group the same things, and nothing read them (no search, no filter). The `tags` field stays on the record, always `[]` for new sources, so old data and old exports still load without a migration. Bring tags back only with a way to use them, such as filtering inside a collection.
 
 ## Known gaps
 

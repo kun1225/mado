@@ -730,23 +730,15 @@ describe('updateSourceSchema', () => {
       'https://a.com/x',
     );
   });
-
-  it('normalizes tags and removes duplicates', () => {
-    expect(
-      updateSourceSchema.parse({ tags: ['#Poster', 'poster', ' ', 'Red '] })
-        .tags,
-    ).toEqual(['poster', 'red']);
-  });
 });
 
 describe('updateSource', () => {
   it('changes only the given fields and bumps updatedAt', async () => {
     await seedSources([buildSource({ id: 'a' })]);
 
-    const updated = await updateSource('a', { note: 'hello', tags: ['Red'] });
+    const updated = await updateSource('a', { note: 'hello' });
 
     expect(updated.note).toBe('hello');
-    expect(updated.tags).toEqual(['red']);
     expect(updated.name).toBe('shot');
     expect(updated.updatedAt).not.toBe('2026-01-01T00:00:00.000Z');
     expect((await fetchAllSources())[0]?.note).toBe('hello');
@@ -774,25 +766,21 @@ describe('updateSource', () => {
 describe('updateSource list changes', () => {
   it('applies add and remove to the stored lists, not to a stale copy', async () => {
     const other = '22222222-2222-4222-8222-222222222222';
-    await seedSources([buildSource({ id: 'a', tags: ['red'] })]);
+    const third = '33333333-3333-4333-8333-333333333333';
+    await seedSources([buildSource({ id: 'a' })]);
 
     // Both are built from the same stale source, like two fast clicks.
     await Promise.all([
-      updateSource('a', { addTags: ['blue'], addCollectionIds: [other] }),
-      updateSource('a', { addTags: ['green'], removeTags: ['red'] }),
+      updateSource('a', { addCollectionIds: [other] }),
+      updateSource('a', {
+        addCollectionIds: [third],
+        removeCollectionIds: [COLLECTION_ID],
+      }),
     ]);
 
     const [source] = await fetchAllSources();
 
-    expect(source.tags.sort()).toEqual(['blue', 'green']);
-    expect(source.collectionIds).toEqual([COLLECTION_ID, other]);
-  });
-
-  it('keeps the tag limit when adding', async () => {
-    const tags = Array.from({ length: 20 }, (_, index) => `t${index}`);
-    await seedSources([buildSource({ id: 'a', tags })]);
-
-    await expect(updateSource('a', { addTags: ['extra'] })).rejects.toThrow();
+    expect(source.collectionIds.sort()).toEqual([other, third].sort());
   });
 });
 

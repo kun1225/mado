@@ -30,7 +30,6 @@ import {
   newWebsiteSourceSchema,
   replaceSourceFileSchema,
   sourceKindSchema,
-  tagsSchema,
   updateSourceSchema,
 } from './source-types';
 
@@ -393,13 +392,8 @@ export async function updateSource(
   id: string,
   input: UpdateSourceInput,
 ): Promise<Source> {
-  const {
-    addTags,
-    removeTags,
-    addCollectionIds,
-    removeCollectionIds,
-    ...fields
-  } = updateSourceSchema.parse(input);
+  const { addCollectionIds, removeCollectionIds, ...fields } =
+    updateSourceSchema.parse(input);
   const database = await openDatabase();
   const transaction = database.transaction(STORES.sources, 'readwrite');
   const store = transaction.objectStore(STORES.sources);
@@ -411,7 +405,6 @@ export async function updateSource(
   const merged = { ...existing, ...fields };
   const source: Source = {
     ...merged,
-    tags: tagsSchema.parse(applyListChange(merged.tags, addTags, removeTags)),
     collectionIds: applyListChange(
       merged.collectionIds,
       addCollectionIds,
@@ -512,7 +505,7 @@ async function saveReplacedFile(
   const database = await openDatabase();
   const transaction = database.transaction(STORES.sources, 'readwrite');
   const store = transaction.objectStore(STORES.sources);
-  // Read again: the user may have edited the name or tags while the file was saving.
+  // Read again: the user may have edited the name or note while the file was saving.
   const previous = await toPromise<Source | undefined>(store.get(id));
 
   if (!previous) throw new Error(`Source not found: ${id}`);

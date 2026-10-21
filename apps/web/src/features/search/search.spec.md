@@ -27,4 +27,4 @@ Find a collection, folder or source by its name, fast and on the device.
 
 ## Known gaps
 
-- Search doesn't look at tags, notes or URLs yet.
+- Search doesn't look at notes or URLs yet.
