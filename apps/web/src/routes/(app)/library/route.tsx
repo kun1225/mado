@@ -42,7 +42,7 @@ function RouteComponent() {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col px-edge pt-16 pb-24">
+    <main className="flex min-h-svh flex-col px-edge pt-4 pb-24">
       <LiquidTabs value={activeTab} onValueChange={handleTabChange}>
         <LiquidTabsList>
           <LiquidTabsTrigger
