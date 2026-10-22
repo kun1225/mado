@@ -1,7 +1,6 @@
 import { cn } from 'cn';
 
 import { useHideOnScroll } from '#/hooks/use-hide-on-scroll';
-import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
 import { ActionDockAddSource } from './action-dock-add-source';
 import { ActionDockSearch } from './action-dock-search';
@@ -13,20 +12,17 @@ export function ActionDock({
 }: {
   addSource?: { collectionId: string | null };
 }) {
-  // A dock that pops in and out on every scroll is the kind of motion reduced-motion users opt out of.
-  const prefersReducedMotion = usePrefersReducedMotion();
-  const isPastScroll = useHideOnScroll(HIDE_AFTER_SCROLL_PX);
-  const isScrolledAway = isPastScroll && !prefersReducedMotion;
+  const isScrolledAway = useHideOnScroll(HIDE_AFTER_SCROLL_PX);
 
   return (
     <div
       data-scrolled-away={isScrolledAway || undefined}
       className={cn(
         'pointer-events-none fixed inset-x-0 bottom-6 z-action-bar flex items-end justify-center gap-3 px-edge',
-        'transition-[translate,opacity,visibility] duration-slow ease-out',
+        'transition-[translate,opacity,visibility] duration-slow ease-out motion-reduce:duration-fast',
         'selecting:invisible selecting:translate-y-[calc(100%+1.5rem)] selecting:opacity-0 motion-reduce:selecting:translate-y-0',
         // Focus inside means the user is typing or in a menu, so the dock must not slide away under them.
-        'data-scrolled-away:not-focus-within:invisible data-scrolled-away:not-focus-within:translate-y-[calc(100%+1.5rem)] data-scrolled-away:not-focus-within:opacity-0',
+        'motion-safe:data-scrolled-away:not-focus-within:invisible motion-safe:data-scrolled-away:not-focus-within:translate-y-[calc(100%+1.5rem)] motion-safe:data-scrolled-away:not-focus-within:opacity-0',
       )}
     >
       {addSource && (

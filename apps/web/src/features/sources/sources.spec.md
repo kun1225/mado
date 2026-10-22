@@ -69,13 +69,13 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **2026-10 — Far grid cards unmount their media instead of hiding it.** Unmounting frees the decoded image, the video decoder and the blob URL. `display: none` on the card would break the grid, because `masonry-layout` would measure it as 0px tall. Cards stay in the DOM, so this is not full virtual scrolling.
 - **2026-10 — `useInView` shares one `IntersectionObserver` per option set**, because hundreds of cards each owning one is much slower.
 - **2026-10 — Drop feedback is "Stage": the grid sinks, a card steps forward.** Picked from a prototype round. Scale `0.96` from the center of the visible part, veil `bg/55` with a 4px blur, card scales `0.96 → 1`; enter `duration-slow`, exit `duration-base`, `ease-out-quart`. The spacing between the collection bar and the grid is the bar's `mb-5`, not padding on the drop zone, so the veil hugs the grid. Rejected: the old dashed border (it sat on the card edges and its pill covered the action dock), a cursor-following chip (easy to miss while looking at the grid), a top pill or label row (covered the first row of cards, and never says the size limit).
+- **2026-10 — The drop veil covers one screen, not the whole grid.** The veil sticks to the top of the screen inside a box the size of the grid, so the blur never covers more than one screen, even in a very tall library. The blur is only on while dragging, because an idle `backdrop-filter` still keeps a GPU layer alive. The file count is read on `dragenter` of the drop zone only until the drag is active, not on every element in the window. The card and the scale origin follow scroll once per frame while dragging.
 - **2026-10 — Tags are removed from the UI.** A source can be in many collections, so tags were a second way to group the same things, and nothing read them (no search, no filter). The `tags` field stays on the record, always `[]` for new sources, so old data and old exports still load without a migration. Bring tags back only with a way to use them, such as filtering inside a collection.
 
 ## Known gaps
 
 - Every card stays in the DOM. With many thousands of sources, the DOM itself gets slow. The fix is our own column math from the aspect ratios, rendering only visible cards.
 - While a file drag scales the grid, fixed elements inside it (like the selection bar) move with the grid until the drag ends.
-- The drop card is placed once when the drag enters. If the page scrolls during the drag, the card does not follow the visible center.
 - If a compression is reading a file at the moment a replace deletes it, the compression fails silently. There's no toast, and the new file still gets its own compression.
 
 ## Planned

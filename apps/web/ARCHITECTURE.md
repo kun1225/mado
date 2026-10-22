@@ -71,6 +71,10 @@ The API lives in `apps/api`. Everything else stays on the device.
 
 ## Key flows
 
+### Action dock scrolling
+
+`ActionDock` uses `useHideOnScroll` to hide after 200px of downward scrolling and return on upward scrolling. CSS limits scroll hiding to `prefers-reduced-motion: no-preference`, so the dock stays visible during scrolling with reduced motion enabled, including before hydration and when the preference changes. Focus inside the dock also keeps it visible.
+
 ### Add a source
 
 ```text

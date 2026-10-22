@@ -13,6 +13,7 @@ Find a collection, folder or source by its name, fast and on the device.
 - Recent searches: up to 5, newest first. Searching for the same text again moves it to the top (case doesn't matter). You can remove one or clear all.
 - Recent searches stay in step across tabs.
 - Each account has its own recent searches. A guest has one shared list on the device.
+- The action dock hides after scrolling down more than 200px and returns on any upward scroll. It stays visible while focus is inside it. With reduced motion enabled, scrolling never hides or moves the dock; CSS applies this preference from the first render and when it changes.
 
 ## Decisions
 
