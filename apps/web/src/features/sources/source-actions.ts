@@ -1,4 +1,8 @@
-import type { Collection } from '#/features/collections/collection-types';
+import type {
+  Collection,
+  CollectionSourceOptions,
+} from '#/features/collections/collection-types';
+import { WITH_FOLDER_SOURCES } from '#/features/collections/collection-types';
 import {
   openDatabase,
   SOURCES_COLLECTION_INDEX,
@@ -273,6 +277,7 @@ function toVisibleSources(sources: Source[]): Source[] {
 
 export async function fetchSourcesByCollection(
   collectionId: string,
+  { includeFolders }: CollectionSourceOptions = WITH_FOLDER_SOURCES,
 ): Promise<Source[]> {
   const database = await openDatabase();
   const transaction = database.transaction(
@@ -285,11 +290,12 @@ export async function fetchSourcesByCollection(
   const index = transaction
     .objectStore(STORES.sources)
     .index(SOURCES_COLLECTION_INDEX);
+  const ids = includeFolders
+    ? collectBranchIds(collections, collectionId)
+    : [collectionId];
   // Start all reads in the same tick, or the transaction closes.
   const lists = await Promise.all(
-    collectBranchIds(collections, collectionId).map((id) =>
-      toPromise<Source[]>(index.getAll(id)),
-    ),
+    ids.map((id) => toPromise<Source[]>(index.getAll(id))),
   );
   // A source in both a folder and its child comes back twice.
   const uniqueSources = new Map(
@@ -352,7 +358,11 @@ export async function fetchDeletedSources(): Promise<Source[]> {
     );
 }
 
-export async function countSourcesByCollection(): Promise<Map<string, number>> {
+export async function countSourcesByCollection({
+  includeFolders,
+}: CollectionSourceOptions = WITH_FOLDER_SOURCES): Promise<
+  Map<string, number>
+> {
   const [collections, sources] = await Promise.all([
     fetchCollectionNodes(),
     fetchAllSources(),
@@ -362,7 +372,11 @@ export async function countSourcesByCollection(): Promise<Map<string, number>> {
   );
 
   return sources.reduce((counts, source) => {
-    for (const id of collectAncestorIds(parentById, source.collectionIds)) {
+    const ids = includeFolders
+      ? collectAncestorIds(parentById, source.collectionIds)
+      : new Set(source.collectionIds);
+
+    for (const id of ids) {
       counts.set(id, (counts.get(id) ?? 0) + 1);
     }
     return counts;

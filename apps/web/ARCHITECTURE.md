@@ -26,6 +26,7 @@ features/storage/            IndexedDB (records)  ·  OPFS (account folder in st
 graph LR
   auth -->|sets the account| storage
   settings -->|auth forms, sign-out| auth
+  settings -->|General tab: folder sources setting| collections
   settings -->|Data tab| export
   settings -->|Data tab| import
   settings -->|file sizes by kind| sources
@@ -39,23 +40,23 @@ graph LR
   import -->|ids, records| storage
   sources --> storage
   collections --> storage
-  sources -->|collectionKeys, Collection type| collections
+  sources -->|collectionKeys, Collection type, folder sources setting| collections
   collections -->|counts, previews, deletes| sources
   search -->|types only| collections
   search -->|types only| sources
   search -->|account for recent searches| storage
 ```
 
-| Domain        | Depends on                                       | Why                                                                                                                                                                                                                |
-| ------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `auth`        | `storage`                                        | Sets the account, which picks the database and the OPFS folder                                                                                                                                                     |
-| `storage`     | none                                             | The base layer                                                                                                                                                                                                     |
-| `settings`    | `auth`, `export`, `import`, `sources`, `storage` | The panel hosts sign-in, sign-up, password reset and sign-out; the Data tab shows storage used (file sizes from `sources`, the browser estimate from `storage`) and starts an export or an import; it owns no data |
-| `sources`     | `storage`, `collections`                         | Stores records and files; uses `collectionKeys` to refresh counts and the `Collection` type for nesting                                                                                                            |
-| `collections` | `storage`, `sources`                             | Counts, previews and deletes go through `source-actions` (`countSourcesByCollection`, `collectBranchIds`, `softDeleteSourcesInCollection`)                                                                         |
-| `search`      | `collections`, `sources`, `storage`              | Types only for the data; the account keys the recent-search list                                                                                                                                                   |
-| `export`      | `collections`, `sources`, `storage`              | Reads every record and media file; builds the zip in the account's OPFS folder when there is no save picker                                                                                                        |
-| `import`      | `export`, `sources`, `collections`, `storage`    | Reads `library.json` with export's schema; saves files through `sources`; writes records with their own ids                                                                                                        |
+| Domain        | Depends on                                                      | Why                                                                                                                                                                                                                                                                                    |
+| ------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `auth`        | `storage`                                                       | Sets the account, which picks the database and the OPFS folder                                                                                                                                                                                                                         |
+| `storage`     | none                                                            | The base layer                                                                                                                                                                                                                                                                         |
+| `settings`    | `auth`, `collections`, `export`, `import`, `sources`, `storage` | The panel hosts sign-in, sign-up, password reset and sign-out; the General tab shows the folder sources switch from `collections`; the Data tab shows storage used (file sizes from `sources`, the browser estimate from `storage`) and starts an export or an import; it owns no data |
+| `sources`     | `storage`, `collections`                                        | Stores records and files; uses `collectionKeys` to refresh counts, the `Collection` type for nesting, and the folder sources setting to pick a collection's sources                                                                                                                    |
+| `collections` | `storage`, `sources`                                            | Counts, previews and deletes go through `source-actions` (`countSourcesByCollection`, `collectBranchIds`, `softDeleteSourcesInCollection`)                                                                                                                                             |
+| `search`      | `collections`, `sources`, `storage`                             | Types only for the data; the account keys the recent-search list                                                                                                                                                                                                                       |
+| `export`      | `collections`, `sources`, `storage`                             | Reads every record and media file; builds the zip in the account's OPFS folder when there is no save picker                                                                                                                                                                            |
+| `import`      | `export`, `sources`, `collections`, `storage`                   | Reads `library.json` with export's schema; saves files through `sources`; writes records with their own ids                                                                                                                                                                            |
 
 **Known coupling:** `collections` and `sources` import each other, in both actions and hooks. It works because nesting rules (`collectBranchIds`) live in `sources`. If this grows, move the shared nesting helpers into `collections` or a small shared module.
 
@@ -173,9 +174,10 @@ Settings → Data → Import a folder → <input webkitdirectory> → File[]
 ### Settings panel and email links
 
 ```text
-⚙ button → ?settings=account → (app)/route.tsx renders SettingsDialog
+⚙ button → ?settings=general → (app)/route.tsx renders SettingsDialog
   → useSettingsSearch parses settings, auth, token, verified, error (zod, bad values dropped)
-  → guest: SettingsAuthForm (mode from ?auth)   signed in: name, email, Sign out
+  → General: the folder sources switch (useShowFolderSources from collections)
+  → Account, guest: SettingsAuthForm (mode from ?auth)   signed in: name, email, Sign out
 verify-email link → /library?settings=account&verified=true
 reset link        → /library?settings=account&auth=reset-password&token=…
 sign-in OK → full reload of the current page without the settings params

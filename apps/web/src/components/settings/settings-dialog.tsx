@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import {
   Cancel01Icon,
   Database01Icon,
+  PreferenceHorizontalIcon,
   UserCircleIcon,
 } from '@hugeicons/core-free-icons';
 import type { IconSvgElement } from '@hugeicons/react';
@@ -29,26 +30,30 @@ import { useSettingsSearch } from '#/features/settings/settings-hooks';
 
 import { SettingsAccountTab } from './settings-account-tab';
 import { SettingsDataTab } from './settings-data-tab';
+import { SettingsGeneralTab } from './settings-general-tab';
 
 const EMAIL_FIELD_ID = 'settings-auth-email';
 
 // The active layer copies the tab list, so both must share one layout.
 const TAB_LIST_CLASS = 'flex items-center gap-0.5 sm:flex-col sm:items-stretch';
 const TAB_CLASS =
-  'flex h-9.5 items-center gap-2 rounded-md px-4 text-sm font-medium';
+  'flex h-9.5 items-center gap-2 rounded-md px-2.5 text-sm font-medium sm:px-4';
+// Phones show icons only, so three tabs and the sign-in action fit in one row. The header names the tab.
+const TAB_LABEL_CLASS = 'max-sm:sr-only';
 
 const SETTINGS_TAB_ITEMS: readonly {
   tab: SettingsTab;
   label: string;
   icon: IconSvgElement;
 }[] = [
+  { tab: 'general', label: 'General', icon: PreferenceHorizontalIcon },
   { tab: 'account', label: 'Account', icon: UserCircleIcon },
   { tab: 'data', label: 'Data', icon: Database01Icon },
 ];
 
 export function SettingsDialog({ authUser }: SettingsDialogProps) {
   const { search, close, selectTab, setAuthMode } = useSettingsSearch();
-  const activeTab = search.tab ?? 'account';
+  const activeTab = search.tab ?? 'general';
   const activeLabel = SETTINGS_TAB_ITEMS.find(
     (item) => item.tab === activeTab,
   )?.label;
@@ -93,15 +98,15 @@ export function SettingsDialog({ authUser }: SettingsDialogProps) {
             </header>
             <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-8">
               <div className="max-w-sm">
-                {activeTab === 'data' ? (
-                  <SettingsDataTab />
-                ) : (
+                {activeTab === 'general' && <SettingsGeneralTab />}
+                {activeTab === 'account' && (
                   <SettingsAccountTab
                     authUser={authUser}
                     search={search}
                     onAuthModeChange={setAuthMode}
                   />
                 )}
+                {activeTab === 'data' && <SettingsDataTab />}
               </div>
             </div>
           </section>
@@ -175,7 +180,7 @@ function SettingsSidebarTabs({
           )}
         >
           <HugeiconsIcon icon={item.icon} size={18} strokeWidth={1.5} />
-          {item.label}
+          <span className={TAB_LABEL_CLASS}>{item.label}</span>
         </button>
       ))}
       {/* The labels are drawn twice so the clip also darkens the text as it slides, like LiquidTabs. */}
@@ -190,7 +195,7 @@ function SettingsSidebarTabs({
         {SETTINGS_TAB_ITEMS.map((item) => (
           <span key={item.tab} className={TAB_CLASS}>
             <HugeiconsIcon icon={item.icon} size={18} strokeWidth={1.5} />
-            {item.label}
+            <span className={TAB_LABEL_CLASS}>{item.label}</span>
           </span>
         ))}
       </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
 import {
+  keepPreviousData,
   useIsMutating,
   useMutation,
   useMutationState,
@@ -12,6 +13,7 @@ import { ZodError } from 'zod';
 import { toast } from '@repo/ui/sonner';
 
 import { collectionKeys } from '#/features/collections/collection-hooks';
+import { useShowFolderSources } from '#/features/collections/collection-preference-hooks';
 
 import type { SiteSourceInput } from '../site-source.type';
 import {
@@ -73,9 +75,16 @@ export function useDeletedSources() {
 }
 
 export function useSources(collectionId: string) {
+  const { showFolderSources } = useShowFolderSources();
+
   return useQuery({
-    queryKey: sourceKeys.byCollection(collectionId),
-    queryFn: () => fetchSourcesByCollection(collectionId),
+    queryKey: [...sourceKeys.byCollection(collectionId), showFolderSources],
+    queryFn: () =>
+      fetchSourcesByCollection(collectionId, {
+        includeFolders: showFolderSources,
+      }),
+    // Flipping the setting keeps the grid and its selection while the new list loads.
+    placeholderData: keepPreviousData,
     enabled: isSupported && Boolean(collectionId),
   });
 }

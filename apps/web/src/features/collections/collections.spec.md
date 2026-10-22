@@ -30,8 +30,10 @@ Collections group sources. They can nest: a collection inside another one is cal
 
 ### What a collection shows
 
-- A collection shows its own sources **and** every source in the folders below it, each source once.
-- `saveCount` counts the same set. It is worked out from the sources on every read and never stored.
+- By default, a collection shows its own sources **and** every source in the folders below it, each source once.
+- **Settings → General → Show sources from folders** turns that off. Then a collection or folder shows only the sources saved right in it. Its folder cards still show. The library always shows every source.
+- The setting is kept for each account (and once for guests) in `localStorage`, under `mado:show-folder-sources[:<accountId>]`. If storage is blocked or the value is bad, it reads as on.
+- `saveCount` counts the same set as the page. It is worked out from the sources on every read and never stored.
 - A card shows up to 3 previews, newest first, picked from the same set as the page.
 - Dropping files on a collection card adds them to that collection.
 
@@ -51,7 +53,10 @@ Collections group sources. They can nest: a collection inside another one is cal
 
 - **2026-09 — Deleting a collection is a hard delete, but its sources go to the trash.** Losing a folder is cheap. Losing saved inspiration is not.
 - **2026-10 — Collections nest through `parentId`.** One model covers both collections and folders.
-- **2026-10 — A parent shows everything in its folders.** Otherwise, saving into a folder would make the source seem to disappear from the collection the user was browsing.
+- **2026-10 — A parent shows everything in its folders, by default.** Otherwise, saving into a folder would make the source seem to disappear from the collection the user was browsing.
+- **2026-10 — Showing folder sources is a setting, on by default.** With everything shown, it was hard to tell which folder you were in. On by default, so nothing changes until someone turns it off. Counts and card previews follow the setting, so a card never says more than its page shows.
+- **2026-10 — The setting lives in `localStorage`, one key per account**, like recent searches. One yes/no value is not worth a new store and a database migration. It is not part of an export.
+- **2026-10 — The setting is part of the React Query keys** (`[...collectionKeys.lists, flag]`, `[...collectionKeys.detail(id), flag]`, `[...sourceKeys.byCollection(id), flag]`). Flipping it shows the right data at once. Rename and color updates write to every cached variant and keep each one's own `saveCount`.
 - **2026-10 — `saveCount` is worked out, not stored**, so it can never drift from the real sources.
 - **2026-10 — Collection deletes run in one transaction** with the source updates, so collections and sources always change together.
 - **2026-10 — Card actions use a context menu, not a visible "…" button.** Cards stay clean, and right-click / long-press is what people expect from folders. The collection page keeps its "…" button, so every action can still be found without a right-click.

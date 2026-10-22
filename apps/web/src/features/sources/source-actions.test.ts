@@ -707,6 +707,41 @@ describe('nested collections', () => {
     expect(counts.get(CHILD_ID)).toBe(2);
     expect(counts.get(GRANDCHILD_ID)).toBe(1);
   });
+
+  describe('without folder sources', () => {
+    const ownOnly = { includeFolders: false };
+
+    it('shows only the sources saved right in the collection', async () => {
+      await seedSources([
+        buildSource({ id: 'a', createdAt: '2026-01-01T00:00:00.000Z' }),
+        buildSource({ id: 'b', createdAt: '2026-01-02T00:00:00.000Z' }),
+        buildSource({ id: 'c', collectionIds: [CHILD_ID] }),
+        buildSource({
+          id: 'd',
+          deletedAt: '2026-01-03T00:00:00.000Z',
+        }),
+      ]);
+
+      const sources = await fetchSourcesByCollection(COLLECTION_ID, ownOnly);
+
+      expect(sources.map((source) => source.id)).toEqual(['b', 'a']);
+    });
+
+    it('counts only the sources saved right in each collection', async () => {
+      await seedSources([
+        buildSource({ id: 'a' }),
+        buildSource({ id: 'b', collectionIds: [CHILD_ID] }),
+        buildSource({ id: 'c', collectionIds: [GRANDCHILD_ID] }),
+        buildSource({ id: 'd', collectionIds: [COLLECTION_ID, CHILD_ID] }),
+      ]);
+
+      const counts = await countSourcesByCollection(ownOnly);
+
+      expect(counts.get(COLLECTION_ID)).toBe(2);
+      expect(counts.get(CHILD_ID)).toBe(2);
+      expect(counts.get(GRANDCHILD_ID)).toBe(1);
+    });
+  });
 });
 
 describe('updateSourceSchema', () => {

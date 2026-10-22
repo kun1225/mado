@@ -27,6 +27,15 @@ export type Collection = {
   updatedAt: string;
 };
 
+/** `includeFolders: false` limits a collection to the sources saved right in it. */
+export type CollectionSourceOptions = {
+  includeFolders: boolean;
+};
+
+export const WITH_FOLDER_SOURCES: CollectionSourceOptions = {
+  includeFolders: true,
+};
+
 export type CreateCollectionInput = {
   name?: string;
   parentId?: string;

@@ -490,7 +490,7 @@ function ActionDockSearchSettingsButton() {
               variant="ghost"
               size="icon"
               className="rounded-full text-muted-fg hover:text-fg"
-              onClick={() => settings.open('account')}
+              onClick={() => settings.open('general')}
             />
           }
         >

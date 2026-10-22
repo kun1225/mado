@@ -35,6 +35,10 @@ describe('parseSettingsSearch', () => {
     expect(parseSettingsSearch({ settings: 'data' }).tab).toBe('data');
   });
 
+  it('opens the general tab', () => {
+    expect(parseSettingsSearch({ settings: 'general' }).tab).toBe('general');
+  });
+
   it('accepts verified as a string or a boolean', () => {
     expect(parseSettingsSearch({ verified: 'true' }).verified).toBe(true);
     expect(parseSettingsSearch({ verified: true }).verified).toBe(true);

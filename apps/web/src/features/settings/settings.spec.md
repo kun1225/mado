@@ -2,15 +2,17 @@
 
 ## Purpose
 
-One place for app settings. Today it holds the account (sign in, sign up, reset a password, see who you are, sign out) and your data (export all sources, import a folder).
+One place for app settings. Today it holds general preferences (whether collections show their folders' sources), the account (sign in, sign up, reset a password, see who you are, sign out) and your data (export all sources, import a folder).
 
-**Depends on:** `auth`, `export`, `import`. **Used by:** every `(app)` page, opened from the settings button next to the search bar. See `apps/web/ARCHITECTURE.md`.
+**Depends on:** `auth`, `collections`, `export`, `import`. **Used by:** every `(app)` page, opened from the settings button next to the search bar. See `apps/web/ARCHITECTURE.md`.
 
 ## Behavior
 
 - The settings button opens a dialog. It fills the screen on phones and is a centered card on larger screens.
-- The sidebar lists the tabs: **Account** and **Data**. Switching tabs replaces the URL, so Back closes the panel instead of stepping through tabs.
+- The sidebar lists the tabs: **General**, **Account** and **Data**. The settings button opens General. Switching tabs replaces the URL, so Back closes the panel instead of stepping through tabs.
+- On phones the tabs show icons only, so three tabs and Sign in/out fit in one row. The header names the open tab, and each tab keeps its label for screen readers.
 - The bottom of the sidebar shows **Sign out** when signed in, or **Sign in** for a guest. Sign in opens the Account tab, from any tab, and moves focus to the email field.
+- **General, Collections:** the **Show sources from folders** switch (see `collections.spec.md`). It saves at once, with no Save button. Clicking the label flips it too.
 - **Account, signed in:** name and email.
 - **Account, guest:** a short note that saves stay on this device, then the auth form. The form switches between sign-in, sign-up, forgot password and reset password without leaving the panel. On a switch, the old form fades out and the new one fades in and rises a little. With reduced motion it switches at once.
 - **Data, Storage:** the total the browser says this site uses, with the most it allows ("of 12.0 GB available", left out when the browser gives no limit), a bar split into Videos, Images and Other, and a row for each with its size. The bar grows in once. With reduced motion it shows at once. Videos and Images add up the files of every source, trash included, because trashed files still use space. Other is the rest: thumbnails, previews and the database. A short note under the rows says everything is saved on this device and what Other means. The section is hidden while loading, or when the browser has no `navigator.storage.estimate()`. The numbers are read again when the number of sources changes (an import, a delete, emptying the trash).
@@ -22,7 +24,7 @@ One place for app settings. Today it holds the account (sign in, sign up, reset 
 
 | Param      | Values                                                    | Set by                      |
 | ---------- | --------------------------------------------------------- | --------------------------- |
-| `settings` | `account`, `data`                                         | the settings button, tabs   |
+| `settings` | `general`, `account`, `data`                              | the settings button, tabs   |
 | `auth`     | `sign-up`, `forgot-password`, `reset-password` (or empty) | the form, the reset email   |
 | `token`    | reset token                                               | better-auth, on reset links |
 | `verified` | `true`                                                    | the verification email      |
@@ -37,6 +39,8 @@ Unknown values fall back to closed, or to the sign-in form.
 - **2026-10 — Sign in/out is a sidebar action, not a tab.** A tab is a place. Signing out is something you do.
 - **2026-10 — No confirm step for sign-out.** Each account's data stays on this device, so signing out loses nothing.
 - **2026-10 — Only tabs with real content.** Empty tabs feel broken. New tabs come with their feature.
+- **2026-10 — General is the first tab and opens by default.** It holds everyday preferences, and Sign in still jumps straight to Account.
+- **2026-10 — Settings shows the folder sources switch but does not own it.** The value and its rules live in `collections`, so settings still owns no data.
 - **2026-10 — Hover and active are two sliding clip-path layers** (200ms ease-in-out, no bounce). Each slides to its tab on its own, so moving the mouse never hides where you are. The hover layer is lighter. The active layer is a copy of the tab list, so its dark label is revealed as the clip slides, like `LiquidTabs`. Touch gets no hover layer, so a tap can't leave it stuck.
 
 - **2026-10 — Storage is a breakdown, not one bar against the quota.** The quota is tens of GB, so "used of quota" is a bar nobody can see. Where the bytes went is more useful, and it needs no quota.

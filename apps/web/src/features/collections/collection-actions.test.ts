@@ -162,6 +162,21 @@ describe('saveCount', () => {
 
     expect(updated.saveCount).toBe(1);
   });
+
+  it('leaves out folder sources when they are hidden', async () => {
+    const parent = await createCollection({ name: 'Moodboard' });
+    const child = await createCollection({ parentId: parent.id });
+    await seedSource(parent.id, 'own');
+    await seedSource(child.id, 'nested');
+    const ownOnly = { includeFolders: false };
+
+    const fetched = await fetchCollection(parent.id, ownOnly);
+    const listed = await fetchAllCollections(ownOnly);
+
+    expect((await fetchCollection(parent.id))?.saveCount).toBe(2);
+    expect(fetched?.saveCount).toBe(1);
+    expect(listed.find(({ id }) => id === parent.id)?.saveCount).toBe(1);
+  });
 });
 
 describe('updateCollection', () => {
@@ -422,5 +437,19 @@ describe('pickPreviewSources', () => {
 
   it('returns an empty list for a collection without sources', () => {
     expect(pickPreviewSources([collection('c1')], [], 'c1')).toEqual([]);
+  });
+
+  it('skips folder sources when they are hidden', () => {
+    const collections = [collection('c1'), collection('child', 'c1')];
+    const sources = [
+      source('nested', ['child'], '2026-01-02T00:00:00.000Z'),
+      source('own', ['c1'], '2026-01-01T00:00:00.000Z'),
+    ];
+
+    const ids = pickPreviewSources(collections, sources, 'c1', {
+      includeFolders: false,
+    }).map(({ id }) => id);
+
+    expect(ids).toEqual(['own']);
   });
 });

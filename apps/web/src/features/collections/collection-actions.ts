@@ -13,12 +13,18 @@ import {
 
 import type {
   Collection,
+  CollectionSourceOptions,
   CreateCollectionInput,
   UpdateCollectionInput,
 } from './collection-types';
-import { updateCollectionSchema } from './collection-types';
+import {
+  updateCollectionSchema,
+  WITH_FOLDER_SOURCES,
+} from './collection-types';
 
-export async function fetchAllCollections(): Promise<Collection[]> {
+export async function fetchAllCollections(
+  options: CollectionSourceOptions = WITH_FOLDER_SOURCES,
+): Promise<Collection[]> {
   const database = await openDatabase();
   const collections = await toPromise<Collection[]>(
     database
@@ -26,7 +32,7 @@ export async function fetchAllCollections(): Promise<Collection[]> {
       .objectStore(STORES.collections)
       .getAll(),
   );
-  const counts = await countSourcesByCollection();
+  const counts = await countSourcesByCollection(options);
 
   return collections
     .map((collection) => ({
@@ -36,7 +42,10 @@ export async function fetchAllCollections(): Promise<Collection[]> {
     .sort((first, second) => second.updatedAt.localeCompare(first.updatedAt));
 }
 
-export async function fetchCollection(id: string): Promise<Collection | null> {
+export async function fetchCollection(
+  id: string,
+  options: CollectionSourceOptions = WITH_FOLDER_SOURCES,
+): Promise<Collection | null> {
   const database = await openDatabase();
   const collection = await toPromise<Collection | undefined>(
     database
@@ -47,7 +56,7 @@ export async function fetchCollection(id: string): Promise<Collection | null> {
 
   if (!collection) return null;
 
-  const counts = await countSourcesByCollection();
+  const counts = await countSourcesByCollection(options);
 
   return { ...normalizeCollection(collection), saveCount: counts.get(id) ?? 0 };
 }
@@ -162,16 +171,21 @@ function normalizeCollection(collection: Collection): Collection {
 
 const PREVIEW_COUNT = 3;
 
-/** A folder card also shows its child folders' saves, like its page does. */
+/** A folder card picks from the same sources as its page, so the two always match. */
 export function pickPreviewSources(
   collections: Collection[],
   sources: Source[],
   collectionId: string,
+  { includeFolders }: CollectionSourceOptions = WITH_FOLDER_SOURCES,
 ): Source[] {
-  const branchIds = new Set(collectBranchIds(collections, collectionId));
+  const ids = new Set(
+    includeFolders
+      ? collectBranchIds(collections, collectionId)
+      : [collectionId],
+  );
 
   return sources
-    .filter((source) => source.collectionIds.some((id) => branchIds.has(id)))
+    .filter((source) => source.collectionIds.some((id) => ids.has(id)))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, PREVIEW_COUNT);
 }
