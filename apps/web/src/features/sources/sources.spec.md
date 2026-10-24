@@ -83,3 +83,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 
 - **Drop a folder.** Dropping a folder on the library runs the same import as Settings → Data (see `import.spec.md`). It needs `webkitGetAsEntry` to read the folder from the drop.
 - **A more fun embed loading state.** While an embedded site loads in the detail dialog, show something friendly and human instead of a plain wait. Idea: two drawn eyes that look around, as if searching for the page.
+- **Facets and tags** (roadmap phase 1). Each source can have values for fixed brand facets: Emotion, Style, Color, Type and Industry. Each facet has a starting list of values, and the user can add their own. Free tags sit next to facets for anything else. The library and a collection can be filtered by facet values and tags.
+  - Why fixed facets: AI (phase 4) fills the same facets, so it can compare and group sources. Free tags alone are too loose for that.
+  - Color: a palette of 3–5 colors is taken from each image on the device, with no AI. It feeds the Color facet and palette cards on the canvas.
+  - Adding facet fields to the source record is a schema change, so it follows the rules in `storage.spec.md`.

@@ -18,7 +18,7 @@
 | Doc                                                                                                              | Purpose                                                                                               |
 | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | [`apps/web/ARCHITECTURE.md`](apps/web/ARCHITECTURE.md)                                                           | Layers, domain dependencies, external API calls, and key flows across domains                         |
-| [`docs/roadmap.md`](docs/roadmap.md)                                                                             | Planned features and their order: near-term items, then permissions, collaboration and whiteboards    |
+| [`docs/roadmap.md`](docs/roadmap.md)                                                                             | Product direction and phases: free local launch, cloud, AI, client sharing, then teams                |
 | [`apps/web/src/features/sources/sources.spec.md`](apps/web/src/features/sources/sources.spec.md)                 | Saved images, videos and websites: adding, compression, the detail dialog, replacing files, the trash |
 | [`apps/web/src/features/collections/collections.spec.md`](apps/web/src/features/collections/collections.spec.md) | Collections and nested folders: naming, what a collection shows, counts, previews, deleting           |
 | [`apps/web/src/features/search/search.spec.md`](apps/web/src/features/search/search.spec.md)                     | Name search over collections and sources, and recent searches                                         |
@@ -28,3 +28,5 @@
 | [`apps/web/src/features/export/export.spec.md`](apps/web/src/features/export/export.spec.md)                     | Export all sources as a zip: folder layout, file names, `library.json` for import                     |
 | [`apps/web/src/features/flags/flags.spec.md`](apps/web/src/features/flags/flags.spec.md)                         | Feature flags in the web app and API: how to add, read and remove one                                 |
 | [`apps/web/src/features/import/import.spec.md`](apps/web/src/features/import/import.spec.md)                     | Import a folder or an unzipped export: ids, skipped files, the folder-to-collection rule              |
+| [`apps/web/src/features/projects/projects.spec.md`](apps/web/src/features/projects/projects.spec.md)             | (Planned) Brand projects: brief, picked sources, canvases                                             |
+| [`apps/web/src/features/canvas/canvas.spec.md`](apps/web/src/features/canvas/canvas.spec.md)                     | (Planned) The infinite canvas in a project, and the canvas library choice                             |

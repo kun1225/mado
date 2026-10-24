@@ -1,52 +1,72 @@
 # Roadmap
 
-What we plan to build, in rough order. Details for near-term work live in each feature's `## Planned` section. Bigger ideas live here until they get their own spec.
+What we plan to build, in rough order. Details for near-term work live in each feature's spec (`## Planned`, or the whole spec for a feature that isn't built yet). Bigger ideas live here until they get their own spec.
 
-## Now / Next
+## Where Mado is going
 
-Small enough to build on the local-first app we have today.
+Mado is a brand design tool for solo brand designers, built around AI. You collect ideas, sort them by brand facets, and turn them into 2–3 brand directions on a canvas. Then you show the client why each direction works.
 
-| Feature                                                  | Spec                                                                  |
-| -------------------------------------------------------- | --------------------------------------------------------------------- |
-| Drop a folder on the library to import it                | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md) |
-| A more fun embed loading state (two eyes looking around) | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md) |
-| Build a landing page                                     | —                                                                     |
+Every step of the product fits one step of a designer's work:
 
-## Later
+```text
+Brief → Collect → Make sense → Directions → Present → Pick
+(project) (library) (facets + AI) (canvas + AI)  (share)  (client vote)
+```
 
-These need data to leave the device, so they come after cloud storage and sync (see "Cloud Storage" and "Sync" in [`prd.md`](prd.md)).
+Rules that shape every phase:
 
-### Cloud backup and sync
+- **Solo designers first.** Teams come later. A share link is enough for clients.
+- **AI only suggests.** Each AI result can be accepted, edited or rejected. The designer has the final say.
+- **AI shows its sources.** Every direction or strategy point links to the sources it came from. Clients pay for the reasons, not for the moodboard.
+- **Free is local, paid is cloud.** The library, facets, projects and canvas are free and stay on the device. AI, cloud backup and client links are paid, because they cost us money per use.
+- **AI is opt-in.** Turning AI on means sending images and text to an AI API, so the user chooses it.
 
-The base for everything below. Without a server copy, nobody else can see your data.
+## Phases
 
-### Permissions
+Each phase ships alone. Mado is a side project, so phases are small.
 
-- Who can view or change a collection, a whiteboard, or a whole workspace.
-- Starting idea: the roles in `workspace_members` from the PRD: `owner`, `admin`, `editor`, `viewer`.
-- Open question: do we share per workspace, per collection, or both?
+| #     | Phase                  | What ships                                                                                                                                | Needs cloud?              | Spec                                                                                                                                         |
+| ----- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | Launch + Now/Next      | Mado branding and landing page (launch), drop a folder to import, a more fun embed loading state                                          | No                        | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md)                                                                        |
+| 1     | Facets                 | Tag sources by Emotion, Style, Color, Type and Industry, plus free tags. A color palette taken from images on the device. Filter by facet | No                        | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md)                                                                        |
+| 2     | Brand project + canvas | A project per client brand with a brief, picked sources and many canvases. A canvas with sources, text, frames and groups                 | No                        | [`projects.spec.md`](../apps/web/src/features/projects/projects.spec.md), [`canvas.spec.md`](../apps/web/src/features/canvas/canvas.spec.md) |
+| 3     | Cloud base             | Accounts for AI, media upload, one-way backup, AI credits                                                                                 | **Yes**, unlocks the rest | —                                                                                                                                            |
+| 4     | AI understanding       | Fill facets with AI, related sources, search by feeling ("calm, warm, handmade"), pull out palette, type style and keywords               | Yes                       | —                                                                                                                                            |
+| 5     | AI synthesis           | 2–3 brand directions placed on the canvas, and a strategy doc (positioning, personality, tone, do/don't). Both show their sources         | Yes, paid                 | —                                                                                                                                            |
+| 6     | Present and share      | Present mode (frames become slides), a share link that works without an account, comments and votes on frames, client picks a direction   | Yes, paid                 | —                                                                                                                                            |
+| 7     | AI images              | Mood images to fill gaps, mockups, logo sketches                                                                                          | Yes, paid                 | —                                                                                                                                            |
+| Later | Teams                  | Two-way sync, permissions, collaboration, brand guideline export, Figma export                                                            | Yes                       | —                                                                                                                                            |
 
-### Collaboration
+## Launch (target: a few weeks from 2026-10)
 
-- Several people work in the same workspace or collection.
-- Needs: permissions, sync, and a rule for two people editing the same thing (see "Conflict Handling" in the PRD).
-- Open question: live (see others' changes right away) or sync-on-refresh first?
+The launch is Mado's own brand and the landing page, on top of the library we have today. Facets, projects and the canvas (phases 1–2) come after the launch.
 
-### Whiteboard
+- **Mado branding:** name story, logo, colors, type and tone of voice. A brand design tool must look like it was made by a brand designer.
+- **Landing page:** tells the brand-tool story from this roadmap, and shows the library working today.
 
-- A free canvas where users place sources, move and resize them, and group them, like a mood board.
-- Can start local-only, so it does not have to wait for sync.
-- Open question: is a whiteboard its own thing, or a view of a collection?
-
-### Share a whiteboard
-
-- Send a link so others can see a whiteboard, or edit it if they have permission.
-- Needs: whiteboard, permissions, cloud storage.
-- Open question: can people without an account view a shared link?
+Why: the launch starts the waitlist and gets feedback before we spend months on the canvas. The rest of phase 0 (folder drop, the fun loading state) can ship whenever it's ready.
 
 ## Order and why
 
-1. **Now / Next** first. They help every user today and need no server.
-2. **Whiteboard (local)** can come early, because it only needs local data.
-3. **Cloud backup and sync** unlocks everything that involves other people.
-4. **Permissions** before **collaboration** and **sharing**, so nothing is shared by accident.
+1. **Facets before AI.** AI is only as useful as the facets it fills. Facets also make the free version better on their own.
+2. **Project and canvas stay local.** They need no server, so they can be part of the free launch.
+3. **Cloud comes before AI**, not after collaboration as planned before. AI needs images on a server, so the cloud base moves up.
+4. **AI understanding before synthesis.** Directions are built from facets, embeddings and extracted palettes.
+5. **Present and share after synthesis.** The thing worth showing a client is the direction and its reasons.
+6. **AI images last.** They cost the most, are the hardest to make look good, and are the easiest to cut.
+7. **Paid plans must be ready by phase 5.** That is where AI cost per use starts.
+8. **Permissions and collaboration move to Later.** A solo designer doesn't need them.
+
+## Decisions
+
+- **2026-10 — The old "Whiteboard" item is now the project canvas.** A canvas lives inside a brand project, not on its own.
+- **2026-10 — Fixed brand facets plus free tags,** not free tags only. Fixed facets let AI compare and group sources.
+- **2026-10 — A brand project is the container for client work.** The library stays global; a project picks sources from it.
+- **2026-10 — Cloud media storage: Cloudflare R2 (proposed).** Mado stores mostly images and short videos that are already compressed on the device. R2 has no fee for downloads, which matters for share links. Mux is built for streaming long videos and charges per minute, which Mado doesn't need.
+
+## Open questions
+
+- Canvas library: React Flow, tldraw or Excalidraw. See `canvas.spec.md`.
+- AI providers: Claude for vision, tagging and writing. AI images (phase 7) need a second provider.
+- Can people without an account comment on a shared link, or only view it?
+- How the paid plan counts AI use (credits per action, or a monthly limit).
