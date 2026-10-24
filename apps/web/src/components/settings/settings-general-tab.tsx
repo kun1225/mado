@@ -21,7 +21,6 @@ import { SETTINGS_THEME_PREFERENCES } from '#/features/settings/settings.type';
 import { useSettingsTheme } from '#/features/settings/settings-theme-hooks';
 
 const THEME_TITLE_ID = 'settings-theme-title';
-const THEME_HINT_ID = 'settings-theme-hint';
 const COLLECTIONS_TITLE_ID = 'settings-collections-title';
 
 const THEME_OPTIONS: readonly SettingsThemeOption[] = [
@@ -49,14 +48,9 @@ function SettingsThemeSection() {
       aria-labelledby={THEME_TITLE_ID}
       className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3"
     >
-      <div className="space-y-0.5">
-        <h3 id={THEME_TITLE_ID} className="text-sm font-medium">
-          Theme
-        </h3>
-        <p id={THEME_HINT_ID} className="text-xs text-muted-fg">
-          System matches your device settings.
-        </p>
-      </div>
+      <h3 id={THEME_TITLE_ID} className="text-sm font-medium">
+        Theme
+      </h3>
       <LiquidTabs
         value={preference}
         onValueChange={(value) => {
@@ -66,11 +60,7 @@ function SettingsThemeSection() {
           if (next) setPreference(next);
         }}
       >
-        <LiquidTabsList
-          aria-labelledby={THEME_TITLE_ID}
-          aria-describedby={THEME_HINT_ID}
-          className="bg-muted"
-        >
+        <LiquidTabsList aria-labelledby={THEME_TITLE_ID} className="bg-muted">
           {THEME_OPTIONS.map((option) => (
             <LiquidTabsTrigger
               key={option.value}
