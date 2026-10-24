@@ -425,28 +425,30 @@ export function readHtmlMetadata(
   const MAX_DESCRIPTION = 1000;
 
   const $ = cheerio.load(html);
-  const meta = (selector: string) => $(selector).first().attr('content');
+  const readMetaContent = (selector: string) =>
+    $(selector).first().attr('content');
 
   const faviconHref = $('link[rel~="icon"]').first().attr('href');
 
   return {
     title: cleanText(
-      meta('meta[property="og:title"]') ??
-        meta('meta[name="twitter:title"]') ??
+      readMetaContent('meta[property="og:title"]') ??
+        readMetaContent('meta[name="twitter:title"]') ??
         $('title').first().text(),
       MAX_TITLE,
     ),
     description: cleanText(
-      meta('meta[property="og:description"]') ??
-        meta('meta[name="description"]') ??
-        meta('meta[name="twitter:description"]'),
+      readMetaContent('meta[property="og:description"]') ??
+        readMetaContent('meta[name="description"]') ??
+        readMetaContent('meta[name="twitter:description"]'),
       MAX_DESCRIPTION,
     ),
     favicon:
       resolveHttpUrl(faviconHref, pageUrl) ??
       new URL('/favicon.ico', pageUrl).href,
     ogImage: resolveHttpUrl(
-      meta('meta[property="og:image"]') ?? meta('meta[name="twitter:image"]'),
+      readMetaContent('meta[property="og:image"]') ??
+        readMetaContent('meta[name="twitter:image"]'),
       pageUrl,
     ),
   };

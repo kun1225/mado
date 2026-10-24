@@ -157,10 +157,6 @@ function SourceDetailFields({ source }: { source: Source }) {
   const note = useSourceField(source, 'note');
   const [isNoteOpen, setIsNoteOpen] = useState(false);
 
-  function blurOnEnter(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'Enter') event.currentTarget.blur();
-  }
-
   return (
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-1.5 text-xs text-muted-fg">
@@ -203,6 +199,11 @@ function SourceDetailFields({ source }: { source: Source }) {
       )}
     </div>
   );
+}
+
+// *** blurOnEnter ***
+function blurOnEnter(event: React.KeyboardEvent<HTMLInputElement>) {
+  if (event.key === 'Enter') event.currentTarget.blur();
 }
 
 // *** SourceDetailUrlField ***

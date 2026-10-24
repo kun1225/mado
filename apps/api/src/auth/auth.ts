@@ -18,16 +18,6 @@ export function createAuth({ database, config, mailer }: AuthDependencies) {
       }),
     });
 
-  // *** sendAuthEmail ***
-  async function sendAuthEmail(recipient: string, url: string, action: string) {
-    await transport.sendMail({
-      from: config.smtp.from,
-      to: recipient,
-      subject: `${action} — Mado`,
-      text: `${action} by opening this link:\n\n${url}\n\nIf you did not request this, you can ignore this email.`,
-    });
-  }
-
   return betterAuth({
     appName: 'Mado',
     secret: config.secret,
@@ -47,7 +37,12 @@ export function createAuth({ database, config, mailer }: AuthDependencies) {
       resetPasswordTokenExpiresIn: 1800,
       revokeSessionsOnPasswordReset: true,
       sendResetPassword: ({ user, url }) =>
-        sendAuthEmail(user.email, url, 'Reset your password'),
+        sendAuthEmail(transport, {
+          from: config.smtp.from,
+          to: user.email,
+          url,
+          action: 'Reset your password',
+        }),
     },
     emailVerification: {
       sendOnSignUp: true,
@@ -55,7 +50,12 @@ export function createAuth({ database, config, mailer }: AuthDependencies) {
       autoSignInAfterVerification: false,
       expiresIn: 3600,
       sendVerificationEmail: ({ user, url }) =>
-        sendAuthEmail(user.email, url, 'Verify your email'),
+        sendAuthEmail(transport, {
+          from: config.smtp.from,
+          to: user.email,
+          url,
+          action: 'Verify your email',
+        }),
     },
     session: { expiresIn: 60 * 60 * 24 * 7, updateAge: 60 * 60 * 24 },
     rateLimit: {
@@ -76,6 +76,19 @@ export function createAuth({ database, config, mailer }: AuthDependencies) {
       disableCSRFCheck: false,
       ipAddress: { ipAddressHeaders: ['x-mado-client-ip'] },
     },
+  });
+}
+
+// *** sendAuthEmail ***
+async function sendAuthEmail(
+  transport: NonNullable<AuthDependencies['mailer']>,
+  email: { from: string; to: string; url: string; action: string },
+) {
+  await transport.sendMail({
+    from: email.from,
+    to: email.to,
+    subject: `${email.action} — Mado`,
+    text: `${email.action} by opening this link:\n\n${email.url}\n\nIf you did not request this, you can ignore this email.`,
   });
 }
 

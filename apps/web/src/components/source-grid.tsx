@@ -57,16 +57,14 @@ export function SourceGrid({
     ]),
   );
 
-  function selectedIds() {
-    return selection.selectedSources.map((source) => source.id);
-  }
+  const selectedIds = selection.selectedSources.map((source) => source.id);
 
   function handleBulkDelete() {
-    (onBulkDelete ?? deleteSourcesMutation.mutate)(selectedIds());
+    (onBulkDelete ?? deleteSourcesMutation.mutate)(selectedIds);
   }
 
   function handleBulkRestore() {
-    onBulkRestore?.(selectedIds());
+    onBulkRestore?.(selectedIds);
   }
 
   return (
