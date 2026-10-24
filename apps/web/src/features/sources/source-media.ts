@@ -34,6 +34,18 @@ export const isMediaStorageSupported =
 
 const SITES_API = `${import.meta.env.VITE_API_ORIGIN ?? 'http://localhost:4000'}/api/v1/sites`;
 
+const SITE_PREVIEW_UNREACHABLE =
+  'Could not reach the Mado server. Check your internet and try again.';
+const SITE_PREVIEW_FAILED =
+  'Could not load this website. It may be down or blocking previews.';
+// Keyed by the `error` code the API returns.
+const SITE_PREVIEW_ERRORS: Record<string, string> = {
+  'invalid-url':
+    'This link is not valid. Copy the full address, starting with http:// or https://.',
+  'url-not-allowed':
+    'This link points to a private or local address, so it cannot be saved.',
+};
+
 export async function fetchSitePreview(
   url: string,
 ): Promise<SiteSourcePreview> {
@@ -41,9 +53,22 @@ export async function fetchSitePreview(
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ url }),
+  }).catch((error: unknown) => {
+    throw new Error(SITE_PREVIEW_UNREACHABLE, { cause: error });
   });
-  if (!response.ok) throw new Error('Could not preview this website.');
+  if (!response.ok) throw new Error(await readSitePreviewError(response));
   return (await response.json()) as SiteSourcePreview;
+}
+
+// *** readSitePreviewError ***
+async function readSitePreviewError(response: Response): Promise<string> {
+  const body: unknown = await response.json().catch(() => null);
+  const code =
+    body && typeof body === 'object' && 'error' in body ? body.error : null;
+  return (
+    (typeof code === 'string' && SITE_PREVIEW_ERRORS[code]) ||
+    SITE_PREVIEW_FAILED
+  );
 }
 
 // Only hosts that allow CORS and that our API is known to return.

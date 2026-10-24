@@ -16,6 +16,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - Pasting a file or a URL adds it, unless the focus is in a text field.
 - Only images and videos, up to `MAX_FILE_MB`.
 - A pasted URL becomes a website source with a preview. An X/Twitter post that has a video becomes a video source instead. If that download fails, it stays a website.
+- If the preview fails, the toast says why: the server cannot be reached, the link is not valid, the link points to a private or local address, or the website could not be loaded.
 - A whole folder can be imported from Settings → Data (see `import.spec.md`).
 
 ### Compression

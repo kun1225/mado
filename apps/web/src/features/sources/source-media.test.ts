@@ -69,6 +69,56 @@ describe('site API helpers', () => {
     );
   });
 
+  it('explains that the server cannot be reached', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new TypeError('Failed to fetch')),
+    );
+
+    await expect(fetchSitePreview('https://example.com')).rejects.toThrow(
+      'Could not reach the Mado server. Check your internet and try again.',
+    );
+  });
+
+  it.each([
+    [
+      'invalid-url',
+      'This link is not valid. Copy the full address, starting with http:// or https://.',
+    ],
+    [
+      'url-not-allowed',
+      'This link points to a private or local address, so it cannot be saved.',
+    ],
+    [
+      'internal',
+      'Could not load this website. It may be down or blocking previews.',
+    ],
+  ])('explains the %s API error', async (code, message) => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ error: code }), { status: 400 }),
+        ),
+    );
+
+    await expect(fetchSitePreview('https://example.com')).rejects.toThrow(
+      message,
+    );
+  });
+
+  it('falls back when the error body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('Bad Gateway', { status: 502 })),
+    );
+
+    await expect(fetchSitePreview('https://example.com')).rejects.toThrow(
+      'Could not load this website. It may be down or blocking previews.',
+    );
+  });
+
   it('returns the downloaded image as a file', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(new Blob(['image'], { type: 'image/png' }), {
