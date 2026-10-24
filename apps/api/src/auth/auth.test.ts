@@ -7,6 +7,7 @@ import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import {
   afterAll,
+  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -33,7 +34,20 @@ const config: AuthConfig = {
     secure: false,
     from: 'hello@mado.local',
   },
+  google: {
+    clientId: 'test-google-client-id',
+    clientSecret: 'test-google-client-secret',
+  },
+  emailPassword: true,
 };
+const googleOnlyConfig: AuthConfig = { ...config, emailPassword: false };
+const googleCallbackURL = `${config.webOrigin}/collection/abc?view=grid`;
+const googleErrorURL = `${googleCallbackURL}&settings=account`;
+const EMAIL_ONLY_TEST_PATHS = [
+  'request-password-reset',
+  'reset-password',
+  'send-verification-email',
+];
 const password = 'a long test password';
 const emails: { to: string; text: string }[] = [];
 const sendMail = vi.fn(async (message: { to: string; text: string }) => {
@@ -341,6 +355,198 @@ describe('authentication integration', () => {
   });
 });
 
+describe('google sign-in with email paused', () => {
+  let googleAuth: ReturnType<typeof createAuth>;
+
+  beforeAll(() => {
+    googleAuth = createAuth({
+      database: drizzle(postgres, { schema }),
+      config: googleOnlyConfig,
+      mailer: { sendMail },
+    });
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  // *** googleRequest ***
+  function googleRequest(path: string, init: RequestInit = {}) {
+    return googleAuth.handler(
+      new Request(`${config.baseUrl}/api/auth/${path}`, {
+        ...init,
+        headers: {
+          'content-type': 'application/json',
+          origin: config.webOrigin,
+          'x-mado-client-ip': '192.0.2.200',
+          ...init.headers,
+        },
+      }),
+    );
+  }
+
+  // *** startGoogleSignIn ***
+  async function startGoogleSignIn() {
+    const result = await googleRequest('sign-in/social', {
+      method: 'POST',
+      body: JSON.stringify({
+        provider: 'google',
+        callbackURL: googleCallbackURL,
+        errorCallbackURL: googleErrorURL,
+      }),
+    });
+    expect(result.status).toBe(200);
+    const { url } = (await result.json()) as { url: string };
+    const authorization = new URL(url);
+    return {
+      authorization,
+      state: authorization.searchParams.get('state')!,
+      cookie: cookieHeader(result),
+    };
+  }
+
+  // *** finishGoogleSignIn ***
+  async function finishGoogleSignIn(profile: GoogleTestProfile) {
+    const { state, cookie } = await startGoogleSignIn();
+    mockGoogleToken(profile);
+    return googleRequest(
+      `callback/google?code=test-code&state=${encodeURIComponent(state)}`,
+      { headers: { cookie } },
+    );
+  }
+
+  // *** sessionUser ***
+  async function sessionUser(callback: Response) {
+    const session = await googleRequest('get-session', {
+      headers: { cookie: cookieHeader(callback) },
+    });
+    return ((await session.json()) as { user: { id: string } } | null)?.user;
+  }
+
+  it('asks Google for account selection and basic identity only', async () => {
+    const { authorization } = await startGoogleSignIn();
+    expect(authorization.origin).toBe('https://accounts.google.com');
+    expect(authorization.searchParams.get('prompt')).toBe('select_account');
+    expect(authorization.searchParams.get('scope')?.split(' ').sort()).toEqual([
+      'email',
+      'openid',
+      'profile',
+    ]);
+    expect(authorization.searchParams.get('redirect_uri')).toBe(
+      `${config.baseUrl}/api/auth/callback/google`,
+    );
+  });
+
+  it('creates a user for a new Google account and returns to the same page', async () => {
+    const callback = await finishGoogleSignIn({
+      sub: 'google-new',
+      email: 'new-google@example.com',
+      emailVerified: true,
+    });
+    expect(callback.status).toBe(302);
+    expect(callback.headers.get('location')).toBe(googleCallbackURL);
+    expect(await sessionUser(callback)).toMatchObject({
+      email: 'new-google@example.com',
+    });
+  });
+
+  it('keeps the same user when a verified email user signs in with Google', async () => {
+    const email = 'linked@example.com';
+    await verifiedAccount(email);
+    const before = await postgres.query<{ id: string }>(
+      'SELECT id FROM "user" WHERE email = $1',
+      [email],
+    );
+    const callback = await finishGoogleSignIn({
+      sub: 'google-linked',
+      email,
+      emailVerified: true,
+    });
+    expect(callback.headers.get('location')).toBe(googleCallbackURL);
+    expect((await sessionUser(callback))?.id).toBe(before.rows[0]?.id);
+  });
+
+  it('does not link Google to an unverified email user', async () => {
+    const email = 'unverified@example.com';
+    await post('sign-up/email', { name: 'Unverified', email, password });
+    const callback = await finishGoogleSignIn({
+      sub: 'google-unverified',
+      email,
+      emailVerified: true,
+    });
+    const location = new URL(callback.headers.get('location')!);
+    expect(location.searchParams.get('error')).toBe('account_not_linked');
+    expect(location.searchParams.get('settings')).toBe('account');
+    expect(callback.headers.get('set-cookie') ?? '').not.toContain(
+      'session_token=',
+    );
+  });
+
+  it('sends a canceled sign-in back to the account panel on the same page', async () => {
+    const { state, cookie } = await startGoogleSignIn();
+    const callback = await googleRequest(
+      `callback/google?error=access_denied&state=${encodeURIComponent(state)}`,
+      { headers: { cookie } },
+    );
+    const location = new URL(callback.headers.get('location')!);
+    expect(`${location.origin}${location.pathname}`).toBe(
+      `${config.webOrigin}/collection/abc`,
+    );
+    expect(location.searchParams.get('error')).toBe('access_denied');
+  });
+
+  it('sends a bad state to the account panel instead of an API error page', async () => {
+    const callback = await googleRequest(
+      'callback/google?code=test-code&state=not-a-real-state',
+    );
+    const location = new URL(callback.headers.get('location')!);
+    expect(`${location.origin}${location.pathname}`).toBe(
+      `${config.webOrigin}/library`,
+    );
+    expect(location.searchParams.get('settings')).toBe('account');
+    expect(location.searchParams.get('error')).toBeTruthy();
+  });
+
+  it('rejects email sign-in and sign-up', async () => {
+    const body = JSON.stringify({
+      name: 'User',
+      email: 'off@example.com',
+      password,
+    });
+    for (const path of ['sign-in/email', 'sign-up/email']) {
+      const result = await googleRequest(path, { method: 'POST', body });
+      expect(result.status).toBeGreaterThanOrEqual(400);
+    }
+  });
+
+  it.each(EMAIL_ONLY_TEST_PATHS)(
+    'hides %s so it cannot send emails',
+    async (path) => {
+      const result = await googleRequest(path, {
+        method: 'POST',
+        body: JSON.stringify({
+          email: 'linked@example.com',
+          redirectTo: `${config.webOrigin}/library`,
+        }),
+      });
+      expect(result.status).toBe(404);
+      expect(sendMail).not.toHaveBeenCalled();
+    },
+  );
+
+  it('limits repeated Google sign-in starts', async () => {
+    let result: Response | undefined;
+    for (let attempt = 0; attempt < 11; attempt++) {
+      result = await googleRequest('sign-in/social', {
+        method: 'POST',
+        body: JSON.stringify({
+          provider: 'google',
+          callbackURL: googleCallbackURL,
+        }),
+      });
+    }
+    expect(result!.status).toBe(429);
+  });
+});
+
 describe('auth configuration', () => {
   it('reports missing fields without exposing secrets', () => {
     expect(() =>
@@ -361,7 +567,86 @@ describe('auth configuration', () => {
         WEB_ORIGIN: config.webOrigin,
         SMTP_HOST: 'localhost',
         SMTP_FROM: 'hello@mado.local',
+        GOOGLE_CLIENT_ID: 'id',
+        GOOGLE_CLIENT_SECRET: 'secret',
       }),
     ).toThrow('HTTPS');
   });
+
+  it('requires Google credentials without printing them', () => {
+    const env = { ...validEnv(), GOOGLE_CLIENT_SECRET: undefined };
+    expect(() => readAuthConfig(env)).toThrow('GOOGLE_CLIENT_SECRET');
+    expect(() => readAuthConfig(env)).not.toThrow('do-not-print-me');
+  });
+
+  it('keeps email and password off unless it is turned on', () => {
+    expect(readAuthConfig(validEnv()).emailPassword).toBe(false);
+    expect(
+      readAuthConfig({ ...validEnv(), AUTH_EMAIL_PASSWORD_ENABLED: 'true' })
+        .emailPassword,
+    ).toBe(true);
+    expect(() =>
+      readAuthConfig({ ...validEnv(), AUTH_EMAIL_PASSWORD_ENABLED: 'yes' }),
+    ).toThrow('AUTH_EMAIL_PASSWORD_ENABLED');
+  });
 });
+
+// *** validEnv ***
+function validEnv(): NodeJS.ProcessEnv {
+  return {
+    DATABASE_URL: 'postgresql://mado:mado@localhost:5432/mado',
+    BETTER_AUTH_SECRET: config.secret,
+    BETTER_AUTH_URL: config.baseUrl,
+    WEB_ORIGIN: config.webOrigin,
+    SMTP_HOST: 'localhost',
+    SMTP_FROM: 'hello@mado.local',
+    GOOGLE_CLIENT_ID: 'id',
+    GOOGLE_CLIENT_SECRET: 'do-not-print-me',
+  };
+}
+
+// *** cookieHeader ***
+function cookieHeader(response: Response) {
+  return response.headers
+    .getSetCookie()
+    .map((value) => value.split(';')[0])
+    .join('; ');
+}
+
+// *** mockGoogleToken ***
+// Only Google's token endpoint is faked, so the real Better Auth callback runs.
+function mockGoogleToken(profile: GoogleTestProfile) {
+  const realFetch = globalThis.fetch;
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    const url = input instanceof Request ? input.url : String(input);
+    if (!url.startsWith('https://oauth2.googleapis.com/token'))
+      return realFetch(input, init);
+    return Response.json({
+      access_token: 'test-access-token',
+      token_type: 'Bearer',
+      expires_in: 3600,
+      scope: 'openid email profile',
+      id_token: googleIdToken(profile),
+    });
+  });
+}
+
+// *** googleIdToken ***
+function googleIdToken({ sub, email, emailVerified }: GoogleTestProfile) {
+  const encode = (value: object) =>
+    Buffer.from(JSON.stringify(value)).toString('base64url');
+  const now = Math.floor(Date.now() / 1000);
+  const claims = {
+    iss: 'https://accounts.google.com',
+    aud: config.google.clientId,
+    sub,
+    email,
+    email_verified: emailVerified,
+    name: 'Google User',
+    iat: now,
+    exp: now + 3600,
+  };
+  return `${encode({ alg: 'RS256', typ: 'JWT' })}.${encode(claims)}.signature`;
+}
+
+type GoogleTestProfile = { sub: string; email: string; emailVerified: boolean };

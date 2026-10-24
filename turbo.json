@@ -6,7 +6,11 @@
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**", "!.next/dev/**"],
-      "env": ["VITE_API_ORIGIN", "VITE_DEV_AUTH_BYPASS"]
+      "env": [
+        "VITE_API_ORIGIN",
+        "VITE_DEV_AUTH_BYPASS",
+        "VITE_AUTH_EMAIL_PASSWORD_ENABLED"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"]
@@ -21,7 +25,11 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "passThroughEnv": ["VITE_API_ORIGIN", "VITE_DEV_AUTH_BYPASS"]
+      "passThroughEnv": [
+        "VITE_API_ORIGIN",
+        "VITE_DEV_AUTH_BYPASS",
+        "VITE_AUTH_EMAIL_PASSWORD_ENABLED"
+      ]
     }
   },
   "globalPassThroughEnv": [
@@ -36,6 +44,9 @@
     "SMTP_USER",
     "SMTP_PASSWORD",
     "SMTP_FROM",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "AUTH_EMAIL_PASSWORD_ENABLED",
     "TRUST_PROXY",
     "PORT",
     "NODE_ENV"

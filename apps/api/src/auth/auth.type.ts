@@ -18,6 +18,13 @@ export type AuthConfig = {
     password?: string;
     from: string;
   };
+  google: AuthGoogleConfig;
+  emailPassword: boolean;
+};
+
+export type AuthGoogleConfig = {
+  clientId: string;
+  clientSecret: string;
 };
 
 export type AuthDependencies = {

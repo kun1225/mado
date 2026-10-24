@@ -6,6 +6,14 @@ import { z } from 'zod';
 import * as schema from './auth.model.js';
 import type { AuthConfig, AuthDependencies } from './auth.type.js';
 
+// emailAndPassword.enabled does not block these, and each one can send an email.
+const EMAIL_ONLY_PATHS = [
+  '/request-password-reset',
+  '/reset-password',
+  '/send-verification-email',
+  '/verify-email',
+];
+
 export function createAuth({ database, config, mailer }: AuthDependencies) {
   const transport =
     mailer ??
@@ -23,13 +31,15 @@ export function createAuth({ database, config, mailer }: AuthDependencies) {
     secret: config.secret,
     baseURL: config.baseUrl,
     trustedOrigins: [config.webOrigin],
+    disabledPaths: config.emailPassword ? [] : EMAIL_ONLY_PATHS,
+    onAPIError: { errorURL: `${config.webOrigin}/library?settings=account` },
     database: drizzleAdapter(database, {
       provider: 'pg',
       schema,
       transaction: true,
     }),
     emailAndPassword: {
-      enabled: true,
+      enabled: config.emailPassword,
       requireEmailVerification: true,
       autoSignIn: false,
       minPasswordLength: 12,
@@ -57,6 +67,23 @@ export function createAuth({ database, config, mailer }: AuthDependencies) {
           action: 'Verify your email',
         }),
     },
+    socialProviders: {
+      google: {
+        clientId: config.google.clientId,
+        clientSecret: config.google.clientSecret,
+        prompt: 'select_account',
+      },
+    },
+    // Linking needs both emails verified, so nobody can take an account by
+    // signing up with someone else's email first.
+    account: {
+      accountLinking: {
+        enabled: true,
+        trustedProviders: [],
+        allowDifferentEmails: false,
+        requireLocalEmailVerified: true,
+      },
+    },
     session: { expiresIn: 60 * 60 * 24 * 7, updateAge: 60 * 60 * 24 },
     rateLimit: {
       enabled: true,
@@ -68,6 +95,7 @@ export function createAuth({ database, config, mailer }: AuthDependencies) {
         '/sign-up/email': { window: 60, max: 5 },
         '/request-password-reset': { window: 60, max: 3 },
         '/send-verification-email': { window: 60, max: 3 },
+        '/sign-in/social': { window: 60, max: 10 },
       },
     },
     advanced: {
@@ -111,6 +139,9 @@ export function readAuthConfig(
       SMTP_USER: z.string().optional(),
       SMTP_PASSWORD: z.string().optional(),
       SMTP_FROM: z.email(),
+      GOOGLE_CLIENT_ID: z.string().min(1),
+      GOOGLE_CLIENT_SECRET: z.string().min(1),
+      AUTH_EMAIL_PASSWORD_ENABLED: z.enum(['true', 'false']).default('false'),
     })
     .safeParse(env);
 
@@ -156,5 +187,10 @@ export function readAuthConfig(
       password: value.SMTP_PASSWORD,
       from: value.SMTP_FROM,
     },
+    google: {
+      clientId: value.GOOGLE_CLIENT_ID,
+      clientSecret: value.GOOGLE_CLIENT_SECRET,
+    },
+    emailPassword: value.AUTH_EMAIL_PASSWORD_ENABLED === 'true',
   };
 }
