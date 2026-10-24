@@ -66,6 +66,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **2026-10 — The iframe drop overlay shows when a file drag starts anywhere in the window (`useIsDraggingFile`).** An iframe swallows drag events, so the overlay has to be in place before the drag reaches it.
 - **2026-10 — The whole detail dialog blocks drops.** The dialog renders inside the library drop zone, and React events from portals bubble to React parents.
 - **2026-10 — Website thumbnails are compressed like images.**
+- **2026-10 — Videos are compressed in the browser (`mediabunny`), not on a server.** It costs nothing to run, the file never leaves the device, and later cloud uploads are smaller. A server would need `ffmpeg`, which Cloudflare Workers can't run.
 - **2026-10 — The FLIP moves the viewer media, not the dialog.** The dialog covers the whole screen, so only the picture has a card to fly from. The popup's own CSS fade is turned off while it flies, because it would fade the media too; the toolbar and panel (`data-flip-chrome`) fade on their own. Base UI only waits for the popup's own animations before it unmounts, so the close adds an empty animation on the popup to hold it until the media lands.
 - **2026-10 — Far grid cards unmount their media instead of hiding it.** Unmounting frees the decoded image, the video decoder and the blob URL. `display: none` on the card would break the grid, because `masonry-layout` would measure it as 0px tall. Cards stay in the DOM, so this is not full virtual scrolling.
 - **2026-10 — `useInView` shares one `IntersectionObserver` per option set**, because hundreds of cards each owning one is much slower.
@@ -83,6 +84,12 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 
 - **Drop a folder.** Dropping a folder on the library runs the same import as Settings → Data (see `import.spec.md`). It needs `webkitGetAsEntry` to read the folder from the drop.
 - **A more fun embed loading state.** While an embedded site loads in the detail dialog, show something friendly and human instead of a plain wait. Idea: two drawn eyes that look around, as if searching for the page.
+- **Copy an image to paste in Figma** (roadmap phase 0, small enough to ship before or with the launch). Cmd/Ctrl+C on a selected card, or a "Copy image" button in the detail dialog, puts the image on the clipboard. Pasting in Figma (or Slack, Keynote, Docs) gives the picture.
+  - Why: designers collect in Mado but design in Figma. Copy and paste is the shortest bridge, and it needs no Figma plugin or account.
+  - The clipboard gets a PNG made from the original file in OPFS, not the grid thumbnail. Browsers only allow `image/png` for images on the clipboard, so JPEG and WebP are turned into PNG. PNG keeps transparency.
+  - Video: copies the frame on screen. Website: copies its preview image. An animated GIF: copies the first frame (the clipboard can't hold animation).
+  - Safari needs the `ClipboardItem` made right inside the click or key press, so pass it a promise of the PNG instead of waiting for the PNG first.
+  - A toast says "Copied". If the browser blocks the clipboard, the toast says so.
 - **Facets and tags** (roadmap phase 1). Each source can have values for fixed brand facets: Emotion, Style, Color, Type and Industry. Each facet has a starting list of values, and the user can add their own. Free tags sit next to facets for anything else. The library and a collection can be filtered by facet values and tags.
   - Why fixed facets: AI (phase 4) fills the same facets, so it can compare and group sources. Free tags alone are too loose for that.
   - Color: a palette of 3–5 colors is taken from each image on the device, with no AI. It feeds the Color facet and palette cards on the canvas.

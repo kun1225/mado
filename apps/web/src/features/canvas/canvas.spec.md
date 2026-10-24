@@ -28,6 +28,13 @@ An infinite board inside a brand project. The designer places sources, writes no
 - Drag a source from a project's source list onto the board.
 - Placing a source on a canvas also adds it to the project.
 
+### Copy to Figma
+
+- Select one or more items and press Cmd/Ctrl+C (or "Copy as image"). Paste in Figma.
+- **One image:** the PNG of the original file, the same as copying from the library (see `sources.spec.md`).
+- **Several items or a frame:** see the open question below. The goal is that the designer gets the selection in Figma in one paste.
+- Why it matters: this is the bridge from Mado's thinking to Figma's making. A direction built on the canvas should move to Figma without saving and dragging files.
+
 ### Saving
 
 - Every change is saved on the device right away. There is no save button.
@@ -60,6 +67,18 @@ Research from 2026-10. The choice decides how much we build ourselves.
 | Fit                                             | Good for a canvas of cards. Weak for free drawing    | Best fit, if the license cost works                                                                                                                                     | Poor fit                                             |
 
 **Leaning: React Flow.** Mado's canvas is mostly cards, not drawing. React Flow is free, so the free version costs nothing to run, and our source cards can be reused as nodes. tldraw is the better tool, but a commercial license is a fixed yearly cost before Mado earns money. Look at it again when paid plans start (phase 5), or ask tldraw about the price for new companies.
+
+### Copying several items to Figma
+
+The clipboard holds only one image, so we need a choice. Test each one in Figma before picking.
+
+| Option                            | Figma gets                                           | Good                                          | Bad                                                                                   |
+| --------------------------------- | ---------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------- |
+| One flat PNG of the selection     | One picture                                          | Works everywhere, simple                      | Images can't be moved apart in Figma                                                  |
+| SVG text with each image embedded | A group with one layer per image, in the same layout | Layers stay separate and keep their positions | Big clipboard for many images. Needs a test of how well Figma imports embedded images |
+| Figma's own clipboard format      | Real Figma layers                                    | Best result                                   | Private and undocumented. Can break any time. Don't use                               |
+
+Leaning: SVG with embedded images when it pastes well in Figma, with a flat PNG as the fallback for other apps (put both on the clipboard).
 
 ### Others
 
