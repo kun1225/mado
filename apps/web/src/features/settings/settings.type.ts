@@ -1,3 +1,4 @@
+import type { IconSvgElement } from '@hugeicons/react';
 import type { ReactNode } from 'react';
 
 import type {
@@ -33,7 +34,7 @@ export type SettingsThemeStore = {
 export type SettingsThemeOption = {
   value: SettingsThemePreference;
   label: string;
-  hint?: string;
+  icon: IconSvgElement;
 };
 
 export type SettingsSearch = {
