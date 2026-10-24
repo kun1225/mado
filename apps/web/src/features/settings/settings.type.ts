@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react';
 
-import type { AuthFormMode, AuthUser } from '#/features/auth/auth.type';
+import type {
+  AuthFormMode,
+  AuthGoogleSignInState,
+  AuthUser,
+} from '#/features/auth/auth.type';
 import type { ExportProgress } from '#/features/export/export.type';
 import type { ImportProgress } from '#/features/import/import.type';
 
@@ -40,6 +44,13 @@ export type SettingsAuthFormProps = {
   verified: boolean;
   linkError?: string;
   onModeChange: (mode: AuthFormMode) => void;
+};
+
+export type SettingsGoogleSignInProps = {
+  google: AuthGoogleSignInState;
+  linkError?: string;
+  showEmailDivider: boolean;
+  disabled?: boolean;
 };
 
 export type SettingsSidebarProps = {

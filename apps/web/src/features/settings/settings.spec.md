@@ -14,7 +14,8 @@ One place for app settings. Today it holds general preferences (whether collecti
 - The bottom of the sidebar shows **Sign out** when signed in, or **Sign in** for a guest. Sign in opens the Account tab, from any tab, and moves focus to the email field.
 - **General, Collections:** the **Show sources from folders** switch (see `collections.spec.md`). It saves at once, with no Save button. Clicking the label flips it too.
 - **Account, signed in:** name and email.
-- **Account, guest:** a short note that saves stay on this device, then the auth form. The form switches between sign-in, sign-up, forgot password and reset password without leaving the panel. On a switch, the old form fades out and the new one fades in and rises a little. With reduced motion it switches at once.
+- **Account, guest:** a short note that saves stay on this device, then "Sign in" and a **Continue with Google** button with the Google mark. Errors from Google show under the button. Sign in in the sidebar moves focus to this button.
+- **Account, guest, with email turned back on:** the Google button, an "or use email" line, then the email form. The form switches between sign-in, sign-up, forgot password and reset password without leaving the panel. On a switch, the old form fades out and the new one fades in and rises a little. With reduced motion it switches at once.
 - **Data, Storage:** the total the browser says this site uses, with the most it allows ("of 12.0 GB available", left out when the browser gives no limit), a bar split into Videos, Images and Other, and a row for each with its size. The bar grows in once. With reduced motion it shows at once. Videos and Images add up the files of every source, trash included, because trashed files still use space. Other is the rest: thumbnails, previews and the database. A short note under the rows says everything is saved on this device and what Other means. The section is hidden while loading, or when the browser has no `navigator.storage.estimate()`. The numbers are read again when the number of sources changes (an import, a delete, emptying the trash).
 - **Data, Backup:** how many sources and collections there are, then **Export .zip** (see `export.spec.md`) and **Import folder** (see `import.spec.md`) side by side. The progress bar of the one that runs shows below the buttons. Only one of the two runs at a time. "How it works" folds the long explanation of both.
 - Esc, the close button and a click outside close the panel. Closing removes every settings param from the URL and keeps the rest (for example `?source=`).
@@ -22,13 +23,14 @@ One place for app settings. Today it holds general preferences (whether collecti
 
 ## URL
 
-| Param      | Values                                                    | Set by                      |
-| ---------- | --------------------------------------------------------- | --------------------------- |
-| `settings` | `general`, `account`, `data`                              | the settings button, tabs   |
-| `auth`     | `sign-up`, `forgot-password`, `reset-password` (or empty) | the form, the reset email   |
-| `token`    | reset token                                               | better-auth, on reset links |
-| `verified` | `true`                                                    | the verification email      |
-| `error`    | better-auth error code                                    | better-auth, on bad links   |
+| Param               | Values                                                    | Set by                                              |
+| ------------------- | --------------------------------------------------------- | --------------------------------------------------- |
+| `settings`          | `general`, `account`, `data`                              | the settings button, tabs                           |
+| `auth`              | `sign-up`, `forgot-password`, `reset-password` (or empty) | the form, the reset email                           |
+| `token`             | reset token                                               | better-auth, on reset links                         |
+| `verified`          | `true`                                                    | the verification email                              |
+| `error`             | better-auth error code                                    | better-auth, on bad links and failed Google sign-in |
+| `error_description` | raw provider text (never shown, dropped on close)         | better-auth, with `error`                           |
 
 Unknown values fall back to closed, or to the sign-in form.
 
@@ -54,4 +56,3 @@ Unknown values fall back to closed, or to the sign-in form.
 ## Planned
 
 - **Appearance tab** with the dark mode switch (see `docs/roadmap.md`).
-- **Google sign-in** replaces the account form: one "Continue with Google" button, no sign-up, forgot-password or reset forms while email is paused (see `auth.spec.md`). The `error` param also carries Google errors, and `error_description` joins the settings params so closing the panel drops it.

@@ -3,7 +3,12 @@
 Mado uses Express + Better Auth + PostgreSQL + Drizzle. Auth routes live in
 `apps/api/src/auth/auth.route.ts`; custom handlers live in `auth.controller.ts`;
 Drizzle tables live in `auth.model.ts`. Better Auth handles its own built-in
-sign-up, sign-in, verification, session, and password-reset endpoints.
+Google sign-in, session, and (when turned on) email and password endpoints.
+
+Google is the only sign-in for now. Email and password is paused: its code
+stays, behind `AUTH_EMAIL_PASSWORD_ENABLED` (API) and
+`VITE_AUTH_EMAIL_PASSWORD_ENABLED` (web). Both are off unless set to `true`.
+While it is off, the reset and verification routes return 404.
 
 ## Where the code lives
 
@@ -15,12 +20,12 @@ API (`apps/api/src`):
 
 Web (`apps/web/src`):
 
-- `routes/(auth)/` — sign-in, sign-up, forgot/reset password, verify email pages
-- `routes/(app)/route.tsx` — session check for every app page, sign-out button
-- `features/auth/auth-session.ts` — loads the session, `safeReturnTo`
-- `features/auth/auth-actions.ts` — calls Better Auth for each form
+- `routes/(app)/route.tsx` — session check for every app page
+- `features/auth/auth-session.ts` — loads the session, `safeReturnTo`, the email switch
+- `features/auth/auth-actions.ts` — `signInWithGoogle` and the email form calls
+- `features/auth/auth-hooks.ts` — `useGoogleSignIn`, `useSignOut`
 - `features/storage/storage-account.ts` — current account; scopes local data
-- `components/auth/` — auth page UI
+- `components/settings/settings-auth-form.tsx` — the sign-in UI in Settings → Account
 
 ## Run locally
 
@@ -29,12 +34,20 @@ Use Node.js 24 or later and pnpm. From the project root:
 1. Start Docker, then run `docker compose up -d`.
 2. Copy `apps/api/.env.example` to `apps/api/.env`.
 3. Generate a secret with `openssl rand -base64 32` and set `BETTER_AUTH_SECRET`.
-4. Run `pnpm --filter api db:migrate`.
-5. Run `pnpm dev`.
-6. Open `http://localhost:3100/sign-up`.
-7. Open `http://localhost:8025` for verification and password-reset emails.
+4. Create a Google OAuth client of type **Web application**. Add the redirect
+   URI `http://localhost:3100/api/auth/callback/google`, then set
+   `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. If the consent screen is in
+   testing mode, add your Google account as a test user.
+5. Run `pnpm --filter api db:migrate`.
+6. Set `VITE_DEV_AUTH_BYPASS=false` in `apps/web/.env.local`, then run `pnpm dev`.
+7. Open `http://localhost:3100/library?settings=account` and click
+   **Continue with Google**.
 
-Mailpit is a local email inbox. Production needs a real SMTP server. Required
+With email turned back on, open `http://localhost:8025` for verification and
+password-reset emails.
+
+Mailpit is a local email inbox. SMTP settings stay required even while email is
+paused, so turning it back on needs no new config. Required
 settings are checked when the API starts; no secret has a built-in default.
 Database migrations run only when requested. Use `pnpm --filter api db:generate`
 after changing tables, review the SQL, then run `db:migrate`.
@@ -54,11 +67,11 @@ when signed in.
 
 ## Routes
 
-- `/sign-up`, `/sign-in`, `/verify-email`, `/forgot-password`, `/reset-password`:
-  public account pages.
 - `/library` and `/collection`: open to guests (local data); signed-in users
   get their own account storage.
 - `/api/auth/*`: Better Auth endpoints, mounted before the Express JSON parser.
+  Google returns to `/api/auth/callback/google`. Errors with no page to return
+  to go to `/library?settings=account&error=…`.
 - `/api/me`: a protected example endpoint that returns public user fields.
 - `/api/health` and existing site preview endpoints: remain public.
 
@@ -76,7 +89,7 @@ not protect files from someone who can inspect the browser profile.
 Old anonymous saves stay untouched in the original `mado` database and `media`
 directory. They are not automatically assigned to an account. Importing old
 saves and syncing data are separate features. Sign-out keeps account saves on
-the device; it clears in-memory query data and reloads to the sign-in page.
+the device; it clears in-memory query data and reloads to the guest library.
 
 ## Production
 
@@ -84,7 +97,9 @@ Serve the web app and `/api` under one HTTPS origin. The Vite dev proxy handles
 this locally; your production reverse proxy must forward `/api` to Express.
 Set `BETTER_AUTH_URL` and `WEB_ORIGIN` to that public origin without a trailing
 slash. Set server-only `API_ORIGIN` on the web server to the internal API origin.
-Keep auth secrets, database credentials, and SMTP credentials server-only.
+Register `https://<origin>/api/auth/callback/google` in the Google client.
+Keep auth secrets, Google credentials, database credentials, and SMTP
+credentials server-only.
 
 Set `NODE_ENV=production` to require HTTPS and secure cookies. Configure
 `TRUST_PROXY` only for the addresses of your reverse proxies. Those proxies must

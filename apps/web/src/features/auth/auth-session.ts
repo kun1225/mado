@@ -58,6 +58,12 @@ function isDevAuthBypass() {
   );
 }
 
+// *** isEmailPasswordAuthEnabled ***
+// Email and password is paused, but its code stays so it can come back.
+function isEmailPasswordAuthEnabled() {
+  return import.meta.env.VITE_AUTH_EMAIL_PASSWORD_ENABLED === 'true';
+}
+
 // *** authUserSchema ***
 const authUserSchema = z.object({
   id: z.string(),
@@ -80,4 +86,4 @@ export function safeReturnTo(value: unknown): string {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-export { isDevAuthBypass };
+export { isDevAuthBypass, isEmailPasswordAuthEnabled };

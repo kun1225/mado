@@ -33,6 +33,7 @@ import { SettingsDataTab } from './settings-data-tab';
 import { SettingsGeneralTab } from './settings-general-tab';
 
 const EMAIL_FIELD_ID = 'settings-auth-email';
+const GOOGLE_BUTTON_ID = 'settings-auth-google';
 
 // The active layer copies the tab list, so both must share one layout.
 const TAB_LIST_CLASS = 'flex items-center gap-0.5 sm:flex-col sm:items-stretch';
@@ -217,9 +218,13 @@ function SettingsSidebarAction({
         className="w-full justify-start"
         onClick={() => {
           onSignIn();
-          // The reset form has no email field until the sign-in form renders.
+          // The reset form has no email field until the sign-in form renders,
+          // and with email paused the Google button is the only control.
           requestAnimationFrame(() =>
-            document.getElementById(EMAIL_FIELD_ID)?.focus(),
+            (
+              document.getElementById(EMAIL_FIELD_ID) ??
+              document.getElementById(GOOGLE_BUTTON_ID)
+            )?.focus(),
           );
         }}
       >

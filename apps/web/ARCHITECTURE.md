@@ -47,16 +47,16 @@ graph LR
   search -->|account for recent searches| storage
 ```
 
-| Domain        | Depends on                                                      | Why                                                                                                                                                                                                                                                                                    |
-| ------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `auth`        | `storage`                                                       | Sets the account, which picks the database and the OPFS folder                                                                                                                                                                                                                         |
-| `storage`     | none                                                            | The base layer                                                                                                                                                                                                                                                                         |
-| `settings`    | `auth`, `collections`, `export`, `import`, `sources`, `storage` | The panel hosts sign-in, sign-up, password reset and sign-out; the General tab shows the folder sources switch from `collections`; the Data tab shows storage used (file sizes from `sources`, the browser estimate from `storage`) and starts an export or an import; it owns no data |
-| `sources`     | `storage`, `collections`                                        | Stores records and files; uses `collectionKeys` to refresh counts, the `Collection` type for nesting, and the folder sources setting to pick a collection's sources                                                                                                                    |
-| `collections` | `storage`, `sources`                                            | Counts, previews and deletes go through `source-actions` (`countSourcesByCollection`, `collectBranchIds`, `softDeleteSourcesInCollection`)                                                                                                                                             |
-| `search`      | `collections`, `sources`, `storage`                             | Types only for the data; the account keys the recent-search list                                                                                                                                                                                                                       |
-| `export`      | `collections`, `sources`, `storage`                             | Reads every record and media file; builds the zip in the account's OPFS folder when there is no save picker                                                                                                                                                                            |
-| `import`      | `export`, `sources`, `collections`, `storage`                   | Reads `library.json` with export's schema; saves files through `sources`; writes records with their own ids                                                                                                                                                                            |
+| Domain        | Depends on                                                      | Why                                                                                                                                                                                                                                                                                               |
+| ------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `auth`        | `storage`                                                       | Sets the account, which picks the database and the OPFS folder                                                                                                                                                                                                                                    |
+| `storage`     | none                                                            | The base layer                                                                                                                                                                                                                                                                                    |
+| `settings`    | `auth`, `collections`, `export`, `import`, `sources`, `storage` | The panel hosts Google sign-in (and the paused email forms) and sign-out; the General tab shows the folder sources switch from `collections`; the Data tab shows storage used (file sizes from `sources`, the browser estimate from `storage`) and starts an export or an import; it owns no data |
+| `sources`     | `storage`, `collections`                                        | Stores records and files; uses `collectionKeys` to refresh counts, the `Collection` type for nesting, and the folder sources setting to pick a collection's sources                                                                                                                               |
+| `collections` | `storage`, `sources`                                            | Counts, previews and deletes go through `source-actions` (`countSourcesByCollection`, `collectBranchIds`, `softDeleteSourcesInCollection`)                                                                                                                                                        |
+| `search`      | `collections`, `sources`, `storage`                             | Types only for the data; the account keys the recent-search list                                                                                                                                                                                                                                  |
+| `export`      | `collections`, `sources`, `storage`                             | Reads every record and media file; builds the zip in the account's OPFS folder when there is no save picker                                                                                                                                                                                       |
+| `import`      | `export`, `sources`, `collections`, `storage`                   | Reads `library.json` with export's schema; saves files through `sources`; writes records with their own ids                                                                                                                                                                                       |
 
 **Known coupling:** `collections` and `sources` import each other, in both actions and hooks. It works because nesting rules (`collectBranchIds`) live in `sources`. If this grows, move the shared nesting helpers into `collections` or a small shared module.
 
@@ -65,7 +65,7 @@ graph LR
 | Call                                   | Where                              | Why                                                                                 |
 | -------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------- |
 | `GET /api/auth/get-session`            | `auth/auth-session.ts` (server fn) | Session check for every `(app)` page                                                |
-| `better-auth` client                   | `auth/auth-client.ts`              | Sign-in, sign-up, reset, sign-out                                                   |
+| `better-auth` client                   | `auth/auth-client.ts`              | Google sign-in, sign-out (and email forms when turned on)                           |
 | `POST /api/v1/sites/preview`, `/image` | `sources/source-media.ts`          | Site metadata, embed mode, OG image (the browser can't fetch these because of CORS) |
 
 The API lives in `apps/api`. Everything else stays on the device.
@@ -177,7 +177,13 @@ Settings → Data → Import a folder → <input webkitdirectory> → File[]
 ⚙ button → ?settings=general → (app)/route.tsx renders SettingsDialog
   → useSettingsSearch parses settings, auth, token, verified, error (zod, bad values dropped)
   → General: the folder sources switch (useShowFolderSources from collections)
-  → Account, guest: SettingsAuthForm (mode from ?auth)   signed in: name, email, Sign out
+  → Account, guest: SettingsAuthForm   signed in: name, email, Sign out
+     email paused (default): only "Continue with Google"
+     email on: Google button, then the email form (mode from ?auth)
+Continue with Google → useGoogleSignIn → signInWithGoogle → POST /api/auth/sign-in/social
+  → full-page redirect to Google → /api/auth/callback/google (Better Auth sets the cookie)
+  → back to the same page; a fresh load picks the account storage
+  → on error: same page + settings=account&error=code; fixed copy, raw text never shown
 verify-email link → /library?settings=account&verified=true
 reset link        → /library?settings=account&auth=reset-password&token=…
 sign-in OK → full reload of the current page without the settings params

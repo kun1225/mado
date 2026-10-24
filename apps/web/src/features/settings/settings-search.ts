@@ -12,6 +12,8 @@ const SETTINGS_SEARCH_KEYS: ReadonlySet<string> = new Set([
   'token',
   'verified',
   'error',
+  // Better Auth adds raw provider text here, so it must never stay in the URL.
+  'error_description',
 ]);
 
 export function parseSettingsSearch(

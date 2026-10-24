@@ -3,6 +3,36 @@ import { authClient } from './auth-client';
 import { safeReturnTo } from './auth-session';
 
 const TOO_MANY_TRIES = 'Too many tries. Please wait a minute.';
+const GOOGLE_FAILED = 'Could not sign in with Google. Please try again.';
+
+// Fixed copy only, because the URL error code comes from outside the app.
+const GOOGLE_ERROR_MESSAGES: Record<string, string> = {
+  access_denied: 'Google sign-in was canceled. Please try again.',
+  account_not_linked:
+    'This email already has an unfinished Mado account. Contact support.',
+};
+
+export async function signInWithGoogle(
+  returnTo: string,
+): Promise<AuthFormResult> {
+  const callbackURL = new URL(safeReturnTo(returnTo), window.location.origin);
+  const errorCallbackURL = new URL(callbackURL);
+  errorCallbackURL.searchParams.set('settings', 'account');
+  const result = await authClient.signIn.social({
+    provider: 'google',
+    callbackURL: callbackURL.href,
+    errorCallbackURL: errorCallbackURL.href,
+  });
+  if (result.error)
+    return { error: rateLimitedOr(result.error.status, GOOGLE_FAILED) };
+  return {};
+}
+
+export function googleSignInErrorMessage(code: string): string {
+  return Object.hasOwn(GOOGLE_ERROR_MESSAGES, code)
+    ? GOOGLE_ERROR_MESSAGES[code]
+    : GOOGLE_FAILED;
+}
 
 export function submitAuthForm(
   mode: AuthFormMode,

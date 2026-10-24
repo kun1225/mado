@@ -28,6 +28,12 @@ export type AuthFormResult = {
   nextMode?: AuthFormMode;
 };
 
+export type AuthGoogleSignInState = {
+  start: (returnTo: string) => Promise<void>;
+  pending: boolean;
+  error: string;
+};
+
 export type AuthSignedInGuardProps = {
   userId: string;
 };

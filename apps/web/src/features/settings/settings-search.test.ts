@@ -72,6 +72,7 @@ describe('withoutSettingsSearch', () => {
       token: 't',
       verified: true,
       error: 'INVALID_TOKEN',
+      error_description: 'raw provider text',
     };
     expect(withoutSettingsSearch(search)).toEqual({ source: 's1' });
     expect(search.settings).toBe('account');
@@ -85,6 +86,14 @@ describe('hrefWithoutSettings', () => {
         '/collection/c1?settings=account&source=s1&auth=sign-in#top',
       ),
     ).toBe('/collection/c1?source=s1#top');
+  });
+
+  it('drops the raw Google error text with the error code', () => {
+    expect(
+      hrefWithoutSettings(
+        '/library?settings=account&error=access_denied&error_description=raw',
+      ),
+    ).toBe('/library');
   });
 
   it('drops the question mark when nothing is left', () => {
