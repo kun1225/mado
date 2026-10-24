@@ -6,12 +6,11 @@ What we plan to build, in rough order. Details for near-term work live in each f
 
 Small enough to build on the local-first app we have today.
 
-| Feature                                                  | Spec                                                                     |
-| -------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Drop a folder on the library to import it                | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md)    |
-| A more fun embed loading state (two eyes looking around) | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md)    |
-| Build a landing page                                     | —                                                                        |
-| Dark mode (follow the system, with a switch in settings) | [`settings.spec.md`](../apps/web/src/features/settings/settings.spec.md) |
+| Feature                                                  | Spec                                                                  |
+| -------------------------------------------------------- | --------------------------------------------------------------------- |
+| Drop a folder on the library to import it                | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md) |
+| A more fun embed loading state (two eyes looking around) | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md) |
+| Build a landing page                                     | —                                                                     |
 
 ## Later
 

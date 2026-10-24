@@ -2,17 +2,21 @@
 
 ## Purpose
 
-One place for app settings. Today it holds general preferences (whether collections show their folders' sources), the account (sign in, sign up, reset a password, see who you are, sign out) and your data (export all sources, import a folder).
+One place for app settings. Today it holds general preferences (whether collections show their folders' sources), the theme, the account (sign in, sign up, reset a password, see who you are, sign out) and your data (export all sources, import a folder).
 
 **Depends on:** `auth`, `collections`, `export`, `import`. **Used by:** every `(app)` page, opened from the settings button next to the search bar. See `apps/web/ARCHITECTURE.md`.
 
 ## Behavior
 
 - The settings button opens a dialog. It fills the screen on phones and is a centered card on larger screens.
-- The sidebar lists the tabs: **General**, **Account** and **Data**. The settings button opens General. Switching tabs replaces the URL, so Back closes the panel instead of stepping through tabs.
-- On phones the tabs show icons only, so three tabs and Sign in/out fit in one row. The header names the open tab, and each tab keeps its label for screen readers.
+- The sidebar lists the tabs: **General**, **Appearance**, **Account** and **Data**. The settings button opens General. Switching tabs replaces the URL, so Back closes the panel instead of stepping through tabs.
+- On phones the tabs show icons only, so four tabs and Sign in/out fit in one row. The header names the open tab, and each tab keeps its label for screen readers.
 - The bottom of the sidebar shows **Sign out** when signed in, or **Sign in** for a guest. Sign in opens the Account tab, from any tab, and moves focus to the email field.
 - **General, Collections:** the **Show sources from folders** switch (see `collections.spec.md`). It saves at once, with no Save button. Clicking the label flips it too.
+- **Appearance, Theme:** three radios, **Light**, **Dark** and **System** ("Match your device settings."). System is the default. A choice applies at once, with no Save button.
+- The theme is saved as `mado:theme` in `localStorage`, for this browser, not per account, so it stays the same across guest and sign-in. A missing or bad value means System. If storage is blocked, the choice still works until the page reloads. Other open tabs follow a change, and clearing storage sends them back to System.
+- A small script in `<head>` sets the theme before the page paints, so a saved Dark never flashes Light. Under System the app follows the device, also while it is open.
+- Images, videos and website embeds keep their own colors.
 - **Account, signed in:** name and email.
 - **Account, guest:** a short note that saves stay on this device, then "Sign in" and a **Continue with Google** button with the Google mark. Errors from Google show under the button. Sign in in the sidebar moves focus to this button.
 - **Account, guest, with email turned back on:** the Google button, an "or use email" line, then the email form. The form switches between sign-in, sign-up, forgot password and reset password without leaving the panel. On a switch, the old form fades out and the new one fades in and rises a little. With reduced motion it switches at once.
@@ -25,7 +29,7 @@ One place for app settings. Today it holds general preferences (whether collecti
 
 | Param               | Values                                                    | Set by                                              |
 | ------------------- | --------------------------------------------------------- | --------------------------------------------------- |
-| `settings`          | `general`, `account`, `data`                              | the settings button, tabs                           |
+| `settings`          | `general`, `appearance`, `account`, `data`                | the settings button, tabs                           |
 | `auth`              | `sign-up`, `forgot-password`, `reset-password` (or empty) | the form, the reset email                           |
 | `token`             | reset token                                               | better-auth, on reset links                         |
 | `verified`          | `true`                                                    | the verification email                              |
@@ -45,14 +49,16 @@ Unknown values fall back to closed, or to the sign-in form.
 - **2026-10 — Settings shows the folder sources switch but does not own it.** The value and its rules live in `collections`, so settings still owns no data.
 - **2026-10 — Hover and active are two sliding clip-path layers** (200ms ease-in-out, no bounce). Each slides to its tab on its own, so moving the mouse never hides where you are. The hover layer is lighter. The active layer is a copy of the tab list, so its dark label is revealed as the clip slides, like `LiquidTabs`. Touch gets no hover layer, so a tap can't leave it stuck.
 
+- **2026-10 — Three theme choices, not a switch.** A switch can't say both "always dark" and "follow my device".
+- **2026-10 — The theme is browser-wide, not per account.** The startup script must read it before any account loads, and one person per browser is the common case.
+- **2026-10 — The startup script is a fixed string next to the store.** It runs before any bundle, so it can't import the store. A test runs it against every saved value and device theme and compares with the store, so the two can't drift.
+- **2026-10 — Native radios for the theme.** Arrow keys and screen readers work with no extra code.
 - **2026-10 — Storage is a breakdown, not one bar against the quota.** The quota is tens of GB, so "used of quota" is a bar nobody can see. Where the bytes went is more useful, and it needs no quota.
 - **2026-10 — Backup is one compact row, with the rules folded away.** Both actions stay visible and the tab stays short. Export keeps the primary button, because it is the common one.
 
 ## Known gaps
 
 - No component tests. The web app has no `@testing-library` yet, so the dialog is checked by hand.
+- Colors with transitions (buttons, tabs) fade when the theme changes, instead of switching at once.
+- Embedded websites may not follow the app theme.
 - The browser estimate covers the whole site, so a device with more than one account also counts the other accounts' files in Other. The estimate is also rounded on purpose, so treat it as close, not exact.
-
-## Planned
-
-- **Appearance tab** with the dark mode switch (see `docs/roadmap.md`).

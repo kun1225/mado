@@ -8,9 +8,38 @@ import type {
 import type { ExportProgress } from '#/features/export/export.type';
 import type { ImportProgress } from '#/features/import/import.type';
 
-export const SETTINGS_TABS = ['general', 'account', 'data'] as const;
+export const SETTINGS_TABS = [
+  'general',
+  'appearance',
+  'account',
+  'data',
+] as const;
 
 export type SettingsTab = (typeof SETTINGS_TABS)[number];
+
+export const SETTINGS_THEME_PREFERENCES = ['light', 'dark', 'system'] as const;
+
+export type SettingsThemePreference =
+  (typeof SETTINGS_THEME_PREFERENCES)[number];
+
+export type SettingsResolvedTheme = Exclude<SettingsThemePreference, 'system'>;
+
+export type SettingsThemeBrowser = {
+  window: Pick<Window, 'localStorage' | 'matchMedia' | 'addEventListener'>;
+  root: Pick<HTMLElement, 'classList'>;
+};
+
+export type SettingsThemeStore = {
+  getSnapshot: () => SettingsThemePreference;
+  subscribe: (listener: () => void) => () => void;
+  setPreference: (preference: SettingsThemePreference) => void;
+};
+
+export type SettingsThemeOption = {
+  value: SettingsThemePreference;
+  label: string;
+  hint?: string;
+};
 
 export type SettingsSearch = {
   tab: SettingsTab | null;

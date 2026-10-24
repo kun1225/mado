@@ -10,6 +10,15 @@
   box-sizing: border-box;
 }
 
+/* So scrollbars, form controls and the page behind first paint match the theme. */
+:root {
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   min-height: 100vh;

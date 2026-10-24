@@ -7,6 +7,9 @@ import {
 
 import { Toaster } from '@repo/ui/sonner';
 
+import { SETTINGS_THEME_SCRIPT } from '#/features/settings/settings-theme';
+import { useSettingsTheme } from '#/features/settings/settings-theme-hooks';
+
 import appCss from '../styles.css?url';
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
@@ -52,15 +55,25 @@ const TOAST_OFFSET = { bottom: 88 };
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    // The startup script adds the theme class before React hydrates.
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: SETTINGS_THEME_SCRIPT }} />
         <HeadContent />
       </head>
       <body>
+        <SettingsThemeSync />
         {children}
         <Toaster offset={TOAST_OFFSET} mobileOffset={TOAST_OFFSET} />
         <Scripts />
       </body>
     </html>
   );
+}
+
+// *** SettingsThemeSync ***
+// Keeps System following the device while the settings panel is closed.
+function SettingsThemeSync() {
+  useSettingsTheme();
+  return null;
 }
