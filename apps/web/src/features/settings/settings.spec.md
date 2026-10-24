@@ -54,4 +54,4 @@ Unknown values fall back to closed, or to the sign-in form.
 ## Planned
 
 - **Appearance tab** with the dark mode switch (see `docs/roadmap.md`).
-- **Google sign-in** in the account form (see `auth.spec.md`).
+- **Google sign-in** replaces the account form: one "Continue with Google" button, no sign-up, forgot-password or reset forms while email is paused (see `auth.spec.md`). The `error` param also carries Google errors, and `error_description` joins the settings params so closing the panel drops it.

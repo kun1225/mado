@@ -25,6 +25,7 @@ Signing in is optional. Guests use the app fully with data on this device. An ac
 - **2026-10 — The session is checked on the server** with `Cache-Control: private, no-store`, so a shared cache never serves one user's session to another.
 - **2026-10 — Auth forms live in the settings panel, not on their own pages.** Signing in is optional, so it should not take the user away from their library.
 - **2026-10 — Email links point at `/library?settings=account&…`.** These params must stay stable, because links in old emails still use them. Links from before this change (`/verify-email`, `/reset-password`) now 404. They expired within an hour anyway.
+- **2026-10 — Email and password sign-up and sign-in are paused.** Google becomes the only way in. The email code stays, behind a switch that is off by default (`AUTH_EMAIL_PASSWORD_ENABLED` in the API, `VITE_AUTH_EMAIL_PASSWORD_ENABLED` in the web app), so it can come back without a rewrite. Until Google sign-in ships, the email forms still work. See `docs/plans/google-sign-in-plan.md`.
 - **2026-10 — In development, the app runs as a guest by default** (`VITE_DEV_AUTH_BYPASS`), so it works without the auth API. Set it to `false` to test real login. It can never be on in production.
 
 ## Known gaps
@@ -33,4 +34,5 @@ Signing in is optional. Guests use the app fully with data on this device. An ac
 
 ## Planned
 
-- **Google sign-in.** It goes in the same panel form, above the email fields.
+- **Google sign-in as the only way in.** The panel shows one "Continue with Google" button and no email fields. A verified email user who signs in with Google using the same email keeps the same account and local library. With the switch off, the email reset and verification routes return 404, so they can't send emails. Plan: `docs/plans/google-sign-in-plan.md`.
+- **Known gaps after it ships:** an unverified email user can't get in, and an email user whose Google account uses another email can't get in. Mado has no real users yet, so no one is locked out.

@@ -10,7 +10,7 @@ Small enough to build on the local-first app we have today.
 | -------------------------------------------------------- | ------------------------------------------------------------------------ |
 | Drop a folder on the library to import it                | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md)    |
 | A more fun embed loading state (two eyes looking around) | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md)    |
-| Google sign-in in the settings panel                     | [`auth.spec.md`](../apps/web/src/features/auth/auth.spec.md)             |
+| Google sign-in as the only sign-in (email paused)        | [`auth.spec.md`](../apps/web/src/features/auth/auth.spec.md)             |
 | Dark mode (follow the system, with a switch in settings) | [`settings.spec.md`](../apps/web/src/features/settings/settings.spec.md) |
 
 ## Later
