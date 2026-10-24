@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mado · Dark mode implementation plan</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: light-dark(#f6f6f3, #181919);
+        --surface: light-dark(#fff, #222424);
+        --fg: light-dark(#242727, #edf0ee);
+        --muted: light-dark(#59615c, #b2bcb5);
+        --line: light-dark(#d5dad6, #404842);
+        --accent: light-dark(#256044, #9bd4ae);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          16px/1.65 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 1060px;
+        margin: auto;
+        padding: 48px 24px 80px;
+      }
+      header {
+        padding-bottom: 24px;
+        border-bottom: 2px solid var(--fg);
+      }
+      h1 {
+        font-size: clamp(34px, 6vw, 58px);
+        line-height: 1.1;
+        letter-spacing: -0.04em;
+        margin: 12px 0;
+      }
+      h2 {
+        margin: 40px 0 12px;
+        font-size: 25px;
+      }
+      h3 {
+        font-size: 18px;
+      }
+      p {
+        max-width: 68ch;
+      }
+      .lead {
+        font-size: 20px;
+        color: var(--muted);
+      }
+      .tag {
+        font-size: 12px;
+        letter-spacing: 0.13em;
+        color: var(--accent);
+        font-weight: 700;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      a {
+        color: var(--accent);
+        text-underline-offset: 4px;
+      }
+      a:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 4px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      .card,
+      details {
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        border-radius: 8px;
+      }
+      .card p {
+        margin-bottom: 0;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .table-wrap {
+        overflow: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--surface);
+      }
+      td,
+      th {
+        padding: 14px;
+        border: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+      code {
+        font-size: 0.9em;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        padding: 18px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: auto;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 650;
+        min-height: 44px;
+      }
+      details {
+        margin: 12px 0;
+      }
+      li {
+        margin: 8px 0;
+      }
+      footer {
+        margin-top: 40px;
+        border-top: 1px solid var(--line);
+        padding-top: 16px;
+        color: var(--muted);
+      }
+      @media (max-width: 650px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        main {
+          padding: 28px 18px 48px;
+        }
+        td,
+        th {
+          padding: 10px;
+        }
+      }
+      @media print {
+        details > * {
+          display: block;
+        }
+        main {
+          max-width: none;
+          padding: 0;
+        }
+        pre {
+          white-space: pre-wrap;
+        }
+        nav {
+          display: none;
+        }
+        :root {
+          color-scheme: light;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="tag">MADO / FEATURE PLAN / 24 OCT 2026</span>
+        <h1>Dark mode, from the first paint.</h1>
+        <p class="lead">
+          Follow the device by default. Let people choose Light, Dark, or System
+          in Settings → Appearance. Keep that choice after a reload.
+        </p>
+        <p class="muted">
+          Status: proposed implementation. This page follows your device theme.
+          The app has not been changed.
+        </p>
+        <nav aria-label="Plan sections">
+          <a href="#behavior">Behavior</a><a href="#files">Files</a
+          ><a href="#flow">Flows</a><a href="#pseudocode">Pseudocode</a
+          ><a href="#checks">Verification</a>
+        </nav>
+      </header>
+      <section id="behavior">
+        <h2>01 · What people get</h2>
+        <div class="grid">
+          <article class="card">
+            <strong>System · default</strong>
+            <p>
+              Match the device theme, including changes while the app is open.
+            </p>
+          </article>
+          <article class="card">
+            <strong>Light</strong>
+            <p>Keep the light theme even when the device uses dark mode.</p>
+          </article>
+          <article class="card">
+            <strong>Dark</strong>
+            <p>Keep the dark theme even when the device uses light mode.</p>
+          </article>
+        </div>
+        <ul>
+          <li>
+            Add Appearance after General. General stays the default tab. Support
+            <code>?settings=appearance</code>.
+          </li>
+          <li>
+            Use a labeled native radio group with Light, Dark, and System.
+            Changes apply at once; no Save button. System has the hint “Match
+            your device settings.”
+          </li>
+          <li>
+            Save a raw string under <code>mado:theme</code> in localStorage. The
+            choice belongs to this browser and site, across guest and signed-in
+            accounts.
+          </li>
+          <li>
+            Missing or invalid values mean System. If storage is blocked,
+            changes still work for this page session. A reload falls back to
+            System.
+          </li>
+          <li>
+            Other open tabs follow saved changes. Removing the key or clearing
+            storage returns them to System.
+          </li>
+          <li>
+            Set the theme before content paints. Theme changes are instant; add
+            no page-wide color animation.
+          </li>
+          <li>
+            Keep images, videos, and website embeds unchanged. External embeds
+            may keep their own theme.
+          </li>
+        </ul>
+        <p>
+          <strong>Why three options?</strong> A switch cannot express both a
+          fixed choice and “follow the device.” Browser-wide storage also lets
+          the startup script read the choice before account loading.
+        </p>
+      </section>
+      <section>
+        <h2>02 · What already exists</h2>
+        <ul>
+          <li>
+            <code>packages/ui/src/styles.css</code> already has
+            <code>.dark</code> tokens and a Tailwind dark variant. Reuse them
+            before adding colors.
+          </li>
+          <li>
+            <code>apps/web/src/styles.css</code> uses semantic background and
+            text tokens.
+          </li>
+          <li>
+            <code>SettingsDialog</code>, <code>SettingsSidebarTabs</code>, and
+            <code>useSettingsSearch</code> already handle tab rendering and URL
+            state.
+          </li>
+          <li>
+            <code>useShowFolderSources</code> shows the existing
+            <code>useSyncExternalStore</code> pattern. Reuse the pattern, but
+            keep theme storage independent of accounts.
+          </li>
+          <li>
+            <code>RootDocument</code> is the document shell. The shared
+            <code>Toaster</code> already uses theme tokens; check its visible
+            result in both themes.
+          </li>
+        </ul>
+      </section>
+      <section id="files">
+        <h2>03 · Files and responsibilities</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>File</th>
+                <th>Planned work</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <code
+                    >apps/web/src/features/settings/settings-theme.type.ts</code
+                  >
+                  · new
+                </td>
+                <td>
+                  <code>SettingsThemePreference</code>: light | dark | system.
+                  <code>SettingsResolvedTheme</code>: light | dark.
+                  <code>SettingsThemeSnapshot</code>: preference plus resolved
+                  theme.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code>apps/web/src/features/settings/settings-theme.ts</code>
+                  · new
+                </td>
+                <td>
+                  Primary export <code>createSettingsThemeStore</code>; private
+                  helpers <code>parseThemePreference</code>,
+                  <code>readThemePreference</code>, <code>resolveTheme</code>,
+                  <code>applyTheme</code>. Own storage, stable snapshots, and
+                  browser listeners. No React dependency.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code
+                    >apps/web/src/features/settings/settings-theme-hooks.ts</code
+                  >
+                  · new
+                </td>
+                <td>
+                  <code>useSettingsTheme</code> uses one lazy browser store and
+                  <code>useSyncExternalStore</code>. The hook also mounts once
+                  in the document shell so System works with Settings closed.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code
+                    >apps/web/src/features/settings/settings-theme-bootstrap.ts</code
+                  >
+                  · new
+                </td>
+                <td>
+                  <code>getSettingsThemeBootstrapScript</code> returns a small
+                  static script. Share the key and parser/resolver rules with
+                  the runtime store; never insert user text.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code
+                    >apps/web/src/components/settings/settings-appearance-tab.tsx</code
+                  >
+                  · new
+                </td>
+                <td>
+                  <code>SettingsAppearanceTab</code> renders the radio group and
+                  calls the hook setter.
+                </td>
+              </tr>
+              <tr>
+                <td><code>apps/web/src/routes/__root.tsx</code></td>
+                <td>
+                  Render the bootstrap script early in the head, before
+                  stylesheet links. Add private
+                  <code>SettingsThemeSync</code> to subscribe throughout the
+                  app. Limit hydration-warning suppression to the html
+                  attributes changed by bootstrap.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code>settings.type.ts</code>,
+                  <code>settings-dialog.tsx</code>
+                </td>
+                <td>
+                  Add appearance to <code>SETTINGS_TABS</code>, navigation
+                  items, label, icon, and content. Check four tabs plus
+                  sign-in/out on narrow screens.
+                </td>
+              </tr>
+              <tr>
+                <td><code>apps/web/src/styles.css</code></td>
+                <td>
+                  Set <code>color-scheme: light</code> on the root and
+                  <code>color-scheme: dark</code> on <code>html.dark</code>. Fix
+                  app-specific color gaps only after review.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code>settings-theme.test.ts</code>,
+                  <code>settings-search.test.ts</code>
+                </td>
+                <td>
+                  Add behavior tests and Appearance URL coverage. Exercise the
+                  actual bootstrap script against the same cases as the store.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code>settings.spec.md</code>,
+                  <code>apps/web/ARCHITECTURE.md</code>,
+                  <code>docs/roadmap.md</code>
+                </td>
+                <td>
+                  When implementing, document browser-wide theme ownership,
+                  startup flow, and Appearance behavior; mark the roadmap item
+                  done.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted">
+          Paths without a full prefix belong to the settings feature or its
+          component folder above. Keep primary functions first, private helpers
+          in call order, types in the type file, and test-only exports in a
+          final block. No new package or database migration.
+        </p>
+      </section>
+      <section id="flow">
+        <h2>04 · Data and control flow</h2>
+        <h3>Data flow</h3>
+        <pre>
+localStorage: mado:theme + device prefers-color-scheme
+  → preference (light | dark | system)
+  → resolved theme (light | dark)
+  → html.dark + CSS color-scheme
+  → shared tokens → app, portals, native controls, toasts
+
+radio choice → store setter → in-memory snapshot + localStorage
+  → subscribers → selected radio + root theme</pre>
+        <h3>Control flow</h3>
+        <ol>
+          <li>
+            The server renders a stable shell without reading browser APIs.
+          </li>
+          <li>
+            The head script reads the saved choice safely, resolves System, and
+            sets the root class before content paints.
+          </li>
+          <li>
+            After hydration, the root subscriber starts the store, reads the
+            latest browser state, and attaches storage and device listeners.
+            Re-read after attaching to close the startup gap.
+          </li>
+          <li>
+            A user choice updates memory and the DOM immediately. Try saving; a
+            storage failure keeps the in-memory choice.
+          </li>
+          <li>
+            A device event changes the DOM only under System. A matching storage
+            event replaces the preference and updates subscribers.
+          </li>
+          <li>
+            The last unsubscribe removes listeners. Setup must remain safe under
+            repeated mounts.
+          </li>
+        </ol>
+        <p>
+          <strong>Domain boundary:</strong> theme is a synchronous browser
+          preference owned by settings. It needs no React Query, auth,
+          IndexedDB, OPFS, or API calls.
+        </p>
+      </section>
+      <section id="pseudocode">
+        <h2>05 · Function and component sketch</h2>
+        <p>These are behavior sketches, not code ready to paste.</p>
+        <details open>
+          <summary>createSettingsThemeStore and its private helpers</summary>
+          <pre>
+createSettingsThemeStore(browser):
+  keep one cached snapshot; keep a listener set
+  getSnapshot(): return cached snapshot
+  getServerSnapshot(): return shared SYSTEM_LIGHT snapshot
+  subscribe(listener):
+    add listener; on first subscription attach browser events
+    refresh from storage and device after attaching
+    on cleanup remove listener; if none remain detach events
+  setPreference(choice):
+    validate choice; keep it in memory
+    applyTheme(resolveTheme(choice, device))
+    try localStorage.setItem(KEY, choice)
+    publish only if preference or resolved theme changed
+  onDeviceChange(): refresh resolved theme from in-memory choice
+  onStorage(event):
+    if localStorage and key is KEY or null:
+      read saved choice; resolve, apply, publish
+  return stable getSnapshot, getServerSnapshot, subscribe, setPreference
+
+parseThemePreference(raw):
+  return raw if light, dark, or system; otherwise system
+
+readThemePreference(storage):
+  try return parseThemePreference(storage.getItem(KEY))
+  catch return system
+
+resolveTheme(preference, deviceIsDark):
+  if preference is system: return dark if deviceIsDark else light
+  return preference
+
+applyTheme(resolved):
+  toggle document.documentElement.classList dark by resolved
+  CSS on html / html.dark supplies color-scheme</pre>
+        </details>
+        <details open>
+          <summary>
+            useSettingsTheme, SettingsThemeSync, SettingsAppearanceTab
+          </summary>
+          <pre>
+useSettingsTheme():
+  lazily get the one browser store; never share mutable state on server
+  snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+  return snapshot and stable setPreference
+
+SettingsThemeSync():
+  useSettingsTheme()
+  return null
+
+SettingsAppearanceTab():
+  { preference, setPreference } = useSettingsTheme()
+  render fieldset with legend “Theme”
+  render Light, Dark, System native radios with shared name
+  checked follows preference; onChange calls setPreference
+  render “Match your device settings.” hint for System</pre>
+        </details>
+        <details open>
+          <summary>getSettingsThemeBootstrapScript</summary>
+          <pre>
+getSettingsThemeBootstrapScript():
+  return static self-contained script using shared key and pure rules:
+    preference = safely read storage, default system
+    deviceIsDark = matchMedia('(prefers-color-scheme: dark)').matches
+    resolved = resolveTheme(preference, deviceIsDark)
+    toggle html.dark
+
+RootDocument integration:
+  html: suppress expected root attribute hydration warning only
+  head: static bootstrap script, then HeadContent
+  body: SettingsThemeSync, existing children, Toaster, Scripts</pre>
+          <p>
+            Test the emitted script and runtime with one input matrix so their
+            rules cannot silently drift. Inspect the rendered HTML to confirm
+            script order. The server snapshot keeps the radio markup stable
+            during hydration; the browser snapshot then selects the saved
+            choice.
+          </p>
+        </details>
+      </section>
+      <section>
+        <h2>06 · Build order</h2>
+        <ol>
+          <li>Add types, the store, and meaningful store tests.</li>
+          <li>
+            Add the bootstrap script and root subscription. Check first paint
+            and hydration before building the settings UI.
+          </li>
+          <li>
+            Add Appearance to the tab list and URL parser. Build the radio group
+            using existing spacing, focus, and text tokens.
+          </li>
+          <li>
+            Review library, folders, search, dialogs, menus, source detail,
+            trash, forms, toasts, and loading/error states in both themes. Fix
+            only colors that fail.
+          </li>
+          <li>
+            Update feature docs and architecture with the implementation. Run
+            checks and the browser matrix below.
+          </li>
+        </ol>
+      </section>
+      <section id="checks">
+        <h2>07 · How we verify it</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Check</th>
+                <th>Pass condition</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Preference and resolution tests</td>
+                <td>
+                  All three choices × both device themes; missing/invalid values
+                  fall back to System. Storage read/write errors do not break
+                  switching.
+                </td>
+              </tr>
+              <tr>
+                <td>Event tests</td>
+                <td>
+                  Device changes affect System only; same-tab setters notify;
+                  other-tab changes and clear events refresh. Unrelated keys are
+                  ignored. Cleanup removes listeners and snapshots stay
+                  referentially stable until changed.
+                </td>
+              </tr>
+              <tr>
+                <td>Bootstrap tests</td>
+                <td>
+                  Run the actual script for the shared input matrix, including
+                  blocked storage. It produces the same root class as runtime
+                  resolution.
+                </td>
+              </tr>
+              <tr>
+                <td>Startup browser check</td>
+                <td>
+                  Cold load and hard reload with saved Dark on a light device
+                  and saved Light on a dark device. Slow loading shows no
+                  wrong-theme flash and no hydration warning. Root script
+                  appears before stylesheet links.
+                </td>
+              </tr>
+              <tr>
+                <td>Settings and persistence</td>
+                <td>
+                  Radio selection applies immediately, survives reload, follows
+                  device changes under System, syncs across two tabs, and
+                  survives sign-in/out. Appearance deep link opens; Back and
+                  close keep existing rules.
+                </td>
+              </tr>
+              <tr>
+                <td>Keyboard and mobile</td>
+                <td>
+                  Tab enters the radio group, arrows change choices, focus stays
+                  visible. Four settings tabs and account action fit at 320px
+                  width and at 200% zoom without clipped actions.
+                </td>
+              </tr>
+              <tr>
+                <td>Visual review</td>
+                <td>
+                  Readable text, borders, focus, selected tabs, overlays, toast
+                  states, and folder colors in both themes. Target 4.5:1 for
+                  normal text and 3:1 for controls. Media colors stay unchanged.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>Project checks at implementation time</h3>
+        <pre>
+pnpm --filter web test
+pnpm --filter web check-types
+pnpm --filter web lint
+pnpm --filter web build</pre>
+        <p>
+          Check formatting for touched files too. This planning-only change does
+          not require app tests.
+        </p>
+      </section>
+      <footer>
+        Ready when: the right theme appears on first paint, each choice
+        persists, System stays live, and the full app remains readable. The
+        current shared palette is a starting point; visual checks decide whether
+        any token needs adjustment.
+      </footer>
+    </main>
+  </body>
+</html>
