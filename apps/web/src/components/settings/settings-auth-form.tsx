@@ -12,7 +12,7 @@ import {
   submitAuthForm,
 } from '#/features/auth/auth-actions';
 import { useGoogleSignIn } from '#/features/auth/auth-hooks';
-import { isEmailPasswordAuthEnabled } from '#/features/auth/auth-session';
+import { isFlagOn } from '#/features/flags/flags';
 import type {
   SettingsAuthFieldProps,
   SettingsAuthFieldsProps,
@@ -43,7 +43,8 @@ const copy: Record<AuthFormMode, { title: string; submit: string }> = {
 
 // Email and password is paused, so Google is the whole form unless it is turned back on.
 export function SettingsAuthForm(props: SettingsAuthFormProps) {
-  if (isEmailPasswordAuthEnabled()) return <SettingsEmailAuthForm {...props} />;
+  if (isFlagOn('authEmailPassword'))
+    return <SettingsEmailAuthForm {...props} />;
   return <SettingsGoogleAuth linkError={props.linkError} />;
 }
 
@@ -196,7 +197,7 @@ function SettingsEmailAuthForm({
             verified={verified}
             linkError={linkError}
           />
-          {mode === 'sign-in' && (
+          {mode === 'sign-in' && isFlagOn('authGoogle') && (
             <SettingsGoogleSignIn
               google={google}
               linkError={verified ? undefined : linkError}

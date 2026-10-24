@@ -27,6 +27,7 @@ import type {
   SettingsTab,
 } from '#/features/settings/settings.type';
 import { useSettingsSearch } from '#/features/settings/settings-hooks';
+import { visibleSettingsTabs } from '#/features/settings/settings-tabs';
 
 import { SettingsAccountTab } from './settings-account-tab';
 import { SettingsDataTab } from './settings-data-tab';
@@ -54,7 +55,10 @@ const SETTINGS_TAB_ITEMS: readonly {
 
 export function SettingsDialog({ authUser }: SettingsDialogProps) {
   const { search, close, selectTab, setAuthMode } = useSettingsSearch();
-  const activeTab = search.tab ?? 'general';
+  const tabs = visibleSettingsTabs(authUser !== null);
+  // A link can still name a hidden tab, so it falls back to General.
+  const activeTab =
+    search.tab && tabs.includes(search.tab) ? search.tab : 'general';
   const activeLabel = SETTINGS_TAB_ITEMS.find(
     (item) => item.tab === activeTab,
   )?.label;
@@ -71,6 +75,7 @@ export function SettingsDialog({ authUser }: SettingsDialogProps) {
         <div className="pointer-events-auto flex h-full w-full flex-col overflow-hidden bg-bg text-fg shadow-xl sm:h-[min(36rem,100%)] sm:max-w-3xl sm:flex-row sm:rounded-xl">
           <SettingsSidebar
             authUser={authUser}
+            tabs={tabs}
             activeTab={activeTab}
             onSelectTab={selectTab}
             onSignIn={() => setAuthMode('sign-in')}
@@ -121,6 +126,7 @@ export function SettingsDialog({ authUser }: SettingsDialogProps) {
 // Tabs are places and sign in/out is an action, so the action sits apart at the bottom.
 function SettingsSidebar({
   authUser,
+  tabs,
   activeTab,
   onSelectTab,
   onSignIn,
@@ -133,10 +139,17 @@ function SettingsSidebar({
       <p className="hidden px-3 pt-2 pb-3 text-xs text-muted-fg sm:block">
         Settings
       </p>
-      <SettingsSidebarTabs activeTab={activeTab} onSelectTab={onSelectTab} />
-      <div className="ml-auto sm:mt-auto sm:ml-0">
-        <SettingsSidebarAction authUser={authUser} onSignIn={onSignIn} />
-      </div>
+      <SettingsSidebarTabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onSelectTab={onSelectTab}
+      />
+      {/* With the account tab hidden, a guest has nowhere to sign in. */}
+      {(authUser || tabs.includes('account')) && (
+        <div className="ml-auto sm:mt-auto sm:ml-0">
+          <SettingsSidebarAction authUser={authUser} onSignIn={onSignIn} />
+        </div>
+      )}
     </nav>
   );
 }
@@ -144,9 +157,11 @@ function SettingsSidebar({
 // *** SettingsSidebarTabs ***
 // Hover and active are separate clipped layers so each can slide between tabs on its own.
 function SettingsSidebarTabs({
+  tabs,
   activeTab,
   onSelectTab,
 }: SettingsSidebarTabsProps) {
+  const items = SETTINGS_TAB_ITEMS.filter((item) => tabs.includes(item.tab));
   const hoverLayerRef = useRef<HTMLDivElement>(null);
   const activeLayerRef = useRef<HTMLDivElement>(null);
   // Never cleared, so the hover layer fades out in place instead of vanishing.
@@ -164,7 +179,7 @@ function SettingsSidebarTabs({
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-muted/40 opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-100"
       />
-      {SETTINGS_TAB_ITEMS.map((item) => (
+      {items.map((item) => (
         <button
           key={item.tab}
           type="button"
@@ -193,7 +208,7 @@ function SettingsSidebarTabs({
           TAB_LIST_CLASS,
         )}
       >
-        {SETTINGS_TAB_ITEMS.map((item) => (
+        {items.map((item) => (
           <span key={item.tab} className={TAB_CLASS}>
             <HugeiconsIcon icon={item.icon} size={18} strokeWidth={1.5} />
             <span className={TAB_LABEL_CLASS}>{item.label}</span>

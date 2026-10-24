@@ -18,7 +18,8 @@ export type AuthConfig = {
     password?: string;
     from: string;
   };
-  google: AuthGoogleConfig;
+  // null when the Google flag is off.
+  google: AuthGoogleConfig | null;
   emailPassword: boolean;
 };
 

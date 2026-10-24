@@ -3,6 +3,8 @@ import { betterAuth } from 'better-auth';
 import nodemailer from 'nodemailer';
 import { z } from 'zod';
 
+import { readFlags } from '../flags/flags.js';
+import type { ApiFlags } from '../flags/flags.type.js';
 import * as schema from './auth.model.js';
 import type { AuthConfig, AuthDependencies } from './auth.type.js';
 
@@ -67,13 +69,16 @@ export function createAuth({ database, config, mailer }: AuthDependencies) {
           action: 'Verify your email',
         }),
     },
-    socialProviders: {
-      google: {
-        clientId: config.google.clientId,
-        clientSecret: config.google.clientSecret,
-        prompt: 'select_account',
-      },
-    },
+    // With no provider registered, Better Auth rejects Google sign-in itself.
+    socialProviders: config.google
+      ? {
+          google: {
+            clientId: config.google.clientId,
+            clientSecret: config.google.clientSecret,
+            prompt: 'select_account',
+          },
+        }
+      : {},
     // Linking needs both emails verified, so nobody can take an account by
     // signing up with someone else's email first.
     account: {
@@ -123,6 +128,7 @@ async function sendAuthEmail(
 // *** readAuthConfig ***
 export function readAuthConfig(
   env: NodeJS.ProcessEnv = process.env,
+  flags: ApiFlags = readFlags(env),
 ): AuthConfig {
   const values = z
     .object({
@@ -139,9 +145,12 @@ export function readAuthConfig(
       SMTP_USER: z.string().optional(),
       SMTP_PASSWORD: z.string().optional(),
       SMTP_FROM: z.email(),
-      GOOGLE_CLIENT_ID: z.string().min(1),
-      GOOGLE_CLIENT_SECRET: z.string().min(1),
-      AUTH_EMAIL_PASSWORD_ENABLED: z.enum(['true', 'false']).default('false'),
+      GOOGLE_CLIENT_ID: flags.authGoogle
+        ? z.string().min(1)
+        : z.string().optional(),
+      GOOGLE_CLIENT_SECRET: flags.authGoogle
+        ? z.string().min(1)
+        : z.string().optional(),
     })
     .safeParse(env);
 
@@ -187,10 +196,13 @@ export function readAuthConfig(
       password: value.SMTP_PASSWORD,
       from: value.SMTP_FROM,
     },
-    google: {
-      clientId: value.GOOGLE_CLIENT_ID,
-      clientSecret: value.GOOGLE_CLIENT_SECRET,
-    },
-    emailPassword: value.AUTH_EMAIL_PASSWORD_ENABLED === 'true',
+    google:
+      flags.authGoogle && value.GOOGLE_CLIENT_ID && value.GOOGLE_CLIENT_SECRET
+        ? {
+            clientId: value.GOOGLE_CLIENT_ID,
+            clientSecret: value.GOOGLE_CLIENT_SECRET,
+          }
+        : null,
+    emailPassword: flags.authEmailPassword,
   };
 }

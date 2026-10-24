@@ -22,6 +22,10 @@ import { createAuth, readAuthConfig } from './auth.js';
 import * as schema from './auth.model.js';
 import type { AuthConfig } from './auth.type.js';
 
+const google = {
+  clientId: 'test-google-client-id',
+  clientSecret: 'test-google-client-secret',
+};
 const config: AuthConfig = {
   databaseUrl: 'postgresql://unused',
   secret: 'test-only-secret-with-at-least-32-characters',
@@ -34,10 +38,7 @@ const config: AuthConfig = {
     secure: false,
     from: 'hello@mado.local',
   },
-  google: {
-    clientId: 'test-google-client-id',
-    clientSecret: 'test-google-client-secret',
-  },
+  google,
   emailPassword: true,
 };
 const googleOnlyConfig: AuthConfig = { ...config, emailPassword: false };
@@ -547,6 +548,31 @@ describe('google sign-in with email paused', () => {
   });
 });
 
+describe('google sign-in turned off', () => {
+  it('rejects a Google sign-in start', async () => {
+    const offAuth = createAuth({
+      database: drizzle(postgres, { schema }),
+      config: { ...googleOnlyConfig, google: null },
+      mailer: { sendMail },
+    });
+    const result = await offAuth.handler(
+      new Request(`${config.baseUrl}/api/auth/sign-in/social`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          origin: config.webOrigin,
+          'x-mado-client-ip': '192.0.2.201',
+        },
+        body: JSON.stringify({
+          provider: 'google',
+          callbackURL: googleCallbackURL,
+        }),
+      }),
+    );
+    expect(result.status).toBeGreaterThanOrEqual(400);
+  });
+});
+
 describe('auth configuration', () => {
   it('reports missing fields without exposing secrets', () => {
     expect(() =>
@@ -579,15 +605,25 @@ describe('auth configuration', () => {
     expect(() => readAuthConfig(env)).not.toThrow('do-not-print-me');
   });
 
+  it('does not need Google credentials when Google is turned off', () => {
+    const env = {
+      ...validEnv(),
+      FLAG_AUTH_GOOGLE: 'false',
+      GOOGLE_CLIENT_ID: undefined,
+      GOOGLE_CLIENT_SECRET: undefined,
+    };
+    expect(readAuthConfig(env).google).toBeNull();
+  });
+
   it('keeps email and password off unless it is turned on', () => {
     expect(readAuthConfig(validEnv()).emailPassword).toBe(false);
     expect(
-      readAuthConfig({ ...validEnv(), AUTH_EMAIL_PASSWORD_ENABLED: 'true' })
+      readAuthConfig({ ...validEnv(), FLAG_AUTH_EMAIL_PASSWORD: 'true' })
         .emailPassword,
     ).toBe(true);
     expect(() =>
-      readAuthConfig({ ...validEnv(), AUTH_EMAIL_PASSWORD_ENABLED: 'yes' }),
-    ).toThrow('AUTH_EMAIL_PASSWORD_ENABLED');
+      readAuthConfig({ ...validEnv(), FLAG_AUTH_EMAIL_PASSWORD: 'yes' }),
+    ).toThrow('FLAG_AUTH_EMAIL_PASSWORD');
   });
 });
 
@@ -638,7 +674,7 @@ function googleIdToken({ sub, email, emailVerified }: GoogleTestProfile) {
   const now = Math.floor(Date.now() / 1000);
   const claims = {
     iss: 'https://accounts.google.com',
-    aud: config.google.clientId,
+    aud: google.clientId,
     sub,
     email,
     email_verified: emailVerified,

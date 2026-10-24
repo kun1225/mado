@@ -26,4 +26,5 @@
 | [`apps/web/src/features/settings/settings.spec.md`](apps/web/src/features/settings/settings.spec.md)             | The settings dialog: tabs, the account tab, sign in/out, and the URL params email links use           |
 | [`apps/web/src/features/storage/storage.spec.md`](apps/web/src/features/storage/storage.spec.md)                 | IndexedDB and OPFS per account, migrations, rules for schema changes                                  |
 | [`apps/web/src/features/export/export.spec.md`](apps/web/src/features/export/export.spec.md)                     | Export all sources as a zip: folder layout, file names, `library.json` for import                     |
+| [`apps/web/src/features/flags/flags.spec.md`](apps/web/src/features/flags/flags.spec.md)                         | Feature flags in the web app and API: how to add, read and remove one                                 |
 | [`apps/web/src/features/import/import.spec.md`](apps/web/src/features/import/import.spec.md)                     | Import a folder or an unzipped export: ids, skipped files, the folder-to-collection rule              |

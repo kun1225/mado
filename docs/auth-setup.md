@@ -5,10 +5,15 @@ Mado uses Express + Better Auth + PostgreSQL + Drizzle. Auth routes live in
 Drizzle tables live in `auth.model.ts`. Better Auth handles its own built-in
 Google sign-in, session, and (when turned on) email and password endpoints.
 
-Google is the only sign-in for now. Email and password is paused: its code
-stays, behind `AUTH_EMAIL_PASSWORD_ENABLED` (API) and
-`VITE_AUTH_EMAIL_PASSWORD_ENABLED` (web). Both are off unless set to `true`.
-While it is off, the reset and verification routes return 404.
+Google is the only sign-in for now. Each sign-in method has a feature flag (see
+`apps/web/src/features/flags/flags.spec.md`):
+
+- Google: `FLAG_AUTH_GOOGLE` (API) and `VITE_FLAG_AUTH_GOOGLE` (web). On by
+  default. When off, the API needs no Google credentials and rejects Google
+  sign-in.
+- Email and password: `FLAG_AUTH_EMAIL_PASSWORD` (API) and
+  `VITE_FLAG_AUTH_EMAIL_PASSWORD` (web). Off by default. While it is off, the
+  reset and verification routes return 404.
 
 ## Where the code lives
 

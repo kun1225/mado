@@ -28,11 +28,12 @@ Signing in is optional. Guests use the app fully with data on this device. An ac
 - **2026-10 — The session is checked on the server** with `Cache-Control: private, no-store`, so a shared cache never serves one user's session to another.
 - **2026-10 — Auth forms live in the settings panel, not on their own pages.** Signing in is optional, so it should not take the user away from their library.
 - **2026-10 — Email links point at `/library?settings=account&…`.** These params must stay stable, because links in old emails still use them. Links from before this change (`/verify-email`, `/reset-password`) now 404. They expired within an hour anyway.
-- **2026-10 — Email and password sign-up and sign-in are paused.** Google is the only way in. The email code stays, behind a switch that is off by default (`AUTH_EMAIL_PASSWORD_ENABLED` in the API, `VITE_AUTH_EMAIL_PASSWORD_ENABLED` in the web app), so it can come back without a rewrite. See `docs/plans/google-sign-in-plan.md`.
+- **2026-10 — Email and password sign-up and sign-in are paused.** Google is the only way in. The email code stays, behind the `authEmailPassword` flag (off by default), so it can come back without a rewrite. See `docs/plans/google-sign-in-plan.md`.
 - **2026-10 — With email off, the reset and verification routes go in `disabledPaths`.** Better Auth's `emailAndPassword.enabled` blocks only sign-in and sign-up, and the other routes could still be used to send emails to anyone.
 - **2026-10 — Google links to an existing user only when both emails are verified and match.** Otherwise someone could sign up with another person's email first and take over their account later. Different-email linking and trusted providers stay off.
 - **2026-10 — Google uses a full-page redirect, not a popup.** The return is a fresh page load, so the right account storage is picked before any library data shows.
 - **2026-10 — Google errors show fixed copy keyed by the error code.** The code arrives in the URL, so anyone can edit it.
+- **2026-10 — Google sign-in has its own flag, `authGoogle` (on by default).** With it off, the API registers no Google provider and needs no Google credentials, so a hidden button is not the only gate. If every sign-in flag is off, settings hides the Account tab from guests and the app stays in guest mode.
 - **2026-10 — In development, the app runs as a guest by default** (`VITE_DEV_AUTH_BYPASS`), so it works without the auth API. Set it to `false` to test real login. It can never be on in production.
 
 ## Known gaps

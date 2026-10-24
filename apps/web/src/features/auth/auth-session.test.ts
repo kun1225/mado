@@ -1,10 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  isDevAuthBypass,
-  isEmailPasswordAuthEnabled,
-  safeReturnTo,
-} from './auth-session';
+import { isDevAuthBypass, safeReturnTo } from './auth-session';
 
 describe('safe return paths', () => {
   it.each(['/library', '/library/deleted', '/collection/abc?view=grid#top'])(
@@ -45,21 +41,5 @@ describe('development login bypass', () => {
     vi.stubEnv('DEV', false);
     vi.stubEnv('VITE_DEV_AUTH_BYPASS', 'true');
     expect(isDevAuthBypass()).toBe(false);
-  });
-});
-
-describe('email and password switch', () => {
-  afterEach(() => vi.unstubAllEnvs());
-
-  it('is off by default while Google is the only sign-in', () => {
-    vi.stubEnv('VITE_AUTH_EMAIL_PASSWORD_ENABLED', undefined);
-    expect(isEmailPasswordAuthEnabled()).toBe(false);
-  });
-
-  it('comes back only when set to true', () => {
-    vi.stubEnv('VITE_AUTH_EMAIL_PASSWORD_ENABLED', 'yes');
-    expect(isEmailPasswordAuthEnabled()).toBe(false);
-    vi.stubEnv('VITE_AUTH_EMAIL_PASSWORD_ENABLED', 'true');
-    expect(isEmailPasswordAuthEnabled()).toBe(true);
   });
 });

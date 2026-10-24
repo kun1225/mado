@@ -80,6 +80,7 @@ export type SettingsGoogleSignInProps = {
 
 export type SettingsSidebarProps = {
   authUser: AuthUser | null;
+  tabs: readonly SettingsTab[];
   activeTab: SettingsTab;
   onSelectTab: (tab: SettingsTab) => void;
   onSignIn: () => void;
@@ -87,7 +88,7 @@ export type SettingsSidebarProps = {
 
 export type SettingsSidebarTabsProps = Pick<
   SettingsSidebarProps,
-  'activeTab' | 'onSelectTab'
+  'tabs' | 'activeTab' | 'onSelectTab'
 >;
 
 export type SettingsSidebarActionProps = Pick<
