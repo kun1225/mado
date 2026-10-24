@@ -177,7 +177,7 @@ Settings → Data → Import a folder → <input webkitdirectory> → File[]
 ⚙ button → ?settings=general → (app)/route.tsx renders SettingsDialog
   → useSettingsSearch parses settings, auth, token, verified, error (zod, bad values dropped)
   → General: the folder sources switch (useShowFolderSources from collections)
-  → Appearance: Light / Dark / System radios (useSettingsTheme)
+  → General: Light / Dark / System radios (useSettingsTheme)
   → Account, guest: SettingsAuthForm   signed in: name, email, Sign out
      email paused (default): only "Continue with Google"
      email on: Google button, then the email form (mode from ?auth)

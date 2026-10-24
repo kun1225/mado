@@ -9,11 +9,11 @@ One place for app settings. Today it holds general preferences (whether collecti
 ## Behavior
 
 - The settings button opens a dialog. It fills the screen on phones and is a centered card on larger screens.
-- The sidebar lists the tabs: **General**, **Appearance**, **Account** and **Data**. The settings button opens General. Switching tabs replaces the URL, so Back closes the panel instead of stepping through tabs.
-- On phones the tabs show icons only, so four tabs and Sign in/out fit in one row. The header names the open tab, and each tab keeps its label for screen readers.
+- The sidebar lists the tabs: **General**, **Account** and **Data**. The settings button opens General. Switching tabs replaces the URL, so Back closes the panel instead of stepping through tabs.
+- On phones the tabs show icons only, so three tabs and Sign in/out fit in one row. The header names the open tab, and each tab keeps its label for screen readers.
 - The bottom of the sidebar shows **Sign out** when signed in, or **Sign in** for a guest. Sign in opens the Account tab, from any tab, and moves focus to the email field.
+- **General, Theme:** three radios, **Light**, **Dark** and **System** ("Match your device settings."), above Collections. System is the default. A choice applies at once, with no Save button.
 - **General, Collections:** the **Show sources from folders** switch (see `collections.spec.md`). It saves at once, with no Save button. Clicking the label flips it too.
-- **Appearance, Theme:** three radios, **Light**, **Dark** and **System** ("Match your device settings."). System is the default. A choice applies at once, with no Save button.
 - The theme is saved as `mado:theme` in `localStorage`, for this browser, not per account, so it stays the same across guest and sign-in. A missing or bad value means System. If storage is blocked, the choice still works until the page reloads. Other open tabs follow a change, and clearing storage sends them back to System.
 - A small script in `<head>` sets the theme before the page paints, so a saved Dark never flashes Light. Under System the app follows the device, also while it is open.
 - Images, videos and website embeds keep their own colors.
@@ -29,7 +29,7 @@ One place for app settings. Today it holds general preferences (whether collecti
 
 | Param               | Values                                                    | Set by                                              |
 | ------------------- | --------------------------------------------------------- | --------------------------------------------------- |
-| `settings`          | `general`, `appearance`, `account`, `data`                | the settings button, tabs                           |
+| `settings`          | `general`, `account`, `data`                              | the settings button, tabs                           |
 | `auth`              | `sign-up`, `forgot-password`, `reset-password` (or empty) | the form, the reset email                           |
 | `token`             | reset token                                               | better-auth, on reset links                         |
 | `verified`          | `true`                                                    | the verification email                              |
@@ -53,6 +53,7 @@ Unknown values fall back to closed, or to the sign-in form.
 - **2026-10 — The theme is browser-wide, not per account.** The startup script must read it before any account loads, and one person per browser is the common case.
 - **2026-10 — The startup script is a fixed string next to the store.** It runs before any bundle, so it can't import the store. A test runs it against every saved value and device theme and compares with the store, so the two can't drift.
 - **2026-10 — Native radios for the theme.** Arrow keys and screen readers work with no extra code.
+- **2026-10 — Theme lives in General, not its own tab.** One setting doesn't earn a tab, and General is where everyday preferences go.
 - **2026-10 — Storage is a breakdown, not one bar against the quota.** The quota is tens of GB, so "used of quota" is a bar nobody can see. Where the bytes went is more useful, and it needs no quota.
 - **2026-10 — Backup is one compact row, with the rules folded away.** Both actions stay visible and the tab stays short. Export keeps the primary button, because it is the common one.
 

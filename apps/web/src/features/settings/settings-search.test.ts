@@ -35,12 +35,6 @@ describe('parseSettingsSearch', () => {
     expect(parseSettingsSearch({ settings: 'data' }).tab).toBe('data');
   });
 
-  it('opens the appearance tab', () => {
-    expect(parseSettingsSearch({ settings: 'appearance' }).tab).toBe(
-      'appearance',
-    );
-  });
-
   it('opens the general tab', () => {
     expect(parseSettingsSearch({ settings: 'general' }).tab).toBe('general');
   });

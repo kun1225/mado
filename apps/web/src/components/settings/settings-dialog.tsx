@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import {
   Cancel01Icon,
   Database01Icon,
-  PaintBoardIcon,
   PreferenceHorizontalIcon,
   UserCircleIcon,
 } from '@hugeicons/core-free-icons';
@@ -30,7 +29,6 @@ import type {
 import { useSettingsSearch } from '#/features/settings/settings-hooks';
 
 import { SettingsAccountTab } from './settings-account-tab';
-import { SettingsAppearanceTab } from './settings-appearance-tab';
 import { SettingsDataTab } from './settings-data-tab';
 import { SettingsGeneralTab } from './settings-general-tab';
 
@@ -41,7 +39,7 @@ const GOOGLE_BUTTON_ID = 'settings-auth-google';
 const TAB_LIST_CLASS = 'flex items-center gap-0.5 sm:flex-col sm:items-stretch';
 const TAB_CLASS =
   'flex h-9.5 items-center gap-2 rounded-md px-2.5 text-sm font-medium sm:px-4';
-// Phones show icons only, so four tabs and the sign-in action fit in one row. The header names the tab.
+// Phones show icons only, so three tabs and the sign-in action fit in one row. The header names the tab.
 const TAB_LABEL_CLASS = 'max-sm:sr-only';
 
 const SETTINGS_TAB_ITEMS: readonly {
@@ -50,7 +48,6 @@ const SETTINGS_TAB_ITEMS: readonly {
   icon: IconSvgElement;
 }[] = [
   { tab: 'general', label: 'General', icon: PreferenceHorizontalIcon },
-  { tab: 'appearance', label: 'Appearance', icon: PaintBoardIcon },
   { tab: 'account', label: 'Account', icon: UserCircleIcon },
   { tab: 'data', label: 'Data', icon: Database01Icon },
 ];
@@ -103,7 +100,6 @@ export function SettingsDialog({ authUser }: SettingsDialogProps) {
             <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-8">
               <div className="max-w-sm">
                 {activeTab === 'general' && <SettingsGeneralTab />}
-                {activeTab === 'appearance' && <SettingsAppearanceTab />}
                 {activeTab === 'account' && (
                   <SettingsAccountTab
                     authUser={authUser}
