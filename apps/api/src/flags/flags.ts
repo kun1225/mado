@@ -4,7 +4,7 @@ import type { ApiFlags } from './flags.type.js';
 
 // Each flag mirrors one in apps/web/src/features/flags/flags.ts.
 const flagSchema = z.object({
-  FLAG_AUTH_GOOGLE: z.enum(['true', 'false']).default('true'),
+  FLAG_AUTH_GOOGLE: z.enum(['true', 'false']).default('false'),
   FLAG_AUTH_EMAIL_PASSWORD: z.enum(['true', 'false']).default('false'),
 });
 
