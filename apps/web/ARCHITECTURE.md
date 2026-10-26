@@ -202,3 +202,5 @@ hydrate → SettingsThemeSync (__root) → useSettingsTheme → createSettingsTh
 Appearance radio → setPreference → html.dark at once → try save to localStorage
 html.dark → .dark tokens in @repo/ui + color-scheme: dark
 ```
+
+Dark mode accents and focus rings use the light mode background color (`oklch(0.96 0 0)`), with dark text on accent fills.

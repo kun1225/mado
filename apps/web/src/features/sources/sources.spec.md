@@ -82,6 +82,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 
 ## Planned
 
+- **More file types** (see "More file types" in `docs/roadmap.md`). Text (`.txt`, `.md`) first, then font, PDF and voice. Today only images, videos and websites are accepted.
 - **Drop a folder.** Dropping a folder on the library runs the same import as Settings → Data (see `import.spec.md`). It needs `webkitGetAsEntry` to read the folder from the drop.
 - **A more fun embed loading state.** While an embedded site loads in the detail dialog, show something friendly and human instead of a plain wait. Idea: two drawn eyes that look around, as if searching for the page.
 - **Copy an image to paste in Figma** (roadmap phase 0, small enough to ship before or with the launch). Cmd/Ctrl+C on a selected card, or a "Copy image" button in the detail dialog, puts the image on the clipboard. Pasting in Figma (or Slack, Keynote, Docs) gives the picture.

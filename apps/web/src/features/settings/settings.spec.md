@@ -17,6 +17,7 @@ One place for app settings. Today it holds general preferences (whether collecti
 - The theme is saved as `mado:theme` in `localStorage`, for this browser, not per account, so it stays the same across guest and sign-in. A missing or bad value means System. If storage is blocked, the choice still works until the page reloads. Other open tabs follow a change, and clearing storage sends them back to System.
 - A small script in `<head>` sets the theme before the page paints, so a saved Dark never flashes Light. Under System the app follows the device, also while it is open.
 - Images, videos and website embeds keep their own colors.
+- Dark mode uses the light mode background color (a soft white) for accents and focus rings, with dark text on accent fills.
 - **Account, signed in:** name and email.
 - **Account, guest:** a short note that saves stay on this device, then "Sign in" and a **Continue with Google** button with the Google mark. Errors from Google show under the button. Sign in in the sidebar moves focus to this button.
 - **Every sign-in flag off, guest:** no Account tab and no Sign in button. A link with `?settings=account` opens General. A signed-in user still sees the Account tab and Sign out, so turning sign-in off never hides their account.

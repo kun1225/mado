@@ -11,7 +11,7 @@ const TRANSITION_DURATION = 400;
 const GUTTER = 10;
 
 const COLUMN_CLASS = cn(
-  'w-[calc((100%-10px)/2)] md:w-[calc((100%-20px)/3)] lg:w-[calc((100%-30px)/4)]',
+  'w-[calc((100%-10px)/2)] md:w-[calc((100%-20px)/3)] lg:w-[calc((100%-30px)/4)] xl:w-[calc((100%-40px)/5)] 2xl:w-[calc((100%-50px)/6)]',
 );
 
 /**

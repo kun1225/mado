@@ -46,6 +46,23 @@ The launch is Mado's own brand and the landing page, on top of the library we ha
 
 Why: the launch starts the waitlist and gets feedback before we spend months on the canvas. The rest of phase 0 (folder drop, the fun loading state) can ship whenever it's ready.
 
+## More file types
+
+Mado saves images, videos and websites today. Designers also collect words, fonts, documents and sound, so more types come in this order:
+
+| Priority | Type                 | What it is                                                                                                                           |
+| -------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 1        | Text (`.txt`, `.md`) | Notes, copy, brand voice, a client brief. A card shows the first lines; the detail dialog shows the whole text, with Markdown drawn. |
+| 2        | Font                 | A card shows a type specimen in that font. Useful for the Type facet.                                                                |
+| 3        | PDF                  | Brand guidelines and decks. A card shows page 1; the detail dialog scrolls the pages.                                                |
+| 4        | Voice                | Audio notes and client calls. A card shows a waveform and a play button.                                                             |
+
+Why text goes first: it is the cheapest to build (no codec, no preview image, nothing to compress) and it is the missing half of a brand project. The brief and the "why" behind a direction are words. Phase 4 AI reads text as easily as images, and the canvas can place text cards.
+
+Why voice goes last: it needs a recorder or a transcript to be useful, and a transcript means AI (phase 4 or later).
+
+Each type gets its own card and detail view, the same facets and tags as other sources, and the same drop, import and export paths. The spec of each type is written when it is picked up, in [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md).
+
 ## Order and why
 
 1. **Facets before AI.** AI is only as useful as the facets it fills. Facets also make the free version better on their own.
@@ -66,8 +83,11 @@ Why: the launch starts the waitlist and gets feedback before we spend months on 
 - **2026-10 — Video compression stays in the browser.** It already runs there with `mediabunny`. It's free for us, keeps the free version local, and makes phase 3 uploads smaller. Compressing on a server needs `ffmpeg`, which Workers can't run.
 - **2026-10 — Host the web app and the API on Cloudflare Workers (proposed).** One platform with R2, cheap for a side project. Postgres stays on a hosted service (Neon) and is reached through Hyperdrive. Confirm after the spike in [`plans/cloudflare-deploy-plan.md`](plans/cloudflare-deploy-plan.md).
 
+- **2026-10 — More file types, text first.** `.txt` and `.md` come first, then font, PDF and voice. See "More file types" above.
+
 ## Open questions
 
+- Where text sources live: in OPFS like other files, or as text in IndexedDB so search can read them.
 - Canvas library: React Flow, tldraw or Excalidraw. See `canvas.spec.md`.
 - AI providers: Claude for vision, tagging and writing. AI images (phase 7) need a second provider.
 - Can people without an account comment on a shared link, or only view it?

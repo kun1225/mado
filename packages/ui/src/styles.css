@@ -82,12 +82,11 @@
   --poise-color-muted: oklch(0.269 0 0);
   --poise-color-muted-fg: oklch(0.7 0 0);
   --poise-color-border: oklch(0.269 0 0);
-  /* Lighter so it stands out on dark. The dark text on it stays readable. */
-  --poise-color-accent: oklch(0.72 0.05 245);
+  --poise-color-accent: oklch(0.96 0 0);
   --poise-color-accent-fg: oklch(0.145 0 0);
   --poise-color-danger: oklch(0.7 0.08 30);
   --poise-color-danger-fg: oklch(0.145 0 0);
-  --poise-color-ring: oklch(0.72 0.05 245);
+  --poise-color-ring: oklch(0.96 0 0);
 
   --poise-color-folder-red: oklch(0.5 0.12 25);
   --poise-color-folder-orange: oklch(0.56 0.11 60);

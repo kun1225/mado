@@ -69,7 +69,12 @@ export function SourceGrid({
 
   return (
     <>
-      <div className={cn(selection.isSelectionMode && 'select-none')}>
+      <div
+        className={cn(
+          '-mx-edge px-2.5',
+          selection.isSelectionMode && 'select-none',
+        )}
+      >
         <Masonry items={sources} getKey={(source) => source.id}>
           {(source) => (
             <SourceCard
@@ -141,7 +146,10 @@ const TILE_ASPECTS = [
 /** Same columns as `Masonry`, so the real grid shows up without a jump. */
 export function SourceGridSkeleton() {
   return (
-    <div aria-hidden className="columns-2 gap-2.5 md:columns-3 lg:columns-4">
+    <div
+      aria-hidden
+      className="-mx-edge columns-2 gap-2.5 px-2.5 md:columns-3 lg:columns-4 xl:columns-5 2xl:columns-6"
+    >
       {TILE_ASPECTS.map((aspect, index) => (
         <div
           key={index}
