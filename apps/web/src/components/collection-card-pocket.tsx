@@ -4,6 +4,7 @@ import type { CSSProperties } from 'react';
 import type { CollectionColor } from '#/features/collections/collection-types';
 import { useMediaObjectUrl } from '#/features/sources/hooks/source-hooks';
 import type { Source } from '#/features/sources/source-types';
+import { isVideoMimeType } from '#/features/sources/source-types';
 
 // Spread around 0, so one, two, or three saves all stay centered.
 const PREVIEW_OFFSETS: Record<number, number[]> = {
@@ -102,7 +103,7 @@ function CollectionCardPreview({
         'group-focus-visible:[translate:calc(var(--offset)*34px)_-25%] group-focus-visible:rotate-[calc(var(--offset)*9deg)]',
       )}
     >
-      {objectUrl && source.kind === 'video' ? (
+      {objectUrl && isVideoMimeType(source.mimeType) ? (
         <video
           src={`${objectUrl}#t=0.1`}
           muted

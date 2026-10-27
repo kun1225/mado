@@ -13,7 +13,7 @@ features/<x>/…-hooks.ts      React Query: cache keys, mutations, toasts
         │  calls actions
 features/<x>/…-actions.ts    Domain logic: validate (zod), read and write records
         │
-features/storage/            IndexedDB (records)  ·  OPFS (account folder in storage-directory.ts, media in sources/source-media.ts)
+features/storage/            IndexedDB (records, and the body of text sources)  ·  OPFS (account folder in storage-directory.ts, media in sources/source-media.ts)
 ```
 
 - The UI never touches IndexedDB or OPFS directly.

@@ -18,7 +18,8 @@ export type ExportFile =
       lastModified: Date;
     }
   | {
-      kind: 'shortcut';
+      /** `shortcut` is a website's `.url` file, `text` is a text source's body. */
+      kind: 'shortcut' | 'text';
       sourceId: string;
       path: string;
       text: string;

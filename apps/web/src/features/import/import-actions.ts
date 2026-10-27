@@ -7,6 +7,8 @@ import {
   writeMediaFile,
 } from '#/features/sources/source-media';
 import type { Source } from '#/features/sources/source-types';
+import { textBodySchema } from '#/features/sources/text-source';
+import type { TextSourceContent } from '#/features/sources/text-source.type';
 import {
   openDatabase,
   STORES,
@@ -20,6 +22,7 @@ import type {
   ImportItem,
   ImportProgress,
   ImportResult,
+  ImportTextFile,
 } from './import.type';
 import { buildImportPlan, findManifestFile } from './import-plan';
 
@@ -131,7 +134,11 @@ async function saveItem(item: ImportItem): Promise<Source> {
     return createSource({ file: item.file, collectionId: item.collectionId });
   }
 
-  const { source, file } = item;
+  const { file } = item;
+  // Read before writing the thumbnail, so a broken text leaves no file behind.
+  const source: Source = item.text
+    ? { ...item.source, text: await readImportText(item.text) }
+    : item.source;
   if (file && source.storageKey) await writeMediaFile(source.storageKey, file);
 
   try {
@@ -146,4 +153,15 @@ async function saveItem(item: ImportItem): Promise<Source> {
   }
 
   return source;
+}
+
+// *** readImportText ***
+async function readImportText(
+  text: ImportTextFile,
+): Promise<TextSourceContent> {
+  return {
+    body: textBodySchema.parse(await text.file.text()),
+    format: text.format,
+    fileName: text.fileName,
+  };
 }

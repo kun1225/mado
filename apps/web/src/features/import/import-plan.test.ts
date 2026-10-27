@@ -134,6 +134,7 @@ describe('buildImportPlan with library.json', () => {
       {
         kind: 'record',
         file: hero.file,
+        text: null,
         source: {
           id: 's1',
           name: 'hero',
@@ -336,6 +337,127 @@ describe('buildImportPlan with library.json', () => {
   });
 });
 
+describe('buildImportPlan with text sources', () => {
+  const textSource = buildManifestSource({
+    id: 't1',
+    name: 'Brief',
+    kind: 'text',
+    text: { format: 'markdown', fileName: 'brief.md' },
+    fileName: '',
+    mimeType: '',
+    sizeBytes: 0,
+    width: null,
+    height: null,
+    files: [{ path: 'Unsorted/Brief.md', role: 'text' }],
+  });
+
+  function plan(manifestSource: ExportManifestSource, files: ImportFile[]) {
+    return buildImportPlan({
+      files,
+      manifest: buildManifest({ sources: [manifestSource] }),
+      existing: NO_IDS,
+      newId: counter(),
+      now: NOW,
+    });
+  }
+
+  it('keeps the id and fields, and points at the text file', () => {
+    const brief = file('export/Unsorted/Brief.md', 'text/markdown', '# B');
+
+    const result = plan(textSource, [brief]);
+
+    expect(result.items).toEqual([
+      {
+        kind: 'record',
+        file: null,
+        text: { file: brief.file, format: 'markdown', fileName: 'brief.md' },
+        source: expect.objectContaining({
+          id: 't1',
+          name: 'Brief',
+          kind: 'text',
+          note: 'a note',
+          storageKey: null,
+        }),
+      },
+    ]);
+    expect(result.skippedCount).toBe(0);
+  });
+
+  it('brings the thumbnail along', () => {
+    const withThumbnail = {
+      ...textSource,
+      fileName: 'clip.mp4',
+      mimeType: 'video/mp4',
+      files: [
+        ...textSource.files,
+        { path: 'Unsorted/Brief.mp4', role: 'media' as const },
+      ],
+    };
+    const clip = file('export/Unsorted/Brief.mp4', 'video/mp4');
+
+    const result = plan(withThumbnail, [
+      file('export/Unsorted/Brief.md', ''),
+      clip,
+    ]);
+
+    expect(result.items[0]).toMatchObject({
+      file: clip.file,
+      source: { kind: 'text', storageKey: 'id-1', mimeType: 'video/mp4' },
+    });
+  });
+
+  it('keeps a text source whose thumbnail is gone', () => {
+    const withThumbnail = {
+      ...textSource,
+      fileName: 'clip.mp4',
+      mimeType: 'video/mp4',
+      files: [
+        ...textSource.files,
+        { path: 'Unsorted/Brief.mp4', role: 'media' as const },
+      ],
+    };
+
+    const result = plan(withThumbnail, [file('export/Unsorted/Brief.md', '')]);
+
+    expect(result.items[0]).toMatchObject({
+      file: null,
+      source: { kind: 'text', storageKey: null, mimeType: '' },
+    });
+  });
+
+  it('skips a text source whose text file is gone', () => {
+    const result = plan(textSource, []);
+
+    expect(result.items).toEqual([]);
+    expect(result.skippedCount).toBe(1);
+  });
+
+  it('reads the format from the file when library.json has none', () => {
+    const { text: _text, ...bare } = textSource;
+
+    const result = plan(
+      { ...bare, files: [{ path: 'Unsorted/a.txt', role: 'text' }] },
+      [file('export/Unsorted/a.txt', 'text/plain')],
+    );
+
+    expect(result.items[0]).toMatchObject({
+      text: { format: 'plain', fileName: 'a.txt' },
+    });
+  });
+
+  it('matches a text path written in another Unicode form', () => {
+    const nfc = 'Unsorted/Café.md'.normalize('NFC');
+    const nfd = 'export/Unsorted/Café.md'.normalize('NFD');
+
+    const result = plan(
+      { ...textSource, files: [{ path: nfc, role: 'text' }] },
+      [file(nfd, 'text/markdown')],
+    );
+
+    expect(result.items).toHaveLength(1);
+  });
+});
+
 describe('buildImportPlan with a plain folder', () => {
   it('turns the picked folder and its subfolders into nested collections', () => {
     const plan = buildImportPlan({
@@ -379,7 +501,7 @@ describe('buildImportPlan with a plain folder', () => {
   it('skips other files, and stays quiet about hidden ones', () => {
     const plan = buildImportPlan({
       files: [
-        file('Trip/notes.txt', 'text/plain'),
+        file('Trip/page.html', 'text/html'),
         file('Trip/empty.png', 'image/png', ''),
         file('Trip/.DS_Store', ''),
         file('Trip/Docs/readme.pdf', 'application/pdf'),
@@ -407,5 +529,42 @@ describe('buildImportPlan with a plain folder', () => {
     });
 
     expect(plan.collections[0]?.name).toHaveLength(100);
+  });
+});
+
+describe('buildImportPlan with text files in a plain folder', () => {
+  it('turns Markdown and plain text into files to save', () => {
+    const plan = buildImportPlan({
+      files: [
+        // Many systems give `.md` no type.
+        file('Notes/a.md', ''),
+        file('Notes/b.txt', 'text/plain'),
+        file('Notes/c.markdown', ''),
+        file('Notes/d.html', 'text/html'),
+        file('Notes/e.csv', 'text/csv'),
+      ],
+      manifest: null,
+      existing: NO_IDS,
+      newId: counter(),
+      now: NOW,
+    });
+
+    expect(
+      plan.items.map((item) => item.kind === 'file' && item.file.name),
+    ).toEqual(['a.md', 'b.txt', 'c.markdown']);
+    expect(plan.skippedCount).toBe(2);
+  });
+
+  it('skips a text file over the text limit', () => {
+    const plan = buildImportPlan({
+      files: [file('Notes/big.txt', 'text/plain', 'a'.repeat(1024 * 1024 + 1))],
+      manifest: null,
+      existing: NO_IDS,
+      newId: counter(),
+      now: NOW,
+    });
+
+    expect(plan.items).toEqual([]);
+    expect(plan.skippedCount).toBe(1);
   });
 });

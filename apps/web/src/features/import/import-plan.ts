@@ -8,9 +8,13 @@ import type {
 import { EXPORT_MANIFEST_NAME } from '#/features/export/export-manifest';
 import type { Source } from '#/features/sources/source-types';
 import {
+  detectFileKind,
   MAX_FILE_BYTES,
-  sourceKindSchema,
 } from '#/features/sources/source-types';
+import {
+  detectTextFormat,
+  MAX_TEXT_BYTES,
+} from '#/features/sources/text-source';
 
 import type {
   ImportExistingIds,
@@ -18,6 +22,7 @@ import type {
   ImportItem,
   ImportPlan,
   ImportPlanInput,
+  ImportTextFile,
 } from './import.type';
 
 /** Pure, so every rule is tested without IndexedDB or OPFS. */
@@ -65,13 +70,19 @@ function toManifestPlan(
     (source) => !existing.sourceIds.has(source.id),
   );
   const items = newSources.flatMap((source): ImportItem[] => {
-    const file = findMediaFile(source, filesByPath);
-    // A website is still a working link without its thumbnail.
-    if (!file && source.kind !== 'website') return [];
+    const file = findFile(source, filesByPath, 'media');
+    const text = source.kind === 'text' ? findText(source, filesByPath) : null;
+    // A website is still a working link, and a text still has its words, without a thumbnail.
+    const isMissing =
+      source.kind === 'text'
+        ? text === null
+        : !file && source.kind !== 'website';
+    if (isMissing) return [];
     return [
       {
         kind: 'record',
         file,
+        text,
         source: toSourceRecord(source, file, knownCollectionIds, newId),
       },
     ];
@@ -93,16 +104,33 @@ function toPathKey(path: string): string {
   return path.normalize('NFC');
 }
 
-// *** findMediaFile ***
+// *** findFile ***
 // A source in two collections has a copy in each folder, and any copy will do.
-function findMediaFile(
+function findFile(
   source: ExportManifestSource,
   filesByPath: Map<string, File>,
+  role: ExportManifestSource['files'][number]['role'],
 ): File | null {
   const copies = source.files
-    .filter((entry) => entry.role === 'media')
+    .filter((entry) => entry.role === role)
     .flatMap((entry) => filesByPath.get(toPathKey(entry.path)) ?? []);
   return copies[0] ?? null;
+}
+
+// *** findText ***
+// `library.json` can be edited by hand, so a missing `text` falls back to the file itself.
+function findText(
+  source: ExportManifestSource,
+  filesByPath: Map<string, File>,
+): ImportTextFile | null {
+  const file = findFile(source, filesByPath, 'text');
+  if (!file) return null;
+
+  return {
+    file,
+    format: source.text?.format ?? detectTextFormat(file) ?? 'plain',
+    fileName: source.text?.fileName ?? file.name,
+  };
 }
 
 // *** toSourceRecord ***
@@ -166,7 +194,7 @@ function toFolderPlan(
   now: Date,
 ): ImportPlan {
   const visible = files.filter(({ path }) => !isHidden(path));
-  const media = visible.filter(({ file }) => isImportableMedia(file));
+  const media = visible.filter(({ file }) => isImportableFile(file));
   // Shortest first, so each parent gets its id before its children.
   const folders = [...new Set(media.flatMap(({ path }) => toFolderChain(path)))]
     .sort((first, second) => toDepth(first) - toDepth(second))
@@ -200,14 +228,13 @@ function isHidden(path: string): boolean {
   return path.split('/').some((part) => part.startsWith('.'));
 }
 
-// *** isImportableMedia ***
+// *** isImportableFile ***
 // The same rules `createSource` checks, so a file that would fail is counted as skipped instead.
-function isImportableMedia(file: File): boolean {
-  return (
-    sourceKindSchema.safeParse(file.type.split('/')[0]).success &&
-    file.size > 0 &&
-    file.size <= MAX_FILE_BYTES
-  );
+function isImportableFile(file: File): boolean {
+  const kind = detectFileKind(file);
+  const maxBytes = kind === 'text' ? MAX_TEXT_BYTES : MAX_FILE_BYTES;
+
+  return kind !== null && file.size > 0 && file.size <= maxBytes;
 }
 
 // *** toFolderChain ***

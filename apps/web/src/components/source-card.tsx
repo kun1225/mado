@@ -8,6 +8,9 @@ import { Button } from '@repo/ui/button';
 import { useMediaObjectUrl } from '#/features/sources/hooks/source-hooks';
 import type { ToggleSelectOptions } from '#/features/sources/hooks/source-interaction-hooks';
 import type { Source } from '#/features/sources/source-types';
+import { isVideoMimeType } from '#/features/sources/source-types';
+import { toTextCardTitle } from '#/features/sources/text-source';
+import type { TextSourceContent } from '#/features/sources/text-source.type';
 import { useInView } from '#/hooks/use-in-view';
 import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
@@ -50,7 +53,8 @@ export function SourceCard({
     <figure
       ref={figureRef}
       data-source-card={source.id}
-      style={{ aspectRatio }}
+      // A text card grows with its text instead.
+      style={source.text ? undefined : { aspectRatio }}
       aria-busy={isCompressing}
       className={cn(
         'group relative overflow-hidden rounded-md select-none',
@@ -132,8 +136,84 @@ export function SourceCard({
 }
 
 // *** SourceCardBody ***
-/** Stays mounted while the media comes and goes, so it remembers a failed file. */
 function SourceCardBody({
+  source,
+  isNear,
+  isCompressing,
+}: {
+  source: Source;
+  isNear: boolean;
+  isCompressing: boolean;
+}) {
+  if (source.text) {
+    return (
+      <SourceCardTextTile
+        source={source}
+        text={source.text}
+        isNear={isNear}
+        isCompressing={isCompressing}
+      />
+    );
+  }
+
+  return (
+    <SourceCardFile
+      source={source}
+      isNear={isNear}
+      isCompressing={isCompressing}
+    />
+  );
+}
+
+// *** SourceCardTextTile ***
+// Used until the thumbnail's size is known, close to most photos.
+const THUMBNAIL_FALLBACK_RATIO = 4 / 3;
+
+/** The thumbnail is inset with corners parallel to the card's, like the frame in the Mado logo. */
+function SourceCardTextTile({
+  source,
+  text,
+  isNear,
+  isCompressing,
+}: {
+  source: Source;
+  text: TextSourceContent;
+  isNear: boolean;
+  isCompressing: boolean;
+}) {
+  const thumbnailRatio =
+    source.width && source.height
+      ? source.width / source.height
+      : THUMBNAIL_FALLBACK_RATIO;
+
+  return (
+    <div className="flex flex-col bg-muted">
+      {/* Padding sits outside the clamp, or the cut line shows through it. */}
+      <div className="p-4">
+        <p className="line-clamp-4 font-serif text-xl/snug text-pretty break-words">
+          {toTextCardTitle(text, source.name)}
+        </p>
+      </div>
+
+      {source.storageKey !== null && (
+        <div
+          style={{ aspectRatio: thumbnailRatio }}
+          className="relative mx-1.5 -mt-1.5 mb-1.5 overflow-hidden rounded-[calc(var(--radius-md)-0.375rem)]"
+        >
+          <SourceCardFile
+            source={source}
+            isNear={isNear}
+            isCompressing={isCompressing}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// *** SourceCardFile ***
+/** Stays mounted while the media comes and goes, so it remembers a failed file. */
+function SourceCardFile({
   source,
   isNear,
   isCompressing,
@@ -147,7 +227,7 @@ function SourceCardBody({
   const [failedFileKey, setFailedFileKey] = useState<string | null>(null);
 
   // Compression swaps the file, which would break a playing video.
-  if (isCompressing && source.kind === 'video') {
+  if (isCompressing && isVideoMimeType(source.mimeType)) {
     return <div className="size-full animate-pulse bg-muted" />;
   }
 
@@ -239,7 +319,7 @@ function SourceCardMedia({
     <>
       <SourceCardBackdrop source={source} isVisible={!isLoaded} />
 
-      {objectUrl !== null && source.kind === 'video' && (
+      {objectUrl !== null && isVideoMimeType(source.mimeType) && (
         <SourceCardVideo
           src={objectUrl}
           className={mediaClass}
@@ -248,7 +328,7 @@ function SourceCardMedia({
         />
       )}
 
-      {objectUrl !== null && source.kind !== 'video' && (
+      {objectUrl !== null && !isVideoMimeType(source.mimeType) && (
         <img
           src={objectUrl}
           alt={source.kind === 'image' ? source.name : ''}

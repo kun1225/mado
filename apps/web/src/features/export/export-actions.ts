@@ -86,7 +86,7 @@ async function* readZipEntries(
 // The user can delete or replace a source while the export runs.
 async function toZipEntry(file: ExportFile, rootName: string) {
   const name = `${rootName}/${file.path}`;
-  if (file.kind === 'shortcut') {
+  if (file.kind !== 'media') {
     return { name, input: file.text, lastModified: file.lastModified };
   }
 

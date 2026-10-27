@@ -177,6 +177,28 @@ describe('exportLibrary', () => {
     expect(finish).toHaveBeenCalledOnce();
   });
 
+  it('writes the text of a text source into the zip, next to its thumbnail', async () => {
+    await seed(
+      [],
+      [
+        buildSource({
+          id: 't1',
+          name: 'Brief',
+          kind: 'text',
+          text: { body: '# Café ☕\n', format: 'markdown', fileName: 'b.md' },
+          fileName: 'cover.png',
+        }),
+      ],
+    );
+    const { target, read } = createMemoryTarget();
+
+    await exportLibrary(target, EXPORTED_AT, vi.fn());
+    const zip = read();
+
+    expect(zip.get(`${ROOT}/Unsorted/Brief.md`)).toBe('# Café ☕\n');
+    expect(zip.get(`${ROOT}/Unsorted/Brief.png`)).toBe('data:key-t1');
+  });
+
   it('skips a file that is gone and lists it', async () => {
     await seed(
       [],

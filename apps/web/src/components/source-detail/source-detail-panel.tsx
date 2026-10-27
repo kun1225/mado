@@ -31,7 +31,7 @@ import type {
   Source,
   UpdateSourceInput,
 } from '#/features/sources/source-types';
-import { canEmbedSite } from '#/features/sources/source-types';
+import { canEmbedSite, isVideoMimeType } from '#/features/sources/source-types';
 
 export function SourceDetailPanel({
   source,
@@ -62,7 +62,7 @@ export function SourceDetailPanel({
           <p className="text-xs text-muted-fg">{describe(source)}</p>
         </header>
 
-        {canEmbedSite(source) && (
+        {(canEmbedSite(source) || source.kind === 'text') && (
           <SourceDetailThumbnail source={source} objectUrl={thumbnailUrl} />
         )}
         <SourceDetailFields source={source} />
@@ -75,6 +75,12 @@ export function SourceDetailPanel({
 // *** describe ***
 function describe(source: Source): string {
   if (source.kind === 'website') return source.site?.domain ?? 'Website';
+  // The media fields belong to the thumbnail, so the size comes from the text.
+  if (source.text) {
+    const format = source.text.format === 'markdown' ? 'Markdown' : 'Text';
+    const bytes = new TextEncoder().encode(source.text.body).length;
+    return `${format} · ${formatBytes(bytes)}`;
+  }
   const format = source.mimeType.split('/')[1]?.split('+')[0]?.toUpperCase();
   const size =
     source.width && source.height ? `${source.width}×${source.height}` : null;
@@ -91,7 +97,7 @@ function formatBytes(bytes: number): string {
 }
 
 // *** SourceDetailThumbnail ***
-// The live page hides the thumbnail, so this is the only place to see and swap it.
+// The live page or the text hides the thumbnail, so this is the only place to see and swap it.
 function SourceDetailThumbnail({
   source,
   objectUrl,
@@ -123,13 +129,23 @@ function SourceDetailThumbnail({
           onClick={replace.open}
           className="group flex size-full items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
-          {objectUrl && (
-            <img
-              src={objectUrl}
-              alt=""
-              className="absolute inset-0 size-full object-cover"
-            />
-          )}
+          {objectUrl &&
+            (isVideoMimeType(source.mimeType) ? (
+              <video
+                src={objectUrl}
+                muted
+                loop
+                autoPlay
+                playsInline
+                className="absolute inset-0 size-full object-cover motion-reduce:hidden"
+              />
+            ) : (
+              <img
+                src={objectUrl}
+                alt=""
+                className="absolute inset-0 size-full object-cover"
+              />
+            ))}
           <span
             className={cn(
               'relative flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-opacity',

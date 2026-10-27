@@ -20,6 +20,7 @@ The local database under every feature. Records go in IndexedDB, and media files
 - **2026-10 — One database per account**, chosen by `getStorageAccount()` when the database opens. Separating whole databases is simpler and safer than filtering every query by user.
 - **v3 migration — `collectionId` became `collectionIds`**, and sources gained `name`, `url`, `note` and `tags`. The migration runs inside the upgrade transaction, so it all works or nothing changes.
 - **A `VersionError` opens the database at its current version** instead of failing. This happens when another tab or a newer build already upgraded it.
+- **2026-10 — Text sources added an optional `text` field to source records, with no migration.** No store or index changed, and old records simply have no `text`. The text body is kept in IndexedDB, not OPFS (see `sources.spec.md`).
 - **Writes that must agree share one transaction**, for example deleting a collection and trashing its sources.
 
 ## Rules for changes

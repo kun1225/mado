@@ -84,10 +84,10 @@ Each type gets its own card and detail view, the same facets and tags as other s
 - **2026-10 — Host the web app and the API on Cloudflare Workers (proposed).** One platform with R2, cheap for a side project. Postgres stays on a hosted service (Neon) and is reached through Hyperdrive. Confirm after the spike in [`plans/cloudflare-deploy-plan.md`](plans/cloudflare-deploy-plan.md).
 
 - **2026-10 — More file types, text first.** `.txt` and `.md` come first, then font, PDF and voice. See "More file types" above.
+- **2026-10 — Text sources live in IndexedDB, not OPFS.** The record keeps the text, so search can read it, and the one OPFS file is the optional thumbnail. In the cloud, the text goes into Postgres and the thumbnail into R2. See `sources.spec.md`.
 
 ## Open questions
 
-- Where text sources live: in OPFS like other files, or as text in IndexedDB so search can read them.
 - Canvas library: React Flow, tldraw or Excalidraw. See `canvas.spec.md`.
 - AI providers: Claude for vision, tagging and writing. AI images (phase 7) need a second provider.
 - Can people without an account comment on a shared link, or only view it?

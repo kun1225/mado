@@ -239,6 +239,24 @@ describe('detectPastedContent', () => {
     expect(detectPastedContent(data)).toEqual({ kind: 'ignored' });
   });
 
+  it('detects a Markdown file with no type', () => {
+    const file = createFile('brief.md', '');
+    const data = createClipboardData([
+      { kind: 'file', type: '', getAsFile: () => file },
+    ]);
+
+    expect(detectPastedContent(data)).toEqual({ kind: 'media', file });
+  });
+
+  it('ignores an HTML file', () => {
+    const file = createFile('page.html', 'text/html');
+    const data = createClipboardData([
+      { kind: 'file', type: 'text/html', getAsFile: () => file },
+    ]);
+
+    expect(detectPastedContent(data)).toEqual({ kind: 'ignored' });
+  });
+
   it('ignores unsupported files', () => {
     const file = createFile('document.pdf', 'application/pdf');
     const data = createClipboardData([

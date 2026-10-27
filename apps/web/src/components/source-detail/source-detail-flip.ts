@@ -1,4 +1,5 @@
 import type {
+  SourceDetailFlipAnchor,
   SourceDetailFlipBox,
   SourceDetailFlipDirection,
 } from './source-detail-flip.type';
@@ -28,12 +29,14 @@ export function flipSourceDetail({
   sourceId,
   aspectRatio,
   direction,
+  anchor = 'center',
 }: {
   media: HTMLElement;
   sourceId: string;
   /** Width / height of the picture, which `object-contain` letterboxes inside `media`. */
   aspectRatio: number | null;
   direction: SourceDetailFlipDirection;
+  anchor?: SourceDetailFlipAnchor;
 }): boolean {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches)
     return false;
@@ -56,6 +59,7 @@ export function flipSourceDetail({
     media: mediaBox,
     content,
     tileRadius: parseFloat(getComputedStyle(tile).borderTopLeftRadius) || 0,
+    anchor,
   });
   const rest = {
     transformOrigin: at.transformOrigin,
@@ -154,11 +158,13 @@ function flipFrame({
   media,
   content,
   tileRadius,
+  anchor = 'center',
 }: {
   tile: SourceDetailFlipBox;
   media: SourceDetailFlipBox;
   content: SourceDetailFlipBox;
   tileRadius: number;
+  anchor?: SourceDetailFlipAnchor;
 }) {
   const scale = Math.max(
     tile.width / content.width,
@@ -167,7 +173,10 @@ function flipFrame({
   const clipWidth = tile.width / scale;
   const clipHeight = tile.height / scale;
   const originX = content.left - media.left + content.width / 2;
-  const originY = content.top - media.top + content.height / 2;
+  const originY =
+    content.top -
+    media.top +
+    (anchor === 'top' ? clipHeight / 2 : content.height / 2);
   const dx = tile.left + tile.width / 2 - (media.left + originX);
   const dy = tile.top + tile.height / 2 - (media.top + originY);
   const insetLeft = originX - clipWidth / 2;

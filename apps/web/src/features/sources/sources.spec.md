@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A source is one saved piece of inspiration: an image, a video, or a website.
+A source is one saved piece of inspiration: an image, a video, a website, or a text (`.txt`, `.md`).
 Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 
 **Depends on:** `storage`, `collections`. **Used by:** `collections`, `search`, `export`, `import`. See `apps/web/ARCHITECTURE.md`.
@@ -14,10 +14,19 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - Drop files on the library or on a collection card to add them there. Many files at once is fine; each one saves on its own, so one bad file does not lose the others.
 - While files are dragged over the library or a collection's grid, the grid shrinks a little behind a frosted veil that spans the full page width (the grid bleeds to the page edge), and a card in the middle of the visible part says "Add 3 files to Library" (or "Drop to add to …" for one file) with the size limit. With reduced motion on, nothing scales; the veil and card only fade.
 - Pasting a file or a URL adds it, unless the focus is in a text field.
-- Only images and videos, up to `MAX_FILE_MB`.
+- Only images, videos and text files (`.txt`, `.md`, `.markdown`), up to `MAX_FILE_MB`. Text files are limited to `MAX_TEXT_MB` (1 MB).
+- The kind comes from the MIME type, then the extension: many systems give `.md` no type. Other `text/*` files (HTML, CSV, code) are rejected.
 - A pasted URL becomes a website source with a preview. An X/Twitter post that has a video becomes a video source instead. If that download fails, it stays a website.
 - If the preview fails, the toast says why: the server cannot be reached, the link is not valid, the link points to a private or local address, or the website could not be loaded.
 - A whole folder can be imported from Settings → Data (see `import.spec.md`).
+
+### Text sources
+
+- The text lives in the record (`text: { body, format, fileName }`), not in OPFS. Like a website, its `storageKey` and media fields describe its optional **thumbnail**, an image or a video.
+- **Card:** only the first sentence, in a serif font, at most 4 lines. The first Markdown heading wins; otherwise the first sentence of the first line with words, with Markdown signs removed. No fixed shape: the card grows with its text. A thumbnail sits under the text, inset by 6 px with corners parallel to the card's.
+- **Detail dialog:** a paper sheet that scrolls. Markdown is drawn with GFM (tables, task lists); plain text keeps its line breaks. Raw HTML shows as text and never runs. Links open in a new tab with `rel="noreferrer"`. Remote images are never loaded; they show as a link with their alt text.
+- **Editing:** the Edit button or <kbd>E</kbd> turns the sheet into a text box with the raw text. Save with the button or <kbd>⌘/Ctrl+S</kbd>. Empty text or text over 1 MB can't be saved. With unsaved changes, Cancel, closing and moving to another source ask "Discard your changes?". Saving changes only the body, never the name, note, link or collections.
+- **Download** gives the text file, not the thumbnail.
 
 ### Compression
 
@@ -31,13 +40,14 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - Arrow keys move to the previous/next source, except while typing in a field.
 - Website sources that can be embedded show the live page in an iframe. Their stored image is a **thumbnail**, shown only in the details panel.
 - Websites that cannot be embedded show their image. With no image, the viewer offers "Add a file".
-- Opening an image or video grows it out of its grid card (FLIP), and closing shrinks it back into the card of the source shown last. Only the first source after opening flies; arrow keys swap without it. With no card on screen, a website, or reduced motion on, the dialog just fades.
+- Opening a source grows it out of its grid card (FLIP), and closing shrinks it back into the card of the source shown last. An image or video flies on its own; a text sheet flies from its top, so its first line lands where the card's was; an embedded website flies its whole frame, showing its thumbnail until the page loads. Only the first source after opening flies; arrow keys swap without it. With no card on screen or reduced motion on, the dialog just fades.
 
 ### Replacing the file
 
 - Use the toolbar button, the viewer's "Add a file" button, a drop on the viewer, or the panel thumbnail.
 - The name, note, link and collections never change.
-- A site that can be embedded stays a website, and only its thumbnail changes. Only images are allowed.
+- A site that can be embedded stays a website, and only its thumbnail changes. Images and videos are allowed.
+- A text stays a text. An image or video becomes its thumbnail; a `.txt` or `.md` replaces its text and keeps the thumbnail. A text file on any other kind is rejected.
 - A site that cannot be embedded turns into an image or video source and loses its `site` preview, but keeps its link.
 - Only one replace per source at a time. A second drop shows "Wait for the current replace to finish."
 - Dropping a file on the panel, the toolbar or the backdrop does nothing. It never replaces the file and never adds a new source.
@@ -72,6 +82,10 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **2026-10 — `useInView` shares one `IntersectionObserver` per option set**, because hundreds of cards each owning one is much slower.
 - **2026-10 — Drop feedback is "Stage": the grid sinks, a card steps forward.** Picked from a prototype round. Scale `0.96` from the center of the visible part, veil `bg/55` with a 4px blur, card scales `0.96 → 1`; enter `duration-slow`, exit `duration-base`, `ease-out-quart`. The spacing between the collection bar and the grid is the bar's `mb-5`, not padding on the drop zone, so the veil hugs the grid. Rejected: the old dashed border (it sat on the card edges and its pill covered the action dock), a cursor-following chip (easy to miss while looking at the grid), a top pill or label row (covered the first row of cards, and never says the size limit).
 - **2026-10 — The drop veil covers one screen, not the whole grid.** The veil sticks to the top of the screen inside a box the size of the grid, so the blur never covers more than one screen, even in a very tall library. The blur is only on while dragging, because an idle `backdrop-filter` still keeps a GPU layer alive. The file count is read on `dragenter` of the drop zone only until the drag is active, not on every element in the window. The card and the scale origin follow scroll once per frame while dragging.
+- **2026-10 — Text lives in the record, not in OPFS.** A text source needs the one file slot for its thumbnail, like a website. The card can show its first sentence on first paint with no file read, which `masonry-layout` needs for the right height. Search can read it later, and when sources move to the cloud (Postgres + R2), the text goes into a Postgres column and only the thumbnail goes to R2.
+- **2026-10 — Plain editing, not a rich editor.** A text box with the raw Markdown keeps the file the user downloads exactly as they typed it. A rich editor is a big dependency and can change the Markdown when it writes it back.
+- **2026-10 — Markdown with `react-markdown` + `remark-gfm`, without `rehype-raw`.** It never turns raw HTML into elements and drops `javascript:` links, so no sanitizer is needed.
+- **2026-10 — Thumbnails can be videos.** The card, panel and viewer pick `<video>` or `<img>` from the thumbnail's `mimeType`, not from the source's kind.
 - **2026-10 — Tags are removed from the UI.** A source can be in many collections, so tags were a second way to group the same things, and nothing read them (no search, no filter). The `tags` field stays on the record, always `[]` for new sources, so old data and old exports still load without a migration. Bring tags back only with a way to use them, such as filtering inside a collection.
 
 ## Known gaps
@@ -82,7 +96,8 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 
 ## Planned
 
-- **More file types** (see "More file types" in `docs/roadmap.md`). Text (`.txt`, `.md`) first, then font, PDF and voice. Today only images, videos and websites are accepted.
+- **More file types** (see "More file types" in `docs/roadmap.md`). Text (`.txt`, `.md`) is done; font, PDF and voice come next.
+- **Text sources, later:** search inside the text, a way to remove a thumbnail, a "new note" with no file, and files that are not UTF-8 (today they show broken letters).
 - **Drop a folder.** Dropping a folder on the library runs the same import as Settings → Data (see `import.spec.md`). It needs `webkitGetAsEntry` to read the folder from the drop.
 - **A more fun embed loading state.** While an embedded site loads in the detail dialog, show something friendly and human instead of a plain wait. Idea: two drawn eyes that look around, as if searching for the page.
 - **Copy an image to paste in Figma** (roadmap phase 0, small enough to ship before or with the launch). Cmd/Ctrl+C on a selected card, or a "Copy image" button in the detail dialog, puts the image on the clipboard. Pasting in Figma (or Slack, Keynote, Docs) gives the picture.

@@ -1,0 +1,1462 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mado · Text source plan</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: light-dark(#f6f6f3, #181919);
+        --surface: light-dark(#fff, #222424);
+        --fg: light-dark(#242727, #edf0ee);
+        --muted: light-dark(#59615c, #b2bcb5);
+        --line: light-dark(#d5dad6, #404842);
+        --accent: light-dark(#256044, #9bd4ae);
+        --card: light-dark(#ecedea, #2a2c2b);
+        --scrim: light-dark(#1c1e1d, #0d0e0e);
+        --serif:
+          'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          16px/1.65 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 1060px;
+        margin: auto;
+        padding: 48px 24px 80px;
+      }
+      header {
+        padding-bottom: 24px;
+        border-bottom: 2px solid var(--fg);
+      }
+      h1 {
+        font-size: clamp(34px, 6vw, 58px);
+        line-height: 1.1;
+        letter-spacing: -0.04em;
+        margin: 12px 0;
+      }
+      h2 {
+        margin: 48px 0 12px;
+        font-size: 25px;
+      }
+      h3 {
+        font-size: 18px;
+        margin: 28px 0 8px;
+      }
+      p {
+        max-width: 68ch;
+      }
+      .lead {
+        font-size: 20px;
+        color: var(--muted);
+      }
+      .tag {
+        font-size: 12px;
+        letter-spacing: 0.13em;
+        color: var(--accent);
+        font-weight: 700;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        padding-top: 20px;
+      }
+      a {
+        color: var(--accent);
+        text-underline-offset: 4px;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        vertical-align: top;
+        padding: 12px;
+        border-bottom: 1px solid var(--line);
+      }
+      code {
+        font-size: 0.9em;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        padding: 20px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      li {
+        margin: 8px 0;
+      }
+      .callout {
+        padding: 18px 20px;
+        border-left: 4px solid var(--accent);
+        background: var(--surface);
+        border-radius: 0 8px 8px 0;
+      }
+      .callout p {
+        margin: 6px 0;
+      }
+      .new {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        padding: 1px 6px;
+        border-radius: 4px;
+        color: var(--surface);
+        background: var(--accent);
+        vertical-align: 2px;
+      }
+      .options {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      .option {
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        border-radius: 8px;
+      }
+      .option.pick {
+        border: 2px solid var(--accent);
+      }
+      .option h3 {
+        margin-top: 0;
+      }
+      .option ul {
+        padding-left: 18px;
+        margin: 0;
+      }
+
+      /* Mockups */
+      .mock-grid {
+        columns: 4 180px;
+        column-gap: 12px;
+        padding: 16px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      .mock-grid > * {
+        break-inside: avoid;
+        margin-bottom: 12px;
+      }
+      .mock-img {
+        border-radius: 12px;
+        background: linear-gradient(135deg, #c9b8a0, #6f7f74);
+      }
+      .mock-text {
+        padding: 16px;
+        border-radius: 12px;
+        background: var(--card);
+      }
+      .mock-text .title {
+        margin: 0;
+        font: 21px/1.25 var(--serif);
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .mock-text.has-cover {
+        padding-bottom: 8px;
+      }
+      /* 8px inset, inner radius = 12 - 8, like the Focus Frame logo. */
+      .mock-text .cover {
+        margin: 14px -8px 0;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .mock-text .cover div {
+        aspect-ratio: 4 / 3;
+        background: linear-gradient(160deg, #4a6a72, #c7d3cf 60%, #6b5844);
+      }
+      .mock-text .cover .play {
+        display: block;
+        aspect-ratio: 16 / 9;
+        background: linear-gradient(160deg, #31343b, #8a6f5a);
+      }
+      .mock-site {
+        overflow: hidden;
+        border-radius: 12px;
+        background: var(--card);
+      }
+      .mock-site .play {
+        position: relative;
+        aspect-ratio: 16 / 10;
+        background: linear-gradient(135deg, #273246, #b48b66);
+      }
+      .mock-site .play::after,
+      .mock-text .cover .play::after {
+        content: '▶';
+        position: absolute;
+        right: 8px;
+        bottom: 6px;
+        font-size: 10px;
+        color: #fff;
+        opacity: 0.8;
+      }
+      .mock-text .cover .play {
+        position: relative;
+      }
+      .mock-site p {
+        margin: 0;
+        padding: 10px 12px;
+        font-size: 12px;
+      }
+      .mock-label {
+        margin: 8px 0 4px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .mock-dialog {
+        display: grid;
+        grid-template-columns: 1fr 220px;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 12px;
+        background: var(--scrim);
+        color: #edf0ee;
+        font-size: 13px;
+      }
+      .mock-bar {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 12px;
+        opacity: 0.85;
+      }
+      .mock-bar span {
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: #ffffff1a;
+      }
+      .mock-bar .primary {
+        background: #9bd4ae;
+        color: #181919;
+      }
+      .mock-sheet {
+        max-height: 300px;
+        overflow: hidden;
+        padding: 28px 32px;
+        border-radius: 12px;
+        background: #f3f3f0;
+        color: #242727;
+        line-height: 1.6;
+      }
+      .mock-sheet h4 {
+        margin: 0 0 10px;
+        font: 26px/1.2 var(--serif);
+      }
+      .mock-sheet p,
+      .mock-sheet ul {
+        margin: 0 0 10px;
+      }
+      .mock-sheet textarea {
+        width: 100%;
+        height: 240px;
+        border: 0;
+        resize: none;
+        background: transparent;
+        color: inherit;
+        font:
+          13px/1.6 ui-monospace,
+          monospace;
+      }
+      .mock-panel {
+        padding: 12px;
+        border-radius: 8px;
+        background: #ffffff12;
+        font-size: 12px;
+      }
+      .mock-panel p {
+        margin: 0 0 8px;
+      }
+      .mock-panel .thumb {
+        aspect-ratio: 4 / 3;
+        margin-bottom: 10px;
+        border-radius: 6px;
+        background: linear-gradient(160deg, #4a6a72, #c7d3cf 60%, #6b5844);
+      }
+      .flip {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr auto 1fr;
+        gap: 10px;
+        align-items: center;
+        padding: 16px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        font-size: 13px;
+      }
+      .flip .arrow {
+        color: var(--muted);
+      }
+      .flip .box {
+        padding: 10px;
+        border: 1px dashed var(--line);
+        border-radius: 8px;
+      }
+      @media (max-width: 760px) {
+        .options,
+        .mock-dialog {
+          grid-template-columns: 1fr;
+        }
+        .flip {
+          grid-template-columns: 1fr;
+        }
+        .flip .arrow {
+          transform: rotate(90deg);
+          justify-self: center;
+        }
+        th,
+        td {
+          padding: 8px;
+          font-size: 14px;
+        }
+      }
+      @media print {
+        main {
+          max-width: none;
+          padding: 0;
+        }
+        nav {
+          display: none;
+        }
+        pre,
+        tr {
+          break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="tag">MADO · IMPLEMENTATION PLAN · 27 OCT 2026 · v3</span>
+        <h1>Save words,<br />not just pictures.</h1>
+        <p class="lead">
+          Add <code>.txt</code> and <code>.md</code> files as a new
+          <code>text</code> source. The card shows the first sentence in a serif
+          font, with an optional image or video thumbnail. The detail dialog
+          shows the whole text. Text and website cards get the same FLIP as
+          images.
+        </p>
+        <p>
+          <strong>Scope:</strong> plan for review. App code has not been
+          changed. Priority 1 in “More file types” in
+          <code>docs/roadmap.md</code>.
+        </p>
+      </header>
+
+      <div class="callout" style="margin-top: 24px">
+        <p><strong>What changed</strong></p>
+        <p>
+          v2: 1. FLIP for website and text sources. 2. mymind-style card with no
+          fixed shape, plus an optional thumbnail with padding like the logo. 3.
+          Thumbnails of text and website sources can be videos.
+        </p>
+        <p>
+          v3: no icon on the card, only the text. The text stays in the record,
+          checked against the cloud plan (Postgres + R2). Export and import get
+          their own design and test list:
+          <a href="#roundtrip">Export &amp; import</a>.
+        </p>
+        <p>
+          Because a text source now has a thumbnail file, the
+          <strong>text moves into IndexedDB</strong> and the thumbnail takes the
+          OPFS slot. This is the same shape as a website source: the record
+          holds the content, and <code>storageKey</code> points to the
+          thumbnail. See <a href="#model">Data model</a>.
+        </p>
+      </div>
+
+      <nav>
+        <a href="#model">Data model</a> · <a href="#behavior">Behavior</a> ·
+        <a href="#mockups">Card &amp; dialog</a> · <a href="#flip">FLIP</a> ·
+        <a href="#decision">Edit or not?</a> ·
+        <a href="#roundtrip">Export &amp; import</a> ·
+        <a href="#files">Files</a> · <a href="#reuse">Reuse</a> ·
+        <a href="#flow">Flow</a> · <a href="#code">Pseudocode</a> ·
+        <a href="#tests">Verification</a>
+      </nav>
+
+      <section id="model">
+        <h2>1. Data model <span class="new">NEW</span></h2>
+        <pre>
+// features/sources/text-source.type.ts
+export type TextSourceContent = {
+  body: string;                      // the whole file, ≤ 1 MB
+  format: 'markdown' | 'plain';
+  fileName: string;                  // "brief.md", for download and export
+};
+
+// source-types.ts
+Source.kind: 'image' | 'video' | 'website' | 'text'
+Source.text?: TextSourceContent      // only on text sources, like `site`
+
+// For website AND text, the media fields describe the thumbnail:
+storageKey, fileName, mimeType, sizeBytes, width, height, durationSeconds
+// null / '' / 0 when there is no thumbnail.</pre>
+        <h3>Why the text lives in IndexedDB</h3>
+        <ul>
+          <li>
+            <strong>One file slot per source.</strong> The thumbnail needs
+            <code>storageKey</code>. Putting the text in the record keeps one
+            OPFS file per source, so delete, trash, compression and replace do
+            not need a second key.
+          </li>
+          <li>
+            <strong>Same shape as websites.</strong> “Content in the record,
+            optional thumbnail in OPFS” is already how websites work. Card,
+            panel and replace can share that path.
+          </li>
+          <li>
+            <strong>The card shows its text at once.</strong> No async file
+            read, so the card has its final height on first paint. That matters
+            because <code>masonry-layout</code> measures card heights.
+          </li>
+          <li>
+            <strong>Search can read it later</strong> with no extra copy. This
+            answers the roadmap open question “where text sources live”.
+          </li>
+          <li>
+            <strong>It fits the cloud plan.</strong> Phase 3 uses Postgres
+            (Neon) for records and R2 for media. When a source is uploaded, the
+            text goes into a Postgres <code>text</code> column with the rest of
+            the record, and only the thumbnail goes to R2. Postgres can search
+            that column, and a 1 MB value is fine there. If the text were in
+            OPFS, the upload would have to send it to R2 first and then read it
+            back to search it.
+          </li>
+          <li>
+            Cost: 1 MB per text in IndexedDB is fine. No
+            <code>DATABASE_VERSION</code> bump, because no store or index
+            changes. <code>text</code> is a new optional field, like
+            <code>site</code>.
+          </li>
+        </ul>
+      </section>
+
+      <section id="behavior">
+        <h2>2. User behavior</h2>
+        <h3>Adding</h3>
+        <ul>
+          <li>
+            Drop, pick, paste a file, or import a folder:
+            <code>.txt</code>, <code>.md</code>, <code>.markdown</code> become
+            <code>text</code> sources. The kind is chosen by MIME type, then by
+            file extension, because many systems give <code>.md</code> an empty
+            type.
+          </li>
+          <li>
+            Other <code>text/*</code> files (HTML, CSV, code) are still
+            rejected.
+          </li>
+          <li>
+            Limit is <strong>1 MB</strong> for text (about 500 pages), not 512
+            MB. Too big shows the usual reject toast.
+          </li>
+          <li>
+            Files are read as UTF-8. Name = file name without the extension. No
+            thumbnail at first.
+          </li>
+        </ul>
+
+        <h3>Card <span class="new">NEW</span></h3>
+        <ul>
+          <li>
+            Like mymind: a soft card with only the
+            <strong>first sentence in a serif font</strong>, at most 4 lines
+            with “…”. No icon and no label.
+          </li>
+          <li>
+            <strong>No fixed shape.</strong> The height follows the text, so a
+            short note is a short card.
+          </li>
+          <li>
+            The first sentence is the first Markdown heading, or else the first
+            sentence of the first line that has words. Markdown signs
+            (<code>#</code>, <code>**</code>, <code>[]()</code>, list dashes)
+            are removed. If nothing is left, the source name is shown.
+          </li>
+          <li>
+            <strong>With a thumbnail:</strong> the image or video sits under the
+            text, inset by <strong>8 px</strong> on the sides and bottom. The
+            inner corner is the outer radius minus 8 px, so the corners stay
+            parallel, like the Focus Frame logo. The thumbnail keeps its own
+            aspect ratio.
+          </li>
+          <li>
+            A video thumbnail plays when half of it is on screen, like video
+            cards. Far cards unmount it.
+          </li>
+        </ul>
+
+        <h3>Thumbnails for text and websites <span class="new">NEW</span></h3>
+        <ul>
+          <li>
+            A text source can get a thumbnail: <strong>image or video</strong>.
+            Use the same ways as website thumbnails: the panel thumbnail, the
+            toolbar, or a drop on the viewer.
+          </li>
+          <li>
+            Embeddable website thumbnails now also accept
+            <strong>video</strong>. Today they allow only images.
+          </li>
+          <li>
+            A text source never changes kind on replace:
+            <ul>
+              <li>An image or video sets the thumbnail.</li>
+              <li>
+                A <code>.md</code>/<code>.txt</code> replaces the text. Name,
+                note, link and collections stay.
+              </li>
+            </ul>
+          </li>
+          <li>
+            Thumbnails are compressed like other media: images to WebP, videos
+            with mediabunny.
+          </li>
+          <li>
+            Websites that cannot be embedded keep today’s rule: a dropped file
+            turns them into an image or video source.
+          </li>
+          <li>
+            Removing a thumbnail is not part of this plan. Replacing it works.
+          </li>
+        </ul>
+
+        <h3>Detail dialog</h3>
+        <ul>
+          <li>
+            The viewer shows a paper sheet about 70 characters wide that
+            scrolls. Headings use the same serif as the card.
+            <code>.md</code> is drawn with GFM (tables, task lists, code).
+            <code>.txt</code> keeps its line breaks.
+          </li>
+          <li>
+            Safe by default: raw HTML is shown as text, never run. Links open in
+            a new tab with <code>rel="noreferrer"</code>. Remote images are not
+            loaded; they show as links with their alt text. Loading them would
+            tell other servers what the user opened.
+          </li>
+          <li>
+            The panel shows the thumbnail, like websites. It plays a video
+            thumbnail muted and looping. Info line:
+            <code>Markdown · 12 KB</code>.
+          </li>
+          <li>
+            Download gives the text file, built from the record. It does not
+            give the thumbnail.
+          </li>
+        </ul>
+
+        <h3>Export and import</h3>
+        <p>
+          Short version here. Details and tests are in
+          <a href="#roundtrip">Export &amp; import</a>.
+        </p>
+      </section>
+
+      <section id="roundtrip">
+        <h2>Export &amp; import with text <span class="new">NEW</span></h2>
+        <p>
+          Today export and import know only images, videos and websites. Three
+          places would break a text source without changes:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Place</th>
+                <th>Today</th>
+                <th>What breaks</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>export-manifest.ts</code></td>
+                <td>
+                  <code>kind: z.enum(['image','video','website'])</code>,
+                  <code>role: z.enum(['media','shortcut'])</code>
+                </td>
+                <td>
+                  A <code>library.json</code> with a text source fails to parse.
+                  Import then falls back to the plain-folder rule, and every id
+                  and nesting is lost.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code>export-layout.ts</code> <code>toSourceFiles</code>
+                </td>
+                <td>
+                  Writes only <code>shortcut</code> and <code>media</code>
+                </td>
+                <td>The text body is never written. The export loses it.</td>
+              </tr>
+              <tr>
+                <td><code>import-plan.ts</code> <code>toManifestPlan</code></td>
+                <td>
+                  <code>if (!file &amp;&amp; kind !== 'website') skip</code>
+                </td>
+                <td>
+                  A text source with no thumbnail has no media file, so it is
+                  skipped.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>Design</h3>
+        <ul>
+          <li>
+            <strong
+              >The <code>.md</code>/<code>.txt</code> file is the truth.</strong
+            >
+            Export writes the body as a file with the new role
+            <code>'text'</code>. <code>library.json</code> stores only
+            <code>text: { format, fileName }</code>, not the body, so the text
+            is not saved twice. If a user edits <code>brief.md</code> in the
+            unzipped folder, import picks up that edit.
+          </li>
+          <li>
+            File names: the text file uses the source name plus the original
+            extension: <code>Brand brief.md</code>. A thumbnail uses the same
+            name with its own extension: <code>Brand brief.webp</code>. The
+            existing name registry already keeps names unique in each folder.
+          </li>
+          <li>
+            Import: <code>findTextFile</code> finds the
+            <code>'text'</code> file, like <code>findMediaFile</code>. A text
+            record with no text file is skipped and counted. A missing thumbnail
+            only drops the thumbnail, like websites.
+          </li>
+          <li>
+            <code>buildImportPlan</code> stays pure and does not read files. The
+            record item carries <code>textFile</code>, and
+            <code>import-actions</code> reads <code>textFile.text()</code>
+            just before it saves. A body that is empty or over 1 MB is skipped.
+          </li>
+          <li>
+            <code>EXPORT_MANIFEST_VERSION</code> goes up by one. A new export
+            opened in an old Mado fails the manifest parse and falls back to a
+            plain-folder import. That is the expected behavior for a newer
+            format. Old exports still import with no change.
+          </li>
+          <li>
+            Plain folder import: <code>.md</code>, <code>.markdown</code> and
+            <code>.txt</code> become text sources through
+            <code>createSource</code>. Other text files are counted as skipped.
+          </li>
+        </ul>
+        <h3>Tests that prove it still works</h3>
+        <p>
+          Write these first; they must fail before the change and pass after.
+          Existing image, video and website tests must stay green.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>File</th>
+                <th>Test</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td rowspan="3"><code>export-layout.test.ts</code></td>
+                <td>
+                  A text source writes a <code>'text'</code> file whose content
+                  is the body, named <code>&lt;name&gt;.md</code> (or
+                  <code>.txt</code> for plain).
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  A text source with a video thumbnail writes the text file and
+                  a <code>.mp4</code>. Both are listed in the manifest with the
+                  right roles.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  A text source in two collections is written in both folders.
+                  The manifest has <code>kind: "text"</code> and
+                  <code>text</code> without <code>body</code>, and it passes
+                  <code>exportManifestSchema</code>.
+                </td>
+              </tr>
+              <tr>
+                <td rowspan="5"><code>import-plan.test.ts</code></td>
+                <td>
+                  A manifest text source with its file makes a record item with
+                  the same id, collections, name, note and
+                  <code>textFile</code>.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  A text source whose text file is gone is skipped and counted.
+                  If only the thumbnail is gone, it is kept with
+                  <code>storageKey: null</code>.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  An old-version manifest (no text kind) still builds the same
+                  plan as today.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  Plain folder: <code>a.md</code> (with an empty MIME type),
+                  <code>b.txt</code> and <code>c.markdown</code> become file
+                  items. <code>d.html</code> and <code>e.csv</code> are skipped.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  Paths in NFD still match the text file, like media files.
+                </td>
+              </tr>
+              <tr>
+                <td rowspan="3"><code>import-actions.test.ts</code></td>
+                <td>
+                  <strong>Round trip:</strong> save text sources (Markdown,
+                  plain, one with an image thumbnail), run export into a fake
+                  folder, clear the library, import that folder. The records are
+                  deep-equal, ignoring <code>storageKey</code>. The bodies and
+                  thumbnail bytes are the same. Include Unicode and emoji in the
+                  body and the name.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  Importing the same export twice adds nothing the second time.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  A text file edited in the folder before import → the edited
+                  body is saved.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          By hand: export a real library with text sources, unzip it, open
+          <code>Brand brief.md</code> in a text editor (it reads normally), then
+          import it into a new guest account and compare.
+        </p>
+      </section>
+
+      <section id="mockups">
+        <h2>3. Card and dialog</h2>
+        <p class="mock-label">
+          Grid: text cards (with and without a thumbnail), a website with a
+          video thumbnail, images
+        </p>
+        <div class="mock-grid" aria-hidden="true">
+          <div class="mock-text">
+            <p class="title">
+              Natural cold plunges are the latest wellness ritual…
+            </p>
+          </div>
+          <div class="mock-img" style="aspect-ratio: 3/4"></div>
+          <div class="mock-text has-cover">
+            <p class="title">Brand brief — Oaks Coffee</p>
+            <div class="cover"><div></div></div>
+          </div>
+          <div class="mock-site">
+            <div class="play"></div>
+            <p>stripe.com · Sessions 2026</p>
+          </div>
+          <div class="mock-text">
+            <p class="title">
+              If you hit the wrong note, it’s the next note that you play that
+              determines if it’s good or bad.
+            </p>
+          </div>
+          <div
+            class="mock-img"
+            style="
+              aspect-ratio: 1/1;
+              background: linear-gradient(135deg, #2d3a4a, #9fb2c4);
+            "
+          ></div>
+          <div class="mock-text has-cover">
+            <p class="title">Call notes: she liked the second palette more.</p>
+            <div class="cover"><span class="play"></span></div>
+          </div>
+        </div>
+
+        <p class="mock-label" style="margin-top: 24px">Dialog: reading</p>
+        <div class="mock-dialog" aria-hidden="true">
+          <div class="mock-bar">
+            <span>‹ 3 / 24 ›</span>
+            <span>Edit · Replace thumbnail · Download · ✕</span>
+          </div>
+          <div class="mock-sheet">
+            <h4>Brand brief — Oaks Coffee</h4>
+            <p>
+              Warm, slow, a little bookish. Feels like the corner table, not the
+              to-go line.
+            </p>
+            <ul>
+              <li><strong>Audience:</strong> 25–40, remote workers</li>
+              <li><strong>Avoid:</strong> neon, “hustle” copy</li>
+              <li><strong>Words:</strong> grounded, honest, steady</li>
+            </ul>
+          </div>
+          <div class="mock-panel">
+            <div class="thumb"></div>
+            <p><strong>Brand brief</strong></p>
+            <p style="color: #b2bcb5">Markdown · 2 KB</p>
+            <p>Note · Link · Collections</p>
+          </div>
+        </div>
+
+        <p class="mock-label" style="margin-top: 24px">Dialog: editing</p>
+        <div class="mock-dialog" aria-hidden="true">
+          <div class="mock-bar">
+            <span>Editing · unsaved</span>
+            <span>Cancel <span class="primary">Save ⌘S</span></span>
+          </div>
+          <div class="mock-sheet">
+            <textarea readonly tabindex="-1">
+# Brand brief — Oaks Coffee
+
+Warm, slow, a little bookish. Feels like the corner table, not the to-go line.
+
+- **Audience:** 25–40, remote workers
+- **Avoid:** neon, "hustle" copy</textarea>
+          </div>
+          <div class="mock-panel">
+            <div class="thumb"></div>
+            <p><strong>Brand brief</strong></p>
+            <p style="color: #b2bcb5">Markdown · 2 KB</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="flip">
+        <h2>4. FLIP for text and websites <span class="new">NEW</span></h2>
+        <p>
+          Today only image and video fly; text and websites just fade. The
+          existing <code>flipSourceDetail</code> already works for any element:
+          it scales the viewer element by one number until it covers the card,
+          then uses <code>clip-path</code> to cut it to the card’s shape. Images
+          and videos pass their aspect ratio. Text and websites pass
+          <code>null</code>, so the whole element box is used.
+        </p>
+        <div class="flip" aria-hidden="true">
+          <div class="box">
+            <strong>Text</strong><br />fly the <em>sheet</em>. Anchor the
+            <strong>top</strong>, so the serif first line on the card turns into
+            the serif heading.
+          </div>
+          <span class="arrow">→</span>
+          <div class="box">
+            <strong>Website (embedded)</strong><br />fly the frame. Until the
+            iframe loads, the frame shows the thumbnail, so the flight carries
+            the picture and not an empty box.
+          </div>
+          <span class="arrow">→</span>
+          <div class="box">
+            <strong>Website (not embedded)</strong><br />fly the image or video,
+            the same as an image source.
+          </div>
+        </div>
+        <ul>
+          <li>
+            <code>flipSourceDetail</code> gets an
+            <code>anchor: 'center' | 'top'</code> option. Today the origin is
+            the center. For a tall sheet, a centered flight would show the
+            middle of the text in the card, and the card shows the start.
+          </li>
+          <li>
+            The frame waits for the iframe’s <code>onLoad</code>. Then it
+            crossfades from the thumbnail to the live page. A website with no
+            thumbnail flies a plain muted box.
+          </li>
+          <li>
+            The same rules stay: only the first source after opening flies,
+            arrow keys swap without it, close shrinks back into the card, and
+            reduced motion or no card on screen means a plain fade.
+          </li>
+          <li>
+            Spec: replace “With no card on screen, a website, or reduced motion
+            on, the dialog just fades” with the new rule.
+          </li>
+        </ul>
+      </section>
+
+      <section id="decision">
+        <h2>5. Should people edit text in Mado?</h2>
+        <div class="callout">
+          <p>
+            <strong>My pick is still option B, plain edit.</strong> With the
+            text in IndexedDB it is even smaller now: Save is one record update,
+            not a file replace. It is the last step, so it can be cut.
+          </p>
+          <p class="muted">
+            Your call. Nothing else in the plan depends on it.
+          </p>
+        </div>
+        <div class="options" style="margin-top: 16px">
+          <div class="option">
+            <h3>A · Read only</h3>
+            <ul>
+              <li>
+                To change the text, edit it elsewhere and drop the file again.
+              </li>
+              <li>
+                Cheapest, but fixing one typo in a brief means leaving Mado.
+              </li>
+            </ul>
+          </div>
+          <div class="option pick">
+            <h3>B · Plain edit ✓</h3>
+            <ul>
+              <li>
+                <strong>Edit</strong> (or <kbd>E</kbd>) turns the sheet into a
+                text box with the raw text. Save with <kbd>⌘/Ctrl+S</kbd>, or
+                Cancel.
+              </li>
+              <li>
+                Save calls <code>updateSourceText</code>, one IndexedDB write.
+              </li>
+              <li>
+                With unsaved changes, close, Cancel and the arrow keys ask
+                “Discard your changes?”.
+              </li>
+            </ul>
+          </div>
+          <div class="option">
+            <h3>C · Rich editor</h3>
+            <ul>
+              <li>Tiptap or Milkdown. A big new dependency.</li>
+              <li>
+                Turning the page back into Markdown can change the user’s file.
+              </li>
+            </ul>
+          </div>
+        </div>
+        <p>
+          Rules for B: empty text cannot be saved. Over 1 MB shows an error.
+          Name, note, link and collections never change. A save error keeps the
+          draft and shows a toast. Two tabs: the last save wins.
+        </p>
+      </section>
+
+      <section id="files">
+        <h2>6. Functions and files</h2>
+        <p>
+          Paths are relative to <code>apps/web/src/</code>. New dependencies:
+          <code>react-markdown</code> and <code>remark-gfm</code>. Without
+          <code>rehype-raw</code>, they never render raw HTML.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>File</th>
+                <th>Planned change</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>features/sources/text-source.type.ts</code> · new</td>
+                <td><code>TextSourceContent</code>.</td>
+              </tr>
+              <tr>
+                <td><code>features/sources/source-types.ts</code></td>
+                <td>
+                  <code>sourceKindSchema</code> →
+                  <code>image | video | text</code>. <code>Source.text?</code>.
+                  <code>MAX_TEXT_BYTES</code>, <code>TEXT_FILE_TYPES</code>. New
+                  <code>isVideoMimeType(type)</code>.
+                </td>
+              </tr>
+              <tr>
+                <td><code>features/sources/text-source.ts</code> · new</td>
+                <td>
+                  <code>toTextCardTitle(text, fallback)</code>: the first
+                  sentence with Markdown signs removed. Pure, unit tested.
+                  <code>toTextFile(text)</code> builds the <code>File</code> for
+                  download and export.
+                </td>
+              </tr>
+              <tr>
+                <td><code>features/sources/source-media.ts</code></td>
+                <td>
+                  <code>detectFileKind(file)</code> →
+                  <code>image | video | text | null</code>.
+                  <code>ACCEPTED_FILE_TYPES</code> adds the text types.
+                  <code>getPastedMediaFile</code> uses
+                  <code>detectFileKind</code>.
+                  <code>downloadSource</code> downloads the text for text
+                  sources.
+                </td>
+              </tr>
+              <tr>
+                <td><code>features/sources/source-actions.ts</code></td>
+                <td>
+                  <code>createSource</code> sends text to a new private
+                  <code>createTextSource</code>. <code>replaceSourceFile</code>:
+                  a text file on a text source calls
+                  <code>replaceSourceText</code>.
+                  <code>toReplacementKind</code> keeps <code>text</code>, and
+                  lets an embedded <code>website</code> take image
+                  <em>or</em> video. <code>saveReplacedFile</code> keeps
+                  <code>text</code> like it keeps <code>site</code>.
+                  <code>toStoredMediaKind</code> reads the thumbnail’s
+                  <code>mimeType</code> instead of assuming an image. New
+                  <code>updateSourceText(id, body)</code>.
+                </td>
+              </tr>
+              <tr>
+                <td><code>features/sources/hooks/source-hooks.ts</code></td>
+                <td>
+                  <code>useUpdateSourceText()</code>. The thumbnail uses the
+                  existing replace hook.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code
+                    >features/sources/hooks/source-interaction-hooks.ts</code
+                  >
+                </td>
+                <td>
+                  <code>DROP_ACCEPT</code> adds
+                  <code
+                    >{'text/plain': ['.txt'], 'text/markdown': ['.md',
+                    '.markdown']}</code
+                  >.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code>features/import/import-plan.ts</code>,
+                  <code>import-actions.ts</code>
+                </td>
+                <td>
+                  <code>isImportableMedia</code> uses
+                  <code>detectFileKind</code> and the per-kind limit. New
+                  private <code>findTextFile</code>; a record item carries
+                  <code>textFile</code>. <code>import-actions</code> reads the
+                  body before it saves. See
+                  <a href="#roundtrip">Export &amp; import</a>.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code>features/export/export-manifest.ts</code>,
+                  <code>export.type.ts</code>, <code>import.type.ts</code>
+                </td>
+                <td>
+                  Add the <code>'text'</code> kind and the
+                  <code>'text'</code> role, plus
+                  <code>text: { format, fileName }</code> with no body. Raise
+                  <code>EXPORT_MANIFEST_VERSION</code>. Add
+                  <code>textFile</code> to the record item.
+                </td>
+              </tr>
+              <tr>
+                <td><code>features/export/export-layout.ts</code></td>
+                <td>
+                  A new <code>'text'</code> export file, built from
+                  <code>text.body</code>, like the <code>shortcut</code> one.
+                  The thumbnail is written as <code>media</code>.
+                </td>
+              </tr>
+              <tr>
+                <td><code>components/source-text.tsx</code> · new</td>
+                <td>
+                  <code>SourceTextDocument({ text })</code>: the Markdown or
+                  plain page, with safe <code>a</code> and <code>img</code>.
+                </td>
+              </tr>
+              <tr>
+                <td><code>components/source-card.tsx</code></td>
+                <td>
+                  No <code>aspectRatio</code> for text. New
+                  <code>SourceCardTextTile</code> (serif title only, optional
+                  inset thumbnail through <code>SourceCardMedia</code>). Video
+                  or image is chosen by <code>isVideoMimeType</code>, not by
+                  <code>kind</code>, so website and text thumbnails can play.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code>components/source-detail/source-detail-text.tsx</code> ·
+                  new
+                </td>
+                <td>
+                  <code>SourceDetailTextViewer</code> (sheet + edit mode, takes
+                  <code>mediaRef</code> for FLIP), and a private
+                  <code>SourceDetailTextEditor</code>.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code>components/source-detail/source-detail-dialog.tsx</code>
+                </td>
+                <td>
+                  The viewer handles text. The website frame gets
+                  <code>mediaRef</code> and a thumbnail placeholder. A
+                  non-embedded website plays a video thumbnail. Pass
+                  <code>anchor</code> and a <code>null</code> ratio for text and
+                  sites. Guard close and arrow keys when the draft is dirty.
+                  Toolbar: Edit, Replace thumbnail.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code>components/source-detail/source-detail-flip.ts</code>
+                </td>
+                <td>
+                  <code>anchor</code> option. <code>flipFrame</code> puts the
+                  origin at <code>content.top</code> when the anchor is
+                  <code>'top'</code>.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code>components/source-detail/source-detail-panel.tsx</code>
+                </td>
+                <td>
+                  The thumbnail shows for text too, and plays when it is a
+                  video. Its file input accepts <code>image/*,video/*</code>.
+                  <code>describe</code> shows Markdown / Text.
+                </td>
+              </tr>
+              <tr>
+                <td>Docs</td>
+                <td>
+                  <code>sources.spec.md</code> (adding, card, thumbnails, FLIP
+                  rule, decisions), <code>import.spec.md</code>,
+                  <code>export.spec.md</code>, <code>storage.spec.md</code> (new
+                  optional field), <code>ARCHITECTURE.md</code> (new deps), and
+                  the roadmap open question.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="reuse">
+        <h2>7. Reuse</h2>
+        <ul>
+          <li>
+            The website model: content in the record, thumbnail in
+            <code>storageKey</code>. Text copies it.
+          </li>
+          <li>
+            <code>replaceSourceFile</code>, <code>saveReplacedFile</code> and
+            the one-replace-at-a-time lock, for thumbnails.
+          </li>
+          <li>
+            <code>compressSource</code> / <code>runCompression</code> for
+            thumbnails, after the mime fix.
+          </li>
+          <li>
+            <code>SourceCardMedia</code>, <code>SourceCardVideo</code>, and
+            <code>useInView</code> near/far, for the inset thumbnail.
+          </li>
+          <li>
+            <code>flipSourceDetail</code>, <code>findVisibleCard</code>, and the
+            fade of the toolbar and panel (<code>data-flip-chrome</code>).
+          </li>
+          <li>
+            <code>SourceDetailThumbnail</code> in the panel, the export
+            <code>shortcut</code> pattern for a file built from text, and
+            <code>useCreateSources</code> / <code>SourceDropZone</code>.
+          </li>
+        </ul>
+      </section>
+
+      <section id="flow">
+        <h2>8. Data flow</h2>
+        <pre>
+Add a text file
+  File → detectFileKind = 'text' → createTextSource
+       → file.text() → { kind: 'text', text: { body, format, fileName }, storageKey: null }
+       → IndexedDB only
+
+Add a thumbnail (text or embedded website)
+  File (image | video) → replaceSourceFile → toReplacementKind keeps kind
+       → OPFS media/&lt;newKey&gt; + record media fields → compressSource
+
+Card
+  record → toTextCardTitle(text, name) → serif title
+         → storageKey ? inset SourceCardMedia (img | video by mimeType) : nothing
+
+Dialog
+  text: SourceDetailTextViewer(record.text)   panel: thumbnail
+  edit: draft → useUpdateSourceText → updateSourceText → IndexedDB → cache
+
+FLIP open
+  card [data-source-card] ─┐
+  viewer element ──────────┴→ flipSourceDetail({ aspectRatio, anchor })
+     image/video: ratio, center · text: null, top · website frame: null, center</pre>
+
+        <h2>9. Control flow</h2>
+        <pre>
+detectFileKind(file)
+  image/* → image · video/* → video
+  mime in TEXT_FILE_TYPES, or empty mime + .txt/.md/.markdown → text
+  else → null
+
+replaceSourceFile(source, file)
+  source text   + text file     → replaceSourceText (body, format, fileName)
+  source text   + image/video   → thumbnail, kind stays text
+  embedded site + image/video   → thumbnail, kind stays website
+  other site    + image/video   → becomes image/video (today's rule)
+  image/video   + text file     → rejected: "Drop an image or video."
+
+toTextCardTitle(text, fallback)
+  first ATX heading → else first line with words → cut at first . ! ? → strip Markdown
+  → trim to 200 chars → empty ? fallback : title</pre>
+      </section>
+
+      <section id="code">
+        <h2>10. Pseudocode</h2>
+        <pre>
+// source-media.ts
+export function detectFileKind(file: File): 'image' | 'video' | 'text' | null {
+  const [group] = file.type.split('/');
+  if (group === 'image' || group === 'video') return group;
+  if (TEXT_FILE_TYPES.mime.includes(file.type)) return 'text';
+  if (!file.type &amp;&amp; TEXT_FILE_TYPES.ext.includes(extensionOf(file.name))) return 'text';
+  return null;
+}
+
+// source-actions.ts
+export async function createSource(input) {
+  const { file, … } = newSourceSchema.parse(input);
+  const kind = detectFileKind(file);
+  if (kind === null) throw new Error('Only images, videos and text are supported');
+  if (kind === 'text') return createTextSource({ … });
+  … // unchanged
+}
+
+// *** createTextSource ***
+async function createTextSource({ collectionId, file, name }) {
+  const body = await file.text();
+  const source: Source = {
+    …baseFields, kind: 'text',
+    text: { body, format: isMarkdown(file) ? 'markdown' : 'plain', fileName: file.name },
+    fileName: '', mimeType: '', sizeBytes: 0, ...UNKNOWN_METADATA, storageKey: null,
+  };
+  await putSource(source);
+  return source;
+}
+
+export async function updateSourceText(id: string, body: string): Promise&lt;Source&gt; {
+  const parsed = textBodySchema.parse(body);          // not empty, ≤ 1 MB
+  return updateRecord(id, (current) =&gt; {
+    if (current.kind !== 'text' || !current.text) throw new Error('Not a text source.');
+    return { ...current, text: { ...current.text, body: parsed }, updatedAt: now() };
+  });
+}
+
+// *** toReplacementKind ***
+function toReplacementKind(current, kind: 'image' | 'video'): SourceKind {
+  if (current.kind === 'text') return 'text';
+  if (canEmbedSite(current)) return 'website';     // image or video now
+  return kind;
+}
+
+// text-source.ts
+export function toTextCardTitle(text: TextSourceContent, fallback: string): string {
+  const lines = text.body.split('\n').map((line) =&gt; line.trim()).filter(Boolean);
+  const heading = text.format === 'markdown' ? lines.find((l) =&gt; /^#{1,6}\s/.test(l)) : undefined;
+  const line = heading ?? lines[0] ?? '';
+  const sentence = heading ? line : (line.match(/^.+?[.!?](\s|$)/)?.[0] ?? line);
+  const plain = stripMarkdown(sentence).slice(0, 200).trim();
+  return plain || fallback;
+}
+
+// source-card.tsx
+function SourceCardTextTile({ source, isNear }) {
+  return (
+    &lt;div className="rounded-xl bg-muted p-4 [&amp;:has([data-thumb])]:pb-2"&gt;
+      &lt;p className="line-clamp-4 font-serif text-xl/tight"&gt;
+        {toTextCardTitle(source.text!, source.name)}
+      &lt;/p&gt;
+      {source.storageKey &amp;&amp; (
+        &lt;div data-thumb className="-mx-2 mt-3 overflow-hidden rounded-[4px]"
+             style={{ aspectRatio: ratioOf(source) }}&gt;
+          {isNear ? &lt;SourceCardMedia source={source} … /&gt; : &lt;SourceCardBackdrop … /&gt;}
+        &lt;/div&gt;
+      )}
+    &lt;/div&gt;
+  );
+}
+
+// source-detail-flip.ts
+const originY = anchor === 'top'
+  ? content.top - media.top + clipHeightAtCardScale / 2
+  : content.top - media.top + content.height / 2;</pre>
+      </section>
+
+      <section id="tests">
+        <h2>11. Verification</h2>
+        <h3>Unit (Vitest, written first)</h3>
+        <ul>
+          <li>
+            <code>detectFileKind</code>: <code>.md</code> with an empty type →
+            text; <code>text/html</code>, <code>.csv</code> → null.
+          </li>
+          <li>
+            <code>createSource</code> with <code>.md</code>: the record has
+            <code>text.body</code> and <code>storageKey: null</code>, and no
+            OPFS write. A 2 MB text is rejected.
+          </li>
+          <li>
+            <code>toTextCardTitle</code>: a heading wins; the first sentence is
+            cut at <code>.</code>; <code>**bold**</code> and
+            <code>[link](url)</code> are stripped; whitespace only → fallback.
+          </li>
+          <li>
+            Replace on a text source: image → thumbnail with the kind kept;
+            video → the same; <code>.md</code> → body replaced and thumbnail
+            kept.
+          </li>
+          <li>
+            Replace on an embedded website: video → stays a website with a video
+            thumbnail. This was rejected before.
+          </li>
+          <li>
+            <code>runCompression</code> on a website or text with a video
+            thumbnail reads video metadata, not image metadata.
+          </li>
+          <li>
+            <code>updateSourceText</code>: the body changes and the rest is
+            kept; empty throws; a non-text source throws.
+          </li>
+          <li>
+            Export and import: the full list is in
+            <a href="#roundtrip">Export &amp; import</a>, including a round-trip
+            test.
+          </li>
+          <li>
+            <code>flipFrame</code> with <code>anchor: 'top'</code> lines up the
+            top edges.
+          </li>
+          <li>
+            <code>SourceTextDocument</code>: <code>&lt;script&gt;</code> shows
+            as text; a remote image makes no request; links get
+            <code>noreferrer</code>.
+          </li>
+        </ul>
+        <h3>E2E (Playwright)</h3>
+        <ul>
+          <li>
+            Drop a <code>.md</code>: the card shows the serif first sentence and
+            its height fits the text.
+          </li>
+          <li>
+            Open: the sheet flies out of the card (check the animation exists).
+            Close: it flies back.
+          </li>
+          <li>
+            Add a video thumbnail in the panel: the card shows an inset video.
+            The same works on an embedded website.
+          </li>
+          <li>
+            Edit, save and reload: the change stays. Dirty + Esc → confirm.
+          </li>
+        </ul>
+        <h3>By hand</h3>
+        <ul>
+          <li>
+            Watch the FLIP for text, embedded and not-embedded sites at normal
+            speed and at 10× slow-down (DevTools animations), in light and dark
+            mode.
+          </li>
+          <li>
+            Check that the inset thumbnail corners are parallel to the card
+            corners.
+          </li>
+          <li>Scroll 300 text cards with video thumbnails: no jank.</li>
+          <li>
+            Drop a <code>.md</code> from Finder and from Windows (empty type).
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>12. Known gaps after this</h2>
+        <ul>
+          <li>
+            Search stays name-only. The text is in IndexedDB now, so adding it
+            to search is small later.
+          </li>
+          <li>No way to remove a thumbnail, only to replace it.</li>
+          <li>Files are read as UTF-8; other encodings show broken letters.</li>
+          <li>No “new note” without a file. It is easy on top of edit (B).</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>13. Order of work</h2>
+        <ol>
+          <li>
+            Types, <code>detectFileKind</code>, <code>toTextCardTitle</code> →
+            verify: unit tests.
+          </li>
+          <li>Create text; compression mime fix → verify: unit tests.</li>
+          <li>
+            Export and import with text (manifest version up) → verify: the
+            export/import tests and the round trip, plus all existing
+            export/import tests still green.
+          </li>
+          <li>
+            Text card (no thumbnail) → verify: E2E drop, by hand light/dark.
+          </li>
+          <li>
+            Thumbnails for text and video thumbnails for websites; card inset;
+            panel → verify: unit replace tests, E2E thumbnail.
+          </li>
+          <li>Dialog reading sheet → verify: E2E open.</li>
+          <li>
+            FLIP for text and websites (<code>anchor</code>) → verify: unit
+            <code>flipFrame</code>, by hand slow-mo.
+          </li>
+          <li>Edit (option B), if you pick it → verify: E2E edit.</li>
+          <li>Specs, ARCHITECTURE.md, roadmap in the same commits.</li>
+        </ol>
+      </section>
+    </main>
+  </body>
+</html>

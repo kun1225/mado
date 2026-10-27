@@ -14,6 +14,8 @@ import { getAccountDirectory } from '#/features/storage/storage-directory';
 
 import type { SiteSourcePreview } from './site-source.type';
 import type { Source } from './source-types';
+import { detectFileKind } from './source-types';
+import { TEXT_FILE_ACCEPT, toTextMimeType } from './text-source';
 
 const MEDIA_DIRECTORY = 'media';
 
@@ -142,6 +144,15 @@ export async function deleteMediaFile(key: string): Promise<void> {
 }
 
 export async function downloadSource(source: Source): Promise<void> {
+  // The text is the source; its stored file is only the thumbnail.
+  if (source.text) {
+    const { body, format, fileName } = source.text;
+    saveBlobToDevice(
+      new Blob([body], { type: toTextMimeType(format) }),
+      fileName,
+    );
+    return;
+  }
   if (!source.storageKey) throw new Error('This source has no file.');
   const file = await readMediaFile(source.storageKey);
   saveBlobToDevice(file.slice(0, file.size, source.mimeType), source.fileName);
@@ -161,15 +172,12 @@ export type PastedContent =
   | { kind: 'url'; url: string }
   | { kind: 'ignored' };
 
-export const ACCEPTED_FILE_TYPES = 'image/*,video/*';
-
-const SUPPORTED_MEDIA_PREFIXES = ACCEPTED_FILE_TYPES.split(',').map((type) =>
-  type.replace('*', ''),
-);
-
-function isSupportedMediaType(type: string): boolean {
-  return SUPPORTED_MEDIA_PREFIXES.some((prefix) => type.startsWith(prefix));
-}
+// Extensions too, because many systems give `.md` no type.
+export const ACCEPTED_FILE_TYPES = [
+  'image/*',
+  'video/*',
+  ...Object.entries(TEXT_FILE_ACCEPT).flat(2),
+].join(',');
 
 function withFallbackFileName(file: File, mimeType: string): File {
   if (file.name) return file;
@@ -189,7 +197,7 @@ function getPastedMediaFile(data: DataTransfer): File | null {
     if (!file || file.size === 0) continue;
 
     const mimeType = file.type || item.type;
-    if (!isSupportedMediaType(mimeType)) continue;
+    if (!detectFileKind({ name: file.name, type: mimeType })) continue;
 
     return withFallbackFileName(file, mimeType);
   }

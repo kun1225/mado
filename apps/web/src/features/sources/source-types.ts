@@ -1,16 +1,36 @@
 import { z } from 'zod';
 
 import type { SiteSourcePreview } from './site-source.type';
+import { detectTextFormat, MAX_TEXT_BYTES, MAX_TEXT_MB } from './text-source';
+import type { TextSourceContent } from './text-source.type';
 
 export const MAX_FILE_MB = 512;
 
 export const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
 
-export const sourceKindSchema = z.enum(['image', 'video'], {
-  error: 'Only images and videos are supported',
+export const sourceKindSchema = z.enum(['image', 'video', 'text'], {
+  error: 'Only images, videos and text files are supported',
 });
 
-export type SourceKind = z.infer<typeof sourceKindSchema> | 'website';
+/** The kinds a dropped file can become. */
+export type FileSourceKind = z.infer<typeof sourceKindSchema>;
+
+export type SourceKind = FileSourceKind | 'website';
+
+/** What a stored file is: the source itself, or the thumbnail of a website or text. */
+export type MediaKind = 'image' | 'video';
+
+export function detectFileKind(
+  file: Pick<File, 'name' | 'type'>,
+): FileSourceKind | null {
+  const [group] = file.type.split('/');
+  if (group === 'image' || group === 'video') return group;
+  return detectTextFormat(file) ? 'text' : null;
+}
+
+export function isVideoMimeType(mimeType: string): boolean {
+  return mimeType.startsWith('video/');
+}
 
 const sourceFileSchema = z
   .instanceof(File)
@@ -18,6 +38,10 @@ const sourceFileSchema = z
   .refine(
     (file) => file.size <= MAX_FILE_BYTES,
     `File must be smaller than ${MAX_FILE_MB}MB`,
+  )
+  .refine(
+    (file) => detectFileKind(file) !== 'text' || file.size <= MAX_TEXT_BYTES,
+    `Text files must be smaller than ${MAX_TEXT_MB}MB`,
   );
 
 export const newSourceSchema = z.object({
@@ -119,6 +143,8 @@ export type Source = {
   collectionIds: string[];
   kind: SourceKind;
   site?: SiteSourcePreview;
+  /** The text lives in the record, and the media fields below describe its thumbnail. */
+  text?: TextSourceContent;
   fileName: string;
   mimeType: string;
   sizeBytes: number;

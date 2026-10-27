@@ -19,6 +19,23 @@ describe('flipFrame', () => {
     expect(frame.clipPath).toBe('inset(200px 0px 200px 0px round 24px)');
   });
 
+  it('keeps the top of the element when anchored to the top', () => {
+    // A text sheet: the card shows its first line, so the flight must too.
+    const sheet = { left: 100, top: 50, width: 800, height: 1000 };
+    const frame = flipFrame({
+      tile: { left: 0, top: 0, width: 400, height: 100 },
+      media: sheet,
+      content: sheet,
+      tileRadius: 0,
+      anchor: 'top',
+    });
+
+    // Scale 0.5, so the card shows 200px of the sheet, cut from its top edge.
+    expect(frame.transformOrigin).toBe('400px 100px');
+    expect(frame.transform).toBe('translate(-300px, -100px) scale(0.5)');
+    expect(frame.clipPath).toBe('inset(0px 0px 800px 0px round 0px)');
+  });
+
   it('clips the width when the tile is taller than the picture', () => {
     const frame = flipFrame({
       tile: { left: 0, top: 0, width: 90, height: 90 },

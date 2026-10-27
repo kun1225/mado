@@ -30,6 +30,7 @@ import {
   replaceSourceFile,
   restoreSources,
   updateSource,
+  updateSourceText,
 } from '../source-actions';
 import { isMediaStorageSupported, readMediaFile } from '../source-media';
 import type { Source, UpdateSourceInput } from '../source-types';
@@ -170,6 +171,17 @@ export function useUpdateSource() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateSourceInput }) =>
       updateSource(id, input),
+    onSuccess: () => invalidateAfterSourceChange(queryClient),
+  });
+}
+
+export function useUpdateSourceText() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: string }) =>
+      updateSourceText(id, body),
+    onError: (error) => toast.error(toCreateErrorMessage(error)),
     onSuccess: () => invalidateAfterSourceChange(queryClient),
   });
 }
