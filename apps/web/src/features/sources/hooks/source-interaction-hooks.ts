@@ -5,18 +5,14 @@ import { useDropzone } from 'react-dropzone';
 
 import { toast } from '@repo/ui/sonner';
 
-import {
-  ACCEPTED_FILE_TYPES,
-  detectPastedContent,
-  isEditablePasteTarget,
-} from '../source-media';
+import { detectPastedContent, isEditablePasteTarget } from '../source-media';
 import type { Source } from '../source-types';
 import {
-  canEmbedSite,
   MAX_FILE_BYTES,
   MAX_FILE_MB,
   updateSourceSchema,
 } from '../source-types';
+import { TEXT_FILE_ACCEPT } from '../text-source';
 
 import {
   useCreateSources,
@@ -284,10 +280,10 @@ export function usePasteSource(
   }, [onMedia, onWebsite]);
 }
 
-// react-dropzone wants `{ 'image/*': [] }`, not a comma list.
-const DROP_ACCEPT = Object.fromEntries(
-  ACCEPTED_FILE_TYPES.split(',').map((type) => [type, []]),
-);
+const MEDIA_ACCEPT: Record<string, string[]> = { 'image/*': [], 'video/*': [] };
+
+// react-dropzone also checks these extensions, so a `.md` with no type is let in.
+const DROP_ACCEPT = { ...MEDIA_ACCEPT, ...TEXT_FILE_ACCEPT };
 
 export function useSourceDropzone(collectionId: string | null) {
   const { mutate: createSources } = useCreateSources();
@@ -349,13 +345,11 @@ function useIsDragOver() {
   };
 }
 
-const THUMBNAIL_ACCEPT = { 'image/*': [] };
-
 export function useReplaceSourceDropzone(source: Source | undefined) {
   const { mutate: replaceFile } = useReplaceSourceFile();
   const isBusy = useIsReplacingSource(source?.id) || source === undefined;
-  // Only an embedded site keeps its page; anything else is swapped for media.
-  const isThumbnail = source !== undefined && canEmbedSite(source);
+  // Only a text can take a new text; everything else takes an image or a video.
+  const takesText = source?.kind === 'text';
 
   function handleDrop(files: File[], rejections: FileRejection[]) {
     if (isBusy) {
@@ -363,7 +357,7 @@ export function useReplaceSourceDropzone(source: Source | undefined) {
       return;
     }
     if (rejections.length > 0) {
-      toast.error(toReplaceRejectionMessage(isThumbnail));
+      toast.error(toReplaceRejectionMessage(takesText));
     }
     if (files.length > 0) {
       replaceFile({ id: source.id, file: files[0] });
@@ -371,7 +365,7 @@ export function useReplaceSourceDropzone(source: Source | undefined) {
   }
 
   const { getRootProps, getInputProps, open, isDragActive } = useDropzone({
-    accept: isThumbnail ? THUMBNAIL_ACCEPT : DROP_ACCEPT,
+    accept: takesText ? DROP_ACCEPT : MEDIA_ACCEPT,
     maxSize: MAX_FILE_BYTES,
     multiple: false,
     // Not `disabled`: that removes the drag handlers, so the drop would reach the library zone.
@@ -423,8 +417,10 @@ export function useIsDraggingFile(): boolean {
 }
 
 // *** toReplaceRejectionMessage ***
-function toReplaceRejectionMessage(isThumbnail: boolean): string {
-  const allowed = isThumbnail ? 'one image' : 'one image or video';
+function toReplaceRejectionMessage(takesText: boolean): string {
+  const allowed = takesText
+    ? 'one image, video or .txt/.md file'
+    : 'one image or video';
 
   return `Drop ${allowed} up to ${MAX_FILE_MB}MB to replace it.`;
 }
@@ -433,7 +429,7 @@ function toReplaceRejectionMessage(isThumbnail: boolean): string {
 function toRejectionMessage(count: number): string {
   const files = count === 1 ? 'file' : 'files';
 
-  return `Skipped ${count} ${files}. Only images and videos up to ${MAX_FILE_MB}MB are supported.`;
+  return `Skipped ${count} ${files}. Only images, videos and .txt or .md files up to ${MAX_FILE_MB}MB are supported.`;
 }
 
 export { toRejectionMessage };

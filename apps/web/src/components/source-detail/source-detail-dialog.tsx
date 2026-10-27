@@ -6,6 +6,7 @@ import {
   Delete02Icon,
   Download01Icon,
   ImageUpload01Icon,
+  PencilEdit02Icon,
   SidebarRightIcon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -35,10 +36,15 @@ import {
   isEditablePasteTarget,
 } from '#/features/sources/source-media';
 import type { Source } from '#/features/sources/source-types';
-import { canEmbedSite } from '#/features/sources/source-types';
+import { canEmbedSite, isVideoMimeType } from '#/features/sources/source-types';
 
 import { flipSourceDetail } from './source-detail-flip';
 import { SourceDetailPanel } from './source-detail-panel';
+import {
+  SourceDetailDiscardDialog,
+  SourceDetailTextViewer,
+  useSourceTextEditor,
+} from './source-detail-text';
 
 export function SourceDetailDialog({
   sources,
@@ -61,6 +67,9 @@ export function SourceDetailDialog({
   if (view.source) lastSource.current = view.source;
   const source = view.source ?? lastSource.current;
   const replace = useReplaceSourceDropzone(source);
+  const editor = useSourceTextEditor(source);
+  // A close or a move that waits for "Discard your changes?".
+  const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
   const isDraggingFile = useIsDraggingFile();
   // Read once here, because the viewer and the panel thumbnail show the same file.
   const objectUrl = useMediaObjectUrl(
@@ -85,8 +94,14 @@ export function SourceDetailDialog({
       setIsFlipClosing(false);
     }
   }
+  // A text sheet and a live page fill the viewer, so the whole element flies.
+  const fillsViewer =
+    source !== undefined && (source.kind === 'text' || canEmbedSite(source));
   const aspectRatio =
-    source?.width && source.height ? source.width / source.height : null;
+    !fillsViewer && source?.width && source.height
+      ? source.width / source.height
+      : null;
+  const flipAnchor = source?.kind === 'text' ? 'top' : 'center';
 
   // Only the source shown first after opening flies from its card; arrow keys
   // swap sources without it. A layout effect, so the media never paints at
@@ -103,6 +118,7 @@ export function SourceDetailDialog({
         sourceId: opening.id,
         aspectRatio,
         direction: 'open',
+        anchor: flipAnchor,
       });
     };
     // Before its metadata a video has a 300×150 box, which is not where it lands.
@@ -114,11 +130,35 @@ export function SourceDetailDialog({
       return () => media.removeEventListener('loadedmetadata', flipOpen);
     }
     flipOpen();
-  }, [isDialogOpen, media, opening, source?.id, aspectRatio]);
+  }, [isDialogOpen, media, opening, source?.id, aspectRatio, flipAnchor]);
 
   if (source === undefined) return null;
   const isEmbedded = canEmbedSite(source);
-  const replaceLabel = isEmbedded ? 'Replace thumbnail' : 'Replace file';
+  const isText = source.kind === 'text';
+  const replaceLabel = !(isEmbedded || isText)
+    ? 'Replace file'
+    : source.storageKey
+      ? 'Replace thumbnail'
+      : 'Add thumbnail';
+  const dropLabel = isText
+    ? 'Drop a thumbnail or a new text'
+    : `Drop to ${replaceLabel.toLowerCase()}`;
+
+  // Leaving drops the draft too, so coming back shows the saved text.
+  function guardLeave(leave: () => void) {
+    if (editor.isDirty) {
+      setPendingLeave(() => leave);
+      return;
+    }
+    editor.stop();
+    leave();
+  }
+
+  function discardAndLeave() {
+    editor.stop();
+    pendingLeave?.();
+    setPendingLeave(null);
+  }
 
   function handleKeyDown(event: KeyboardEvent) {
     if (view.source === undefined || isEditablePasteTarget(event.target))
@@ -131,11 +171,24 @@ export function SourceDetailDialog({
           ? nextId
           : undefined;
 
-    if (targetId !== undefined) onActiveIdChange(targetId);
+    if (targetId !== undefined) {
+      guardLeave(() => onActiveIdChange(targetId));
+      return;
+    }
+
+    const isPlainKey = !event.metaKey && !event.ctrlKey && !event.altKey;
+    if (event.key === 'e' && isPlainKey && isText && editor.draft === null) {
+      event.preventDefault();
+      editor.start();
+    }
+  }
+
+  function close() {
+    guardLeave(closeNow);
   }
 
   // Runs before the dialog closes, so Base UI's exit wait sees the animations.
-  function close() {
+  function closeNow() {
     const didFlip =
       media !== null &&
       source !== undefined &&
@@ -144,6 +197,7 @@ export function SourceDetailDialog({
         sourceId: source.id,
         aspectRatio,
         direction: 'close',
+        anchor: flipAnchor,
       });
     setIsFlipClosing(didFlip);
     onActiveIdChange(null);
@@ -188,9 +242,16 @@ export function SourceDetailDialog({
             position={view.index + 1}
             total={sources.length}
             onPrevious={
-              previousId ? () => onActiveIdChange(previousId) : undefined
+              previousId
+                ? () => guardLeave(() => onActiveIdChange(previousId))
+                : undefined
             }
-            onNext={nextId ? () => onActiveIdChange(nextId) : undefined}
+            onNext={
+              nextId
+                ? () => guardLeave(() => onActiveIdChange(nextId))
+                : undefined
+            }
+            onEdit={isText && editor.draft === null ? editor.start : undefined}
             onReplace={replace.open}
             replaceLabel={replaceLabel}
             isReplacing={replace.isBusy}
@@ -209,17 +270,25 @@ export function SourceDetailDialog({
               })}
             >
               <input {...replace.getInputProps()} />
-              <SourceDetailViewer
-                key={`viewer-${source.id}`}
-                source={source}
-                objectUrl={objectUrl}
-                onAddImage={replace.open}
-                mediaRef={setMedia}
-              />
-              {(replace.isDragActive || (isEmbedded && isDraggingFile)) && (
-                <SourceDetailDropOverlay
-                  label={`Drop to ${replaceLabel.toLowerCase()}`}
+              {source.text ? (
+                <SourceDetailTextViewer
+                  key={`text-${source.id}`}
+                  text={source.text}
+                  editor={editor}
+                  onCancel={() => guardLeave(() => {})}
+                  mediaRef={setMedia}
                 />
+              ) : (
+                <SourceDetailViewer
+                  key={`viewer-${source.id}`}
+                  source={source}
+                  objectUrl={objectUrl}
+                  onAddImage={replace.open}
+                  mediaRef={setMedia}
+                />
+              )}
+              {(replace.isDragActive || (isEmbedded && isDraggingFile)) && (
+                <SourceDetailDropOverlay label={dropLabel} />
               )}
             </div>
             <SourceDetailPanel
@@ -231,6 +300,11 @@ export function SourceDetailDialog({
           </div>
         </DialogContent>
       </Dialog>
+      <SourceDetailDiscardDialog
+        open={pendingLeave !== null}
+        onKeepEditing={() => setPendingLeave(null)}
+        onDiscard={discardAndLeave}
+      />
     </div>
   );
 }
@@ -272,6 +346,7 @@ function SourceDetailToolbar({
   total,
   onPrevious,
   onNext,
+  onEdit,
   onReplace,
   replaceLabel,
   isReplacing,
@@ -285,6 +360,7 @@ function SourceDetailToolbar({
   total: number;
   onPrevious?: () => void;
   onNext?: () => void;
+  onEdit?: () => void;
   onReplace: () => void;
   replaceLabel: string;
   isReplacing: boolean;
@@ -324,6 +400,22 @@ function SourceDetailToolbar({
       </Button>
 
       <div className="ml-auto flex items-center gap-2">
+        {onEdit && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className={TOOLBAR_BUTTON}
+            aria-label="Edit text"
+            title="Edit text (E)"
+            onClick={onEdit}
+          >
+            <HugeiconsIcon
+              icon={PencilEdit02Icon}
+              size={18}
+              strokeWidth={1.5}
+            />
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon-sm"
@@ -407,7 +499,23 @@ function SourceDetailViewer({
     const isTweet = embed.mode !== 'none' && isTweetEmbed(embed.src);
     return (
       <div className="pointer-events-none flex min-h-0 min-w-0 flex-1 flex-col">
-        <div className="pointer-events-auto relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-md bg-bg/10">
+        <div
+          // A live page or an empty frame flies as a whole; a picture flies on its own.
+          ref={embed.mode !== 'none' || !objectUrl ? mediaRef : undefined}
+          className="pointer-events-auto relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-md bg-bg/10"
+        >
+          {embed.mode !== 'none' && objectUrl && (
+            // The thumbnail stands in while the page loads, so the flight carries a picture.
+            <SourceDetailMedia
+              src={objectUrl}
+              mimeType={source.mimeType}
+              isPreview
+              className={cn(
+                'pointer-events-none absolute inset-0 size-full object-cover transition-opacity duration-300 motion-reduce:transition-none',
+                isEmbedLoaded && 'opacity-0',
+              )}
+            />
+          )}
           {embed.mode !== 'none' && !isEmbedLoaded && (
             <SourceDetailSpinner
               label={`Loading ${source.name}`}
@@ -441,8 +549,10 @@ function SourceDetailViewer({
               )}
             />
           ) : objectUrl ? (
-            <img
+            <SourceDetailMedia
+              ref={mediaRef}
               src={objectUrl}
+              mimeType={source.mimeType}
               alt={`Preview of ${source.name}`}
               className="pointer-events-auto size-full object-contain"
             />
@@ -519,6 +629,52 @@ function SourceDetailViewer({
           />
         )}
     </div>
+  );
+}
+
+// *** SourceDetailMedia ***
+// A website thumbnail can be an image or a video.
+function SourceDetailMedia({
+  ref,
+  src,
+  mimeType,
+  alt = '',
+  isPreview = false,
+  className,
+}: {
+  ref?: (media: HTMLElement | null) => void;
+  src: string;
+  mimeType: string;
+  alt?: string;
+  /** A still frame under the loading page, so it never plays or takes focus. */
+  isPreview?: boolean;
+  className: string;
+}) {
+  if (!isVideoMimeType(mimeType)) {
+    return <img ref={ref} src={src} alt={alt} className={className} />;
+  }
+
+  return isPreview ? (
+    <video
+      ref={ref}
+      src={`${src}#t=0.1`}
+      muted
+      playsInline
+      preload="metadata"
+      aria-hidden
+      className={className}
+    />
+  ) : (
+    <video
+      ref={ref}
+      src={src}
+      controls
+      autoPlay
+      loop
+      muted
+      playsInline
+      className={className}
+    />
   );
 }
 

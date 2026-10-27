@@ -181,13 +181,13 @@ describe('resolveSourceDetail', () => {
 describe('toRejectionMessage', () => {
   it('uses the singular for one file', () => {
     expect(toRejectionMessage(1)).toBe(
-      'Skipped 1 file. Only images and videos up to 512MB are supported.',
+      'Skipped 1 file. Only images, videos and .txt or .md files up to 512MB are supported.',
     );
   });
 
   it('uses the plural for many files', () => {
     expect(toRejectionMessage(3)).toBe(
-      'Skipped 3 files. Only images and videos up to 512MB are supported.',
+      'Skipped 3 files. Only images, videos and .txt or .md files up to 512MB are supported.',
     );
   });
 });

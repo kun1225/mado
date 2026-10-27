@@ -276,6 +276,92 @@ describe('buildExportLayout', () => {
     ]);
   });
 
+  it('writes the text of a text source as its own file', () => {
+    const layout = buildExportLayout(
+      [],
+      [
+        buildSource({
+          id: 's1',
+          name: 'Brief',
+          kind: 'text',
+          text: { body: '# Brief', format: 'markdown', fileName: 'b.md' },
+          storageKey: null,
+          fileName: '',
+          mimeType: '',
+        }),
+        buildSource({
+          id: 's2',
+          name: 'Call',
+          kind: 'text',
+          text: { body: 'notes', format: 'plain', fileName: 'call.text' },
+          storageKey: null,
+          fileName: '',
+          mimeType: '',
+        }),
+      ],
+      EXPORTED_AT,
+    );
+
+    expect(layout.files).toEqual([
+      {
+        kind: 'text',
+        sourceId: 's1',
+        path: 'Unsorted/Brief.md',
+        text: '# Brief',
+        lastModified: new Date('2026-02-01T00:00:00.000Z'),
+      },
+      {
+        kind: 'text',
+        sourceId: 's2',
+        path: 'Unsorted/Call.txt',
+        text: 'notes',
+        lastModified: new Date('2026-02-01T00:00:00.000Z'),
+      },
+    ]);
+  });
+
+  it('writes a text source and its thumbnail in every collection', () => {
+    const layout = buildExportLayout(
+      [
+        buildCollection({ id: 'c1', name: 'A' }),
+        buildCollection({ id: 'c2', name: 'B' }),
+      ],
+      [
+        buildSource({
+          id: 's1',
+          name: 'Brief',
+          kind: 'text',
+          collectionIds: ['c1', 'c2'],
+          text: { body: '# Brief', format: 'markdown', fileName: 'b.md' },
+          fileName: 'clip.mp4',
+          mimeType: 'video/mp4',
+        }),
+      ],
+      EXPORTED_AT,
+    );
+    const manifest = exportManifestSchema.parse(layout.manifest);
+
+    expect(layout.files.map(({ kind, path }) => [kind, path])).toEqual([
+      ['text', 'A/Brief.md'],
+      ['media', 'A/Brief.mp4'],
+      ['text', 'B/Brief.md'],
+      ['media', 'B/Brief.mp4'],
+    ]);
+    expect(manifest.sources[0]).toMatchObject({
+      kind: 'text',
+      text: { format: 'markdown', fileName: 'b.md' },
+      files: [
+        { path: 'A/Brief.md', role: 'text' },
+        { path: 'A/Brief.mp4', role: 'media' },
+        { path: 'B/Brief.md', role: 'text' },
+        { path: 'B/Brief.mp4', role: 'media' },
+      ],
+    });
+    // The file is the truth, so the body is not saved twice.
+    expect(manifest.sources[0].text).not.toHaveProperty('body');
+    expect(manifest.version).toBe(2);
+  });
+
   it('builds a manifest that import can read', () => {
     const layout = buildExportLayout(
       [buildCollection({ id: 'c1', name: 'A', color: 'blue', saveCount: 4 })],

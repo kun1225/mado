@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Bring a folder of images and videos into the library, or rebuild a library from an unzipped export.
+Bring a folder of images, videos and text files into the library, or rebuild a library from an unzipped export.
 
 **Depends on:** `collections` (types), `export` (the `library.json` schema), `sources`, `storage`. **Used by:** `settings` (the Data tab). See `apps/web/ARCHITECTURE.md`.
 
@@ -22,16 +22,17 @@ The folder has `library.json` at its top (see `export.spec.md`).
 - A source copied into several folders comes back as one source in all of them. Any copy of its file will do.
 - **An id that is already here is skipped**, trash included. Importing your own export again changes nothing.
 - An image or video whose file is gone is skipped. A website without its thumbnail is kept as a link card.
+- A text source reads its body from its `text` file, so an edit made to that file before importing is kept. A text source whose text file is gone is skipped; one whose thumbnail is gone is kept without it. A text file that is empty or over 1 MB counts as "could not be saved".
 - A link to a collection that is nowhere (not in the file, not in the library) is dropped. A collection whose parent is gone moves to the top.
 - Files are not compressed again. They were compressed before the export.
-- A `library.json` that is broken or from an unknown version falls back to the plain-folder rule, and the toast says so.
+- A `library.json` that is broken or from a newer version falls back to the plain-folder rule, and the toast says so. Versions 1 and 2 both import.
 
 ### A plain folder
 
 - The folder you pick becomes a collection. Each subfolder becomes a folder inside it, at the same depth.
-- Every image and video becomes a source, saved and compressed the same way as a dropped file.
-- Other files, empty files and files over 512 MB are skipped and counted. Hidden files (`.DS_Store`, anything inside a `.folder`) are skipped quietly.
-- A folder with no images or videos anywhere inside it does not become a collection.
+- Every image, video and `.txt`/`.md`/`.markdown` file becomes a source, saved the same way as a dropped file. A `.md` with no type still counts, by its extension.
+- Other files (HTML, CSV, PDF, …), empty files, files over 512 MB and text files over 1 MB are skipped and counted. Hidden files (`.DS_Store`, anything inside a `.folder`) are skipped quietly.
+- A folder with no images, videos or text files anywhere inside it does not become a collection.
 - Folder names are cut to 100 characters (never inside an emoji).
 
 ## Decisions

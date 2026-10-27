@@ -1,5 +1,6 @@
 import type { Collection } from '#/features/collections/collection-types';
 import type { Source } from '#/features/sources/source-types';
+import type { TextSourceContent } from '#/features/sources/text-source.type';
 
 import type {
   ExportFile,
@@ -169,6 +170,20 @@ function toSourceFiles(
           },
         ]
       : [];
+  const text: ExportFile[] = source.text
+    ? [
+        {
+          kind: 'text',
+          sourceId: source.id,
+          path: joinPath(
+            folder,
+            names.claim(folder, stem, toTextExtension(source.text)),
+          ),
+          text: source.text.body,
+          lastModified,
+        },
+      ]
+    : [];
   const media: ExportFile[] = source.storageKey
     ? [
         {
@@ -184,7 +199,7 @@ function toSourceFiles(
       ]
     : [];
 
-  return [...shortcut, ...media];
+  return [...shortcut, ...text, ...media];
 }
 
 // *** toShortcutText ***
@@ -192,6 +207,14 @@ function toSourceFiles(
 // Line breaks are removed so a stored URL cannot add its own lines to the file.
 function toShortcutText(url: string): string {
   return `[InternetShortcut]\r\nURL=${url.replace(/[\r\n]/g, '')}\r\n`;
+}
+
+// *** toTextExtension ***
+// Keep `.markdown` if that is what the user had, but never write an odd one like `.text`.
+function toTextExtension(text: TextSourceContent): string {
+  const match = /\.(md|markdown|txt)$/i.exec(text.fileName);
+  if (match) return match[0].toLowerCase();
+  return text.format === 'markdown' ? '.md' : '.txt';
 }
 
 // *** toExtension ***
@@ -243,6 +266,9 @@ function toManifest(
       tags: source.tags,
       collectionIds: source.collectionIds,
       ...(source.site && { site: source.site }),
+      ...(source.text && {
+        text: { format: source.text.format, fileName: source.text.fileName },
+      }),
       fileName: source.fileName,
       mimeType: source.mimeType,
       sizeBytes: source.sizeBytes,

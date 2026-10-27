@@ -43,7 +43,7 @@ const ICON_HOVER =
   'transition-transform ease-out-quart group-hover:scale-110 motion-reduce:transition-none';
 
 const ACTIONS = [
-  { key: 'image', label: 'Add image', icon: Image01FreeIcons },
+  { key: 'image', label: 'Add file', icon: Image01FreeIcons },
   { key: 'website', label: 'Add website', icon: Link01Icon },
 ] as const;
 

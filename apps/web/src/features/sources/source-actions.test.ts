@@ -28,6 +28,7 @@ let openDatabase: typeof import('../storage/database').openDatabase;
 let newSourceSchema: typeof import('./source-types').newSourceSchema;
 let sourceKindSchema: typeof import('./source-types').sourceKindSchema;
 let createSources: typeof import('./source-actions').createSources;
+let updateSourceText: typeof import('./source-actions').updateSourceText;
 
 const COLLECTION_ID = '11111111-1111-4111-8111-111111111111';
 
@@ -118,6 +119,7 @@ beforeEach(async () => {
     replaceSourceFile,
     restoreSources,
     updateSource,
+    updateSourceText,
   } = await import('./source-actions'));
   ({
     compressMedia,
@@ -169,7 +171,7 @@ describe('sourceKindSchema', () => {
 
   it('rejects other file types', () => {
     expect(() => sourceKindSchema.parse('application')).toThrow(
-      'Only images and videos are supported',
+      'Only images, videos and text files are supported',
     );
   });
 });
@@ -213,6 +215,107 @@ describe('createSources', () => {
       error: { message: 'Storage is full.' },
       sources: [{ fileName: 'saved.png' }],
     });
+  });
+});
+
+describe('createSources with text files', () => {
+  beforeEach(() => {
+    vi.mocked(writeMediaFile).mockReset();
+    vi.mocked(writeMediaFile).mockResolvedValue(undefined);
+  });
+
+  it('keeps the text in the record and writes no file', async () => {
+    const file = new File(['# Brief\n\nWarm 😀'], 'brief.md', { type: '' });
+
+    const { sources, error } = await createSources([
+      { collectionId: COLLECTION_ID, file },
+    ]);
+
+    expect(error).toBeUndefined();
+    expect(sources[0]).toMatchObject({
+      name: 'brief',
+      kind: 'text',
+      text: {
+        body: '# Brief\n\nWarm 😀',
+        format: 'markdown',
+        fileName: 'brief.md',
+      },
+      storageKey: null,
+      fileName: '',
+      mimeType: '',
+      sizeBytes: 0,
+      width: null,
+      height: null,
+    });
+    expect(writeMediaFile).not.toHaveBeenCalled();
+    expect(await fetchAllSources()).toEqual(sources);
+  });
+
+  it('rejects a text file over the text limit', async () => {
+    const file = new File(['a'.repeat(1024 * 1024 + 1)], 'big.txt', {
+      type: 'text/plain',
+    });
+
+    const { error } = await createSources([{ collectionId: null, file }]);
+
+    expect(error).toMatchObject({
+      issues: [{ message: 'Text files must be smaller than 1MB' }],
+    });
+  });
+
+  it.each([
+    ['page.html', 'text/html'],
+    ['table.csv', 'text/csv'],
+  ])('rejects %s', async (name, type) => {
+    const file = new File(['<p>x</p>'], name, { type });
+
+    const { error } = await createSources([{ collectionId: null, file }]);
+
+    expect(error).toMatchObject({
+      issues: [{ message: 'Only images, videos and text files are supported' }],
+    });
+  });
+
+  it('rejects a text file with only spaces', async () => {
+    const file = new File(['  \n'], 'blank.txt', { type: 'text/plain' });
+
+    const { error } = await createSources([{ collectionId: null, file }]);
+
+    expect(error).toMatchObject({ issues: [{ message: 'Text is empty' }] });
+  });
+});
+
+describe('updateSourceText', () => {
+  const text = { body: 'old', format: 'markdown' as const, fileName: 'a.md' };
+
+  it('changes only the body and bumps updatedAt', async () => {
+    await seedSources([
+      buildSource({ id: 't', kind: 'text', text, note: 'kept' }),
+    ]);
+
+    const result = await updateSourceText('t', 'new body');
+
+    expect(result).toMatchObject({
+      note: 'kept',
+      storageKey: 't',
+      text: { ...text, body: 'new body' },
+    });
+    expect(result.updatedAt).not.toBe('2026-01-01T00:00:00.000Z');
+    expect((await fetchAllSources())[0]).toEqual(result);
+  });
+
+  it('rejects empty text', async () => {
+    await seedSources([buildSource({ id: 't', kind: 'text', text })]);
+
+    await expect(updateSourceText('t', ' ')).rejects.toThrow('Text is empty');
+  });
+
+  it('rejects a source that is not text', async () => {
+    await seedSources([buildSource({ id: 'a' })]);
+
+    await expect(updateSourceText('a', 'hi')).rejects.toThrow(
+      'Only text sources can be edited.',
+    );
   });
 });
 
@@ -905,6 +1008,59 @@ describe('compressSource', () => {
   });
 });
 
+describe('compressSource with a video thumbnail', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.mocked(compressMedia).mockReset();
+    vi.mocked(compressMedia).mockImplementation((file: File) =>
+      Promise.resolve(file),
+    );
+  });
+
+  it('reads video metadata for the thumbnail of a website or text', async () => {
+    vi.mocked(writeMediaFile).mockResolvedValue(undefined);
+    vi.mocked(readMediaFile).mockResolvedValue(new File(['original'], 'a'));
+    vi.mocked(compressMedia).mockResolvedValue(
+      new File(['x'], 'clip.mp4', { type: 'video/mp4' }),
+    );
+    stubVideoElement();
+    const source = buildSource({
+      id: 't',
+      kind: 'text',
+      text: { body: 'hi', format: 'plain', fileName: 'a.txt' },
+      mimeType: 'video/quicktime',
+    });
+    await seedSources([source]);
+
+    const result = await compressSource(source);
+
+    expect(result).toMatchObject({
+      kind: 'text',
+      mimeType: 'video/mp4',
+      width: 640,
+      height: 360,
+      durationSeconds: 12,
+    });
+  });
+});
+
+function stubVideoElement() {
+  vi.stubGlobal('document', {
+    createElement: () => {
+      const video = {
+        videoWidth: 640,
+        videoHeight: 360,
+        duration: 12,
+        onloadedmetadata: null as (() => void) | null,
+        set src(_value: string) {
+          queueMicrotask(() => video.onloadedmetadata?.());
+        },
+      };
+      return video;
+    },
+  });
+}
+
 describe('replaceSourceFile', () => {
   const NEW_KEY = '22222222-2222-4222-8222-222222222222';
   const photo = new File(['new photo'], 'new.jpg', { type: 'image/jpeg' });
@@ -1011,14 +1167,78 @@ describe('replaceSourceFile', () => {
     expect(deleteMediaFile).not.toHaveBeenCalled();
   });
 
-  it('rejects a video as the thumbnail of a site that can be embedded', async () => {
+  it('takes a video as the thumbnail of a site that can be embedded', async () => {
+    stubVideoElement();
     await seedSources([buildSource({ id: 'w', kind: 'website', site })]);
     const clip = new File(['clip'], 'clip.mp4', { type: 'video/mp4' });
 
-    await expect(replaceSourceFile('w', clip)).rejects.toThrow(
-      'A website thumbnail must be an image',
-    );
+    const result = await replaceSourceFile('w', clip);
+
+    expect(result).toMatchObject({
+      kind: 'website',
+      site,
+      mimeType: 'video/mp4',
+      storageKey: NEW_KEY,
+      durationSeconds: 12,
+    });
+  });
+
+  const text = { body: 'Brief', format: 'markdown' as const, fileName: 'a.md' };
+
+  it('sets an image as the thumbnail of a text source', async () => {
+    await seedSources([
+      buildSource({ id: 't', kind: 'text', text, storageKey: null }),
+    ]);
+
+    const result = await replaceSourceFile('t', photo);
+
+    expect(result).toMatchObject({
+      kind: 'text',
+      text,
+      storageKey: NEW_KEY,
+      mimeType: 'image/jpeg',
+    });
+  });
+
+  it('sets a video as the thumbnail of a text source', async () => {
+    stubVideoElement();
+    await seedSources([buildSource({ id: 't', kind: 'text', text })]);
+    const clip = new File(['clip'], 'clip.mp4', { type: 'video/mp4' });
+
+    const result = await replaceSourceFile('t', clip);
+
+    expect(result).toMatchObject({ kind: 'text', text, mimeType: 'video/mp4' });
+    expect(deleteMediaFile).toHaveBeenCalledWith('t');
+  });
+
+  it('replaces the text of a text source and keeps its thumbnail', async () => {
+    await seedSources([
+      buildSource({ id: 't', kind: 'text', text, note: 'kept' }),
+    ]);
+    const file = new File(['New words'], 'new.txt', { type: 'text/plain' });
+
+    const result = await replaceSourceFile('t', file);
+
+    expect(result).toMatchObject({
+      kind: 'text',
+      note: 'kept',
+      storageKey: 't',
+      text: { body: 'New words', format: 'plain', fileName: 'new.txt' },
+    });
     expect(writeMediaFile).not.toHaveBeenCalled();
+    expect(deleteMediaFile).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['an image', () => buildSource({ id: 'a' })],
+    ['a website', () => buildSource({ id: 'a', kind: 'website', site })],
+  ])('rejects a text file on %s', async (_label, build) => {
+    await seedSources([build()]);
+    const file = new File(['words'], 'a.md', { type: 'text/markdown' });
+
+    await expect(replaceSourceFile('a', file)).rejects.toThrow(
+      'Only an image or video can replace this file.',
+    );
   });
 
   it('turns a site that cannot be embedded into media and keeps its link', async () => {

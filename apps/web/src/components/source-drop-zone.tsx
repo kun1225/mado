@@ -61,7 +61,7 @@ export function SourceDropZone({
             {toDropTitle(label, count)}
           </p>
           <p className="mt-1 text-sm text-muted-fg">
-            Images and videos, up to {MAX_FILE_MB} MB each
+            Images, videos and .txt or .md files, up to {MAX_FILE_MB} MB
           </p>
         </div>
       </div>

@@ -183,7 +183,7 @@ describe('importLibrary from a plain folder', () => {
     const result = await importLibrary(
       [
         pickedFile('Trip/beach.jpg', 'image/jpeg'),
-        pickedFile('Trip/notes.txt', 'text/plain'),
+        pickedFile('Trip/page.html', 'text/html'),
       ],
       () => {},
     );

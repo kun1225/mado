@@ -22,6 +22,7 @@ import {
   writeMediaFile,
 } from './source-media';
 import type {
+  MediaKind,
   NewSourceInput,
   Source,
   SourceKind,
@@ -29,6 +30,8 @@ import type {
 } from './source-types';
 import {
   canEmbedSite,
+  detectFileKind,
+  isVideoMimeType,
   MAX_NAME_LENGTH,
   newSourceSchema,
   newWebsiteSourceSchema,
@@ -36,6 +39,8 @@ import {
   sourceKindSchema,
   updateSourceSchema,
 } from './source-types';
+import { readTextContent, textBodySchema } from './text-source';
+import type { TextSourceContent } from './text-source.type';
 
 type MediaMetadata = Pick<Source, 'width' | 'height' | 'durationSeconds'>;
 
@@ -48,7 +53,7 @@ const UNKNOWN_METADATA: MediaMetadata = {
 /** Metadata is a bonus, so a file the browser cannot read is still saved, just without a size. */
 async function readMediaMetadata(
   file: File,
-  kind: Exclude<SourceKind, 'website'>,
+  kind: MediaKind,
 ): Promise<MediaMetadata> {
   const url = URL.createObjectURL(file);
 
@@ -83,17 +88,16 @@ async function readMediaMetadata(
 
 export async function createSource(input: NewSourceInput): Promise<Source> {
   const { collectionId, file, name, url } = newSourceSchema.parse(input);
-  const kind = sourceKindSchema.parse(file.type.split('/')[0]);
+  const kind = sourceKindSchema.parse(detectFileKind(file));
+  if (kind === 'text') return createTextSource({ collectionId, file, name });
+
   const metadata = await readMediaMetadata(file, kind);
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
   const source: Source = {
     id,
-    name: (name ?? (file.name.replace(/\.[^.]+$/, '') || file.name)).slice(
-      0,
-      MAX_NAME_LENGTH,
-    ),
+    name: toSourceName(name, file),
     url: url ?? null,
     note: null,
     tags: [],
@@ -119,6 +123,58 @@ export async function createSource(input: NewSourceInput): Promise<Source> {
     await toCompletion(transaction);
   } catch (error) {
     await deleteMediaFile(id);
+    throw new Error(`Failed to save "${file.name}".`, { cause: error });
+  }
+
+  return source;
+}
+
+// *** toSourceName ***
+function toSourceName(name: string | undefined, file: File): string {
+  return (name ?? (file.name.replace(/\.[^.]+$/, '') || file.name)).slice(
+    0,
+    MAX_NAME_LENGTH,
+  );
+}
+
+// *** createTextSource ***
+/** Like a website, the content lives in the record, so the one file slot is free for a thumbnail. */
+async function createTextSource({
+  collectionId,
+  file,
+  name,
+}: {
+  collectionId: string | null;
+  file: File;
+  name?: string;
+}): Promise<Source> {
+  const text = await readTextContent(file);
+  const now = new Date().toISOString();
+  const source: Source = {
+    id: crypto.randomUUID(),
+    name: toSourceName(name, file),
+    url: null,
+    note: null,
+    tags: [],
+    collectionIds: collectionId ? [collectionId] : [],
+    kind: 'text',
+    text,
+    fileName: '',
+    mimeType: '',
+    sizeBytes: 0,
+    ...UNKNOWN_METADATA,
+    storageKey: null,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+  };
+
+  try {
+    const database = await openDatabase();
+    const transaction = database.transaction(STORES.sources, 'readwrite');
+    transaction.objectStore(STORES.sources).put(source);
+    await toCompletion(transaction);
+  } catch (error) {
     throw new Error(`Failed to save "${file.name}".`, { cause: error });
   }
 
@@ -232,7 +288,7 @@ async function runCompression(source: Source): Promise<Source> {
 
   const metadata = await readMediaMetadata(
     compressed,
-    toStoredMediaKind(source.kind),
+    toMediaKind(compressed.type),
   );
 
   await writeMediaFile(storageKey, compressed);
@@ -263,10 +319,10 @@ async function runCompression(source: Source): Promise<Source> {
   return updated;
 }
 
-// *** toStoredMediaKind ***
-// A website's stored file is always its thumbnail image.
-function toStoredMediaKind(kind: SourceKind): Exclude<SourceKind, 'website'> {
-  return kind === 'website' ? 'image' : kind;
+// *** toMediaKind ***
+// The kind can't tell: a website or text keeps an image or a video as its thumbnail.
+function toMediaKind(mimeType: string): MediaKind {
+  return isVideoMimeType(mimeType) ? 'video' : 'image';
 }
 
 function toVisibleSources(sources: Source[]): Source[] {
@@ -433,6 +489,20 @@ export async function updateSource(
   return source;
 }
 
+/** Saves an edit made in the detail dialog. Name, note and links never change here. */
+export async function updateSourceText(
+  id: string,
+  body: string,
+): Promise<Source> {
+  const parsed = textBodySchema.parse(body);
+
+  return updateTextSource(
+    id,
+    (current) => ({ ...current, text: { ...current.text, body: parsed } }),
+    'Only text sources can be edited.',
+  );
+}
+
 /**
  * Keep everything the user typed. A site that can be embedded stays a website and
  * only its thumbnail changes. A site that cannot is just a picture with a link, so
@@ -446,7 +516,10 @@ export async function replaceSourceFile(
   input: File,
 ): Promise<Source> {
   const { file } = replaceSourceFileSchema.parse({ file: input });
-  const mediaKind = sourceKindSchema.parse(file.type.split('/')[0]);
+  const fileKind = sourceKindSchema.parse(detectFileKind(file));
+  if (fileKind === 'text') return replaceSourceText(id, file);
+
+  const mediaKind = fileKind;
   const existing = await readSource(id);
   // Fail early, before writing the file. The save checks again on fresh data.
   toReplacementKind(existing, mediaKind);
@@ -479,6 +552,44 @@ export async function replaceSourceFile(
   return source;
 }
 
+// *** replaceSourceText ***
+// The text is in the record, so the thumbnail and its file stay as they are.
+async function replaceSourceText(id: string, file: File): Promise<Source> {
+  const text = await readTextContent(file);
+
+  return updateTextSource(
+    id,
+    (current) => ({ ...current, text }),
+    'Only an image or video can replace this file.',
+  );
+}
+
+// *** updateTextSource ***
+async function updateTextSource(
+  id: string,
+  change: (current: Source & { text: TextSourceContent }) => Source,
+  notTextMessage: string,
+): Promise<Source> {
+  const database = await openDatabase();
+  const transaction = database.transaction(STORES.sources, 'readwrite');
+  const store = transaction.objectStore(STORES.sources);
+  const existing = await toPromise<Source | undefined>(store.get(id));
+
+  if (!existing) throw new Error(`Source not found: ${id}`);
+  if (existing.kind !== 'text' || !existing.text) {
+    throw new Error(notTextMessage);
+  }
+
+  const source: Source = {
+    ...change({ ...existing, text: existing.text }),
+    updatedAt: new Date().toISOString(),
+  };
+  store.put(source);
+  await toCompletion(transaction);
+
+  return source;
+}
+
 // *** readSource ***
 async function readSource(id: string): Promise<Source> {
   const database = await openDatabase();
@@ -492,19 +603,17 @@ async function readSource(id: string): Promise<Source> {
 }
 
 // *** toReplacementKind ***
-function toReplacementKind(
-  current: Source,
-  kind: Exclude<SourceKind, 'website'>,
-): SourceKind {
-  if (!canEmbedSite(current)) return kind;
-  if (kind !== 'image') throw new Error('A website thumbnail must be an image');
-  return 'website';
+// A text, or a site that can be embedded, keeps its content and only swaps its thumbnail.
+function toReplacementKind(current: Source, kind: MediaKind): SourceKind {
+  if (current.kind === 'text') return 'text';
+  if (canEmbedSite(current)) return 'website';
+  return kind;
 }
 
 // *** saveReplacedFile ***
 async function saveReplacedFile(
   id: string,
-  mediaKind: Exclude<SourceKind, 'website'>,
+  mediaKind: MediaKind,
   fields: Pick<
     Source,
     | 'fileName'
@@ -529,7 +638,7 @@ async function saveReplacedFile(
   // A leftover site preview would make the viewer show media as a website.
   const { site: _site, ...media } = previous;
   const source: Source = {
-    ...(kind === 'website' ? previous : media),
+    ...(kind === 'website' || kind === 'text' ? previous : media),
     ...fields,
     kind,
     updatedAt: new Date().toISOString(),

@@ -29,6 +29,8 @@ mado-export-2026-10-19.zip
     │   ├── hero (2).webp       same name, numbered
     │   ├── Dribbble.url        a website: a shortcut…
     │   ├── Dribbble.png        …and its thumbnail
+    │   ├── Brief.md            a text source: its text…
+    │   ├── Brief.webp          …and its thumbnail, if it has one
     │   └── Typography/         a folder inside it
     ├── Unsorted/               sources in no collection
     └── library.json            every record, for import
@@ -38,13 +40,16 @@ mado-export-2026-10-19.zip
 - A source in two collections is copied into both folders.
 - Names drop the characters Windows and macOS refuse (`/ \ : * ? " < > |`), lose trailing dots and spaces and leading dots, and are cut to 60 characters (never inside an emoji). Windows device names (`CON`, `nul.txt`, …) get a `-`. Repeats get `(2)`, `(3)`, checked without case and with Unicode normalized (NFC). `Unsorted` and `library.json` at the top are kept for the export, so a collection with that name gets `(2)`.
 - The extension comes from the stored file's mime type, then from `fileName`.
+- A text source's file is written from its `text.body`. It keeps `.md`, `.markdown` or `.txt` from `text.fileName`, and otherwise gets `.md` or `.txt` from its format.
 - Each file's date is the source's `updatedAt`.
 
 ### `library.json`
 
 - Built and checked by one zod schema, `exportManifestSchema`, with `format: 'mado-export'` and a `version`.
 - Has every collection (with its folder `path`) and every source (name, note, tags, link, site preview, sizes, dates).
-- Each source lists its `files` with a role, `media` or `shortcut`.
+- Each source lists its `files` with a role: `media`, `shortcut` or `text`.
+- A text source has `text: { format, fileName }`, but not the body. The body is only in its `text` file.
+- `version` is 2 since text sources. Import still reads version 1.
 - Paths start inside the top folder, so renaming that folder after unzipping breaks nothing.
 - `missingFiles` lists the files that were gone while exporting.
 - No `storageKey` and no `deletedAt`. They only mean something inside this browser.
@@ -63,6 +68,7 @@ mado-export-2026-10-19.zip
 - **2026-10 — Records are read once at the start.** A file deleted or replaced while exporting is skipped and listed in `missingFiles`, so one missing file never fails the whole export.
 - **2026-10 — A source in two collections is copied into both folders.** The zip matches what users see in the app. `library.json` lists both paths, so import can rebuild one source.
 - **2026-10 — A website becomes a `.url` shortcut**, which opens in the browser on Windows and macOS. Line breaks in the link are removed, so a stored link cannot add lines to the file.
+- **2026-10 — A text source's body is a file, not a field in `library.json`.** The `.md` opens in any editor, and the text is not stored twice. If a user edits the file before importing, the edit is what comes back.
 - **2026-10 — Its own domain.** Export reads both `collections` and `sources`. Inside either one, it would add to the coupling between them.
 
 ## Known gaps

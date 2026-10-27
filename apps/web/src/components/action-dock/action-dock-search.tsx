@@ -4,6 +4,7 @@ import {
   Folder01Icon,
   Link01Icon,
   Settings01Icon,
+  TextIcon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useNavigate } from '@tanstack/react-router';
@@ -49,6 +50,7 @@ import {
 } from '#/features/sources/hooks/source-hooks';
 import { SOURCE_SEARCH_KEY } from '#/features/sources/hooks/source-interaction-hooks';
 import type { Source } from '#/features/sources/source-types';
+import { isVideoMimeType } from '#/features/sources/source-types';
 
 import { FLOATING_BAR, FLOATING_SURFACE } from '.';
 
@@ -398,8 +400,12 @@ function ActionDockSearchSourceItem({
     <CommandItem value={`source-${source.id}`} onSelect={onSelect}>
       <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-fg">
         {!objectUrl ? (
-          <HugeiconsIcon icon={Link01Icon} size={14} strokeWidth={1.5} />
-        ) : source.kind === 'video' ? (
+          <HugeiconsIcon
+            icon={source.kind === 'text' ? TextIcon : Link01Icon}
+            size={14}
+            strokeWidth={1.5}
+          />
+        ) : isVideoMimeType(source.mimeType) ? (
           <video
             src={objectUrl}
             muted
