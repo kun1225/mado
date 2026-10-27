@@ -12,7 +12,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 ### Adding
 
 - Drop files on the library or on a collection card to add them there. Many files at once is fine; each one saves on its own, so one bad file does not lose the others.
-- While files are dragged over the library or a collection's grid, the grid shrinks a little behind a frosted veil, and a card in the middle of the visible part says "Add 3 files to Library" (or "Drop to add to …" for one file) with the size limit. With reduced motion on, nothing scales; the veil and card only fade.
+- While files are dragged over the library or a collection's grid, the grid shrinks a little behind a frosted veil that spans the full page width (the grid bleeds to the page edge), and a card in the middle of the visible part says "Add 3 files to Library" (or "Drop to add to …" for one file) with the size limit. With reduced motion on, nothing scales; the veil and card only fade.
 - Pasting a file or a URL adds it, unless the focus is in a text field.
 - Only images and videos, up to `MAX_FILE_MB`.
 - A pasted URL becomes a website source with a preview. An X/Twitter post that has a video becomes a video source instead. If that download fails, it stays a website.

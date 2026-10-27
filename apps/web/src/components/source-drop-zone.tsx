@@ -41,7 +41,7 @@ export function SourceDropZone({
 
       <div
         aria-hidden
-        className="pointer-events-none absolute -inset-2 overflow-clip rounded-xl"
+        className="pointer-events-none absolute -inset-x-edge -inset-y-2 overflow-clip rounded-xl"
       >
         {/* Blur only while dragging: an idle backdrop-filter still keeps a GPU layer alive. */}
         <div className="sticky top-0 h-lvh max-h-full bg-bg/55 opacity-0 shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--color-fg)_6%,transparent)] transition-[opacity,backdrop-filter] duration-base ease-out-quart group-data-drag-active/drop:opacity-100 group-data-drag-active/drop:backdrop-blur-xs group-data-drag-active/drop:duration-slow" />
