@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mado · Folder drop import plan</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: light-dark(#f6f6f3, #181919);
+        --surface: light-dark(#fff, #222424);
+        --fg: light-dark(#242727, #edf0ee);
+        --muted: light-dark(#59615c, #b2bcb5);
+        --line: light-dark(#d5dad6, #404842);
+        --accent: light-dark(#256044, #9bd4ae);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          16px/1.65 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 1060px;
+        margin: auto;
+        padding: 48px 24px 80px;
+      }
+      header {
+        padding-bottom: 24px;
+        border-bottom: 2px solid var(--fg);
+      }
+      h1 {
+        font-size: clamp(34px, 6vw, 58px);
+        line-height: 1.1;
+        letter-spacing: -0.04em;
+        margin: 12px 0;
+      }
+      h2 {
+        margin: 40px 0 12px;
+        font-size: 25px;
+      }
+      h3 {
+        font-size: 18px;
+      }
+      p {
+        max-width: 68ch;
+      }
+      .lead {
+        font-size: 20px;
+        color: var(--muted);
+      }
+      .tag {
+        font-size: 12px;
+        letter-spacing: 0.13em;
+        color: var(--accent);
+        font-weight: 700;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      a {
+        color: var(--accent);
+        text-underline-offset: 4px;
+      }
+      a:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 4px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      .card,
+      details {
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        border-radius: 8px;
+      }
+      .card p {
+        margin-bottom: 0;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .table-wrap {
+        overflow: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--surface);
+      }
+      td,
+      th {
+        padding: 14px;
+        border: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+      code {
+        font-size: 0.9em;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        padding: 18px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: auto;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 650;
+        min-height: 44px;
+      }
+      details {
+        margin: 12px 0;
+      }
+      li {
+        margin: 8px 0;
+      }
+      footer {
+        margin-top: 40px;
+        border-top: 1px solid var(--line);
+        padding-top: 16px;
+        color: var(--muted);
+      }
+      @media (max-width: 650px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        main {
+          padding: 28px 18px 48px;
+        }
+        td,
+        th {
+          padding: 10px;
+        }
+      }
+      @media print {
+        details > * {
+          display: block;
+        }
+        main {
+          max-width: none;
+          padding: 0;
+        }
+        pre {
+          white-space: pre-wrap;
+        }
+        nav {
+          display: none;
+        }
+        :root {
+          color-scheme: light;
+        }
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        vertical-align: top;
+        padding: 12px;
+        border-bottom: 1px solid var(--line);
+      }
+      code {
+        overflow-wrap: anywhere;
+      }
+      pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        padding: 20px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      nav {
+        padding-top: 20px;
+      }
+      a {
+        color: var(--accent);
+      }
+      @media (max-width: 640px) {
+        th,
+        td {
+          padding: 8px;
+          font-size: 14px;
+        }
+      }
+      @media print {
+        main {
+          max-width: none;
+          padding: 0;
+        }
+        pre,
+        tr {
+          break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="tag">MADO · IMPLEMENTATION PLAN · 24 OCT 2026</span>
+        <h1>Drop a folder.<br />Keep its structure.</h1>
+        <p class="lead">
+          Import a folder by dropping it onto the Library source area. Reuse the
+          import engine that Settings already uses.
+        </p>
+        <p>
+          <strong>Scope:</strong> plan for review. App code has not been
+          changed.
+        </p>
+      </header>
+      <nav>
+        <a href="#behavior">Behavior</a> · <a href="#files">Files</a> ·
+        <a href="#flow">Flow</a> · <a href="#code">Pseudocode</a> ·
+        <a href="#tests">Verification</a>
+      </nav>
+      <section id="behavior">
+        <h2>1. User behavior</h2>
+        <ul>
+          <li>
+            Drop a folder onto the Library grid or its empty state. Its top
+            folder becomes a collection; supported files and subfolders keep
+            their nesting.
+          </li>
+          <li>
+            An unzipped Mado export uses its top-level library.json. Keep ids
+            and metadata; skip ids already present, including trash. A broken
+            manifest follows the existing plain-folder rule.
+          </li>
+          <li>
+            Loose images and videos keep the current add-source behavior.
+            Multiple folders import one at a time, each with its own manifest
+            scope. Mixed drops add loose media separately and import each
+            folder.
+          </li>
+          <li>
+            Keep the existing Library drop surface. Collection cards and
+            collection pages keep their current behavior; importing a folder
+            into an existing collection is outside this change.
+          </li>
+          <li>
+            Use neutral Library feedback: “Drop files or folders into Library”.
+            Do not describe a folder count as a file count. Keep the current
+            size limit hint and visual treatment.
+          </li>
+          <li>
+            After release, show “Reading folder…” while scanning, then
+            “Importing file N of M…” in a small Library status area with a
+            progressbar and polite live status. Progress also stays visible in
+            Settings. Completion and errors use existing import toasts.
+          </li>
+          <li>
+            Reject a new folder drop while an import or export is running. Keep
+            handling the event so the browser does not open the dropped item.
+            Show a short “Wait for the current import or export to finish.”
+            message.
+          </li>
+          <li>
+            On a folder-read error, save nothing from that folder and show a
+            clear error. Continue with other dropped roots. If folder reading is
+            unavailable, direct users to Settings → Data → Import a folder; do
+            not silently flatten it.
+          </li>
+        </ul>
+        <p>
+          Existing rules stay in force: hidden files are quiet skips;
+          unsupported, empty, or over-512-MB files are counted skips; folders
+          with no supported media create nothing; empty folders are not saved;
+          plain-folder imports can create duplicates; no zip support or cancel
+          button.
+        </p>
+      </section>
+      <section id="files">
+        <h2>2. Functions and files</h2>
+        <p>
+          Paths below are relative to <code>apps/web/src/</code>. Keep new
+          import types in <code>features/import/import.type.ts</code>, prefixed
+          with <code>Import</code>.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Planned change</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>features/import/import-drop.ts</code> · new</td>
+              <td>
+                <code>captureImportDrop</code> captures entries synchronously;
+                <code>readImportDropFolder</code> walks one root. Private
+                helpers: <code>walkImportEntry</code>,
+                <code>readImportEntries</code>,
+                <code>readImportEntryFile</code>. No React or storage writes.
+              </td>
+            </tr>
+            <tr>
+              <td><code>features/import/import.type.ts</code></td>
+              <td>
+                Add <code>ImportDropRoot</code> (directory entry or loose File),
+                <code>ImportRequest</code> (picked files or captured drop
+                roots), and <code>ImportActivity</code> (reading/importing, root
+                name and root index). Keep the existing
+                <code>ImportFile</code> path/file pair.
+              </td>
+            </tr>
+            <tr>
+              <td><code>features/import/import-actions.ts</code></td>
+              <td>
+                Extract existing save logic into
+                <code>importLibraryFiles(ImportFile[], onProgress)</code>. Keep
+                <code>importLibrary(File[], onProgress)</code> as the Settings
+                adapter. No changes to import planning rules.
+              </td>
+            </tr>
+            <tr>
+              <td><code>features/import/import-hooks.ts</code></td>
+              <td>
+                Extend <code>useImportLibrary</code> with
+                <code>startDroppedImport</code>, reading activity and sequential
+                folder jobs in one mutation. Keep existing toasts, compression
+                and invalidation. Expose shared busy state.
+              </td>
+            </tr>
+            <tr>
+              <td><code>features/import/import-operation.ts</code> · new</td>
+              <td>
+                <code>tryStartImportOperation</code> and
+                <code>finishImportOperation</code>: a small synchronous in-tab
+                lock shared by import and export. Reserve before folder reads or
+                save-picker work. Release on every outcome.
+              </td>
+            </tr>
+            <tr>
+              <td><code>features/export/export-hooks.ts</code></td>
+              <td>
+                Apply the same lock in <code>startExport</code> before opening
+                the save picker. Keep the picker in the click call path; never
+                wait for a queued import.
+              </td>
+            </tr>
+            <tr>
+              <td><code>features/import/import-drop-hooks.ts</code> · new</td>
+              <td>
+                <code>useImportDrop</code> returns
+                <code>handleFolderDrop</code>. On a real drop, capture roots
+                immediately. Consume directory drops only; forward loose files
+                through a supplied existing-source callback.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>features/sources/hooks/source-interaction-hooks.ts</code>
+              </td>
+              <td>
+                Add an optional drop interceptor to
+                <code>useSourceDropzone</code>. Call it from react-dropzone’s
+                composed root <code>onDrop</code> before default file
+                extraction. On consumed drops, clear feedback and stop
+                propagation; otherwise keep the existing source path.
+              </td>
+            </tr>
+            <tr>
+              <td><code>components/source-drop-zone.tsx</code></td>
+              <td>
+                Accept optional Library drop interception and neutral folder
+                copy. Keep all hooks unconditional and leave current motion
+                alone. Move any new props types into a separate type file.
+              </td>
+            </tr>
+            <tr>
+              <td><code>routes/(app)/library/index.tsx</code></td>
+              <td>
+                Wire <code>useImportDrop</code>, <code>useCreateSources</code>,
+                and <code>LibraryImportStatus</code> into the existing grid
+                wrapper.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code
+                  >routes/(app)/library/-components/library-import-status.tsx</code
+                >
+                · new
+              </td>
+              <td>
+                <code>LibraryImportStatus</code> renders reading/importing
+                activity; no controls and no new animations.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          <strong>Placement rule:</strong> primary function first, private
+          helpers in call order, required function markers before helpers.
+          Export helpers only for useful direct tests.
+        </p>
+      </section>
+      <section>
+        <h2>3. Reuse</h2>
+        <ul>
+          <li>
+            <code>buildImportPlan</code>, <code>findManifestFile</code>,
+            <code>readManifest</code>, <code>readExistingIds</code>,
+            <code>saveCollections</code>, <code>saveItem</code>: preserve
+            existing import rules and storage writes.
+          </li>
+          <li>
+            <code>useImportLibrary</code>: completion toasts, shared progress,
+            cache refresh and compression queue.
+          </li>
+          <li>
+            <code>useCreateSources</code>: loose files in mixed drops use the
+            same validation, rejection message and compression path as today.
+          </li>
+          <li>
+            <code>SourceDropZone</code> and <code>useIsDragOver</code>: reuse
+            feedback and the existing stale-highlight fix.
+          </li>
+          <li>
+            Settings folder picker stays a File[] caller. Dropped folders pass
+            explicit paths rather than changing readonly
+            File.webkitRelativePath.
+          </li>
+        </ul>
+      </section>
+      <section id="flow">
+        <h2>4. Data flow</h2>
+        <pre>
+Library native drop
+  → capture roots synchronously (before await)
+  → directory roots: walk entries → ImportFile[] per root
+      → importLibraryFiles → buildImportPlan
+      → collections → sources → IndexedDB + OPFS
+      → compression → refresh sources + collections
+  → loose files: existing source validation → useCreateSources
+  → shared progress and existing result toasts</pre>
+        <h2>5. Control flow</h2>
+        <ol>
+          <li>
+            Only enable the interceptor on the Library source area. It must run
+            before react-dropzone flattens files or filters out library.json.
+          </li>
+          <li>
+            Capture file entries and loose Files in the native drop call stack.
+            If there are no directory roots, return false and let the normal
+            handler run.
+          </li>
+          <li>
+            For a directory drop, prevent default, consume the event and acquire
+            the shared import/export lock before any await. Reject busy drops
+            immediately.
+          </li>
+          <li>
+            Run the entire folder batch inside the import mutation, so
+            navigation and Settings closure do not cancel its callbacks. Read
+            each root completely before writing it.
+          </li>
+          <li>
+            Read directories in batches until an empty batch. Use explicit paths
+            such as Moodboard/Colors/blue.png. Read sequentially to avoid
+            thousands of concurrent promises; do not load file bytes into
+            memory.
+          </li>
+          <li>
+            Import each root separately. Never combine two exports into one
+            manifest lookup. Skip unreadable roots with a clear error. A full
+            disk stops the remaining batch.
+          </li>
+          <li>
+            Refresh caches after any writes, including partial failure. Release
+            the lock and clear activity in a final cleanup. Both Settings and
+            Library observe the same activity.
+          </li>
+        </ol>
+        <p>
+          The lock is per browser tab, matching current activity tracking.
+          Cross-tab coordination is outside this change.
+        </p>
+      </section>
+      <section id="code">
+        <h2>6. Pseudocode</h2>
+        <p>
+          Signatures are proposed; use existing DOM entry types where TypeScript
+          provides them.
+        </p>
+        <pre>
+captureImportDrop(dataTransfer):
+  synchronously map file items to getAsEntry/webkitGetAsEntry results
+  capture loose Files now too
+  return roots; mark unavailable directory reading explicitly
+
+readImportDropFolder(root):
+  files = []
+  await walkImportEntry(root.entry, root.name, files)
+  return files
+
+walkImportEntry(entry, path, files):
+  if hidden path: return
+  if file:
+    files.push({ path, file: await readImportEntryFile(entry) })
+    return
+  reader = entry.createReader()
+  repeat:
+    batch = await readImportEntries(reader)
+    if batch is empty: return
+    for child in batch:
+      await walkImportEntry(child, path + '/' + child.name, files)
+
+readImportEntries(reader):
+  wrap reader.readEntries(success, failure) in Promise
+
+readImportEntryFile(entry):
+  wrap entry.file(success, failure) in Promise
+
+importLibrary(pickedFiles, onProgress):
+  return importLibraryFiles(pickedFiles.map(toImportFile), onProgress)
+
+importLibraryFiles(files, onProgress):
+  run existing manifest → plan → collections → sequential saves
+  return existing ImportResult
+
+tryStartImportOperation(kind):
+  if active operation exists: return false
+  set active kind synchronously; return true
+
+finishImportOperation():
+  clear active operation
+
+useImportLibrary():
+  startImport(files) / startDroppedImport(roots):
+    if lock unavailable: toast busy; return
+    start existing mutation with ImportRequest
+  mutation:
+    picked input → importLibrary
+    dropped input → for each directory root:
+      publish reading activity
+      read folder; on read error toast and continue
+      publish importing activity
+      importLibraryFiles; enqueue saved plain-folder sources
+      show existing per-root result toast
+      on quota error: stop batch
+  onSettled:
+    clear progress, release lock, invalidate affected caches
+
+useExportLibrary().startExport():
+  if lock unavailable: toast busy; return
+  start existing export mutation immediately
+  onSettled: clear export progress; release lock
+
+useImportDrop(onLooseFiles):
+  handleFolderDrop(event):
+    roots = captureImportDrop(event.dataTransfer)
+    if no directories and not an unsupported folder: return false
+    prevent default; stop propagation
+    if unsupported: show Settings fallback; return true
+    if busy: show busy toast; return true
+    startDroppedImport(directory roots)
+    onLooseFiles(loose files, using existing validation)
+    return true
+
+useSourceDropzone(collectionId, optionalInterceptor):
+  root onDrop(event):
+    clear drag feedback
+    if optionalInterceptor(event) consumed: stop default extraction
+    otherwise let existing react-dropzone onDrop add files
+
+SourceDropZone(props):
+  useSourceDropzone(collectionId, props.interceptor)
+  render existing wrapper and overlay with Library-specific copy
+
+Library():
+  connect createSources callback to useImportDrop
+  render SourceDropZone with interceptor
+  render LibraryImportStatus(shared activity)
+
+LibraryImportStatus(activity):
+  if idle: return null
+  render polite reading text, or labelled progressbar + import text</pre>
+        <p>
+          <strong>Integration check before coding:</strong> inspect the
+          installed react-dropzone event composition. Confirm that the supplied
+          root onDrop runs first and stopPropagation prevents its internal
+          extraction. Preserve child dialog and collection-card drop boundaries.
+          If that contract differs, use its supported event extraction hook
+          instead; test the same one-drop/one-write contract.
+        </p>
+      </section>
+      <section id="tests">
+        <h2>7. Verification</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Check</th>
+              <th>Proof</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Folder reader tests</td>
+              <td>
+                Nested paths, empty folders, hidden paths, 250+ children over
+                several batches, callback errors, synchronous capture before
+                asynchronous reads, and loose-file roots.
+              </td>
+            </tr>
+            <tr>
+              <td>Import action tests</td>
+              <td>
+                Picked File[] and explicit ImportFile[] yield the same
+                structure. A renamed exported root restores ids. Two dropped
+                export roots use separate manifests. Existing plain-folder and
+                manifest tests still pass.
+              </td>
+            </tr>
+            <tr>
+              <td>Hook / lock tests</td>
+              <td>
+                Rapid second start is refused; import blocks export and vice
+                versa; scan errors and quota errors release the lock; reading
+                state appears before saving; partial writes refresh caches;
+                navigation does not suppress cleanup/toasts.
+              </td>
+            </tr>
+            <tr>
+              <td>Drop integration</td>
+              <td>
+                A folder reaches import once, never createSources. A mixed drop
+                adds loose files once. Unsupported files inside a folder reach
+                import skip accounting. Loose-file rejection feedback stays the
+                same.
+              </td>
+            </tr>
+            <tr>
+              <td>Real browser checks</td>
+              <td>
+                Chrome, Firefox and Safari desktop: drop nested folders and an
+                unzipped export, import 250+ files, mixed drop, repeat export
+                import, offline import, open Settings mid-import, navigate away,
+                and simulate a busy export. Verify browser navigation is
+                prevented.
+              </td>
+            </tr>
+            <tr>
+              <td>UI regression checks</td>
+              <td>
+                Empty/populated Library, collection card/page drops,
+                detail-dialog drops, drag overlay clears after drop,
+                keyboard-accessible Settings fallback, reduced motion and status
+                announcements.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          Run <code>pnpm --filter web test</code>,
+          <code>pnpm --filter web check-types</code> and
+          <code>pnpm --filter web lint</code>. Use the existing Vitest setup for
+          logic tests; do not add a component-test framework just for this
+          feature.
+        </p>
+      </section>
+      <section>
+        <h2>8. Delivery order and docs</h2>
+        <ol>
+          <li>
+            Add the reader and path-based import adapter, then their tests.
+          </li>
+          <li>
+            Add the shared operation guard and batch activity to import/export
+            hooks.
+          </li>
+          <li>
+            Wire the Library interceptor, loose-file callback and status UI.
+          </li>
+          <li>Run automated checks and real-browser drop checks.</li>
+          <li>
+            Update <code>import.spec.md</code>, <code>sources.spec.md</code> and
+            <code>ARCHITECTURE.md</code> in the implementation commit: new entry
+            point, root-by-root behavior, shared guard, progress and remaining
+            gaps.
+          </li>
+        </ol>
+        <p>
+          No new package, storage schema, network call or migration is needed.
+        </p>
+      </section>
+      <footer>
+        <h2>Browser API references</h2>
+        <p>
+          <a
+            href="https://developer.mozilla.org/en-US/docs/Web/API/DataTransferItem/webkitGetAsEntry"
+            >MDN: capture dropped entries in the drop handler</a
+          >
+          ·
+          <a
+            href="https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryReader/readEntries"
+            >MDN: keep reading directory batches until empty</a
+          >
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>

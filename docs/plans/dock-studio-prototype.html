@@ -1,0 +1,4238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mado dock and studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ---------- Mado tokens (packages/ui/src/styles.css) ---------- */
+      :root {
+        --bg: oklch(0.96 0 0);
+        --fg: oklch(0.205 0 0);
+        --muted: oklch(0.94 0 0);
+        --muted-fg: oklch(0.556 0 0);
+        --border: oklch(0.86 0 0);
+        --accent: oklch(0.305 0 0);
+        --accent-fg: oklch(0.985 0 0);
+        --danger: oklch(0.52 0.09 30);
+        --surface: oklch(0.995 0 0);
+        --hover: oklch(0.205 0 0 / 0.05);
+        --folder-red: oklch(0.82 0.1 25);
+        --folder-orange: oklch(0.85 0.1 60);
+        --folder-yellow: oklch(0.9 0.11 95);
+        --folder-green: oklch(0.85 0.1 150);
+        --folder-blue: oklch(0.83 0.08 245);
+        --folder-purple: oklch(0.8 0.09 300);
+        --folder-pink: oklch(0.84 0.09 350);
+        --folder-gray: oklch(0.86 0 0);
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+        --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+        --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+        --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+        --shadow-raised:
+          0 0 0 1px rgb(0 0 0 / 0.05), 0 1px 3px rgb(0 0 0 / 0.06),
+          0 10px 28px -10px rgb(0 0 0 / 0.16);
+        --shadow-float:
+          0 0 0 1px rgb(0 0 0 / 0.06), 0 2px 6px rgb(0 0 0 / 0.06),
+          0 16px 40px -12px rgb(0 0 0 / 0.2);
+        --img-outline: rgb(0 0 0 / 0.1);
+        --edge: max(16px, min(3.5vw, 96px));
+        --z-bar: 150;
+        --z-overlay: 199;
+        --z-modal: 200;
+        --z-popover: 205;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: oklch(0.145 0 0);
+          --fg: oklch(0.985 0 0);
+          --muted: oklch(0.269 0 0);
+          --muted-fg: oklch(0.7 0 0);
+          --border: oklch(0.269 0 0);
+          --accent: oklch(0.96 0 0);
+          --accent-fg: oklch(0.145 0 0);
+          --danger: oklch(0.7 0.08 30);
+          --surface: oklch(0.195 0 0);
+          --hover: oklch(1 0 0 / 0.06);
+          --folder-red: oklch(0.5 0.12 25);
+          --folder-orange: oklch(0.56 0.11 60);
+          --folder-yellow: oklch(0.62 0.1 95);
+          --folder-green: oklch(0.52 0.1 150);
+          --folder-blue: oklch(0.5 0.1 245);
+          --folder-purple: oklch(0.48 0.11 300);
+          --folder-pink: oklch(0.54 0.1 350);
+          --folder-gray: oklch(0.4 0 0);
+          --shadow-raised: 0 0 0 1px rgb(255 255 255 / 0.09);
+          --shadow-float:
+            0 0 0 1px rgb(255 255 255 / 0.1), 0 16px 40px -12px rgb(0 0 0 / 0.6);
+          --img-outline: rgb(255 255 255 / 0.1);
+          color-scheme: dark;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: Geist, ui-sans-serif, system-ui, sans-serif;
+        font-size: 14px;
+        line-height: 1.45;
+        -webkit-font-smoothing: antialiased;
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+        color: inherit;
+        touch-action: manipulation;
+      }
+      button {
+        cursor: pointer;
+      }
+      input,
+      select {
+        font-size: 16px;
+      }
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+      svg {
+        flex-shrink: 0;
+      }
+      .num {
+        font-variant-numeric: tabular-nums;
+      }
+      .muted {
+        color: var(--muted-fg);
+      }
+
+      /* ---------- buttons ---------- */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 32px;
+        padding: 0 12px;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: var(--fg);
+        font-size: 13px;
+        font-weight: 500;
+        white-space: nowrap;
+        transition:
+          background-color 150ms ease-out,
+          color 150ms ease-out,
+          scale 150ms ease-out;
+      }
+      .btn:active {
+        scale: 0.96;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .btn:hover {
+          background: var(--hover);
+        }
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: var(--accent-fg);
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .btn-primary:hover {
+          background: color-mix(in oklch, var(--accent) 88%, var(--bg));
+        }
+      }
+      .btn-soft {
+        background: var(--muted);
+      }
+      .btn-danger {
+        background: var(--danger);
+        color: #fff;
+      }
+      .btn-icon {
+        width: 36px;
+        padding: 0;
+        justify-content: center;
+      }
+      .btn[aria-pressed='true'],
+      .btn[aria-expanded='true'].btn-toggle {
+        background: var(--accent);
+        color: var(--accent-fg);
+      }
+
+      /* ---------- chips ---------- */
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        height: 28px;
+        border-radius: 999px;
+        background: var(--surface);
+        box-shadow: var(--shadow-raised);
+        font-size: 13px;
+        font-weight: 500;
+        max-width: 100%;
+      }
+      .chip > button,
+      .chip > span {
+        border: 0;
+        background: transparent;
+        height: 100%;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+      }
+      .chip-main {
+        padding: 0 4px 0 10px;
+        min-width: 0;
+      }
+      .chip-main span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .chip-x {
+        width: 26px;
+        justify-content: center;
+        color: var(--muted-fg);
+        position: relative;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .chip-x:hover {
+          color: var(--fg);
+        }
+        button.chip-main:hover {
+          color: var(--muted-fg);
+        }
+      }
+      .chip svg {
+        width: 14px;
+        height: 14px;
+        color: var(--muted-fg);
+      }
+      .chip-ghost {
+        height: 28px;
+        padding: 0 10px;
+        gap: 6px;
+        display: inline-flex;
+        align-items: center;
+        border: 1px dashed var(--border);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--muted-fg);
+        font-size: 13px;
+        font-weight: 500;
+        transition:
+          color 150ms ease-out,
+          border-color 150ms ease-out;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .chip-ghost:hover {
+          color: var(--fg);
+          border-color: var(--muted-fg);
+        }
+      }
+      .kbd {
+        font-size: 11px;
+        padding: 1px 5px;
+        border-radius: 4px;
+        background: var(--muted);
+        color: var(--muted-fg);
+        font-family: inherit;
+      }
+
+      /* ---------- source grid (mirrors source-grid + source-card) ---------- */
+      .grid {
+        columns: 240px;
+        column-gap: 10px;
+      }
+      .grid-side {
+        columns: 2;
+        column-gap: 8px;
+      }
+      .card {
+        break-inside: avoid;
+        margin: 0 0 10px;
+      }
+      .grid-side .card {
+        margin-bottom: 8px;
+      }
+      .card-hit {
+        display: block;
+        position: relative;
+        padding: 0;
+        border: 0;
+        background: none;
+        border-radius: var(--radius-md);
+        width: 100%;
+        transition: scale 150ms ease-out;
+      }
+      .card-hit:active {
+        scale: 0.985;
+      }
+      .card-media {
+        display: block;
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--radius-md);
+        outline: 1px solid var(--img-outline);
+        outline-offset: -1px;
+        background: var(--muted);
+      }
+      .card-media img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .card-hit::after {
+        content: attr(data-name);
+        position: absolute;
+        inset: auto 0 0 0;
+        padding: 24px 10px 8px;
+        font-size: 12.5px;
+        color: #fff;
+        text-align: left;
+        background: linear-gradient(transparent, rgb(0 0 0 / 0.55));
+        border-radius: 0 0 var(--radius-md) var(--radius-md);
+        opacity: 0;
+        transition: opacity 150ms ease-out;
+        pointer-events: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .card-hit:hover::after {
+          opacity: 1;
+        }
+      }
+      .card-hit[data-current]::before {
+        content: '';
+        position: absolute;
+        inset: -3px;
+        border-radius: 11px;
+        box-shadow: 0 0 0 2px var(--fg);
+        pointer-events: none;
+        z-index: 1;
+      }
+      .badge {
+        position: absolute;
+        left: 8px;
+        top: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        height: 22px;
+        padding: 0 8px;
+        border-radius: 999px;
+        font-size: 11.5px;
+        font-weight: 500;
+        background: rgb(10 10 10 / 0.62);
+        color: #fff;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        pointer-events: none;
+        max-width: calc(100% - 16px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .badge svg {
+        width: 12px;
+        height: 12px;
+      }
+      .board-mini {
+        position: absolute;
+        inset: 0;
+        background-color: var(--muted);
+        background-image: radial-gradient(var(--border) 1px, transparent 1px);
+        background-size: 12px 12px;
+      }
+      .board-mini span {
+        position: absolute;
+        border-radius: 3px;
+        background-size: cover;
+        background-position: center;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+      }
+      .board-mini .mini-note {
+        background: var(--surface);
+      }
+      .empty {
+        padding: 64px 16px;
+        text-align: center;
+        color: var(--muted-fg);
+        display: grid;
+        justify-items: center;
+        gap: 12px;
+      }
+      .empty strong {
+        color: var(--fg);
+        font-size: 15px;
+        font-weight: 500;
+      }
+      .empty p {
+        margin: 0;
+        max-width: 42ch;
+        text-wrap: pretty;
+      }
+
+      /* ---------- library page ---------- */
+      .lib {
+        padding: 16px var(--edge) 140px;
+        min-height: 100vh;
+      }
+      .lib-top {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        min-height: 44px;
+        flex-wrap: wrap;
+      }
+      .ltabs {
+        display: inline-flex;
+        padding: 3px;
+        border-radius: 999px;
+        background: var(--muted);
+      }
+      .ltabs button {
+        height: 30px;
+        padding: 0 14px;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--muted-fg);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .ltabs button[aria-selected='true'] {
+        background: var(--surface);
+        color: var(--fg);
+        box-shadow: var(--shadow-raised);
+      }
+      .ltabs svg {
+        width: 15px;
+        height: 15px;
+      }
+      .crumbs {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        flex-wrap: wrap;
+        font-size: 13.5px;
+        color: var(--muted-fg);
+        min-width: 0;
+      }
+      .crumbs button {
+        border: 0;
+        background: transparent;
+        height: 28px;
+        padding: 0 6px;
+        border-radius: 6px;
+        color: inherit;
+        max-width: 220px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .crumbs button:hover {
+          background: var(--hover);
+          color: var(--fg);
+        }
+      }
+      .crumbs .sep {
+        color: var(--border);
+        padding: 0 1px;
+      }
+      .crumbs [aria-current='page'] {
+        color: var(--fg);
+        padding: 0 6px;
+        max-width: 260px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .crumbs button.drop-ok {
+        background: var(--accent);
+        color: var(--accent-fg);
+      }
+      .title-row {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 10px;
+      }
+      .title-row .back {
+        width: 32px;
+        height: 32px;
+      }
+      .title-input {
+        border: 1px solid transparent;
+        background: transparent;
+        border-radius: var(--radius-md);
+        font-size: 24px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        height: 40px;
+        padding: 0 10px;
+        field-sizing: content;
+        min-width: 60px;
+        max-width: 100%;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .title-input:hover {
+          border-color: var(--border);
+        }
+      }
+      .title-input:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 0;
+      }
+      .folder-row {
+        display: flex;
+        gap: 16px;
+        overflow-x: auto;
+        padding: 24px 0 4px;
+        margin-bottom: 20px;
+        scrollbar-width: none;
+      }
+      .folder-row::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* folder card (mirrors collection-card + collection-card-pocket) */
+      .fcard {
+        --pf: var(--muted);
+        --pb: var(--border);
+        position: relative;
+        flex: 0 0 176px;
+        height: 176px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        background: transparent;
+        padding: 0;
+        text-align: left;
+        transition:
+          border-color 150ms ease-out,
+          scale 150ms ease-out,
+          background-color 150ms ease-out;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .fcard:hover {
+          border-color: var(--fg);
+        }
+      }
+      .fcard.drop-ok {
+        scale: 1.02;
+        border-color: var(--accent);
+        background: color-mix(in oklch, var(--accent) 10%, transparent);
+      }
+      .pocket {
+        position: absolute;
+        left: 50%;
+        top: 22px;
+        width: 112px;
+        height: 92px;
+        margin-left: -56px;
+        filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.12));
+        perspective: 400px;
+        pointer-events: none;
+      }
+      .pocket .back {
+        position: absolute;
+        inset: auto 0 0 0;
+        height: 72px;
+        border-radius: 6px;
+        border-top-left-radius: 0;
+        background: var(--pb);
+      }
+      .pocket .tab {
+        position: absolute;
+        left: 0;
+        bottom: 72px;
+        width: 40px;
+        height: 8px;
+        border-radius: 6px 6px 0 0;
+        background: var(--pb);
+      }
+      .pocket .prev {
+        position: absolute;
+        left: 50%;
+        bottom: 30px;
+        width: 48px;
+        height: 56px;
+        margin-left: -24px;
+        border-radius: 4px;
+        overflow: hidden;
+        outline: 1px solid var(--img-outline);
+        outline-offset: -1px;
+        background: var(--muted) center / cover;
+        transform-origin: bottom;
+        translate: calc(var(--o) * 14px) 0;
+        rotate: calc(var(--o) * 3deg);
+        transition:
+          translate 120ms var(--ease-out-quart),
+          rotate 120ms var(--ease-out-quart);
+      }
+      .pocket .front {
+        position: absolute;
+        inset: auto 0 0 0;
+        height: 64px;
+        border-radius: 6px;
+        background: var(--pf)
+          linear-gradient(to bottom, rgb(255 255 255 / 0.25), rgb(0 0 0 / 0.05));
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35);
+        transform-origin: bottom;
+        transition: transform 120ms var(--ease-out-quart);
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .fcard:hover .front {
+          transform: rotateX(-28deg);
+          transition-duration: 240ms;
+        }
+        .fcard:hover .prev {
+          translate: calc(var(--o) * 30px) -22%;
+          rotate: calc(var(--o) * 9deg);
+          transition-duration: 240ms;
+          transition-delay: var(--d);
+        }
+      }
+      .fcard-label {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 12px;
+        min-width: 0;
+      }
+      .fcard-label b {
+        display: block;
+        font-weight: 500;
+        font-size: 14px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .fcard-label span {
+        color: var(--muted-fg);
+        font-size: 14px;
+      }
+      .fcard-new {
+        border-style: dashed;
+        color: var(--muted-fg);
+        display: grid;
+        place-items: center;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .fcard-new:hover {
+          color: var(--fg);
+        }
+      }
+      .fcard-new .fcard-label {
+        color: inherit;
+      }
+      .active-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 0 0 16px;
+      }
+      .active-row:empty {
+        display: none;
+      }
+
+      /* ---------- dock ---------- */
+      .dock {
+        position: fixed;
+        left: 50%;
+        bottom: 24px;
+        transform: translateX(-50%);
+        z-index: var(--z-bar);
+        width: min(680px, calc(100vw - 32px));
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+      .studio .dock {
+        position: absolute;
+        width: min(680px, calc(100% - 32px));
+      }
+      .dock-row {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        width: 100%;
+      }
+      .glass {
+        background: color-mix(in oklch, var(--surface) 84%, transparent);
+        backdrop-filter: blur(20px) saturate(1.4);
+        -webkit-backdrop-filter: blur(20px) saturate(1.4);
+        box-shadow: var(--shadow-float);
+      }
+      .dock-add {
+        width: 48px;
+        height: 48px;
+        border-radius: 999px;
+        flex-shrink: 0;
+      }
+      .dock-bar {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        padding: 4px;
+        border-radius: 26px;
+        min-height: 48px;
+      }
+      .dock-bar .btn-icon {
+        width: 40px;
+        height: 40px;
+      }
+      .dock-search {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 4px 0 8px;
+      }
+      .dock-search input {
+        flex: 1;
+        min-width: 80px;
+        height: 40px;
+        border: 0;
+        background: transparent;
+        outline: none;
+      }
+      .dock-search input::-webkit-search-cancel-button {
+        display: none;
+      }
+      .dock-search input::placeholder {
+        color: var(--muted-fg);
+      }
+      .dock-search .chips {
+        flex-wrap: nowrap;
+      }
+      .sf-icon {
+        display: inline-flex;
+        color: var(--muted-fg);
+        pointer-events: none;
+      }
+      .sheet {
+        width: 100%;
+        border-radius: 20px;
+        padding: 14px;
+        max-height: min(56vh, 540px);
+        overflow: auto;
+        transform-origin: bottom center;
+        animation: sheet-in 200ms var(--ease-out);
+        display: grid;
+        gap: 14px;
+        align-content: start;
+      }
+      .sheet.wide {
+        width: min(880px, calc(100vw - 32px));
+      }
+      .studio .sheet.wide {
+        width: min(880px, calc(100% + 0px));
+      }
+      @keyframes sheet-in {
+        from {
+          opacity: 0;
+          transform: translateY(8px) scale(0.98);
+        }
+      }
+      .sheet[hidden] {
+        display: none;
+      }
+      .sheet h3 {
+        margin: 0 0 8px;
+        font-size: 11.5px;
+        font-weight: 500;
+        color: var(--muted-fg);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .suggest {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+      }
+
+      /* folder manager */
+      .fm {
+        padding: 0;
+        overflow: hidden;
+        display: block;
+      }
+      .fm-cols {
+        display: flex;
+        overflow-x: auto;
+        max-height: min(52vh, 380px);
+      }
+      .fm-col {
+        flex: 0 0 228px;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid var(--border);
+        min-height: 0;
+      }
+      .fm-col:last-child {
+        border-right: 0;
+      }
+      .fm-list {
+        flex: 1;
+        overflow: auto;
+        padding: 6px;
+      }
+      .fm-foot {
+        padding: 6px;
+        border-top: 1px solid var(--border);
+      }
+      .fm-row {
+        display: flex;
+        align-items: center;
+        border-radius: 6px;
+        position: relative;
+      }
+      .fm-row[aria-current='true'] {
+        background: var(--muted);
+      }
+      .fm-row.drop-ok {
+        background: var(--accent);
+        color: var(--accent-fg);
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .fm-row:hover {
+          background: var(--hover);
+        }
+        .fm-row[aria-current='true']:hover {
+          background: var(--muted);
+        }
+      }
+      .fm-go {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 34px;
+        padding: 0 6px 0 10px;
+        border: 0;
+        background: transparent;
+        border-radius: 6px;
+        text-align: left;
+        font-size: 13.5px;
+      }
+      .fm-go .name {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .fm-go .count {
+        color: var(--muted-fg);
+        font-size: 12px;
+      }
+      .fm-go svg {
+        width: 14px;
+        height: 14px;
+        color: var(--muted-fg);
+      }
+      .fm-row.drop-ok .fm-go svg,
+      .fm-row.drop-ok .count {
+        color: inherit;
+      }
+      .fm-act {
+        width: 28px;
+        height: 28px;
+        border: 0;
+        background: transparent;
+        border-radius: 6px;
+        display: grid;
+        place-items: center;
+        color: var(--muted-fg);
+        flex-shrink: 0;
+      }
+      .fm-act svg {
+        width: 14px;
+        height: 14px;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .fm-act {
+          opacity: 0;
+          transition: opacity 150ms ease-out;
+        }
+        .fm-row:hover .fm-act,
+        .fm-row:focus-within .fm-act {
+          opacity: 1;
+        }
+        .fm-act:hover {
+          background: var(--hover);
+          color: var(--fg);
+        }
+      }
+      .fm-edit {
+        display: flex;
+        gap: 4px;
+        padding: 3px;
+        width: 100%;
+        min-width: 0;
+      }
+      .fm-edit input {
+        flex: 1;
+        min-width: 0;
+        height: 30px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0 8px;
+        background: var(--bg);
+        font-size: 16px;
+      }
+      .fm-confirm {
+        padding: 8px 10px;
+        display: grid;
+        gap: 8px;
+        font-size: 13px;
+        width: 100%;
+        background: var(--muted);
+        border-radius: 6px;
+      }
+      .fm-confirm p {
+        margin: 0;
+      }
+      .fm-confirm div {
+        display: flex;
+        gap: 6px;
+      }
+      .fm-hint {
+        margin: 0;
+        padding: 8px 14px;
+        font-size: 12px;
+        color: var(--muted-fg);
+        border-top: 1px solid var(--border);
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        flex-shrink: 0;
+      }
+
+      /* add menu + popover */
+      .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        height: 40px;
+        padding: 0 10px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        text-align: left;
+        font-size: 14px;
+      }
+      .menu-item svg {
+        color: var(--muted-fg);
+      }
+      .menu-item small {
+        margin-left: auto;
+        color: var(--muted-fg);
+        font-size: 12px;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .menu-item:hover {
+          background: var(--hover);
+        }
+      }
+      .pop {
+        position: fixed;
+        z-index: var(--z-popover);
+        width: min(420px, calc(100vw - 32px));
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-float);
+        padding: 6px;
+        animation: pop-in 160ms var(--ease-out);
+      }
+      @keyframes pop-in {
+        from {
+          opacity: 0;
+          transform: scale(0.97);
+        }
+      }
+      .pop-tabs {
+        display: flex;
+        gap: 2px;
+        padding: 2px;
+        background: var(--muted);
+        border-radius: 6px;
+      }
+      .pop-tabs button {
+        flex: 1;
+        height: 30px;
+        border: 0;
+        background: transparent;
+        border-radius: 5px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--muted-fg);
+      }
+      .pop-tabs button[aria-selected='true'] {
+        background: var(--surface);
+        color: var(--fg);
+        box-shadow: var(--shadow-raised);
+      }
+      .pop-body {
+        padding: 10px 6px 6px;
+        display: grid;
+        gap: 14px;
+        max-height: min(420px, 60vh);
+        overflow: auto;
+      }
+      .pop-label {
+        margin: 0 0 6px;
+        font-size: 11.5px;
+        font-weight: 500;
+        color: var(--muted-fg);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .preset-grid,
+      .type-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+      }
+      .pop-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        height: 34px;
+        padding: 0 10px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        text-align: left;
+        font-size: 13.5px;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .pop-item:hover {
+          background: var(--hover);
+        }
+      }
+      .pop-item[aria-pressed='true'],
+      .pop-item[aria-current='true'] {
+        background: var(--accent);
+        color: var(--accent-fg);
+      }
+      .pop-item[aria-current='true'] .place {
+        color: inherit;
+        opacity: 0.75;
+      }
+      .pop-item .count {
+        margin-left: auto;
+        color: var(--muted-fg);
+        font-size: 12px;
+      }
+      .pop-item span:not(.count):not(.dot) {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .pop-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        font-size: 13.5px;
+      }
+      .pop-row input,
+      .pop-row select {
+        height: 34px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        padding: 0 8px;
+      }
+      .pop-row input[type='number'] {
+        width: 64px;
+      }
+      .pop-row input[type='date'] {
+        width: 148px;
+      }
+      .pop-row .btn {
+        margin-left: auto;
+      }
+      .pop-help {
+        margin: 0;
+        font-size: 12.5px;
+        color: var(--muted-fg);
+      }
+      .pop-section {
+        margin: 4px 0 2px;
+        padding: 0 10px;
+        font-size: 11.5px;
+        font-weight: 500;
+        color: var(--muted-fg);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      /* ---------- chat (shared) ---------- */
+      .chat-log {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .msg-user {
+        align-self: flex-end;
+        max-width: 85%;
+        background: var(--muted);
+        padding: 8px 12px;
+        border-radius: 16px 16px 4px 16px;
+      }
+      .msg-ai {
+        display: grid;
+        gap: 10px;
+        max-width: 62ch;
+      }
+      .msg-ai p {
+        margin: 0;
+        text-wrap: pretty;
+      }
+      .who {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--muted-fg);
+        font-weight: 500;
+      }
+      .who svg {
+        width: 14px;
+        height: 14px;
+      }
+      .caret {
+        display: inline-block;
+        width: 7px;
+        height: 14px;
+        margin-left: 2px;
+        vertical-align: -2px;
+        background: var(--fg);
+        animation: blink 900ms steps(1) infinite;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+      .cites {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .cite {
+        width: 48px;
+        height: 48px;
+        padding: 0;
+        border: 0;
+        border-radius: 6px;
+        overflow: hidden;
+        outline: 1px solid var(--img-outline);
+        outline-offset: -1px;
+        background: var(--muted);
+      }
+      .cite img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .msg-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .chat-empty {
+        color: var(--muted-fg);
+        display: grid;
+        gap: 10px;
+        padding: 4px 0;
+      }
+      .chat-empty p {
+        margin: 0;
+        max-width: 60ch;
+      }
+      .chat-sheet {
+        background: color-mix(in oklch, var(--surface) 97%, transparent);
+        padding: 0;
+        gap: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: min(56vh, 540px);
+      }
+      .chat-head {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px;
+        border-bottom: 1px solid var(--border);
+        min-height: 52px;
+      }
+      .chat-body {
+        flex: 1;
+        overflow: auto;
+        padding: 16px;
+        min-height: 0;
+      }
+      .place {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        color: var(--muted-fg);
+        min-width: 0;
+      }
+      .place svg {
+        width: 12px;
+        height: 12px;
+      }
+      .place span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* A · Tabs */
+      .s-tabs {
+        display: flex;
+        gap: 2px;
+        overflow-x: auto;
+        flex: 1;
+        min-width: 0;
+        scrollbar-width: none;
+      }
+      .s-tab {
+        border: 0;
+        background: transparent;
+        height: 34px;
+        padding: 0 12px;
+        border-radius: 8px;
+        color: var(--muted-fg);
+        white-space: nowrap;
+        max-width: 200px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        flex-shrink: 0;
+      }
+      .s-tab span:first-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .s-tab[aria-selected='true'] {
+        background: var(--muted);
+        color: var(--fg);
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .s-tab:hover {
+          color: var(--fg);
+        }
+      }
+      .s-tab .x {
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        display: grid;
+        place-items: center;
+        margin-right: -6px;
+        flex-shrink: 0;
+      }
+      .s-tab .x svg {
+        width: 12px;
+        height: 12px;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .s-tab .x:hover {
+          background: var(--hover);
+        }
+      }
+
+      /* B · History */
+      .hist {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        flex: 1;
+        min-height: 0;
+      }
+      .hist-list {
+        border-right: 1px solid var(--border);
+        overflow: auto;
+        padding: 8px;
+        display: grid;
+        gap: 2px;
+        align-content: start;
+      }
+      .hist-list input {
+        height: 34px;
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg);
+        padding: 0 10px;
+        font-size: 16px;
+        margin-bottom: 6px;
+      }
+      .hist-item {
+        border: 0;
+        background: transparent;
+        text-align: left;
+        padding: 7px 10px;
+        border-radius: 8px;
+        display: grid;
+        gap: 1px;
+        width: 100%;
+        min-width: 0;
+      }
+      .hist-item b {
+        font-weight: 500;
+        font-size: 13.5px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .hist-item[aria-current='true'] {
+        background: var(--muted);
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .hist-item:hover {
+          background: var(--hover);
+        }
+        .hist-item[aria-current='true']:hover {
+          background: var(--muted);
+        }
+      }
+      .hist-group {
+        margin: 8px 10px 2px;
+        font-size: 11.5px;
+        font-weight: 500;
+        color: var(--muted-fg);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .hist-main {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        min-width: 0;
+      }
+      .hist-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--border);
+        min-height: 48px;
+        min-width: 0;
+      }
+      .hist-title b {
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      @media (max-width: 720px) {
+        .hist {
+          grid-template-columns: 1fr;
+        }
+        .hist-list {
+          display: none;
+        }
+      }
+
+      /* C · Per place */
+      .place-btn {
+        border: 0;
+        background: transparent;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        max-width: 60%;
+        text-align: left;
+      }
+      .place-btn b {
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .place-btn:hover {
+          background: var(--hover);
+        }
+      }
+      .elsewhere {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        margin: -16px -16px 14px;
+        background: var(--muted);
+        font-size: 13px;
+      }
+      .elsewhere span {
+        flex: 1;
+        min-width: 0;
+      }
+
+      /* ---------- studio ---------- */
+      .studio {
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        height: 100dvh;
+      }
+      .studio.collapsed {
+        grid-template-columns: 0 1fr;
+      }
+      .st-side {
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+        min-width: 0;
+      }
+      .studio.collapsed .st-side {
+        visibility: hidden;
+        border-right: 0;
+      }
+      .st-side-head {
+        display: grid;
+        gap: 6px;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+      }
+      .st-side-head .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+      }
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 32px;
+        padding: 0 10px 0 6px;
+        border: 0;
+        background: transparent;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 13.5px;
+        min-width: 0;
+        max-width: 240px;
+        flex-shrink: 1;
+      }
+      .back-link span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .back-link:hover {
+          background: var(--hover);
+        }
+      }
+      .st-side .crumbs {
+        font-size: 12.5px;
+      }
+      .st-side .crumbs button {
+        height: 24px;
+        max-width: 140px;
+      }
+      .st-side-grid {
+        flex: 1;
+        overflow: auto;
+        padding: 10px 12px 40px;
+      }
+      .st-side-grid .card {
+        cursor: grab;
+      }
+      .st-side .active-row {
+        margin: 0;
+      }
+      .st-main {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+      }
+      .st-top {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 52px;
+        padding: 0 12px;
+        border-bottom: 1px solid var(--border);
+        min-width: 0;
+      }
+      .st-top h1 {
+        margin: 0 0 0 2px;
+        font-size: 15px;
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+      }
+      .st-top .meta {
+        color: var(--muted-fg);
+        font-size: 13px;
+        white-space: nowrap;
+      }
+      .st-board {
+        flex: 1;
+        display: flex;
+        min-height: 0;
+      }
+      @media (max-width: 760px) {
+        .studio,
+        .studio.collapsed {
+          grid-template-columns: 1fr;
+        }
+        .st-side {
+          position: fixed;
+          inset: 0 auto 0 0;
+          width: min(340px, 90vw);
+          z-index: var(--z-bar);
+          background: var(--bg);
+        }
+      }
+
+      /* board */
+      .board {
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        flex: 1;
+        background-color: var(--bg);
+        background-image: radial-gradient(
+          var(--border) 1.2px,
+          transparent 1.2px
+        );
+        background-size: 20px 20px;
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+      }
+      .board.panning {
+        cursor: grabbing;
+      }
+      .board.drop-ok {
+        box-shadow: inset 0 0 0 2px var(--accent);
+      }
+      .board-world {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+      .b-item {
+        position: absolute;
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: var(--shadow-raised);
+        background: var(--muted);
+        cursor: move;
+      }
+      .b-item img {
+        display: block;
+        width: 100%;
+        pointer-events: none;
+      }
+      .b-item.dragging {
+        box-shadow: var(--shadow-float);
+      }
+      .b-note {
+        position: absolute;
+        width: 220px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: var(--shadow-raised);
+        font-size: 14px;
+        cursor: move;
+      }
+      .board-empty {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        color: var(--muted-fg);
+        pointer-events: none;
+      }
+      .board-empty strong {
+        display: block;
+        color: var(--fg);
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+
+      /* overlays */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        z-index: var(--z-overlay);
+        background: rgb(0 0 0 / 0.4);
+        animation: fade-in 200ms var(--ease-out);
+      }
+      @keyframes fade-in {
+        from {
+          opacity: 0;
+        }
+      }
+      .modal {
+        position: fixed;
+        z-index: var(--z-modal);
+        inset: 24px;
+        margin: auto;
+        max-width: 980px;
+        max-height: 760px;
+        background: var(--surface);
+        border-radius: 16px;
+        box-shadow: var(--shadow-float);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: modal-in 220ms var(--ease-out);
+      }
+      @keyframes modal-in {
+        from {
+          opacity: 0;
+          transform: scale(0.97);
+        }
+      }
+      .modal-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 10px 10px 18px;
+        border-bottom: 1px solid var(--border);
+      }
+      .modal-head h2 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 500;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .lightbox {
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        flex: 1;
+        min-height: 0;
+      }
+      .lightbox-media {
+        background: var(--muted);
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        min-height: 0;
+      }
+      .lightbox-media img {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: var(--radius-md);
+        outline: 1px solid var(--img-outline);
+        outline-offset: -1px;
+      }
+      .lightbox-info {
+        padding: 18px;
+        display: grid;
+        align-content: start;
+        gap: 14px;
+        border-left: 1px solid var(--border);
+      }
+      .lightbox-info dl {
+        margin: 0;
+        display: grid;
+        gap: 10px;
+      }
+      .lightbox-info dt {
+        font-size: 12px;
+        color: var(--muted-fg);
+      }
+      .lightbox-info dd {
+        margin: 2px 0 0;
+      }
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 96px;
+        transform: translateX(-50%);
+        z-index: var(--z-popover);
+        padding: 10px 14px;
+        border-radius: 12px;
+        background: var(--fg);
+        color: var(--bg);
+        font-size: 13.5px;
+        animation: sheet-in 200ms var(--ease-out);
+        max-width: calc(100vw - 32px);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+
+      /* Harness only: room for the picker at the top, so it never covers the work. */
+      body[data-picker-top] #stage {
+        padding-top: 64px;
+      }
+      body[data-picker-top] .studio {
+        height: calc(100dvh - 64px);
+      }
+
+      /* ---------- picker (verbatim from PICKER.md) ---------- */
+      .proto-picker {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2147483647;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        padding: 4px;
+        border-radius: 999px;
+        background: rgba(10, 10, 10, 0.82);
+        -webkit-backdrop-filter: blur(12px) saturate(1.4);
+        backdrop-filter: blur(12px) saturate(1.4);
+        box-shadow:
+          0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+          0 8px 24px rgba(0, 0, 0, 0.24),
+          0 2px 6px rgba(0, 0, 0, 0.12);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 13px;
+        line-height: 1;
+        -webkit-font-smoothing: antialiased;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .proto-picker-highlight {
+        position: absolute;
+        top: 4px;
+        left: 0;
+        height: 28px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        will-change: transform;
+      }
+      .proto-picker[data-ready] .proto-picker-highlight {
+        transition:
+          transform 250ms cubic-bezier(0.23, 1, 0.32, 1),
+          width 250ms cubic-bezier(0.23, 1, 0.32, 1);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .proto-picker[data-ready] .proto-picker-highlight {
+          transition: none;
+        }
+      }
+      .proto-picker-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+        height: 28px;
+        padding: 0 12px;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.55);
+        font: inherit;
+        cursor: pointer;
+        transition: color 150ms ease-out;
+      }
+      .proto-picker-item:hover {
+        color: rgba(255, 255, 255, 0.85);
+      }
+      .proto-picker-item:active {
+        transform: scale(0.97);
+      }
+      .proto-picker-item:focus-visible {
+        outline: 2px solid rgba(255, 255, 255, 0.4);
+        outline-offset: 2px;
+      }
+      .proto-picker-item[data-active] {
+        color: #fff;
+      }
+      .proto-picker-divider {
+        width: 1px;
+        height: 16px;
+        margin: 0 4px;
+        background: rgba(255, 255, 255, 0.12);
+      }
+      .proto-picker-replay {
+        padding: 0 10px;
+        font-size: 14px;
+      }
+      .proto-picker[data-position='top'] {
+        bottom: auto;
+        top: 24px;
+      }
+    </style>
+  </head>
+  <body data-picker-top>
+    <div id="stage"></div>
+    <input type="file" id="file-input" accept="image/*" multiple hidden />
+
+    <nav
+      class="proto-picker"
+      data-position="top"
+      aria-label="Prototype variants"
+    >
+      <span class="proto-picker-highlight" aria-hidden="true"></span>
+      <button class="proto-picker-item" data-active aria-current="true">
+        Tabs
+      </button>
+      <button class="proto-picker-item">History</button>
+      <button class="proto-picker-item">Per place</button>
+    </nav>
+
+    <script>
+      /* =====================================================================
+   Data — worst-case content: long names, deep folders, every kind.
+   ===================================================================== */
+      const NOW = new Date('2026-10-27T10:00:00');
+      const DAY = 864e5;
+      const HOUR = 3600e3;
+
+      let COLLECTIONS = [
+        { id: 'c1', name: 'Brand work', parentId: null, color: 'blue' },
+        {
+          id: 'c2',
+          name: 'Nike — Air Max refresh',
+          parentId: 'c1',
+          color: 'orange',
+        },
+        { id: 'c3', name: 'Logos', parentId: 'c2', color: null },
+        { id: 'c4', name: 'Packaging', parentId: 'c2', color: null },
+        { id: 'c14', name: 'Rejected round one', parentId: 'c3', color: 'red' },
+        {
+          id: 'c5',
+          name: 'Oat milk packaging research for the Nordic market launch',
+          parentId: 'c1',
+          color: 'green',
+        },
+        { id: 'c6', name: 'Type specimens', parentId: null, color: 'yellow' },
+        { id: 'c7', name: 'Serif', parentId: 'c6', color: null },
+        { id: 'c8', name: 'Grotesk', parentId: 'c6', color: null },
+        {
+          id: 'c9',
+          name: 'Motion references',
+          parentId: null,
+          color: 'purple',
+        },
+        { id: 'c10', name: 'Web inspiration', parentId: null, color: null },
+        { id: 'c11', name: 'Landing pages', parentId: 'c10', color: null },
+        { id: 'c12', name: 'Pricing pages', parentId: 'c10', color: null },
+        {
+          id: 'c13',
+          name: 'Lisbon trip — tiles, shop signs and everything else I photographed',
+          parentId: null,
+          color: 'pink',
+        },
+      ];
+
+      const RAW = [
+        ['s1', 'Aesop store interior, Kyoto', 'image', 1, ['c13'], 4, 5],
+        ['s2', 'Air Max 1 sole detail, macro shot', 'image', 3, ['c2'], 1, 1],
+        [
+          's3',
+          'Swiss concert poster — Josef Müller-Brockmann, Tonhalle Zürich 1955 reprint from the Lars Müller archive',
+          'image',
+          4,
+          ['c6', 'c7'],
+          3,
+          4,
+        ],
+        [
+          's4',
+          'linear.app',
+          'website',
+          6,
+          ['c11'],
+          16,
+          10,
+          { url: 'https://linear.app' },
+        ],
+        ['s5', 'Swoosh sketch v3', 'image', 8, ['c3'], 1, 1],
+        [
+          's6',
+          'Shoe box, warm kraft with orange tab',
+          'image',
+          9,
+          ['c4'],
+          5,
+          4,
+        ],
+        ['s7', 'Tile pattern, Alfama', 'image', 12, ['c13'], 1, 1],
+        [
+          's8',
+          'Rauno — interface craft reel',
+          'video',
+          14,
+          ['c9'],
+          16,
+          9,
+          { dur: '0:42' },
+        ],
+        ['s9', 'Oatly carton side panel copy', 'image', 18, ['c5'], 3, 4],
+        [
+          's10',
+          'stripe.com/pricing',
+          'website',
+          21,
+          ['c12'],
+          16,
+          10,
+          { url: 'https://stripe.com/pricing' },
+        ],
+        ['s11', 'GT America specimen', 'image', 25, ['c8'], 4, 3],
+        [
+          's12',
+          'Nordic supermarket shelf, Stockholm',
+          'image',
+          33,
+          ['c5'],
+          3,
+          2,
+        ],
+        ['s13', 'Logo lockup — wide', 'image', 38, ['c3', 'c14'], 2, 1],
+        [
+          's14',
+          'Product turntable, white sweep',
+          'video',
+          44,
+          ['c2', 'c9'],
+          1,
+          1,
+          { dur: '0:12' },
+        ],
+        [
+          's15',
+          'Shop sign, hand-painted serif',
+          'image',
+          47,
+          ['c13', 'c7'],
+          4,
+          5,
+        ],
+        [
+          's16',
+          'vercel.com',
+          'website',
+          52,
+          ['c11'],
+          16,
+          10,
+          { url: 'https://vercel.com' },
+        ],
+        ['s17', 'Recycled board texture', 'image', 58, ['c4', 'c5'], 1, 1],
+        ['s18', 'Editorial grid study', 'image', 63, ['c7'], 3, 4],
+        [
+          's19',
+          'Packaging unboxing, slow motion',
+          'video',
+          68,
+          ['c4'],
+          9,
+          16,
+          { dur: '1:05' },
+        ],
+        ['s20', 'Warm minimal living room', 'image', 75, [], 4, 5],
+        ['s21', 'Concrete stairwell, morning light', 'image', 82, [], 2, 3],
+        [
+          's22',
+          'raycast.com/pro',
+          'website',
+          90,
+          ['c12'],
+          16,
+          10,
+          { url: 'https://raycast.com/pro' },
+        ],
+        ['s23', 'Neue Haas Grotesk poster', 'image', 97, ['c8'], 3, 4],
+        [
+          's24',
+          'Orange gradient, sunset over Tejo',
+          'image',
+          104,
+          ['c13'],
+          3,
+          2,
+        ],
+        ['s25', 'Bottle label with debossed logo', 'image', 120, ['c5'], 4, 5],
+        [
+          's26',
+          'Kinetic type loop',
+          'video',
+          135,
+          ['c9', 'c6'],
+          1,
+          1,
+          { dur: '0:08' },
+        ],
+        ['s27', 'Ceramic cups on linen', 'image', 150, [], 1, 1],
+        [
+          's28',
+          'mymind.com',
+          'website',
+          160,
+          ['c11'],
+          16,
+          10,
+          { url: 'https://mymind.com' },
+        ],
+        ['s29', 'Woodcut alphabet, 1890', 'image', 175, ['c7'], 3, 4],
+        ['s30', 'Logo grid construction', 'image', 190, ['c3'], 1, 1],
+        ['s31', 'Paper bag, natural fibre', 'image', 205, ['c4'], 4, 5],
+        ['s32', 'Brutalist housing, Barbican', 'image', 230, [], 3, 2],
+      ];
+
+      let SOURCES = [
+        {
+          id: 'k1',
+          name: 'Air Max — direction A: warm industrial',
+          kind: 'canvas',
+          date: new Date(NOW - 2 * DAY),
+          collectionIds: ['c2'],
+          w: 4,
+          h: 3,
+          items: [
+            { sid: 's6', x: 0, y: 0, w: 260 },
+            { sid: 's2', x: 280, y: 30, w: 200 },
+            { sid: 's17', x: 500, y: 0, w: 180 },
+            { sid: 's24', x: 280, y: 250, w: 280 },
+            { sid: 's13', x: 0, y: 240, w: 260 },
+          ],
+          notes: [
+            {
+              text: 'Kraft + orange tab. Feels honest, not luxury.',
+              x: 600,
+              y: 210,
+            },
+          ],
+        },
+        {
+          id: 'k2',
+          name: 'Nordic oat milk shelf study',
+          kind: 'canvas',
+          date: new Date(NOW - 40 * DAY),
+          collectionIds: ['c5'],
+          w: 4,
+          h: 3,
+          items: [
+            { sid: 's12', x: 0, y: 0, w: 320 },
+            { sid: 's9', x: 340, y: 0, w: 170 },
+            { sid: 's25', x: 530, y: 0, w: 170 },
+          ],
+          notes: [
+            {
+              text: 'Everyone on the shelf shouts. Can we whisper?',
+              x: 0,
+              y: 240,
+            },
+          ],
+        },
+        {
+          id: 'k3',
+          name: 'Type pairing board',
+          kind: 'canvas',
+          date: new Date(NOW - 70 * DAY),
+          collectionIds: ['c6'],
+          w: 4,
+          h: 3,
+          items: [
+            { sid: 's11', x: 0, y: 0, w: 240 },
+            { sid: 's3', x: 260, y: 0, w: 200 },
+            { sid: 's29', x: 480, y: 0, w: 200 },
+            { sid: 's23', x: 260, y: 290, w: 200 },
+          ],
+          notes: [],
+        },
+        ...RAW.map(([id, name, kind, d, cols, w, h, extra = {}]) => ({
+          id,
+          name,
+          kind,
+          date: new Date(NOW - d * DAY - ((d * HOUR) % DAY)),
+          collectionIds: cols,
+          w,
+          h,
+          ...extra,
+        })),
+      ];
+
+      /* AI sessions — a place is 'library', a collection id, or a canvas id. */
+      const done = (full, ids = []) => ({
+        role: 'ai',
+        full,
+        shown: 9999,
+        ids,
+        actions: [],
+        filters: [],
+        rest: '',
+      });
+      let SESSIONS = [
+        {
+          id: 'a1',
+          title: 'Warm packaging references',
+          place: 'library',
+          updated: new Date(NOW - 2 * HOUR),
+          messages: [
+            {
+              role: 'user',
+              text: 'Find warm packaging from the last two months',
+            },
+            done(
+              '5 sources from the last 2 months match. “Shoe box, warm kraft with orange tab” is the closest. They share kraft, board and orange accents.',
+              ['s6', 's17', 's19', 's31', 's24'],
+            ),
+          ],
+        },
+        {
+          id: 'a2',
+          title: 'Is direction A too safe?',
+          place: 'k1',
+          updated: new Date(NOW - 26 * HOUR),
+          messages: [
+            { role: 'user', text: 'Is direction A too safe?' },
+            done(
+              'A little. Every source here is close-up and calm. Nothing on the board has motion or a loud colour. One loud piece — like “Orange gradient, sunset over Tejo” at full size — would give it a point of view.',
+              ['s24', 's6', 's2'],
+            ),
+          ],
+        },
+        {
+          id: 'a3',
+          title: 'What stands out on the shelf?',
+          place: 'k2',
+          updated: new Date(NOW - 5 * DAY),
+          messages: [
+            { role: 'user', text: 'What stands out on the shelf?' },
+            done(
+              "Most packs use big type and bright colour. The quiet ones, like “Bottle label with debossed logo”, stand out because they don't compete.",
+              ['s25', 's12'],
+            ),
+          ],
+        },
+        {
+          id: 'a4',
+          title: 'Serif options for the oat brand',
+          place: 'c6',
+          updated: new Date(NOW - 9 * DAY),
+          messages: [
+            {
+              role: 'user',
+              text: 'Which serifs would suit a calm oat milk brand?',
+            },
+            done(
+              '“Woodcut alphabet, 1890” and “Shop sign, hand-painted serif” feel handmade and warm. The Müller-Brockmann poster is the opposite: strict and cold.',
+              ['s29', 's15', 's3'],
+            ),
+          ],
+        },
+        {
+          id: 'a5',
+          title: 'Logo round one — what did the client reject?',
+          place: 'c3',
+          updated: new Date(NOW - 21 * DAY),
+          messages: [
+            { role: 'user', text: 'Summarise the rejected logos' },
+            done(
+              'One source is in Rejected round one: “Logo lockup — wide”. It was saved 38 days ago, before the swoosh sketches.',
+              ['s13'],
+            ),
+          ],
+        },
+      ];
+
+      /* =====================================================================
+   State
+   ===================================================================== */
+      let uid = 100;
+      const nid = (p = 'f') => `${p}${++uid}`;
+      const S = {
+        page: 'library',
+        tab: 'all',
+        scope: null,
+        origin: null,
+        canvasId: null,
+        sidebar: true,
+        text: '',
+        filters: [],
+        sheet: null,
+        activeSession: null,
+        draftNew: false,
+        fm: { editing: null, confirm: null },
+        histQuery: '',
+      };
+      const reduceMotion = matchMedia(
+        '(prefers-reduced-motion: reduce)',
+      ).matches;
+
+      /* =====================================================================
+   Helpers
+   ===================================================================== */
+      const $ = (s, r = document) => r.querySelector(s);
+      const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+      const esc = (s) =>
+        String(s).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              '&': '&amp;',
+              '<': '&lt;',
+              '>': '&gt;',
+              '"': '&quot;',
+              "'": '&#39;',
+            })[c],
+        );
+      const byId = (id) => SOURCES.find((s) => s.id === id);
+      const colById = (id) => COLLECTIONS.find((c) => c.id === id);
+      const children = (pid) => COLLECTIONS.filter((c) => c.parentId === pid);
+      const ancestors = (id) => {
+        const out = [];
+        let c = colById(id);
+        while (c) {
+          out.unshift(c);
+          c = colById(c.parentId);
+        }
+        return out;
+      };
+      const branchIds = (id) => [
+        id,
+        ...children(id).flatMap((c) => branchIds(c.id)),
+      ];
+      const inBranch = (s, cid) =>
+        s.collectionIds.some((x) => ancestors(x).some((a) => a.id === cid));
+      const countIn = (cid) => SOURCES.filter((s) => inBranch(s, cid)).length;
+      const dotColor = (c) => `var(--folder-${c?.color || 'gray'})`;
+      const fmt = (d) =>
+        d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+      const fmtLong = (d) =>
+        d.toLocaleDateString('en', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        });
+      const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+      const imgUrl = (s, width = 480) =>
+        s.blob ||
+        `https://picsum.photos/seed/mado-${s.id}/${width}/${Math.round((width * s.h) / s.w)}`;
+      const ago = (d) => {
+        const h = Math.round((NOW - d) / HOUR);
+        if (h < 1) return 'Just now';
+        if (h < 24) return `${h}h ago`;
+        const dd = Math.round(h / 24);
+        return dd === 1 ? 'Yesterday' : `${dd} days ago`;
+      };
+
+      const ico = {
+        search:
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+        spark:
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3c.6 4.6 3.4 7.4 8 8-4.6.6-7.4 3.4-8 8-.6-4.6-3.4-7.4-8-8 4.6-.6 7.4-3.4 8-8Z"/></svg>',
+        folder:
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>',
+        folderSm:
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>',
+        x: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+        chev: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
+        down: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+        back: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
+        plus: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+        plusSm:
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+        pencil:
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/></svg>',
+        trash:
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+        cal: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
+        type: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>',
+        image:
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>',
+        trashTab:
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+        play: '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5-11-6.5Z"/></svg>',
+        globe:
+          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>',
+        board:
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="8" height="10" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="13" y="11" width="8" height="10" rx="1.5"/><rect x="3" y="15" width="8" height="6" rx="1.5"/></svg>',
+        panel:
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>',
+        upload:
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>',
+        library:
+          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+      };
+      const KIND_ICON = {
+        image: ico.type,
+        video: ico.play,
+        website: ico.globe,
+        canvas: ico.board,
+      };
+      const KIND_LABEL = {
+        image: 'Images',
+        video: 'Videos',
+        website: 'Websites',
+        canvas: 'Canvases',
+      };
+      const KIND_ONE = {
+        image: 'Image',
+        video: 'Video',
+        website: 'Website',
+        canvas: 'Canvas',
+      };
+
+      /* =====================================================================
+   Filters — "last two months", "2 months ago to last month", types, "in X"
+   ===================================================================== */
+      const NUM = {
+        a: 1,
+        an: 1,
+        one: 1,
+        two: 2,
+        three: 3,
+        four: 4,
+        five: 5,
+        six: 6,
+        seven: 7,
+        eight: 8,
+        nine: 9,
+        ten: 10,
+        twelve: 12,
+      };
+      const toNum = (w) => NUM[w.toLowerCase()] ?? (parseInt(w, 10) || 0);
+      function minus(n, unit) {
+        const d = new Date(NOW);
+        if (unit === 'day') d.setDate(d.getDate() - n);
+        if (unit === 'week') d.setDate(d.getDate() - 7 * n);
+        if (unit === 'month') d.setMonth(d.getMonth() - n);
+        if (unit === 'year') d.setFullYear(d.getFullYear() - n);
+        return d;
+      }
+      const dateLast = (n, unit) => ({
+        kind: 'date',
+        from: minus(n, unit),
+        to: null,
+        label: n === 1 ? `Last ${unit}` : `Last ${n} ${unit}s`,
+      });
+      const dateRange = (a, au, b, bu) => ({
+        kind: 'date',
+        from: minus(a, au),
+        to: b ? minus(b, bu) : null,
+        label: `${plural(a, au)} ago → ${b ? `${plural(b, bu)} ago` : 'now'}`,
+      });
+      const dateDates = (from, to) => ({
+        kind: 'date',
+        from,
+        to,
+        label: `${fmt(from)} – ${fmt(to)}`,
+      });
+      function datePreset(p) {
+        if (p === 'today') {
+          const d = new Date(NOW);
+          d.setHours(0, 0, 0, 0);
+          return { kind: 'date', from: d, to: null, label: 'Today' };
+        }
+        if (p === '7d') return { ...dateLast(7, 'day'), label: 'Last 7 days' };
+        if (p === '30d')
+          return { ...dateLast(30, 'day'), label: 'Last 30 days' };
+        if (p === '2m') return dateLast(2, 'month');
+        if (p === 'lastmonth')
+          return {
+            ...dateRange(2, 'month', 1, 'month'),
+            label: 'Month before last',
+          };
+        if (p === 'year')
+          return {
+            kind: 'date',
+            from: new Date(NOW.getFullYear(), 0, 1),
+            to: null,
+            label: 'This year',
+          };
+      }
+      const kindOf = (w) => {
+        w = w.toLowerCase();
+        if (/^(ima|pho|pic)/.test(w)) return 'image';
+        if (/^(vid|cli)/.test(w)) return 'video';
+        if (/^(web|sit|lin)/.test(w)) return 'website';
+        return 'canvas';
+      };
+      function parseQuery(text) {
+        let rest = ` ${text} `;
+        const out = [];
+        const take = (re, fn) => {
+          rest = rest.replace(re, (...m) => {
+            const f = fn(m);
+            if (!f) return m[0];
+            out.push(f);
+            return ' ';
+          });
+        };
+        const U = '(day|week|month|year)s?';
+        take(
+          new RegExp(
+            `\\b(?:from )?(\\w+) ${U} ago (?:to|until|-|–) (?:(\\w+) ${U} ago|last (week|month)|now|today)\\b`,
+            'gi',
+          ),
+          (m) => {
+            const a = toNum(m[1]);
+            if (!a) return null;
+            let b = 0,
+              bu = m[2].toLowerCase();
+            if (m[3]) {
+              b = toNum(m[3]);
+              bu = m[4].toLowerCase();
+            } else if (m[5]) {
+              b = 1;
+              bu = m[5].toLowerCase();
+            }
+            return dateRange(a, m[2].toLowerCase(), b, bu);
+          },
+        );
+        take(
+          new RegExp(
+            `\\b(?:in the |from the )?(?:last|past) (\\w+) ${U}\\b`,
+            'gi',
+          ),
+          (m) => {
+            const n = toNum(m[1]);
+            return n ? dateLast(n, m[2].toLowerCase()) : null;
+          },
+        );
+        take(
+          /\b(?:from |in )?(?:the )?(?:last|past) (day|week|month|year)\b/gi,
+          (m) => dateLast(1, m[1].toLowerCase()),
+        );
+        take(/\btoday\b/gi, () => datePreset('today'));
+        take(/\bthis year\b/gi, () => datePreset('year'));
+        const kinds = new Set();
+        rest = rest.replace(
+          /\b(images?|photos?|pictures?|videos?|clips?|websites?|sites?|links?|canvas(?:es)?|boards?|moodboards?)\b/gi,
+          (m) => {
+            kinds.add(kindOf(m));
+            return ' ';
+          },
+        );
+        if (kinds.size) out.push({ kind: 'type', kinds: [...kinds] });
+        [...COLLECTIONS]
+          .sort((a, b) => b.name.length - a.name.length)
+          .forEach((c) => {
+            const short = c.name
+              .split(' — ')[0]
+              .toLowerCase()
+              .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp(
+              `\\b(?:in|from) (?:my )?(?:the )?${short}\\b`,
+              'i',
+            );
+            if (re.test(rest)) {
+              rest = rest.replace(re, ' ');
+              out.push({ kind: 'col', cid: c.id });
+            }
+          });
+        return {
+          filters: out.map((f) => ({ ...f, id: nid() })),
+          rest: rest.replace(/\s+/g, ' ').trim(),
+        };
+      }
+      const STOP = new Set([
+        'the',
+        'my',
+        'all',
+        'show',
+        'me',
+        'from',
+        'in',
+        'of',
+        'and',
+        'with',
+        'find',
+        'any',
+        'some',
+        'what',
+        'which',
+        'do',
+        'does',
+        'have',
+        'i',
+        'saved',
+        'that',
+        'are',
+        'is',
+        'a',
+        'an',
+        'to',
+        'make',
+        'create',
+        'build',
+        'start',
+        'for',
+        'these',
+        'those',
+        'about',
+        'common',
+        'between',
+        'ago',
+        'can',
+        'you',
+        'out',
+        'pull',
+        'give',
+        'this',
+        'it',
+        'too',
+        'how',
+        'why',
+      ]);
+      const keywords = (t) =>
+        t
+          .toLowerCase()
+          .replace(/[?!.,]/g, ' ')
+          .split(/\s+/)
+          .filter((w) => w && !STOP.has(w));
+      const hay = (s) =>
+        `${s.name} ${s.url || ''} ${s.kind} ${s.collectionIds
+          .map((c) =>
+            ancestors(c)
+              .map((a) => a.name)
+              .join(' '),
+          )
+          .join(' ')}`.toLowerCase();
+      function matches(s, f) {
+        if (f.kind === 'type') return f.kinds.includes(s.kind);
+        if (f.kind === 'date')
+          return (!f.from || s.date >= f.from) && (!f.to || s.date <= f.to);
+        if (f.kind === 'col') return inBranch(s, f.cid);
+        return true;
+      }
+      function filterSources({ filters = [], text = '', scope = null } = {}) {
+        const words = keywords(text);
+        return SOURCES.filter(
+          (s) =>
+            (!scope || inBranch(s, scope)) &&
+            filters.every((f) => matches(s, f)) &&
+            words.every((w) => hay(s).includes(w)),
+        ).sort((a, b) => b.date - a.date);
+      }
+      const live = () => parseQuery(S.text);
+      const currentResults = () => {
+        const p = live();
+        return filterSources({
+          filters: [...S.filters, ...p.filters],
+          text: p.rest,
+          scope: S.scope,
+        });
+      };
+      function filterLabel(f) {
+        if (f.kind === 'type')
+          return f.kinds.map((k) => KIND_LABEL[k]).join(', ');
+        if (f.kind === 'date') return f.label;
+        if (f.kind === 'col') return colById(f.cid)?.name || 'Deleted';
+      }
+      const filterIcon = (f) =>
+        f.kind === 'date'
+          ? ico.cal
+          : f.kind === 'col'
+            ? ico.folderSm
+            : ico.type;
+
+      /* =====================================================================
+   Shared renderers — cards, chips, breadcrumbs
+   ===================================================================== */
+      const cardCache = new Map();
+      function cardHTML(s) {
+        const ar = s.kind === 'canvas' ? '4 / 3' : `${s.w} / ${s.h}`;
+        let media,
+          badge = '';
+        if (s.kind === 'canvas') {
+          media = boardMiniHTML(s);
+          badge = `<span class="badge">${ico.board.replace(/14/g, '12')} Canvas · ${plural(s.items.length + s.notes.length, 'item')}</span>`;
+        } else {
+          media = `<img src="${imgUrl(s)}" alt="" loading="lazy" draggable="false">`;
+          if (s.kind === 'video')
+            badge = `<span class="badge">${ico.play} ${s.dur}</span>`;
+          if (s.kind === 'website')
+            badge = `<span class="badge">${ico.globe} ${esc(new URL(s.url).hostname)}</span>`;
+        }
+        return `<figure class="card" data-card="${s.id}" draggable="true" style="margin-inline:0"><button class="card-hit" data-open="${s.id}" data-name="${esc(s.name)}" aria-label="${s.kind === 'canvas' ? 'Open canvas' : 'Open'} ${esc(s.name)}"><span class="card-media" style="aspect-ratio:${ar}">${media}${badge}</span></button></figure>`;
+      }
+      function boardMiniHTML(c) {
+        const boxes = [
+          ...c.items.map((it) => {
+            const s = byId(it.sid);
+            return { x: it.x, y: it.y, w: it.w, h: (it.w * s.h) / s.w, s };
+          }),
+          ...c.notes.map((n) => ({
+            x: n.x,
+            y: n.y,
+            w: 220,
+            h: 70,
+            note: true,
+          })),
+        ];
+        if (!boxes.length) return '<span class="board-mini"></span>';
+        const minX = Math.min(...boxes.map((b) => b.x)),
+          minY = Math.min(...boxes.map((b) => b.y));
+        const W = Math.max(...boxes.map((b) => b.x + b.w)) - minX,
+          H = Math.max(...boxes.map((b) => b.y + b.h)) - minY;
+        const k = Math.min(84 / W, 80 / (H * (4 / 3)));
+        const ox = (100 - W * k) / 2,
+          oy = (100 - H * k * (4 / 3)) / 2;
+        return `<span class="board-mini">${boxes.map((b) => `<span class="${b.note ? 'mini-note' : ''}" style="left:${ox + (b.x - minX) * k}%;top:${oy + (b.y - minY) * k * (4 / 3)}%;width:${b.w * k}%;height:${b.h * k * (4 / 3)}%;${b.s ? `background-image:url(${imgUrl(b.s, 160)})` : ''}"></span>`).join('')}</span>`;
+      }
+      function cardEl(s) {
+        let el = cardCache.get(s.id);
+        if (!el) {
+          const t = document.createElement('template');
+          t.innerHTML = cardHTML(s).trim();
+          el = t.content.firstElementChild;
+          cardCache.set(s.id, el);
+        }
+        el.querySelector('.card-hit').toggleAttribute(
+          'data-current',
+          S.page === 'studio' && s.id === S.canvasId,
+        );
+        return el;
+      }
+      function renderGrid(container, list) {
+        if (!container) return;
+        if (!list.length) {
+          const p = live();
+          container.innerHTML =
+            S.tab === 'deleted' && S.page === 'library'
+              ? '<div class="empty" style="column-span:all"><strong>The trash is empty</strong><p>Deleted sources stay here for 30 days.</p></div>'
+              : S.text || S.filters.length
+                ? `<div class="empty" style="column-span:all"><strong>Nothing matches ${p.rest ? `“${esc(p.rest)}”` : 'these filters'}</strong><p>Try a wider date range, remove a filter, or search all collections.</p><button class="btn btn-soft" data-clear>Clear search</button></div>`
+                : `<div class="empty" style="column-span:all"><strong>This ${S.scope && colById(S.scope)?.parentId ? 'folder' : 'collection'} is empty</strong><p>Drag sources onto it, or press + in the dock to upload.</p></div>`;
+          return;
+        }
+        container.replaceChildren(...list.map(cardEl));
+      }
+      function chipHTML(f) {
+        const label = esc(filterLabel(f));
+        return `<span class="chip"><button type="button" class="chip-main" data-edit-filter="${f.id}" aria-label="Edit filter ${label}">${filterIcon(f)}<span>${label}</span></button><button type="button" class="chip-x" data-remove-filter="${f.id}" aria-label="Remove filter ${label}">${ico.x}</button></span>`;
+      }
+      function detectedHTML() {
+        const p = live();
+        if (!p.filters.length) return '';
+        return `<button class="chip-ghost" data-commit type="button">${p.filters.map((f) => `${filterIcon(f)} ${esc(filterLabel(f))}`).join(' · ')} <kbd class="kbd">Enter</kbd> to keep</button>`;
+      }
+      function crumbsHTML(scope, { here = true } = {}) {
+        const segs = scope ? ancestors(scope) : [];
+        if (!segs.length && here)
+          return '<span aria-current="page">Library</span>';
+        return `<button type="button" data-scope="" data-drop-col="">Library</button>${segs.map((a, i) => `<span class="sep" aria-hidden="true">/</span>${i === segs.length - 1 && here ? `<span aria-current="page" title="${esc(a.name)}">${esc(a.name)}</span>` : `<button type="button" data-scope="${a.id}" data-drop-col="${a.id}" title="${esc(a.name)}">${esc(a.name)}</button>`}`).join('')}`;
+      }
+
+      /* =====================================================================
+   App shell — library page and studio page share one dock
+   ===================================================================== */
+      function dockHTML() {
+        return `<div class="dock" data-dock>
+    <div class="sheet glass" data-sheet hidden></div>
+    <div class="dock-row">
+      <button class="btn btn-icon btn-toggle dock-add glass" data-dock-btn="add" aria-label="Add" aria-expanded="false">${ico.plus}</button>
+      <div class="dock-bar glass">
+        <button class="btn btn-icon btn-toggle" data-dock-btn="folders" aria-label="Collections and folders" aria-expanded="false">${ico.folder}</button>
+        <form class="dock-search" role="search" data-dock-form>
+          <span class="sf-icon" data-dock-icon>${ico.search}</span>
+          <span class="chips" data-dock-chips></span>
+          <label class="sr-only" for="dq">Search or ask</label>
+          <input id="dq" data-search-input type="search" autocomplete="off" spellcheck="false">
+        </form>
+        <button class="btn btn-icon btn-toggle" data-dock-btn="chat" aria-label="Ask Mado" aria-expanded="false">${ico.spark}</button>
+      </div>
+    </div>
+  </div>`;
+      }
+
+      function libraryHTML() {
+        return `<div class="lib">
+    <div class="lib-top">
+      <div class="ltabs" role="tablist" aria-label="Library">
+        <button role="tab" data-tab="all" aria-selected="${S.tab === 'all'}">${ico.image} All</button>
+        <button role="tab" data-tab="deleted" aria-selected="${S.tab === 'deleted'}">${ico.trashTab} Deleted</button>
+      </div>
+      <nav class="crumbs" aria-label="Breadcrumb" data-crumbs></nav>
+    </div>
+    <div data-title-row></div>
+    <div class="folder-row" data-folder-row aria-label="Folders"></div>
+    <div class="active-row" data-active></div>
+    <main class="grid" data-grid></main>
+  </div>${dockHTML()}`;
+      }
+
+      function studioHTML() {
+        const originLabel = S.origin
+          ? colById(S.origin)?.name || 'Library'
+          : 'Library';
+        const back = `<button class="back-link" data-back aria-label="Back to ${esc(originLabel)}" title="Back to ${esc(originLabel)}">${ico.back}<span>${esc(originLabel)}</span></button>`;
+        return `<div class="studio ${S.sidebar ? '' : 'collapsed'}" data-studio>
+    <aside class="st-side" aria-label="Library" ${S.sidebar ? '' : 'inert'}>
+      <div class="st-side-head">
+        <div class="top">${back}<button class="btn btn-icon" data-collapse aria-label="Hide library" aria-expanded="true" title="Hide library  [">${ico.panel}</button></div>
+        <nav class="crumbs" aria-label="Library folder" data-crumbs></nav>
+        <div class="active-row" data-active></div>
+      </div>
+      <div class="st-side-grid"><main class="grid grid-side" data-grid></main></div>
+    </aside>
+    <section class="st-main" aria-label="Canvas">
+      <div class="st-top">
+        ${S.sidebar ? '' : `${back}<button class="btn btn-icon" data-collapse aria-label="Show library" aria-expanded="false" title="Show library  [">${ico.panel}</button><span class="muted" aria-hidden="true">/</span>`}
+        <span class="sf-icon">${ico.board}</span><h1 data-canvas-title></h1><span class="meta num" data-canvas-meta></span>
+      </div>
+      <div class="st-board" data-board></div>
+      ${dockHTML()}
+    </section>
+  </div>`;
+      }
+
+      let board = null;
+      function mountApp() {
+        closePop();
+        closeOverlay();
+        stage.innerHTML = S.page === 'studio' ? studioHTML() : libraryHTML();
+        bindDock();
+        if (S.page === 'studio')
+          board = mountBoard($('[data-board]'), byId(S.canvasId));
+        window.scrollTo(0, 0);
+        update();
+      }
+
+      function update() {
+        const studio = S.page === 'studio';
+        $('[data-crumbs]').innerHTML =
+          studio && !S.scope
+            ? '<span aria-current="page">All sources</span>'
+            : crumbsHTML(S.scope, { here: !studio });
+        if (!studio) updateLibrary();
+        else {
+          const c = byId(S.canvasId);
+          $('[data-canvas-title]').textContent = c.name;
+          $('[data-canvas-meta]').textContent =
+            `· ${plural(c.items.length + c.notes.length, 'item')}`;
+        }
+        $('[data-active]').innerHTML = S.filters.length
+          ? `${S.filters.map(chipHTML).join('')}<button class="btn" data-clear>Clear</button>`
+          : '';
+        renderGrid(
+          $('[data-grid]'),
+          S.tab === 'deleted' && !studio ? [] : currentResults(),
+        );
+        updateDock();
+      }
+
+      function updateLibrary() {
+        $$('[data-tab]').forEach((t) =>
+          t.setAttribute('aria-selected', t.dataset.tab === S.tab),
+        );
+        const deleted = S.tab === 'deleted';
+        const c = S.scope && colById(S.scope);
+        $('[data-title-row]').innerHTML =
+          c && !deleted
+            ? `<div class="title-row"><button class="btn btn-icon back" data-scope="${c.parentId || ''}" aria-label="Back to ${esc(c.parentId ? colById(c.parentId).name : 'Library')}">${ico.back}</button><label class="sr-only" for="title-in">Collection name</label><input id="title-in" class="title-input" value="${esc(c.name)}" maxlength="100" data-title spellcheck="false" autocomplete="off"></div>`
+            : '';
+        const kids = children(S.scope);
+        const row = $('[data-folder-row]');
+        row.hidden = deleted;
+        row.innerHTML = deleted
+          ? ''
+          : `<button class="fcard fcard-new" data-new-folder="${S.scope || ''}"><span aria-hidden="true">${ico.plus}</span><span class="fcard-label"><b>${S.scope ? 'New folder' : 'New collection'}</b></span></button>${kids.map(folderCardHTML).join('')}`;
+        const t = $('[data-title]');
+        if (t) {
+          t.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') t.blur();
+            if (e.key === 'Escape') {
+              t.value = c.name;
+              t.blur();
+            }
+          });
+          t.addEventListener('blur', () => {
+            const v = t.value.trim();
+            if (v && v !== c.name) renameCollection(c.id, v);
+            else t.value = c.name;
+          });
+        }
+      }
+      function folderCardHTML(c) {
+        const prev = filterSources({ scope: c.id })
+          .filter((s) => s.kind !== 'canvas')
+          .slice(0, 3);
+        const offs =
+          { 1: [0], 2: [-0.5, 0.5], 3: [-1, 0, 1] }[prev.length] || [];
+        const style = c.color
+          ? `--pf:var(--folder-${c.color});--pb:color-mix(in oklch, var(--folder-${c.color}), black 15%)`
+          : '';
+        return `<button class="fcard" data-scope="${c.id}" data-drop-col="${c.id}" style="${style}" title="${esc(c.name)}">
+    <span class="pocket" aria-hidden="true"><span class="back"></span><span class="tab"></span>${prev.map((s, i) => `<span class="prev" style="--o:${offs[i]};--d:${i * 40}ms;background-image:url(${imgUrl(s, 120)})"></span>`).join('')}<span class="front"></span></span>
+    <span class="fcard-label"><b>${esc(c.name)}</b><span class="num">${plural(countIn(c.id), 'save')}</span></span>
+  </button>`;
+      }
+
+      /* ---------- dock ---------- */
+      function bindDock() {
+        const input = $('#dq');
+        input.value = S.text;
+        input.addEventListener('input', () => {
+          if (S.sheet === 'chat') return;
+          S.text = input.value;
+          S.sheet = 'search';
+          // Results show in the sidebar, so searching with it hidden would look like nothing happened.
+          if (S.page === 'studio' && !S.sidebar) {
+            S.sidebar = true;
+            mountApp();
+            const i = $('#dq');
+            i.focus();
+            i.setSelectionRange(i.value.length, i.value.length);
+            return;
+          }
+          update();
+        });
+        input.addEventListener('focus', () => {
+          if (!S.sheet) {
+            S.sheet = 'search';
+            updateDock();
+          }
+        });
+        input.addEventListener('keydown', (e) => {
+          if (
+            e.key === 'Backspace' &&
+            !input.value &&
+            S.filters.length &&
+            S.sheet !== 'chat'
+          ) {
+            S.filters = S.filters.slice(0, -1);
+            update();
+          }
+        });
+        $('[data-dock-form]').addEventListener('submit', (e) => {
+          e.preventDefault();
+          if (S.sheet === 'chat') {
+            ask(input.value);
+            input.value = '';
+            return;
+          }
+          commitText();
+        });
+        const dock = $('[data-dock]');
+        dock.addEventListener('focusout', (e) => {
+          if (!dock.contains(e.relatedTarget) && !pop && S.sheet === 'search') {
+            S.sheet = null;
+            updateDock();
+          }
+        });
+      }
+      function updateDock() {
+        const chat = S.sheet === 'chat';
+        $$('[data-dock-btn]').forEach((b) =>
+          b.setAttribute('aria-expanded', S.sheet === b.dataset.dockBtn),
+        );
+        $('[data-dock-icon]').innerHTML = chat ? ico.spark : ico.search;
+        const input = $('#dq');
+        if (chat && input.value === S.text) input.value = '';
+        if (!chat && input.value !== S.text) input.value = S.text;
+        const where = S.scope ? colById(S.scope).name : null;
+        input.placeholder = chat
+          ? chatPlaceholder()
+          : where
+            ? `Search in ${where}…`
+            : S.page === 'studio'
+              ? 'Search your library…'
+              : 'Search everything…';
+        $('[data-dock-chips]').innerHTML =
+          !chat && S.filters.length
+            ? `<span class="chip" title="${S.filters.map(filterLabel).join(' · ')}"><span class="chip-main" style="padding-right:10px">${ico.type}<span class="num">${plural(S.filters.length, 'filter')}</span></span></span>`
+            : '';
+        const sheet = $('[data-sheet]');
+        sheet.hidden = !S.sheet;
+        sheet.className = `sheet glass${S.sheet === 'folders' ? ' fm' : ''}${chat ? ` chat-sheet${variant.wide ? ' wide' : ''}` : ''}`;
+        if (S.sheet === 'search') sheet.innerHTML = searchSheetHTML();
+        if (S.sheet === 'folders') sheet.innerHTML = folderManagerHTML();
+        if (S.sheet === 'add') sheet.innerHTML = addMenuHTML();
+        if (chat) {
+          sheet.innerHTML = variant.chatHTML();
+          afterChatRender();
+        }
+      }
+      function searchSheetHTML() {
+        const d = detectedHTML();
+        return `${d ? `<div><h3>Understood</h3>${d}</div>` : ''}
+    <div><h3>Filter by</h3><div class="chips">
+      <button class="btn btn-soft" data-add-filter="type" type="button">${ico.type} Type</button>
+      <button class="btn btn-soft" data-add-filter="date" type="button">${ico.cal} Date</button>
+      <button class="btn btn-soft" data-add-filter="collection" type="button">${ico.folderSm} Collection</button>
+      ${S.filters.map(chipHTML).join('')}
+    </div></div>
+    ${S.text ? '' : `<div><h3>Try typing</h3><div class="suggest">${['videos from the last two months', '2 months ago to last month', 'canvases in Brand work', 'pricing websites'].map((s) => `<button class="btn" data-try="${s}" type="button">${s}</button>`).join('')}</div></div>`}`;
+      }
+      function addMenuHTML() {
+        const here = S.scope ? colById(S.scope).name : 'Library';
+        return `<div style="display:grid;gap:2px">
+    <button class="menu-item" data-add="upload">${ico.upload} Upload images <small>to ${esc(here)}</small></button>
+    <button class="menu-item" data-add="canvas">${ico.board.replace(/14/g, '16')} New canvas <small>opens the studio</small></button>
+    <button class="menu-item" data-add="folder">${ico.folderSm.replace(/14/g, '16')} ${S.scope ? 'New folder here' : 'New collection'}</button>
+  </div>`;
+      }
+
+      /* ---------- folder manager (columns, like Finder) ---------- */
+      function folderManagerHTML() {
+        const path = S.scope ? ancestors(S.scope).map((a) => a.id) : [];
+        const cols = [null, ...path];
+        return `<div class="fm-cols">${cols
+          .map(
+            (pid) => `<div class="fm-col">
+      <div class="fm-list">
+        ${pid === null ? `<div class="fm-row" ${!S.scope ? 'aria-current="true"' : ''}><button class="fm-go" data-fm-go=""><span class="name">All sources</span><span class="count num">${SOURCES.length}</span></button></div>` : ''}
+        ${children(pid).map(fmRowHTML).join('')}
+        ${pid !== null && !children(pid).length ? '<p class="muted" style="margin:6px 10px;font-size:13px">No folders inside yet.</p>' : ''}
+      </div>
+      <div class="fm-foot"><button class="fm-go" data-fm-new="${pid || ''}" style="color:var(--muted-fg)">${ico.plusSm}<span class="name">${pid ? 'New folder' : 'New collection'}</span></button></div>
+    </div>`,
+          )
+          .join('')}</div>
+    <p class="fm-hint">Click to open · drag a card onto a folder to add it · pencil to rename, bin to delete</p>`;
+      }
+      function fmRowHTML(c) {
+        const path = S.scope ? ancestors(S.scope).map((a) => a.id) : [];
+        if (S.fm.editing === c.id)
+          return `<div class="fm-row"><form class="fm-edit" data-fm-rename="${c.id}"><label class="sr-only" for="fm-in">Folder name</label><input id="fm-in" value="${esc(c.name)}" maxlength="100" required autocomplete="off"><button class="btn btn-primary" style="height:30px">Save</button></form></div>`;
+        if (S.fm.confirm === c.id) {
+          const n = branchIds(c.id).length - 1;
+          return `<div class="fm-row"><div class="fm-confirm" role="alertdialog" aria-label="Delete ${esc(c.name)}"><p>Delete “${esc(c.name)}”${n ? ` and ${plural(n, 'folder')} inside` : ''}? Sources saved only here go to the trash.</p><div><button class="btn btn-danger" data-fm-delete="${c.id}">Delete</button><button class="btn" data-fm-cancel>Cancel</button></div></div></div>`;
+        }
+        return `<div class="fm-row" data-drop-col="${c.id}" ${path.includes(c.id) ? 'aria-current="true"' : ''}>
+    <button class="fm-go" data-fm-go="${c.id}" title="${esc(c.name)}"><span class="dot" style="background:${dotColor(c)}"></span><span class="name">${esc(c.name)}</span><span class="count num">${countIn(c.id)}</span>${children(c.id).length ? ico.chev : '<span style="width:14px"></span>'}</button>
+    <button class="fm-act" data-fm-edit="${c.id}" aria-label="Rename ${esc(c.name)}">${ico.pencil}</button>
+    <button class="fm-act" data-fm-ask="${c.id}" aria-label="Delete ${esc(c.name)}">${ico.trash}</button>
+  </div>`;
+      }
+      function createFolder(pid) {
+        const c = {
+          id: nid('c'),
+          name: pid ? 'New folder' : 'New collection',
+          parentId: pid || null,
+          color: null,
+        };
+        COLLECTIONS = [...COLLECTIONS, c];
+        return c;
+      }
+      function renameCollection(id, name) {
+        COLLECTIONS = COLLECTIONS.map((c) =>
+          c.id === id ? { ...c, name } : c,
+        );
+        update();
+      }
+      function deleteCollection(id) {
+        const ids = new Set(branchIds(id));
+        const parent = colById(id).parentId;
+        COLLECTIONS = COLLECTIONS.filter((c) => !ids.has(c.id));
+        SOURCES = SOURCES.map((s) => ({
+          ...s,
+          collectionIds: s.collectionIds.filter((x) => !ids.has(x)),
+        }));
+        cardCache.clear();
+        if (S.scope && ids.has(S.scope)) S.scope = parent;
+        S.filters = S.filters.filter((f) => f.kind !== 'col' || colById(f.cid));
+      }
+      function addToCollection(sid, cid) {
+        const s = byId(sid);
+        if (!s || !cid) return;
+        if (s.collectionIds.includes(cid))
+          return toast(`Already in ${colById(cid).name}`);
+        SOURCES = SOURCES.map((x) =>
+          x.id === sid ? { ...x, collectionIds: [...x.collectionIds, cid] } : x,
+        );
+        toast(`Added “${s.name}” to ${colById(cid).name}`);
+        update();
+      }
+
+      /* =====================================================================
+   AI — sessions are shared; each variant only changes how you pick one
+   ===================================================================== */
+      const placeOf = () =>
+        S.page === 'studio' ? S.canvasId : S.scope || 'library';
+      function placeLabel(p) {
+        if (p === 'library') return { icon: ico.library, label: 'Library' };
+        const s = byId(p);
+        if (s) return { icon: ico.board.replace(/14/g, '12'), label: s.name };
+        const c = colById(p);
+        return {
+          icon: ico.folderSm.replace(/14/g, '12'),
+          label: c ? c.name : 'Deleted folder',
+        };
+      }
+      const placeHTML = (p) => {
+        const l = placeLabel(p);
+        return `<span class="place">${l.icon}<span>${esc(l.label)}</span></span>`;
+      };
+      const session = () => SESSIONS.find((x) => x.id === S.activeSession);
+      const sortedSessions = () =>
+        [...SESSIONS].sort((a, b) => b.updated - a.updated);
+      function chatPlaceholder() {
+        if (S.page === 'studio')
+          return 'Ask about this canvas or your library…';
+        return S.scope
+          ? `Ask about ${colById(S.scope).name}…`
+          : 'Ask about your library…';
+      }
+
+      function msgHTML(m, i) {
+        if (m.role === 'user')
+          return `<div class="msg-user">${esc(m.text)}</div>`;
+        const words = m.full.split(' ');
+        const finished = m.shown >= words.length;
+        const ids = m.ids.slice(0, 6);
+        const more = m.ids.length - ids.length;
+        const acts = [...m.actions];
+        if (finished && m.ids.length && !m.made) {
+          if (m.filters.length || m.rest)
+            acts.push({ a: 'show', label: 'Show in library' });
+          acts.push(
+            S.page === 'studio'
+              ? { a: 'add', label: 'Add to this canvas' }
+              : { a: 'canvas', label: 'Make a canvas from these' },
+          );
+        }
+        return `<div class="msg-ai"><span class="who">${ico.spark} Mado</span>
+    <p>${esc(words.slice(0, m.shown).join(' '))}${finished ? '' : '<span class="caret" aria-hidden="true"></span>'}</p>
+    ${
+      finished && ids.length
+        ? `<div class="cites">${ids
+            .map((id) => {
+              const s = byId(id);
+              return s
+                ? `<button class="cite" data-open="${id}" aria-label="Open ${esc(s.name)}"><img src="${imgUrl(s.kind === 'canvas' ? byId(s.items[0]?.sid || 's1') : s, 120)}" alt=""></button>`
+                : '';
+            })
+            .join(
+              '',
+            )}${more > 0 ? `<span class="num muted" style="font-size:12px">+${more}</span>` : ''}</div>`
+        : ''
+    }
+    ${finished && acts.length ? `<div class="msg-actions">${acts.map((a) => `<button class="btn btn-soft" data-ai="${a.a}" data-mi="${i}" ${a.id ? `data-id="${a.id}"` : ''}>${esc(a.label)}</button>`).join('')}</div>` : ''}
+  </div>`;
+      }
+      const SUGGEST = () =>
+        S.page === 'studio'
+          ? [
+              'Is this direction too safe?',
+              'Find warm packaging from the last two months',
+              'What is missing from this board?',
+            ]
+          : [
+              'Images from the last two months',
+              'What do my Nike sources have in common?',
+              'Make a canvas from warm photos',
+            ];
+      function logHTML(sess, emptyText) {
+        if (!sess || !sess.messages.length)
+          return `<div class="chat-empty"><p>${emptyText || 'Ask about your library. Mado looks at names, dates and collections, and always shows the sources it used.'}</p><div class="suggest">${SUGGEST()
+            .map(
+              (s) =>
+                `<button class="btn btn-soft" data-suggest="${esc(s)}">${esc(s)}</button>`,
+            )
+            .join('')}</div></div>`;
+        return `<div class="chat-log">${sess.messages.map((m, i) => msgHTML(m, i)).join('')}</div>`;
+      }
+      function afterChatRender() {
+        const b = $('[data-chat-scroll]');
+        if (b) b.scrollTop = b.scrollHeight;
+      }
+      function refreshChat() {
+        if (S.sheet === 'chat') {
+          $('[data-sheet]').innerHTML = variant.chatHTML();
+          afterChatRender();
+        }
+      }
+
+      function newSession() {
+        S.activeSession = null;
+        S.draftNew = true;
+        refreshChat();
+        $('#dq').focus();
+      }
+      function ask(q) {
+        q = q.trim();
+        if (!q) return;
+        let sess = session();
+        if (!sess) {
+          sess = {
+            id: nid('a'),
+            title: q.length > 48 ? `${q.slice(0, 46)}…` : q,
+            place: placeOf(),
+            updated: new Date(NOW),
+            messages: [],
+          };
+          SESSIONS = [...SESSIONS, sess];
+          S.activeSession = sess.id;
+        }
+        S.draftNew = false;
+        const msg = { role: 'ai', shown: 0, ...aiReply(q) };
+        sess.messages = [...sess.messages, { role: 'user', text: q }, msg];
+        sess.updated = new Date(NOW.getTime() + uid * 1000);
+        const total = msg.full.split(' ').length;
+        if (reduceMotion) msg.shown = total;
+        refreshChat();
+        if (reduceMotion) return;
+        const t = setInterval(() => {
+          msg.shown += 1;
+          if (msg.shown >= total) clearInterval(t);
+          if (S.activeSession === sess.id) refreshChat();
+        }, 28);
+      }
+      function aiReply(q) {
+        const p = parseQuery(q);
+        const words = keywords(p.rest);
+        const canvas = S.page === 'studio' ? byId(S.canvasId) : null;
+        if (
+          canvas &&
+          /\b(this|board|canvas|direction|missing|safe)\b/i.test(q) &&
+          !/\b(find|show)\b/i.test(q)
+        ) {
+          return {
+            full: `This board has ${plural(canvas.items.length, 'source')}${canvas.notes.length ? ` and ${plural(canvas.notes.length, 'note')}` : ''}. They are calm, close-up and warm. What's missing is contrast: one loud image or a type sample would show the client where the edge is.`,
+            ids: canvas.items.map((i) => i.sid),
+            actions: [],
+            filters: [],
+            rest: '',
+            made: true,
+          };
+        }
+        const pool = filterSources({
+          filters: p.filters,
+          scope: S.page === 'studio' ? null : S.scope,
+        }).filter((s) => s.kind !== 'canvas');
+        let hits = words.length
+          ? pool.filter((s) => words.some((w) => hay(s).includes(w)))
+          : pool;
+        if (/warm/i.test(q))
+          hits = [
+            ...new Set([
+              ...hits,
+              ...pool.filter((s) =>
+                /kraft|orange|warm|sunset|ceramic|linen|wood|paper/i.test(
+                  s.name,
+                ),
+              ),
+            ]),
+          ].sort((a, b) => b.date - a.date);
+        if (!hits.length) hits = pool;
+        hits = hits.slice(0, 8);
+        const t = p.filters.find((f) => f.kind === 'type'),
+          d = p.filters.find((f) => f.kind === 'date');
+        const noun = (n) =>
+          t
+            ? t.kinds
+                .map((k) =>
+                  (n === 1 ? KIND_ONE[k] : KIND_LABEL[k]).toLowerCase(),
+                )
+                .join(' and ')
+            : n === 1
+              ? 'source'
+              : 'sources';
+        const tail = d
+          ? ` from ${d.label.charAt(0).toLowerCase()}${d.label.slice(1)}`
+          : '';
+        if (!hits.length)
+          return {
+            full: `I couldn't find any ${noun(2)}${tail}. Try a wider date range or another collection.`,
+            ids: [],
+            actions: [],
+            filters: p.filters,
+            rest: '',
+          };
+        if (
+          /\b(make|create|build|start)\b/i.test(q) &&
+          /\b(canvas|board|moodboard)/i.test(q)
+        ) {
+          const c = createCanvas(
+            hits.slice(0, 6),
+            `${words.length ? words.join(' ').replace(/^\w/, (x) => x.toUpperCase()) : 'New'} — draft`,
+          );
+          return {
+            full: `I made a canvas with ${plural(c.items.length, 'source')}${tail}. It's saved in your library like any other source. It's only a starting point — move things around or remove what doesn't fit.`,
+            ids: c.items.map((x) => x.sid),
+            actions: [{ a: 'open', id: c.id, label: 'Open canvas' }],
+            filters: p.filters,
+            rest: '',
+            made: true,
+          };
+        }
+        const n = hits.length;
+        const common = /common|share|similar/i.test(q)
+          ? ' They share warm, natural materials — kraft, board and orange accents — and most are close-up product shots.'
+          : '';
+        return {
+          full: `${n === 1 ? 'One' : n} ${noun(n)}${tail} match. “${hits[0].name}” is the closest.${common}`,
+          ids: hits.map((h) => h.id),
+          actions: [],
+          filters: p.filters,
+          rest: words.join(' '),
+        };
+      }
+      function createCanvas(sources, name) {
+        const items = sources.map((s, i) => ({
+          sid: s.id,
+          x: (i % 3) * 220,
+          y: Math.floor(i / 3) * 260,
+          w: 200,
+        }));
+        const c = {
+          id: nid('k'),
+          name,
+          kind: 'canvas',
+          date: new Date(NOW.getTime() + uid * 1000),
+          collectionIds: S.scope ? [S.scope] : [],
+          w: 4,
+          h: 3,
+          items,
+          notes: [],
+        };
+        SOURCES = [c, ...SOURCES];
+        return c;
+      }
+
+      /* ---------- Variant A · Tabs: open chats as tabs; older ones in a menu ---------- */
+      const TABS = {
+        open: [],
+        enter() {
+          if (!this.open.length)
+            this.open = sortedSessions()
+              .slice(0, 3)
+              .map((s) => s.id);
+          if (!S.activeSession && !S.draftNew)
+            S.activeSession = this.open[0] || null;
+          if (!S.activeSession) S.draftNew = true;
+        },
+        chatHTML() {
+          if (S.activeSession && !this.open.includes(S.activeSession))
+            this.open = [S.activeSession, ...this.open];
+          const tabs = this.open
+            .map((id) => SESSIONS.find((s) => s.id === id))
+            .filter(Boolean);
+          const others = sortedSessions().filter(
+            (s) => !this.open.includes(s.id),
+          );
+          const sess = session();
+          return `<div class="chat-head">
+      <div class="s-tabs" role="tablist" aria-label="Open chats">
+        ${S.draftNew ? '<button class="s-tab" role="tab" aria-selected="true"><span>New chat</span></button>' : ''}
+        ${tabs.map((s) => `<button class="s-tab" role="tab" data-session="${s.id}" aria-selected="${s.id === S.activeSession}" title="${esc(s.title)}"><span>${esc(s.title)}</span><span class="x" data-close-tab="${s.id}" role="button" aria-label="Close ${esc(s.title)}">${ico.x}</span></button>`).join('')}
+      </div>
+      ${others.length ? `<button class="btn" data-more-sessions title="Older chats">${others.length} more ${ico.down}</button>` : ''}
+      <button class="btn btn-icon" data-new-session aria-label="New chat" title="New chat">${ico.plus}</button>
+    </div>
+    <div class="chat-body" data-chat-scroll>${sess ? `<div style="margin-bottom:12px">${placeHTML(sess.place)}</div>` : ''}${logHTML(sess)}</div>`;
+        },
+        more(anchor) {
+          const others = sortedSessions().filter(
+            (s) => !this.open.includes(s.id),
+          );
+          openPop(
+            anchor,
+            `<div class="pop-body" style="padding:0;gap:2px">${others.map((s) => `<button class="pop-item" data-pick="${s.id}" style="height:auto;padding:8px 10px;display:grid;gap:2px"><span style="font-weight:500">${esc(s.title)}</span><span class="place">${placeLabel(s.place).icon}<span>${esc(placeLabel(s.place).label)} · ${ago(s.updated)}</span></span></button>`).join('')}</div>`,
+            (e) => {
+              const b = e.target.closest('[data-pick]');
+              if (b) {
+                closePop();
+                S.draftNew = false;
+                S.activeSession = b.dataset.pick;
+                refreshChat();
+              }
+            },
+          );
+        },
+      };
+
+      /* ---------- Variant B · History: every chat listed beside the conversation ---------- */
+      const HISTORY = {
+        wide: true,
+        enter() {
+          if (!S.activeSession && !S.draftNew)
+            S.activeSession = sortedSessions()[0]?.id || null;
+          if (!S.activeSession) S.draftNew = true;
+        },
+        chatHTML() {
+          const q = S.histQuery.toLowerCase();
+          const list = sortedSessions().filter(
+            (s) =>
+              !q ||
+              s.title.toLowerCase().includes(q) ||
+              placeLabel(s.place).label.toLowerCase().includes(q),
+          );
+          const groups = [
+            ['Today', (s) => NOW - s.updated < DAY],
+            [
+              'This week',
+              (s) => NOW - s.updated >= DAY && NOW - s.updated < 7 * DAY,
+            ],
+            ['Earlier', (s) => NOW - s.updated >= 7 * DAY],
+          ];
+          const sess = session();
+          return `<div class="hist">
+      <nav class="hist-list" aria-label="Chats">
+        <button class="btn btn-soft" data-new-session style="justify-content:flex-start;margin-bottom:6px">${ico.plusSm} New chat</button>
+        <label class="sr-only" for="hq">Search chats</label><input id="hq" data-hist-q placeholder="Search chats" value="${esc(S.histQuery)}" autocomplete="off">
+        ${groups
+          .map(([g, fn]) => {
+            const items = list.filter(fn);
+            return items.length
+              ? `<p class="hist-group">${g}</p>${items.map((s) => `<button class="hist-item" data-session="${s.id}" aria-current="${s.id === S.activeSession}"><b>${esc(s.title)}</b>${placeHTML(s.place)}</button>`).join('')}`
+              : '';
+          })
+          .join('')}
+        ${list.length ? '' : '<p class="muted" style="margin:8px 10px;font-size:13px">No chats match.</p>'}
+      </nav>
+      <div class="hist-main">
+        <div class="hist-title">${sess ? `<b>${esc(sess.title)}</b>${placeHTML(sess.place)}<span class="muted" style="margin-left:auto;font-size:12px;white-space:nowrap">${ago(sess.updated)}</span>` : '<b>New chat</b>'}</div>
+        <div class="chat-body" data-chat-scroll>${logHTML(sess)}</div>
+      </div>
+    </div>`;
+        },
+      };
+
+      /* ---------- Variant C · Per place: chats belong to where you are ---------- */
+      const PLACE = {
+        enter() {
+          const here = sortedSessions().filter((s) => s.place === placeOf());
+          S.activeSession = here[0]?.id || null;
+          S.draftNew = !here.length;
+        },
+        chatHTML() {
+          const here = placeOf();
+          const sess = session();
+          const l = placeLabel(here);
+          const count = SESSIONS.filter((s) => s.place === here).length;
+          const where = S.page === 'studio' ? 'on this canvas' : 'here';
+          const elsewhere = sess && sess.place !== here;
+          return `<div class="chat-head">
+      <button class="place-btn" data-place-menu aria-haspopup="menu" title="Switch chat">${ico.spark}<b>${sess ? esc(sess.title) : 'New chat'}</b>${ico.down}</button>
+      <span class="place">${l.icon}<span>${count ? `${plural(count, 'chat')} ${where}` : `No chats ${where} yet`}</span></span>
+      <button class="btn btn-icon" style="margin-left:auto" data-new-session aria-label="New chat here" title="New chat here">${ico.plus}</button>
+    </div>
+    <div class="chat-body" data-chat-scroll>
+      ${elsewhere ? `<div class="elsewhere">${placeLabel(sess.place).icon}<span>This chat started in <b>${esc(placeLabel(sess.place).label)}</b>.</span><button class="btn btn-soft" data-goto-place="${sess.place}">Go there</button></div>` : ''}
+      ${logHTML(sess, S.page === 'studio' ? `Chats here are about “${esc(l.label)}”. Mado can see this board and your whole library.` : `Chats here are about ${esc(l.label === 'Library' ? 'your whole library' : `“${l.label}”`)}.`)}
+    </div>`;
+        },
+        menu(anchor) {
+          const here = placeOf();
+          const mine = sortedSessions().filter((s) => s.place === here);
+          const rest = sortedSessions().filter((s) => s.place !== here);
+          const item = (s) =>
+            `<button class="pop-item" data-pick="${s.id}" ${s.id === S.activeSession ? 'aria-current="true"' : ''} style="height:auto;padding:8px 10px;display:grid;gap:2px"><span style="font-weight:500">${esc(s.title)}</span><span class="place">${placeLabel(s.place).icon}<span>${esc(placeLabel(s.place).label)} · ${ago(s.updated)}</span></span></button>`;
+          openPop(
+            anchor,
+            `<div class="pop-body" style="padding:0;gap:2px">
+      <p class="pop-section">${S.page === 'studio' ? 'On this canvas' : `In ${esc(placeLabel(here).label)}`}</p>
+      ${mine.length ? mine.map(item).join('') : '<p class="pop-help" style="padding:4px 10px">None yet.</p>'}
+      <button class="pop-item" data-pick="new">${ico.plusSm}<span>New chat here</span></button>
+      ${rest.length ? `<p class="pop-section" style="margin-top:8px">Elsewhere</p>${rest.map(item).join('')}` : ''}
+    </div>`,
+            (e) => {
+              const b = e.target.closest('[data-pick]');
+              if (!b) return;
+              closePop();
+              if (b.dataset.pick === 'new') newSession();
+              else {
+                S.draftNew = false;
+                S.activeSession = b.dataset.pick;
+                refreshChat();
+              }
+            },
+          );
+        },
+      };
+
+      /* =====================================================================
+   Popovers, filter builder, overlays, board
+   ===================================================================== */
+      let pop = null;
+      function placePop(el, anchor) {
+        const r = anchor.getBoundingClientRect();
+        const w = el.offsetWidth,
+          h = el.offsetHeight;
+        const left = Math.min(Math.max(16, r.left), innerWidth - w - 16);
+        const below = innerHeight - r.bottom > h + 16 || r.top < h + 16;
+        el.style.left = `${left}px`;
+        el.style.top = below
+          ? `${r.bottom + 8}px`
+          : `${Math.max(16, r.top - h - 8)}px`;
+        el.style.transformOrigin = `${r.left + r.width / 2 - left}px ${below ? 'top' : 'bottom'}`;
+      }
+      function openPop(anchor, html, onClick, onSubmit) {
+        closePop();
+        const el = document.createElement('div');
+        el.className = 'pop';
+        el.setAttribute('role', 'dialog');
+        el.innerHTML = html;
+        document.body.append(el);
+        placePop(el, anchor);
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          onClick(e, el);
+        });
+        el.addEventListener('submit', (e) => {
+          e.preventDefault();
+          onSubmit?.(e, el);
+        });
+        pop = { el, anchor };
+        if (!('ontouchstart' in window))
+          (
+            el.querySelector('[aria-selected="true"]') ||
+            el.querySelector('button, input')
+          )?.focus();
+      }
+      function closePop(restore = false) {
+        if (!pop) return;
+        const a = pop.anchor;
+        pop.el.remove();
+        pop = null;
+        if (restore && a.isConnected) a.focus();
+      }
+
+      const unitOptions = (sel) =>
+        ['day', 'week', 'month', 'year']
+          .map(
+            (u) =>
+              `<option value="${u}" ${u === sel ? 'selected' : ''}>${u}s</option>`,
+          )
+          .join('');
+      function treeItems(pid, depth) {
+        return children(pid)
+          .map(
+            (c) =>
+              `<button class="pop-item" data-col="${c.id}" style="padding-left:${10 + depth * 16}px"><span class="dot" style="background:${dotColor(c)}"></span><span>${esc(c.name)}</span><span class="count num">${countIn(c.id)}</span></button>${treeItems(c.id, depth + 1)}`,
+          )
+          .join('');
+      }
+      function openBuilder(anchor, { tab = 'type', filter = null, onApply }) {
+        let active = filter
+          ? filter.kind === 'col'
+            ? 'collection'
+            : filter.kind
+          : tab;
+        const kindsOn = new Set(
+          filter?.kind === 'type'
+            ? filter.kinds
+            : S.filters.find((f) => f.kind === 'type')?.kinds || [],
+        );
+        const body = () => {
+          if (active === 'type')
+            return `<div><p class="pop-label">Show only</p><div class="type-grid">${Object.keys(
+              KIND_LABEL,
+            )
+              .map(
+                (k) =>
+                  `<button class="pop-item" data-kind="${k}" aria-pressed="${kindsOn.has(k)}">${KIND_ICON[k].replace(/width="1\d"/, 'width="14"').replace(/height="1\d"/, 'height="14"')}<span>${KIND_LABEL[k]}</span><span class="count num">${SOURCES.filter((s) => s.kind === k).length}</span></button>`,
+              )
+              .join(
+                '',
+              )}</div></div><div class="pop-row"><span class="pop-help">Pick one or more.</span><button class="btn btn-primary" data-apply-type>Apply</button></div>`;
+          if (active === 'date')
+            return `<div><p class="pop-label">Quick</p><div class="preset-grid">${[
+              ['today', 'Today'],
+              ['7d', 'Last 7 days'],
+              ['30d', 'Last 30 days'],
+              ['2m', 'Last 2 months'],
+              ['lastmonth', 'Month before last'],
+              ['year', 'This year'],
+            ]
+              .map(
+                ([k, l]) =>
+                  `<button class="pop-item" data-preset="${k}">${l}</button>`,
+              )
+              .join('')}</div></div>
+      <div><p class="pop-label">Last…</p><form class="pop-row" data-form="last"><span>Last</span><label class="sr-only" for="pl-n">Amount</label><input id="pl-n" name="n" type="number" min="1" max="99" value="2" required><label class="sr-only" for="pl-u">Unit</label><select id="pl-u" name="u">${unitOptions('month')}</select><button class="btn btn-soft">Add</button></form></div>
+      <div><p class="pop-label">Between two moments</p><form class="pop-row" data-form="range"><span>From</span><label class="sr-only" for="pr-a">From amount</label><input id="pr-a" name="a" type="number" min="1" max="99" value="2" required><label class="sr-only" for="pr-au">From unit</label><select id="pr-au" name="au">${unitOptions('month')}</select><span>ago to</span><label class="sr-only" for="pr-b">To amount</label><input id="pr-b" name="b" type="number" min="0" max="99" value="1" required><label class="sr-only" for="pr-bu">To unit</label><select id="pr-bu" name="bu">${unitOptions('month')}</select><span>ago</span><button class="btn btn-soft">Add</button></form></div>
+      <div><p class="pop-label">Exact dates</p><form class="pop-row" data-form="dates"><label class="sr-only" for="pd-a">Start date</label><input id="pd-a" name="a" type="date" value="2026-08-01" required><span>–</span><label class="sr-only" for="pd-b">End date</label><input id="pd-b" name="b" type="date" value="2026-09-30" required><button class="btn btn-soft">Add</button></form></div>
+      <p class="pop-help">Tip: type it instead — “last two months” or “2 months ago to last month”.</p>`;
+          return `<div><p class="pop-label">In collection (includes its folders)</p>${treeItems(null, 0)}</div>`;
+        };
+        const html = () =>
+          `<div class="pop-tabs" role="tablist">${['type', 'date', 'collection'].map((t) => `<button role="tab" aria-selected="${t === active}" data-tab-b="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}</div><div class="pop-body">${body()}</div>`;
+        const apply = (f) => {
+          closePop(true);
+          onApply({ ...f, id: filter?.id || nid() });
+        };
+        openPop(
+          anchor,
+          html(),
+          (e, el) => {
+            const t = e.target.closest('button');
+            if (!t) return;
+            if (t.dataset.tabB) {
+              active = t.dataset.tabB;
+              el.innerHTML = html();
+              placePop(el, anchor);
+              el.querySelector(`[data-tab-b="${active}"]`).focus();
+            } else if (t.dataset.kind) {
+              kindsOn.has(t.dataset.kind)
+                ? kindsOn.delete(t.dataset.kind)
+                : kindsOn.add(t.dataset.kind);
+              t.setAttribute('aria-pressed', kindsOn.has(t.dataset.kind));
+            } else if ('applyType' in t.dataset) {
+              if (kindsOn.size) apply({ kind: 'type', kinds: [...kindsOn] });
+            } else if (t.dataset.preset) apply(datePreset(t.dataset.preset));
+            else if (t.dataset.col) apply({ kind: 'col', cid: t.dataset.col });
+          },
+          (e) => {
+            const fd = new FormData(e.target);
+            const form = e.target.dataset.form;
+            if (form === 'last') apply(dateLast(+fd.get('n'), fd.get('u')));
+            if (form === 'range') {
+              const f = dateRange(
+                +fd.get('a'),
+                fd.get('au'),
+                +fd.get('b'),
+                fd.get('bu'),
+              );
+              const a = e.target.querySelector('[name=a]');
+              if (f.to && f.from > f.to) {
+                a.setCustomValidity('The start must be before the end');
+                e.target.reportValidity();
+                a.setCustomValidity('');
+                return;
+              }
+              apply(f);
+            }
+            if (form === 'dates') {
+              const a = new Date(fd.get('a')),
+                b = new Date(fd.get('b'));
+              b.setHours(23, 59);
+              apply(dateDates(a < b ? a : b, a < b ? b : a));
+            }
+          },
+        );
+      }
+
+      let overlay = null;
+      function closeOverlay() {
+        if (!overlay) return;
+        overlay.nodes.forEach((n) => n.remove());
+        const r = overlay.restore;
+        overlay = null;
+        if (r?.isConnected) r.focus();
+      }
+      function openSource(id, restore) {
+        const s = byId(id);
+        if (!s) return;
+        if (s.kind === 'canvas') return openStudio(id);
+        closeOverlay();
+        const back = document.createElement('div');
+        back.className = 'overlay';
+        back.addEventListener('click', closeOverlay);
+        const m = document.createElement('div');
+        m.className = 'modal';
+        m.setAttribute('role', 'dialog');
+        m.setAttribute('aria-modal', 'true');
+        const d = Math.round((NOW - s.date) / DAY);
+        m.innerHTML = `<div class="modal-head"><h2>${esc(s.name)}</h2><button class="btn btn-icon" data-close aria-label="Close">${ico.x}</button></div>
+    <div class="lightbox"><div class="lightbox-media"><img src="${imgUrl(s, 1000)}" alt="${esc(s.name)}"></div><div class="lightbox-info"><dl>
+      <div><dt>Kind</dt><dd>${KIND_ONE[s.kind]}${s.dur ? ` · ${s.dur}` : ''}</dd></div>
+      ${s.url ? `<div><dt>Link</dt><dd>${esc(s.url)}</dd></div>` : ''}
+      <div><dt>Saved</dt><dd>${fmtLong(s.date)} · ${d <= 0 ? 'today' : `${plural(d, 'day')} ago`}</dd></div>
+      <div><dt>Collections</dt><dd>${
+        s.collectionIds.length
+          ? s.collectionIds
+              .map((c) =>
+                esc(
+                  ancestors(c)
+                    .map((a) => a.name)
+                    .join(' / '),
+                ),
+              )
+              .join('<br>')
+          : 'Only in the library'
+      }</dd></div>
+    </dl></div></div>`;
+        document.body.append(back, m);
+        overlay = { nodes: [back, m], restore };
+        m.querySelector('[data-close]').addEventListener('click', closeOverlay);
+        m.querySelector('[data-close]').focus();
+      }
+      function openStudio(id) {
+        if (S.page !== 'studio') S.origin = S.scope;
+        S.page = 'studio';
+        S.canvasId = id;
+        if (S.sheet !== 'chat') S.sheet = null;
+        if (variant === PLACE && S.sheet === 'chat') PLACE.enter();
+        mountApp();
+      }
+      function backToLibrary() {
+        S.page = 'library';
+        S.scope = S.origin;
+        if (S.sheet !== 'chat') S.sheet = null;
+        if (variant === PLACE && S.sheet === 'chat') PLACE.enter();
+        mountApp();
+      }
+
+      function mountBoard(host, c) {
+        host.innerHTML = `<div class="board" tabindex="0" aria-label="Canvas ${esc(c.name)}. Drag the background to move around."><div class="board-world"></div>${c.items.length + c.notes.length ? '' : '<div class="board-empty"><div><strong>This canvas is empty</strong>Drag sources from the library and drop them here.</div></div>'}</div>`;
+        const el = $('.board', host),
+          world = $('.board-world', host);
+        const pan = { x: 56, y: 56 };
+        const draw = () => {
+          world.style.transform = `translate(${pan.x}px, ${pan.y}px)`;
+          world.innerHTML =
+            c.items
+              .map((it, i) => {
+                const s = byId(it.sid);
+                return `<div class="b-item" data-item="${i}" style="left:${it.x}px;top:${it.y}px;width:${it.w}px"><img src="${imgUrl(s, 400)}" alt="${esc(s.name)}" style="aspect-ratio:${s.w}/${s.h}"></div>`;
+              })
+              .join('') +
+            c.notes
+              .map(
+                (n, i) =>
+                  `<div class="b-note" data-note="${i}" style="left:${n.x}px;top:${n.y}px">${esc(n.text)}</div>`,
+              )
+              .join('');
+        };
+        draw();
+        let drag = null;
+        el.addEventListener('pointerdown', (e) => {
+          const item = e.target.closest('[data-item],[data-note]');
+          el.setPointerCapture(e.pointerId);
+          if (item) {
+            const list = item.dataset.item !== undefined ? 'items' : 'notes';
+            const i = +(item.dataset.item ?? item.dataset.note);
+            drag = {
+              type: 'item',
+              list,
+              i,
+              sx: e.clientX,
+              sy: e.clientY,
+              ox: c[list][i].x,
+              oy: c[list][i].y,
+              el: item,
+            };
+            item.classList.add('dragging');
+          } else {
+            drag = {
+              type: 'pan',
+              sx: e.clientX,
+              sy: e.clientY,
+              ox: pan.x,
+              oy: pan.y,
+            };
+            el.classList.add('panning');
+          }
+        });
+        el.addEventListener('pointermove', (e) => {
+          if (!drag) return;
+          const dx = e.clientX - drag.sx,
+            dy = e.clientY - drag.sy;
+          if (drag.type === 'pan') {
+            pan.x = drag.ox + dx;
+            pan.y = drag.oy + dy;
+            world.style.transform = `translate(${pan.x}px, ${pan.y}px)`;
+          } else {
+            drag.el.style.left = `${drag.ox + dx}px`;
+            drag.el.style.top = `${drag.oy + dy}px`;
+            drag.nx = drag.ox + dx;
+            drag.ny = drag.oy + dy;
+          }
+        });
+        const end = () => {
+          if (drag?.type === 'item' && drag.nx !== undefined) {
+            c[drag.list] = c[drag.list].map((it, j) =>
+              j === drag.i ? { ...it, x: drag.nx, y: drag.ny } : it,
+            );
+            cardCache.delete(c.id);
+          }
+          drag?.el?.classList.remove('dragging');
+          el.classList.remove('panning');
+          drag = null;
+        };
+        el.addEventListener('pointerup', end);
+        el.addEventListener('pointercancel', end);
+        el.addEventListener('dragover', (e) => {
+          if (e.dataTransfer.types.includes('text/mado-source')) {
+            e.preventDefault();
+            el.classList.add('drop-ok');
+          }
+        });
+        el.addEventListener('dragleave', () => el.classList.remove('drop-ok'));
+        el.addEventListener('drop', (e) => {
+          e.preventDefault();
+          el.classList.remove('drop-ok');
+          const s = byId(e.dataTransfer.getData('text/mado-source'));
+          if (!s || s.kind === 'canvas') return;
+          const r = el.getBoundingClientRect();
+          c.items = [
+            ...c.items,
+            {
+              sid: s.id,
+              x: e.clientX - r.left - pan.x - 100,
+              y: e.clientY - r.top - pan.y - 60,
+              w: 200,
+            },
+          ];
+          cardCache.delete(c.id);
+          $('.board-empty', el)?.remove();
+          draw();
+          update();
+        });
+        return {
+          addItems(ids) {
+            c.items = [
+              ...c.items,
+              ...ids.map((sid, i) => ({
+                sid,
+                x: 760 + (i % 2) * 220,
+                y: Math.floor(i / 2) * 260,
+                w: 200,
+              })),
+            ];
+            cardCache.delete(c.id);
+            $('.board-empty', el)?.remove();
+            draw();
+            update();
+          },
+        };
+      }
+
+      let toastTimer;
+      function toast(text) {
+        $('.toast')?.remove();
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.setAttribute('role', 'status');
+        t.textContent = text;
+        document.body.append(t);
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(
+          () => t.remove(),
+          1800 + text.split(' ').length * 120,
+        );
+      }
+
+      /* =====================================================================
+   Events
+   ===================================================================== */
+      function setText(t) {
+        S.text = t;
+        $('#dq').value = t;
+        update();
+      }
+      function commitText() {
+        const p = live();
+        if (!p.filters.length) return;
+        let next = S.filters;
+        p.filters.forEach((f) => {
+          next =
+            f.kind === 'type'
+              ? [...next.filter((x) => x.kind !== 'type'), f]
+              : [...next, f];
+        });
+        S.filters = next;
+        setText(p.rest);
+      }
+      function addFilter(f) {
+        const exists = S.filters.some((x) => x.id === f.id);
+        S.filters = exists
+          ? S.filters.map((x) => (x.id === f.id ? f : x))
+          : f.kind === 'type'
+            ? [...S.filters.filter((x) => x.kind !== 'type'), f]
+            : [...S.filters, f];
+        update();
+      }
+      function goScope(id) {
+        S.scope = id || null;
+        S.fm.editing = null;
+        S.fm.confirm = null;
+        if (variant === PLACE && S.sheet === 'chat') PLACE.enter();
+        update();
+      }
+
+      document.addEventListener('click', (e) => {
+        const closeTab = e.target.closest('[data-close-tab]');
+        if (closeTab) {
+          const id = closeTab.dataset.closeTab;
+          TABS.open = TABS.open.filter((x) => x !== id);
+          if (S.activeSession === id) S.activeSession = TABS.open[0] || null;
+          if (!S.activeSession) S.draftNew = true;
+          return refreshChat();
+        }
+        const t = e.target.closest('button');
+        if (!t) return;
+        const d = t.dataset;
+        if (d.open) return openSource(d.open, t);
+        if (d.back !== undefined) return backToLibrary();
+        if (d.collapse !== undefined) {
+          S.sidebar = !S.sidebar;
+          return mountApp();
+        }
+        if (d.tab) {
+          S.tab = d.tab;
+          return update();
+        }
+        if (d.scope !== undefined) return goScope(d.scope);
+        if (d.newFolder !== undefined) {
+          const c = createFolder(d.newFolder || null);
+          S.scope = c.id;
+          update();
+          requestAnimationFrame(() => {
+            const i = $('[data-title]');
+            i?.focus();
+            i?.select();
+          });
+          return;
+        }
+        if (d.dockBtn) {
+          S.sheet = S.sheet === d.dockBtn ? null : d.dockBtn;
+          if (S.sheet === 'chat') variant.enter();
+          S.fm.editing = null;
+          S.fm.confirm = null;
+          updateDock();
+          if (S.sheet === 'chat') $('#dq').focus();
+          return;
+        }
+        if (d.try) {
+          setText(d.try);
+          $('#dq').focus();
+          return;
+        }
+        if (d.commit !== undefined) {
+          commitText();
+          $('#dq').focus();
+          return;
+        }
+        if (d.clear !== undefined) {
+          S.filters = [];
+          setText('');
+          return;
+        }
+        if (d.editFilter) {
+          const f = S.filters.find((x) => x.id === d.editFilter);
+          return openBuilder(t, { filter: f, onApply: addFilter });
+        }
+        if (d.removeFilter) {
+          S.filters = S.filters.filter((x) => x.id !== d.removeFilter);
+          return update();
+        }
+        if (d.addFilter !== undefined)
+          return openBuilder(t, {
+            tab: d.addFilter || 'type',
+            onApply: (f) => {
+              S.sheet = null;
+              addFilter(f);
+            },
+          });
+        if (d.fmGo !== undefined) return goScope(d.fmGo);
+        if (d.fmNew !== undefined) {
+          const c = createFolder(d.fmNew || null);
+          S.fm.editing = c.id;
+          update();
+          requestAnimationFrame(() => {
+            const i = $('#fm-in');
+            i?.focus();
+            i?.select();
+          });
+          return;
+        }
+        if (d.fmEdit) {
+          S.fm.editing = d.fmEdit;
+          S.fm.confirm = null;
+          updateDock();
+          requestAnimationFrame(() => {
+            const i = $('#fm-in');
+            i?.focus();
+            i?.select();
+          });
+          return;
+        }
+        if (d.fmAsk) {
+          S.fm.confirm = d.fmAsk;
+          S.fm.editing = null;
+          updateDock();
+          requestAnimationFrame(() => $('[data-fm-cancel]')?.focus());
+          return;
+        }
+        if (d.fmCancel !== undefined) {
+          S.fm.confirm = null;
+          return updateDock();
+        }
+        if (d.fmDelete) {
+          const name = colById(d.fmDelete).name;
+          deleteCollection(d.fmDelete);
+          S.fm.confirm = null;
+          toast(`Deleted “${name}”`);
+          return update();
+        }
+        if (d.add) {
+          S.sheet = null;
+          if (d.add === 'upload') {
+            $('#file-input').click();
+            return updateDock();
+          }
+          if (d.add === 'canvas') {
+            const c = createCanvas([], 'Untitled canvas');
+            return openStudio(c.id);
+          }
+          const c = createFolder(S.scope);
+          if (S.page === 'studio') {
+            S.sheet = 'folders';
+            S.fm.editing = c.id;
+            update();
+            requestAnimationFrame(() => {
+              const i = $('#fm-in');
+              i?.focus();
+              i?.select();
+            });
+            return;
+          }
+          S.scope = c.id;
+          update();
+          requestAnimationFrame(() => {
+            const i = $('[data-title]');
+            i?.focus();
+            i?.select();
+          });
+          return;
+        }
+        if (d.session) {
+          S.draftNew = false;
+          S.activeSession = d.session;
+          return refreshChat();
+        }
+        if (d.newSession !== undefined) return newSession();
+        if (d.moreSessions !== undefined) return TABS.more(t);
+        if (d.placeMenu !== undefined) return PLACE.menu(t);
+        if (d.gotoPlace) {
+          const p = d.gotoPlace;
+          const keep = S.activeSession;
+          if (byId(p)) {
+            S.sheet = 'chat';
+            openStudio(p);
+          } else if (S.page === 'studio') {
+            S.origin = p === 'library' ? null : p;
+            S.sheet = 'chat';
+            backToLibrary();
+          } else {
+            S.scope = p === 'library' ? null : p;
+            update();
+          }
+          S.activeSession = keep;
+          S.draftNew = false;
+          refreshChat();
+          return;
+        }
+        if (d.suggest) return ask(d.suggest);
+        if (d.ai) {
+          const sess = session();
+          const m = sess.messages[+d.mi];
+          if (d.ai === 'show') {
+            S.filters = m.filters.map((f) => ({ ...f, id: nid() }));
+            S.sheet = null;
+            setText(m.rest);
+            return;
+          }
+          if (d.ai === 'canvas') {
+            const c = createCanvas(
+              m.ids.slice(0, 6).map(byId),
+              'From Mado — draft',
+            );
+            m.made = true;
+            sess.messages = [
+              ...sess.messages,
+              {
+                role: 'ai',
+                full: `Done. “${c.name}” is in your library now.`,
+                shown: 99,
+                ids: [],
+                actions: [{ a: 'open', id: c.id, label: 'Open canvas' }],
+                filters: [],
+                rest: '',
+                made: true,
+              },
+            ];
+            update();
+            return refreshChat();
+          }
+          if (d.ai === 'add') {
+            board?.addItems(m.ids.slice(0, 4));
+            m.made = true;
+            toast(
+              `Added ${plural(Math.min(4, m.ids.length), 'source')} to the canvas`,
+            );
+            return refreshChat();
+          }
+          if (d.ai === 'open') return openStudio(d.id);
+        }
+      });
+      document.addEventListener('submit', (e) => {
+        const f = e.target.closest('[data-fm-rename]');
+        if (!f) return;
+        e.preventDefault();
+        const v = f.querySelector('input').value.trim();
+        S.fm.editing = null;
+        if (v) renameCollection(f.dataset.fmRename, v);
+        else updateDock();
+      });
+      document.addEventListener('input', (e) => {
+        if (e.target.matches('[data-hist-q]')) {
+          S.histQuery = e.target.value;
+          refreshChat();
+          const i = $('[data-hist-q]');
+          i.focus();
+          i.setSelectionRange(i.value.length, i.value.length);
+        }
+      });
+      document.addEventListener('dragstart', (e) => {
+        const card = e.target.closest?.('[data-card]');
+        if (card) e.dataTransfer.setData('text/mado-source', card.dataset.card);
+      });
+      document.addEventListener('dragover', (e) => {
+        const t = e.target.closest?.('[data-drop-col]');
+        $$('.drop-ok[data-drop-col]').forEach(
+          (x) => x !== t && x.classList.remove('drop-ok'),
+        );
+        if (
+          t &&
+          t.dataset.dropCol &&
+          e.dataTransfer.types.includes('text/mado-source')
+        ) {
+          e.preventDefault();
+          t.classList.add('drop-ok');
+        }
+      });
+      document.addEventListener('drop', (e) => {
+        const t = e.target.closest?.('[data-drop-col]');
+        $$('.drop-ok[data-drop-col]').forEach((x) =>
+          x.classList.remove('drop-ok'),
+        );
+        if (!t || !t.dataset.dropCol) return;
+        e.preventDefault();
+        addToCollection(
+          e.dataTransfer.getData('text/mado-source'),
+          t.dataset.dropCol,
+        );
+      });
+      $('#file-input').addEventListener('change', (e) => {
+        const files = [...e.target.files];
+        files.forEach((file) => {
+          const s = {
+            id: nid('s'),
+            name: file.name.replace(/\.[^.]+$/, ''),
+            kind: 'image',
+            date: new Date(NOW.getTime() + uid * 1000),
+            collectionIds: S.scope ? [S.scope] : [],
+            w: 1,
+            h: 1,
+            blob: URL.createObjectURL(file),
+          };
+          const img = new Image();
+          img.onload = () => {
+            SOURCES = SOURCES.map((x) =>
+              x.id === s.id
+                ? { ...x, w: img.naturalWidth, h: img.naturalHeight }
+                : x,
+            );
+            cardCache.delete(s.id);
+            update();
+          };
+          img.src = s.blob;
+          SOURCES = [s, ...SOURCES];
+        });
+        if (files.length) toast(`Added ${plural(files.length, 'image')}`);
+        e.target.value = '';
+        update();
+      });
+      document.addEventListener('pointerdown', (e) => {
+        if (pop && !pop.el.contains(e.target) && !pop.anchor.contains(e.target))
+          closePop();
+        const dock = $('[data-dock]');
+        if (
+          dock &&
+          S.sheet &&
+          S.sheet !== 'chat' &&
+          !dock.contains(e.target) &&
+          !pop?.el.contains(e.target)
+        ) {
+          S.sheet = null;
+          S.fm.editing = null;
+          S.fm.confirm = null;
+          updateDock();
+        }
+      });
+      document.addEventListener(
+        'keydown',
+        (e) => {
+          if (e.key === 'Escape') {
+            if (pop) {
+              closePop(true);
+              return;
+            }
+            if (overlay) {
+              closeOverlay();
+              return;
+            }
+            if (S.fm.editing || S.fm.confirm) {
+              S.fm.editing = null;
+              S.fm.confirm = null;
+              updateDock();
+              return;
+            }
+            if (S.sheet) {
+              S.sheet = null;
+              updateDock();
+              document.activeElement?.blur();
+              return;
+            }
+          }
+          if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+          if (e.key === '/' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
+            e.preventDefault();
+            $('#dq')?.focus();
+          }
+          if (e.key === '[' && S.page === 'studio') {
+            S.sidebar = !S.sidebar;
+            mountApp();
+          }
+        },
+        true,
+      );
+
+      /* =====================================================================
+   Harness — picker wiring (PICKER.md)
+   ===================================================================== */
+      const variants = [TABS, HISTORY, PLACE];
+      let variant = TABS;
+      const stage = document.getElementById('stage');
+      const picker = document.querySelector('.proto-picker');
+      const highlight = picker.querySelector('.proto-picker-highlight');
+      const items = [
+        ...picker.querySelectorAll(
+          '.proto-picker-item:not(.proto-picker-replay)',
+        ),
+      ];
+      let currentIndex = 0;
+
+      function moveHighlight() {
+        const el = items[currentIndex];
+        highlight.style.width = el.offsetWidth + 'px';
+        highlight.style.transform = `translateX(${el.offsetLeft}px)`;
+      }
+      function mount(i) {
+        variant = variants[i];
+        S.activeSession = null;
+        S.draftNew = false;
+        if (S.sheet === 'chat') variant.enter();
+        mountApp();
+      }
+      function setActive(i) {
+        if (i < 0 || i >= variants.length) return;
+        currentIndex = i;
+        items.forEach((el, j) => {
+          el.toggleAttribute('data-active', j === i);
+          if (j === i) el.setAttribute('aria-current', 'true');
+          else el.removeAttribute('aria-current');
+        });
+        moveHighlight();
+        const url = new URL(location);
+        url.searchParams.set('v', i + 1);
+        history.replaceState(null, '', url);
+        mount(i);
+      }
+      items.forEach((el, i) =>
+        el.addEventListener('click', () => setActive(i)),
+      );
+      window.addEventListener('resize', () => {
+        moveHighlight();
+        if (pop) placePop(pop.el, pop.anchor);
+      });
+      document.addEventListener('keydown', (e) => {
+        if (
+          /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) ||
+          e.target.isContentEditable
+        )
+          return;
+        if (e.metaKey || e.ctrlKey || e.altKey || pop || overlay) return;
+        const num = parseInt(e.key, 10);
+        if (num >= 1 && num <= variants.length) setActive(num - 1);
+        else if (e.key === 'ArrowRight')
+          setActive((currentIndex + 1) % variants.length);
+        else if (e.key === 'ArrowLeft')
+          setActive((currentIndex - 1 + variants.length) % variants.length);
+      });
+      setActive(
+        (parseInt(new URLSearchParams(location.search).get('v'), 10) || 1) - 1,
+      );
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => picker.setAttribute('data-ready', '')),
+      );
+    </script>
+  </body>
+</html>
