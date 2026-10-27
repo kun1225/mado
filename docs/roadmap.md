@@ -42,9 +42,9 @@ Each phase ships alone. Mado is a side project, so phases are small.
 The launch is Mado's own brand and the landing page, on top of the library we have today. Facets, projects and the canvas (phases 1–2) come after the launch.
 
 - **Mado branding:** name story, logo, colors, type and tone of voice. A brand design tool must look like it was made by a brand designer.
-- **Landing page:** tells the brand-tool story from this roadmap, and shows the library working today.
+- **Landing page:** tells the brand-tool story from this roadmap, and shows the library working today. v1 has six sections and no waitlist: see [`plans/landing-page-v1.md`](plans/landing-page-v1.md).
 
-Why: the launch starts the waitlist and gets feedback before we spend months on the canvas. The rest of phase 0 (folder drop, the fun loading state) can ship whenever it's ready.
+Why: the launch gets people using the free library and gets feedback before we spend months on the canvas. The rest of phase 0 (folder drop, the fun loading state) can ship whenever it's ready.
 
 ## More file types
 
