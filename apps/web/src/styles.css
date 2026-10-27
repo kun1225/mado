@@ -3,6 +3,19 @@
 
 @source '../../../packages/ui/src';
 
+@theme {
+  /* The one or two serif words a title may have, per the brand direction. */
+  --font-accent: 'Bodoni Moda', 'Noto Serif JP', ui-serif, Georgia, serif;
+
+  --animate-marquee: marquee 90s linear infinite;
+
+  @keyframes marquee {
+    to {
+      translate: -50% 0;
+    }
+  }
+}
+
 /* Lets other bottom bars move aside when the selection bar shows, without sharing selection state. */
 @custom-variant selecting (body:has([data-source-selection-bar]) &);
 

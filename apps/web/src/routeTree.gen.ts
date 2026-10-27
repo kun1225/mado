@@ -9,22 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as appRouteRouteImport } from './routes/(app)/route'
+import { Route as appIndexRouteImport } from './routes/(app)/index'
 import { Route as appCollectionRouteRouteImport } from './routes/(app)/collection/route'
 import { Route as appLibraryRouteRouteImport } from './routes/(app)/library/route'
 import { Route as appCollectionCollectionIdRouteImport } from './routes/(app)/collection/$collectionId'
 import { Route as appLibraryIndexRouteImport } from './routes/(app)/library/index'
 import { Route as appLibraryDeletedRouteImport } from './routes/(app)/library/deleted'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const appRouteRoute = appRouteRouteImport.update({
   id: '/(app)',
   getParentRoute: () => rootRouteImport,
+} as any)
+const appIndexRoute = appIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => appRouteRoute,
 } as any)
 const appCollectionRouteRoute = appCollectionRouteRouteImport.update({
   id: '/collection',
@@ -54,26 +54,26 @@ const appLibraryDeletedRoute = appLibraryDeletedRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
   '/collection': typeof appCollectionRouteRouteWithChildren
   '/library': typeof appLibraryRouteRouteWithChildren
+  '/': typeof appIndexRoute
   '/collection/$collectionId': typeof appCollectionCollectionIdRoute
   '/library/deleted': typeof appLibraryDeletedRoute
   '/library/': typeof appLibraryIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/collection': typeof appCollectionRouteRouteWithChildren
+  '/': typeof appIndexRoute
   '/collection/$collectionId': typeof appCollectionCollectionIdRoute
   '/library/deleted': typeof appLibraryDeletedRoute
   '/library': typeof appLibraryIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/(app)': typeof appRouteRouteWithChildren
   '/(app)/collection': typeof appCollectionRouteRouteWithChildren
   '/(app)/library': typeof appLibraryRouteRouteWithChildren
+  '/(app)/': typeof appIndexRoute
   '/(app)/collection/$collectionId': typeof appCollectionCollectionIdRoute
   '/(app)/library/deleted': typeof appLibraryDeletedRoute
   '/(app)/library/': typeof appLibraryIndexRoute
@@ -81,50 +81,49 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
     | '/collection'
     | '/library'
+    | '/'
     | '/collection/$collectionId'
     | '/library/deleted'
     | '/library/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/collection'
+    | '/'
     | '/collection/$collectionId'
     | '/library/deleted'
     | '/library'
   id:
     | '__root__'
-    | '/'
     | '/(app)'
     | '/(app)/collection'
     | '/(app)/library'
+    | '/(app)/'
     | '/(app)/collection/$collectionId'
     | '/(app)/library/deleted'
     | '/(app)/library/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   appRouteRoute: typeof appRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/(app)': {
       id: '/(app)'
       path: ''
       fullPath: ''
       preLoaderRoute: typeof appRouteRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/(app)/': {
+      id: '/(app)/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof appIndexRouteImport
+      parentRoute: typeof appRouteRoute
     }
     '/(app)/collection': {
       id: '/(app)/collection'
@@ -192,11 +191,13 @@ const appLibraryRouteRouteWithChildren = appLibraryRouteRoute._addFileChildren(
 interface appRouteRouteChildren {
   appCollectionRouteRoute: typeof appCollectionRouteRouteWithChildren
   appLibraryRouteRoute: typeof appLibraryRouteRouteWithChildren
+  appIndexRoute: typeof appIndexRoute
 }
 
 const appRouteRouteChildren: appRouteRouteChildren = {
   appCollectionRouteRoute: appCollectionRouteRouteWithChildren,
   appLibraryRouteRoute: appLibraryRouteRouteWithChildren,
+  appIndexRoute: appIndexRoute,
 }
 
 const appRouteRouteWithChildren = appRouteRoute._addFileChildren(
@@ -204,7 +205,6 @@ const appRouteRouteWithChildren = appRouteRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   appRouteRoute: appRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport

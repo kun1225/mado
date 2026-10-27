@@ -4,7 +4,7 @@ The first landing page for the launch. It tells the brand-tool story from the [r
 
 **Decision (2026-10):** v1 is small. Six sections, no waitlist. Mado is free in this stage and needs no account, so the call to action opens the app. Why: a waitlist means a backend and a reason to wait. Today there is nothing to wait for.
 
-This is a plan only. Design and copy come after the logo.
+**Built (2026-10):** the page is live at `/`. What it does now, and why it changed from the table below (no "Mado in short", the real library instead of a "How it works" grid), is in [`landing.spec.md`](../../apps/web/src/features/landing/landing.spec.md).
 
 ## Sections
 

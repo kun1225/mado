@@ -46,6 +46,8 @@ graph LR
   search -->|types only| collections
   search -->|types only| sources
   search -->|account for recent searches| storage
+  landing -->|LibraryView, add button| sources
+  landing -->|LibraryView| collections
 ```
 
 | Domain        | Depends on                                                               | Why                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -59,6 +61,7 @@ graph LR
 | `search`      | `collections`, `sources`, `storage`                                      | Types only for the data; the account keys the recent-search list                                                                                                                                                                                                                                                                                                                               |
 | `export`      | `collections`, `sources`, `storage`                                      | Reads every record and media file; builds the zip in the account's OPFS folder when there is no save picker                                                                                                                                                                                                                                                                                    |
 | `import`      | `export`, `sources`, `collections`, `storage`                            | Reads `library.json` with export's schema; saves files through `sources`; writes records with their own ids                                                                                                                                                                                                                                                                                    |
+| `landing`     | `sources`, `collections`                                                 | The page at `/` shows the real library (`LibraryView`, `ActionDockAddSource`) in a "try it" frame. It lives under `(app)`, so it shares the account and local data with `/library`                                                                                                                                                                                                             |
 
 **Known coupling:** `collections` and `sources` import each other, in both actions and hooks. It works because nesting rules (`collectBranchIds`) live in `sources`. If this grows, move the shared nesting helpers into `collections` or a small shared module.
 
