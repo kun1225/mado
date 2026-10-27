@@ -7,13 +7,18 @@
   /* The one or two serif words a title may have, per the brand direction. */
   --font-accent: 'Bodoni Moda', 'Noto Serif JP', ui-serif, Georgia, serif;
 
-  --animate-marquee: marquee 90s linear infinite;
+  --animate-marquee-y: marquee-y 80s linear infinite;
 
-  @keyframes marquee {
+  @keyframes marquee-y {
     to {
-      translate: -50% 0;
+      translate: 0 -50%;
     }
   }
+}
+
+/* Scrolling would move the hero away while the landing intro plays. */
+:root[data-landing-intro='pending'] {
+  overflow: hidden;
 }
 
 /* Lets other bottom bars move aside when the selection bar shows, without sharing selection state. */
@@ -71,6 +76,8 @@ body {
 .scroll-fade-x {
   --scroll-fade-size: 2rem;
   overflow-x: auto;
+  /* Without this, overflow-x makes y auto too, and children that move (reveal, hover) make the row scroll up and down. */
+  overflow-y: hidden;
   scrollbar-width: none;
   mask-image: linear-gradient(
     to right,

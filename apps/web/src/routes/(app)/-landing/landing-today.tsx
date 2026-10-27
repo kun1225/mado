@@ -1,96 +1,91 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { cn } from 'cn';
+import { useMotionValueEvent, useScroll } from 'motion/react';
 
-import { RevealText } from '#/components/reveal';
+import { Reveal, RevealText } from '#/components/reveal';
+import type { LandingTodayItem } from '#/features/landing/landing.type';
 import { LANDING_TODAY } from '#/features/landing/landing-content';
 
-import { TodayArt } from './landing-today-art';
+import { TodayIcon, TodayLines } from './landing-today-lines';
 import { Accent, LANDING_H2 } from './landing-ui';
 
-// The item crossing the middle band of the screen is the active one.
-const ACTIVE_BAND = '-45% 0px -45% 0px';
-
-/** The text scrolls past a pinned drawing; the drawing changes to match the item in the middle of the screen. */
+/** The section pins while scrolling moves the active item down the list, and the background lines take its shape. */
 export function LandingToday() {
+  const sectionRef = useRef<HTMLElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  // On phones each drawing sits with its own text, so once drawn it stays drawn.
-  const [furthestIndex, setFurthestIndex] = useState(0);
-  const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start start', 'end end'],
+  });
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const index = Number((entry.target as HTMLElement).dataset.index);
-            setActiveIndex(index);
-            setFurthestIndex((furthest) => Math.max(furthest, index));
-          }
-        }
-      },
-      { rootMargin: ACTIVE_BAND },
-    );
-    itemRefs.current.forEach((item) => item && observer.observe(item));
-
-    return () => observer.disconnect();
-  }, []);
+  useMotionValueEvent(scrollYProgress, 'change', (progress) =>
+    setActiveIndex(
+      Math.min(
+        LANDING_TODAY.length - 1,
+        Math.floor(progress * LANDING_TODAY.length),
+      ),
+    ),
+  );
 
   return (
-    <section className="px-edge py-32">
-      <RevealText as="h2" className={LANDING_H2}>
-        What works <Accent>today</Accent>.
-      </RevealText>
-
-      <div className="mt-8 grid gap-x-24 lg:mt-0 lg:grid-cols-2">
-        <ol>
+    <section ref={sectionRef} className="relative h-[300svh]">
+      <div className="sticky top-0 flex h-svh flex-col items-center justify-center overflow-hidden px-edge">
+        <TodayLines activeArt={LANDING_TODAY[activeIndex].art} />
+        <RevealText as="h2" className={cn(LANDING_H2, 'relative text-center')}>
+          What works <Accent>today</Accent>.
+        </RevealText>
+        <Reveal
+          as="ol"
+          delay={150}
+          className="relative mt-12 flex w-full max-w-md flex-col gap-2"
+        >
           {LANDING_TODAY.map((item, index) => (
-            <li
+            <TodayItem
               key={item.title}
-              ref={(element) => {
-                itemRefs.current[index] = element;
-              }}
-              data-index={index}
-              className="flex flex-col justify-center py-12 lg:min-h-[80svh] lg:py-0"
-            >
-              <div className="mb-8 aspect-square max-w-md rounded-lg bg-muted lg:hidden">
-                <TodayArt art={item.art} isActive={index <= furthestIndex} />
-              </div>
-              <div
-                className={cn(
-                  'transition-opacity duration-slow ease-out-quart',
-                  activeIndex !== index && 'lg:opacity-25',
-                )}
-              >
-                <RevealText
-                  as="h3"
-                  className="text-3xl/tight font-medium tracking-[-0.02em] sm:text-4xl/tight"
-                >
-                  {item.title}
-                </RevealText>
-                <RevealText
-                  delay={150}
-                  className="mt-4 max-w-[38ch] text-lg/relaxed text-pretty text-muted-fg"
-                >
-                  {item.line}
-                </RevealText>
-              </div>
-            </li>
+              item={item}
+              isActive={index === activeIndex}
+            />
           ))}
-        </ol>
-
-        <div className="hidden lg:block">
-          <div className="sticky top-[calc(50svh-min(20vw,280px)+2rem)] grid aspect-square w-full max-w-[560px] rounded-lg bg-muted">
-            {LANDING_TODAY.map((item, index) => (
-              <TodayArt
-                key={item.art}
-                art={item.art}
-                isActive={activeIndex === index}
-                className="col-start-1 row-start-1 size-full"
-              />
-            ))}
-          </div>
-        </div>
+        </Reveal>
       </div>
     </section>
+  );
+}
+
+// *** TodayItem ***
+function TodayItem({
+  item,
+  isActive,
+}: {
+  item: LandingTodayItem;
+  isActive: boolean;
+}) {
+  return (
+    <li
+      className={cn(
+        'flex items-center gap-4 rounded-lg border p-3 pr-5 transition-colors duration-slow ease-out-quart',
+        isActive ? 'border-fg bg-fg text-bg' : 'border-border bg-bg',
+      )}
+    >
+      <span
+        className={cn(
+          'grid size-14 shrink-0 place-items-center rounded-md transition-colors duration-slow ease-out-quart',
+          isActive ? 'bg-bg/10' : 'bg-muted',
+        )}
+      >
+        <TodayIcon art={item.art} className="size-8" />
+      </span>
+      <div>
+        <h3 className="font-medium">{item.title}</h3>
+        <p
+          className={cn(
+            'mt-0.5 text-sm text-pretty transition-colors duration-slow ease-out-quart',
+            isActive ? 'text-bg/70' : 'text-muted-fg',
+          )}
+        >
+          {item.line}
+        </p>
+      </div>
+    </li>
   );
 }

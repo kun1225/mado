@@ -63,21 +63,44 @@ export function LandingHero() {
 }
 
 // *** LandingGallery ***
-/** A full-width strip of references that drifts on its own. Paused on hover; still with reduced motion. */
+// Each column starts at a different item and runs at its own speed, so the wall never lines up.
+const GALLERY_COLUMNS = [
+  { offset: 0, duration: '70s', isReversed: false, className: '' },
+  { offset: 3, duration: '95s', isReversed: true, className: '' },
+  { offset: 5, duration: '80s', isReversed: false, className: 'max-sm:hidden' },
+  { offset: 2, duration: '105s', isReversed: true, className: 'max-lg:hidden' },
+];
+
+/** A wall of 2, 3 or 4 columns that drift up and down forever. Paused on hover; still with reduced motion. */
 function LandingGallery({ className }: { className?: string }) {
   return (
     <div className={cn('relative', className)}>
       <div
         data-intro-band
         role="img"
-        aria-label="A strip of saved references: architecture photos, a brief and a type specimen"
-        className="overflow-hidden in-data-[landing-intro=pending]:[clip-path:inset(calc(50%-32px)_50%_calc(50%-32px)_50%_round_999px)] motion-reduce:overflow-x-auto"
+        aria-label="A wall of saved references: architecture photos, a brief and a type specimen"
+        className="group/gallery grid h-[clamp(480px,88svh,900px)] grid-cols-2 gap-3 overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,#000_12%,#000_75%,transparent)] px-3 in-data-[landing-intro=pending]:[clip-path:inset(calc(50%-32px)_50%_calc(50%-32px)_50%_round_999px)] sm:grid-cols-3 lg:grid-cols-4"
       >
-        <div className="flex w-max animate-marquee hover:[animation-play-state:paused] motion-reduce:animate-none">
-          {[...LANDING_GALLERY, ...LANDING_GALLERY].map((item, index) => (
-            <GalleryTile key={`${item.id}-${index}`} item={item} />
-          ))}
-        </div>
+        {GALLERY_COLUMNS.map((column) => (
+          <div
+            key={column.offset}
+            style={{
+              animationDuration: column.duration,
+              animationDirection: column.isReversed ? 'reverse' : 'normal',
+            }}
+            className={cn(
+              'flex animate-marquee-y flex-col group-hover/gallery:[animation-play-state:paused] motion-reduce:animate-none',
+              column.className,
+            )}
+          >
+            {[
+              ...rotate(LANDING_GALLERY, column.offset),
+              ...rotate(LANDING_GALLERY, column.offset),
+            ].map((item, index) => (
+              <GalleryTile key={`${item.id}-${index}`} item={item} />
+            ))}
+          </div>
+        ))}
       </div>
 
       <div
@@ -102,9 +125,14 @@ function LandingGallery({ className }: { className?: string }) {
   );
 }
 
+// *** rotate ***
+function rotate<T>(items: T[], offset: number): T[] {
+  return [...items.slice(offset), ...items.slice(0, offset)];
+}
+
 // *** GalleryTile ***
-// Padding instead of gap, so half the track is exactly one set and the loop has no jump.
-const TILE = 'h-[clamp(240px,32vw,440px)] shrink-0 pr-3';
+// Padding instead of gap, so half the column is exactly one set and the loop has no jump.
+const TILE = 'shrink-0 pb-3';
 
 function GalleryTile({ item }: { item: LandingGalleryItem }) {
   if (item.kind === 'image') {
@@ -115,7 +143,7 @@ function GalleryTile({ item }: { item: LandingGalleryItem }) {
           alt=""
           draggable={false}
           style={{ aspectRatio: `${item.width} / ${item.height}` }}
-          className="h-full w-auto rounded-md bg-muted object-cover select-none"
+          className="w-full rounded-md bg-muted object-cover select-none"
         />
       </div>
     );
@@ -124,8 +152,10 @@ function GalleryTile({ item }: { item: LandingGalleryItem }) {
   if (item.kind === 'text') {
     return (
       <div className={TILE}>
-        <div className="flex aspect-[3/4] h-full items-end rounded-md bg-muted p-6">
-          <p className="font-serif text-2xl/snug text-pretty">{item.text}</p>
+        <div className="flex aspect-[3/4] w-full items-end rounded-md bg-muted p-4 sm:p-6">
+          <p className="font-serif text-lg/snug text-pretty sm:text-2xl/snug">
+            {item.text}
+          </p>
         </div>
       </div>
     );
@@ -133,9 +163,9 @@ function GalleryTile({ item }: { item: LandingGalleryItem }) {
 
   return (
     <div className={TILE}>
-      <div className="flex aspect-square h-full flex-col justify-between rounded-md border border-border bg-bg p-6">
+      <div className="flex aspect-square w-full flex-col justify-between rounded-md border border-border bg-bg p-4 sm:p-6">
         <span className="text-xs text-muted-fg">{item.name}</span>
-        <span className="font-accent text-7xl font-semibold italic">
+        <span className="font-accent text-5xl font-semibold italic sm:text-7xl">
           {item.specimen}
         </span>
       </div>

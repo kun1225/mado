@@ -1,5 +1,4 @@
 import { Reveal, RevealText } from '#/components/reveal';
-import { LANDING_GALLERY_CREDITS } from '#/features/landing/landing-content';
 
 import { Accent, LANDING_H2, Logo, OpenMado, Wordmark } from './landing-ui';
 
@@ -24,14 +23,11 @@ export function LandingFinal() {
 
 export function LandingFooter() {
   return (
-    <footer className="flex flex-col gap-6 border-t border-border px-edge pt-10 pb-16">
+    <footer className="border-t border-border px-edge pt-10 pb-16">
       <div className="flex items-center justify-between text-sm">
         <Wordmark />
         <span className="text-muted-fg">Made for brand designers.</span>
       </div>
-      <p className="max-w-prose text-xs text-pretty text-muted-fg">
-        {LANDING_GALLERY_CREDITS}
-      </p>
     </footer>
   );
 }

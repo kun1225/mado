@@ -18,14 +18,20 @@ export type LandingTodayItem = {
   art: LandingTodayArt;
 };
 
-export type LandingStep = {
-  title: string;
-  status: 'Works today' | 'Coming';
-};
-
 export type LandingRoadmapItem = {
   phase: string;
   name: string;
   line: string;
   isLive: boolean;
+};
+
+export type LandingSeedCollection = 'Typography' | 'Pattern' | 'Brand';
+
+export type LandingSeedSource = {
+  collection: LandingSeedCollection;
+  name: string;
+  /** A thumbnail on a host that allows cross-origin fetch, so the browser can save it. */
+  src: string;
+  /** The public page the image comes from, shown as the source's link. */
+  url: string;
 };

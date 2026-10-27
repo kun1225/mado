@@ -47,7 +47,7 @@ graph LR
   search -->|types only| sources
   search -->|account for recent searches| storage
   landing -->|LibraryView, add button| sources
-  landing -->|LibraryView| collections
+  landing -->|LibraryView, sample collections| collections
 ```
 
 | Domain        | Depends on                                                               | Why                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -61,7 +61,7 @@ graph LR
 | `search`      | `collections`, `sources`, `storage`                                      | Types only for the data; the account keys the recent-search list                                                                                                                                                                                                                                                                                                                               |
 | `export`      | `collections`, `sources`, `storage`                                      | Reads every record and media file; builds the zip in the account's OPFS folder when there is no save picker                                                                                                                                                                                                                                                                                    |
 | `import`      | `export`, `sources`, `collections`, `storage`                            | Reads `library.json` with export's schema; saves files through `sources`; writes records with their own ids                                                                                                                                                                                                                                                                                    |
-| `landing`     | `sources`, `collections`                                                 | The page at `/` shows the real library (`LibraryView`, `ActionDockAddSource`) in a "try it" frame. It lives under `(app)`, so it shares the account and local data with `/library`                                                                                                                                                                                                             |
+| `landing`     | `sources`, `collections`                                                 | The page at `/` shows the real library (`LibraryView`, `ActionDockAddSource`) in a "try it" frame, and adds sample collections and sources (`useCreateCollection`, `useCreateSources`) the first time the library is empty. It lives under `(app)`, so it shares the account and local data with `/library`                                                                                    |
 
 **Known coupling:** `collections` and `sources` import each other, in both actions and hooks. It works because nesting rules (`collectBranchIds`) live in `sources`. If this grows, move the shared nesting helpers into `collections` or a small shared module.
 
@@ -72,6 +72,7 @@ graph LR
 | `GET /api/auth/get-session`            | `auth/auth-session.ts` (server fn) | Session check for every `(app)` page                                                |
 | `better-auth` client                   | `auth/auth-client.ts`              | Google sign-in, sign-out (and email forms when turned on)                           |
 | `POST /api/v1/sites/preview`, `/image` | `sources/source-media.ts`          | Site metadata, embed mode, OG image (the browser can't fetch these because of CORS) |
+| `GET thumb.wikimedia.org` images       | `landing/landing-seed.ts`          | Sample sources for an empty library in the landing page's "try it" frame, once      |
 
 The API lives in `apps/api`. Everything else stays on the device.
 

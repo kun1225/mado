@@ -69,10 +69,20 @@ function playIntro(hero: HTMLElement) {
 
   async function sequence() {
     if (!band || !left || !right || !header) return finish();
-    const { width, height } = band.getBoundingClientRect();
-    const top = (height - PILL_HEIGHT) / 2;
+    // A reload can restore a scroll position, and the page is locked during the intro.
+    window.scrollTo(0, 0);
+    const rect = band.getBoundingClientRect();
+    const { width, height } = rect;
+    // The wall is taller than the screen, so the pill opens in the middle of the part you can see.
+    const visibleTop = Math.max(rect.top, 0);
+    const visibleBottom = Math.min(rect.bottom, window.innerHeight);
+    const centerY = (visibleTop + visibleBottom) / 2 - rect.top;
+    const top = centerY - PILL_HEIGHT / 2;
+    const bottom = height - centerY - PILL_HEIGHT / 2;
+    left.style.top = `${centerY}px`;
+    right.style.top = `${centerY}px`;
     const pill = (openWidth: number) =>
-      `inset(${top}px ${(width - openWidth) / 2}px ${top}px ${(width - openWidth) / 2}px round 999px)`;
+      `inset(${top}px ${(width - openWidth) / 2}px ${bottom}px ${(width - openWidth) / 2}px round 999px)`;
     const openWidth = Math.min(280, width * 0.42);
 
     await run(
