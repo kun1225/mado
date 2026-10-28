@@ -9,7 +9,12 @@ import type {
 import type { ExportProgress } from '#/features/export/export.type';
 import type { ImportProgress } from '#/features/import/import.type';
 
-export const SETTINGS_TABS = ['general', 'account', 'data'] as const;
+export const SETTINGS_TABS = [
+  'general',
+  'account',
+  'data',
+  'feedback',
+] as const;
 
 export type SettingsTab = (typeof SETTINGS_TABS)[number];
 
@@ -61,6 +66,10 @@ export type SettingsAccountTabProps = {
   authUser: AuthUser | null;
   search: SettingsSearch;
   onAuthModeChange: (mode: AuthFormMode) => void;
+};
+
+export type SettingsFeedbackTabProps = {
+  authUser: AuthUser | null;
 };
 
 export type SettingsAuthFormProps = {
