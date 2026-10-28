@@ -6,10 +6,9 @@ import { LANDING_ROADMAP } from '#/features/landing/landing-content';
 
 import { Accent, LANDING_H2 } from './landing-ui';
 
-/** The roadmap as a row of cards you scroll sideways. The edges fade where there is more to see. */
 export function LandingRoadmap() {
   return (
-    <section className="py-32">
+    <section className="py-section">
       <RevealText as="h2" className={cn(LANDING_H2, 'px-edge')}>
         What comes <Accent>next</Accent>.
       </RevealText>

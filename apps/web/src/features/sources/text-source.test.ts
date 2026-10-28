@@ -5,6 +5,7 @@ import {
   MAX_TEXT_BYTES,
   readTextContent,
   textBodySchema,
+  toNoteFile,
   toTextCardTitle,
 } from './text-source';
 import type { TextSourceContent } from './text-source.type';
@@ -107,5 +108,23 @@ describe('readTextContent', () => {
       format: 'markdown',
       fileName: 'brief.md',
     });
+  });
+});
+
+describe('toNoteFile', () => {
+  it('makes a Markdown file named after the title', async () => {
+    const file = toNoteFile('  Ideas  ', '# Hello');
+
+    expect(file.name).toBe('Ideas.md');
+    expect(file.type).toBe('text/markdown');
+    expect(await file.text()).toBe('# Hello');
+  });
+
+  it('falls back to a default name when the title is empty', () => {
+    expect(toNoteFile('   ', 'Hello').name).toBe('Untitled note.md');
+  });
+
+  it('reads back as Markdown', () => {
+    expect(detectTextFormat(toNoteFile('Ideas', 'Hello'))).toBe('markdown');
   });
 });

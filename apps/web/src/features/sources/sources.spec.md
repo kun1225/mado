@@ -19,6 +19,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - A pasted URL becomes a website source with a preview. An X/Twitter post that has a video becomes a video source instead. If that download fails, it stays a website.
 - If the preview fails, the toast says why: the server cannot be reached, the link is not valid, the link points to a private or local address, or the website could not be loaded.
 - A whole folder can be imported from Settings → Data (see `import.spec.md`).
+- The plus menu has **Add markdown**: a dialog with an optional title and a text box. It saves a text source in the current collection. **Add markdown** is disabled while the text is empty, and over 1 MB it shows the limit. Cmd/Ctrl+Enter saves. If saving fails, the dialog keeps the text.
 
 ### Text sources
 
@@ -83,6 +84,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **2026-10 — Drop feedback is "Stage": the grid sinks, a card steps forward.** Picked from a prototype round. Scale `0.96` from the center of the visible part, veil `bg/55` with a 4px blur, card scales `0.96 → 1`; enter `duration-slow`, exit `duration-base`, `ease-out-quart`. The spacing between the collection bar and the grid is the bar's `mb-5`, not padding on the drop zone, so the veil hugs the grid. Rejected: the old dashed border (it sat on the card edges and its pill covered the action dock), a cursor-following chip (easy to miss while looking at the grid), a top pill or label row (covered the first row of cards, and never says the size limit).
 - **2026-10 — The drop veil covers one screen, not the whole grid.** The veil sticks to the top of the screen inside a box the size of the grid, so the blur never covers more than one screen, even in a very tall library. The blur is only on while dragging, because an idle `backdrop-filter` still keeps a GPU layer alive. The file count is read on `dragenter` of the drop zone only until the drag is active, not on every element in the window. The card and the scale origin follow scroll once per frame while dragging.
 - **2026-10 — Text lives in the record, not in OPFS.** A text source needs the one file slot for its thumbnail, like a website. The card can show its first sentence on first paint with no file read, which `masonry-layout` needs for the right height. Search can read it later, and when sources move to the cloud (Postgres + R2), the text goes into a Postgres column and only the thumbnail goes to R2.
+- **2026-10 — "Add markdown" builds a `.md` File and uses the normal add path (`toNoteFile`).** A typed note is then the same as a dropped file: same validation, same record, same errors, and no new storage code. Rejected: creating an empty source and opening the editor, because empty text can't be saved and a blank card shows no first sentence.
 - **2026-10 — Plain editing, not a rich editor.** A text box with the raw Markdown keeps the file the user downloads exactly as they typed it. A rich editor is a big dependency and can change the Markdown when it writes it back.
 - **2026-10 — Markdown with `react-markdown` + `remark-gfm`, without `rehype-raw`.** It never turns raw HTML into elements and drops `javascript:` links, so no sanitizer is needed.
 - **2026-10 — Thumbnails can be videos.** The card, panel and viewer pick `<video>` or `<img>` from the thumbnail's `mimeType`, not from the source's kind.
@@ -97,7 +99,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 ## Planned
 
 - **More file types** (see "More file types" in `docs/roadmap.md`). Text (`.txt`, `.md`) is done; font, PDF and voice come next.
-- **Text sources, later:** search inside the text, a way to remove a thumbnail, a "new note" with no file, and files that are not UTF-8 (today they show broken letters).
+- **Text sources, later:** search inside the text, a way to remove a thumbnail, and files that are not UTF-8 (today they show broken letters).
 - **Drop a folder.** Dropping a folder on the library runs the same import as Settings → Data (see `import.spec.md`). It needs `webkitGetAsEntry` to read the folder from the drop.
 - **A more fun embed loading state.** While an embedded site loads in the detail dialog, show something friendly and human instead of a plain wait. Idea: two drawn eyes that look around, as if searching for the page.
 - **Copy an image to paste in Figma** (roadmap phase 0, small enough to ship before or with the launch). Cmd/Ctrl+C on a selected card, or a "Copy image" button in the detail dialog, puts the image on the clipboard. Pasting in Figma (or Slack, Keynote, Docs) gives the picture.

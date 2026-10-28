@@ -56,6 +56,14 @@ export async function readTextContent(file: File): Promise<TextSourceContent> {
   };
 }
 
+const DEFAULT_NOTE_TITLE = 'Untitled note';
+
+export function toNoteFile(title: string, body: string): File {
+  return new File([body], `${title.trim() || DEFAULT_NOTE_TITLE}.md`, {
+    type: toTextMimeType('markdown'),
+  });
+}
+
 export function toTextMimeType(format: TextSourceFormat): string {
   return format === 'markdown' ? 'text/markdown' : 'text/plain';
 }

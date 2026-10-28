@@ -6,6 +6,7 @@
 @theme {
   /* The one or two serif words a title may have, per the brand direction. */
   --font-accent: var(--poise-font-accent);
+  --spacing-section: 80px;
 
   --animate-marquee-y: marquee-y 80s linear infinite;
 

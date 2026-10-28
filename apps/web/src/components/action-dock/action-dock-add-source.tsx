@@ -3,6 +3,7 @@ import {
   Add01Icon,
   Image01FreeIcons,
   Link01Icon,
+  NoteAddIcon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Liquid } from 'liquid-gooey';
@@ -25,6 +26,9 @@ import {
 } from '#/features/sources/hooks/source-hooks';
 import { usePasteSource } from '#/features/sources/hooks/source-interaction-hooks';
 import { ACCEPTED_FILE_TYPES } from '#/features/sources/source-media';
+import { toNoteFile } from '#/features/sources/text-source';
+
+import { MarkdownNoteDialog } from './action-dock-markdown-dialog';
 
 // Same height as the search and selection bars, so the dock lines up.
 const TOGGLE_SIZE = 48;
@@ -45,6 +49,7 @@ const ICON_HOVER =
 const ACTIONS = [
   { key: 'image', label: 'Add file', icon: Image01FreeIcons },
   { key: 'website', label: 'Add website', icon: Link01Icon },
+  { key: 'markdown', label: 'Add markdown', icon: NoteAddIcon },
 ] as const;
 
 type ActionKey = (typeof ACTIONS)[number]['key'];
@@ -57,12 +62,13 @@ export function ActionDockAddSource({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
-  const { mutate: createSources } = useCreateSources();
+  const { mutate: createSources, isPending: isSavingNote } = useCreateSources();
   const { mutate: createWebsiteEmbedSource, isPending } =
     useCreateWebsiteSource();
   const isCreating = useIsCreatingSources();
   const [open, setOpen] = useState(false);
   const [websiteDialogOpen, setWebsiteDialogOpen] = useState(false);
+  const [markdownDialogOpen, setMarkdownDialogOpen] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
 
   const handlePasteMedia = (file: File) =>
@@ -111,7 +117,8 @@ export function ActionDockAddSource({
   function handleAction(key: ActionKey) {
     setOpen(false);
     if (key === 'image') fileInputRef.current?.click();
-    else setWebsiteDialogOpen(true);
+    else if (key === 'website') setWebsiteDialogOpen(true);
+    else setMarkdownDialogOpen(true);
   }
 
   function handleWebsiteSubmit(url: string) {
@@ -119,6 +126,15 @@ export function ActionDockAddSource({
       { collectionId, url },
       { onSuccess: () => setWebsiteDialogOpen(false) },
     );
+  }
+
+  function handleMarkdownSubmit(title: string, body: string) {
+    createSources([{ collectionId, file: toNoteFile(title, body) }], {
+      // On a failure the toast shows why, and the dialog keeps the text.
+      onSuccess: ({ sources }) => {
+        if (sources.length > 0) setMarkdownDialogOpen(false);
+      },
+    });
   }
 
   const transition = reducedMotion ? { duration: 0 } : ('bouncy' as const);
@@ -239,6 +255,14 @@ export function ActionDockAddSource({
           onOpenChange={setWebsiteDialogOpen}
           onSubmit={handleWebsiteSubmit}
           isSaving={isPending}
+        />
+      )}
+      {markdownDialogOpen && (
+        <MarkdownNoteDialog
+          open={markdownDialogOpen}
+          onOpenChange={setMarkdownDialogOpen}
+          onSubmit={handleMarkdownSubmit}
+          isSaving={isSavingNote}
         />
       )}
     </TooltipProvider>

@@ -23,7 +23,7 @@ import { Accent, LANDING_H2 } from './landing-ui';
 /** A title, then the real library in a frame you can use. */
 export function LandingTry() {
   return (
-    <section className="px-edge py-32">
+    <section className="px-edge py-section">
       <div className="flex flex-col items-center text-center">
         <RevealText as="h2" className={LANDING_H2}>
           Try it <Accent>here</Accent>.

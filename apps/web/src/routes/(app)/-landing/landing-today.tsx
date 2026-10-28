@@ -53,7 +53,7 @@ function TodayRow() {
   return (
     <section
       ref={sectionRef}
-      className="relative hidden overflow-hidden px-edge py-32 md:block"
+      className="relative hidden overflow-hidden px-edge py-section md:block"
     >
       <TodayLines activeArt={hoveredArt} />
       <div className="relative flex items-end justify-between gap-8">
@@ -145,7 +145,10 @@ function TodayPinned() {
   );
 
   return (
-    <section ref={sectionRef} className="relative h-[300svh] md:hidden">
+    <section
+      ref={sectionRef}
+      className="relative my-section h-[300svh] md:hidden"
+    >
       <div className="sticky top-0 flex h-svh flex-col items-center justify-center overflow-hidden px-edge">
         <TodayLines activeArt={LANDING_TODAY[activeIndex].art} />
         <RevealText as="h2" className={cn(LANDING_H2, 'relative text-center')}>

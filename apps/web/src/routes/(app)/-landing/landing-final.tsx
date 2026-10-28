@@ -4,7 +4,7 @@ import { Accent, LANDING_H2, Logo, OpenMado, Wordmark } from './landing-ui';
 
 export function LandingFinal() {
   return (
-    <section className="flex flex-col items-center px-edge py-40 text-center">
+    <section className="flex flex-col items-center px-edge py-section text-center">
       <Reveal>
         <Logo className="size-14" />
       </Reveal>

@@ -31,7 +31,7 @@ export function LandingHero() {
   useLandingIntro(heroRef);
 
   return (
-    <section ref={heroRef} className="pt-16 pb-28 sm:pt-24">
+    <section ref={heroRef} className="py-section">
       <div className="flex flex-col items-center px-edge text-center">
         <RevealText as="h1" trigger="manual" className="t-h-1 text-balance">
           Frame what <Accent>you see</Accent>.

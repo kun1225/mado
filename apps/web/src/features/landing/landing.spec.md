@@ -27,7 +27,7 @@ One column of sections with `px-edge` side padding. The gallery and the line bac
 
 ### Reveal
 
-- Text comes in word by word: each word slides up, fades in and sharpens. Other elements do the same as one block. Each plays once, when it scrolls into view.
+- Text comes in word by word: each word slides up, fades in and sharpens. Other elements do the same as one block. Each plays every time it scrolls into view from the bottom. Scrolling up past the top edge does not replay it.
 - Reduced motion shows everything at once.
 
 ## Decisions
@@ -39,6 +39,7 @@ One column of sections with `px-edge` side padding. The gallery and the line bac
 - **2026-10 — The "try it" frame is the real library.** The page lives under `(app)`, so it shares the account and local data with `/library`. Why: a fake demo can drift from the app, and the real one proves "local, no sign-up". Cost: the page needs the session check.
 - **2026-10 — The frame doesn't scroll, and samples fill an empty library.** A scrolling box caught the wheel and stopped the page. An empty frame didn't show what Mado is. Samples are real sources you can open, sort and delete. They are added once per browser (`localStorage`). They are public domain, so they need no credit, and load from Wikimedia's thumbnail host, which allows cross-origin fetch (`commons.wikimedia.org` redirects don't).
 - **2026-10 — Reveal runs in CSS.** One shared `IntersectionObserver` sets `data-revealed`, and each word's delay comes from its order. Why: a motion value and scroll listener per word cost main-thread time on every scroll.
+  - A second observer with no root margin removes `data-revealed` once the element is fully below the screen. Why: the first observer's 10% inset would hide an element still visible in the bottom strip.
 - **2026-10 — Scroll-linked motion is allowed here.** A marketing page is seen once, so it gets more motion than the app. Motion still follows input where it can.
 - **2026-10 — The gallery doesn't pause on hover.** It is a backdrop, not something to read, so stopping it added nothing.
 - **2026-10 — "Today" is cards on wide screens, a pinned list on phones.** Three screens of pinned scroll felt long on desktop. Phones have no hover, so they keep the list. Both use five rings, not eight, to stay quiet.

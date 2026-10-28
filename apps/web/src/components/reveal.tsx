@@ -108,26 +108,30 @@ function useRevealOnView(isEnabled: boolean) {
   useEffect(() => {
     const element = ref.current;
     if (!isEnabled || !element) return;
-    const observer = getRevealObserver();
-    observer.observe(element);
+    const reveal = getRevealObserver();
+    const reset = getResetObserver();
+    reveal.observe(element);
+    reset.observe(element);
 
-    return () => observer.unobserve(element);
+    return () => {
+      reveal.unobserve(element);
+      reset.unobserve(element);
+    };
   }, [isEnabled]);
 
   return ref;
 }
 
 // *** getRevealObserver ***
-// One observer for the whole page, and each element is dropped once revealed.
+// One observer for the whole page. Elements stay observed so they can play again.
 let revealObserver: IntersectionObserver | undefined;
 
 function getRevealObserver() {
   revealObserver ??= new IntersectionObserver(
-    (entries, observer) => {
+    (entries) => {
       for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        entry.target.setAttribute('data-revealed', '');
-        observer.unobserve(entry.target);
+        if (entry.isIntersecting)
+          entry.target.setAttribute('data-revealed', '');
       }
     },
     // Starts a little above the bottom edge, so the motion is seen, not missed.
@@ -135,6 +139,24 @@ function getRevealObserver() {
   );
 
   return revealObserver;
+}
+
+// *** getResetObserver ***
+// Hides an element again once it is fully below the screen, so it plays when it
+// scrolls up from the bottom next time. It has no root margin, unlike the reveal
+// observer, so an element in the bottom 10% strip is not hidden while visible.
+let resetObserver: IntersectionObserver | undefined;
+
+function getResetObserver() {
+  resetObserver ??= new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      const isBelowScreen =
+        !entry.isIntersecting && entry.boundingClientRect.top > 0;
+      if (isBelowScreen) entry.target.removeAttribute('data-revealed');
+    }
+  });
+
+  return resetObserver;
 }
 
 // *** splitWords ***
