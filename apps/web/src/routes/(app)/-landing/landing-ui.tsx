@@ -4,7 +4,9 @@ import type { ReactNode } from 'react';
 import { buttonVariants } from '@repo/ui/button';
 import { cn } from '@repo/ui/cn';
 
+import type { LandingTile } from '#/features/landing/landing.type';
 import { LANDING_APP_HREF } from '#/features/landing/landing-content';
+import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
 export const LANDING_H2 = 't-h-2 text-balance';
 
@@ -19,9 +21,11 @@ export function Accent({ children }: { children: ReactNode }) {
 
 export function OpenMado({
   size = 'lg',
+  label = 'Open Mado',
   className,
 }: {
   size?: 'lg' | 'sm';
+  label?: string;
   className?: string;
 }) {
   return (
@@ -34,8 +38,50 @@ export function OpenMado({
         className,
       )}
     >
-      Open Mado
+      {label}
     </Link>
+  );
+}
+
+/** A saved source as it looks in the library: the media, rounded, at its own aspect ratio. */
+export function TileMedia({
+  tile,
+  className,
+}: {
+  tile: LandingTile;
+  className?: string;
+}) {
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const classes = cn(
+    'block size-full rounded-md bg-muted object-cover select-none',
+    className,
+  );
+
+  if (tile.kind === 'video') {
+    // Muted and inline, or browsers won't autoplay it. Still with reduced motion.
+    return (
+      <video
+        src={tile.src}
+        muted
+        loop
+        playsInline
+        autoPlay={!prefersReducedMotion}
+        preload="metadata"
+        aria-hidden
+        className={classes}
+      />
+    );
+  }
+
+  return (
+    <img
+      src={tile.src}
+      alt=""
+      draggable={false}
+      loading="lazy"
+      decoding="async"
+      className={classes}
+    />
   );
 }
 

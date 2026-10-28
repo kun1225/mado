@@ -7,7 +7,6 @@ import { revealWithin } from '#/components/reveal';
 
 const SEEN_KEY = 'mado:landing-intro-seen';
 const PILL_HEIGHT = 64;
-const WORD_GAP = 20;
 const EASE_OUT = [0.25, 1, 0.5, 1] as const;
 const EASE_IN_OUT = [0.76, 0, 0.24, 1] as const;
 
@@ -17,7 +16,7 @@ const EASE_IN_OUT = [0.76, 0, 0.24, 1] as const;
  */
 export const LANDING_INTRO_SCRIPT = `try{if(!sessionStorage.getItem('${SEEN_KEY}')&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.dataset.landingIntro='pending'}catch(e){}`;
 
-/** A window opens between "Mado" and "窓", grows into the gallery, then the hero text and header come in. */
+/** "Mado" splits into "Ma" and "do", a window opens between them and grows into the hero, then the hero text and header come in. */
 export function useLandingIntro(heroRef: RefObject<HTMLElement | null>) {
   useEffect(() => {
     const hero = heroRef.current;
@@ -73,7 +72,7 @@ function playIntro(hero: HTMLElement) {
     window.scrollTo(0, 0);
     const rect = band.getBoundingClientRect();
     const { width, height } = rect;
-    // The wall is taller than the screen, so the pill opens in the middle of the part you can see.
+    // The pill opens in the middle of the part of the band you can see.
     const visibleTop = Math.max(rect.top, 0);
     const visibleBottom = Math.min(rect.bottom, window.innerHeight);
     const centerY = (visibleTop + visibleBottom) / 2 - rect.top;
@@ -94,12 +93,13 @@ function playIntro(hero: HTMLElement) {
       animate(
         right,
         { opacity: [0, 1], y: [16, 0] },
-        { duration: 0.6, ease: EASE_OUT, delay: 0.08 },
+        { duration: 0.6, ease: EASE_OUT },
       ),
     );
     if (isStopped()) return;
 
-    const shift = openWidth / 2 + WORD_GAP;
+    // The words meet at the center, so each moves half the window's width.
+    const shift = openWidth / 2;
     await run(
       animate(
         band,

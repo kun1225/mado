@@ -17,7 +17,6 @@ import {
 } from '#/features/collections/collection-hooks';
 import { useAllSources } from '#/features/sources/hooks/source-hooks';
 
-/** The library's collections row and source grid. `/library` and the landing page's "try it" frame share it, so both show the same local data. */
 export function LibraryView() {
   const navigate = useNavigate();
   const collectionsQuery = useChildCollections(null);

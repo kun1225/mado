@@ -1,17 +1,23 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { MotionConfig } from 'motion/react';
 
-import { LandingFinal, LandingFooter } from './-landing/landing-final';
+import { LandingFaq } from './-landing/landing-faq';
+import { LandingFeatures } from './-landing/landing-features';
+import {
+  LandingFinal,
+  LandingFooter,
+  LandingNoAccount,
+} from './-landing/landing-final';
 import { LandingHeader, LandingHero } from './-landing/landing-hero';
 import { LANDING_INTRO_SCRIPT } from './-landing/landing-intro';
+import { LandingPain } from './-landing/landing-pain';
 import { LandingRoadmap } from './-landing/landing-roadmap';
-import { LandingToday } from './-landing/landing-today';
-import { LandingTry } from './-landing/landing-try';
+import { LandingSearch } from './-landing/landing-search';
 
-// Under (app), so the "try it" frame uses the same account and local library as /library.
 export const Route = createFileRoute('/(app)/')({
   head: () => ({
     meta: [
-      { title: 'Mado — Frame what you see' },
+      { title: 'Mado — Your local design library' },
       {
         name: 'description',
         content:
@@ -23,11 +29,6 @@ export const Route = createFileRoute('/(app)/')({
         rel: 'stylesheet',
         href: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600&display=swap',
       },
-      {
-        // Only the one glyph the intro uses, so the whole Japanese font isn't loaded.
-        rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600&text=%E7%AA%93&display=swap',
-      },
     ],
   }),
   component: LandingPage,
@@ -35,18 +36,22 @@ export const Route = createFileRoute('/(app)/')({
 
 function LandingPage() {
   return (
-    <>
+    // "user" turns movement off with reduced motion, but keeps fades.
+    <MotionConfig reducedMotion="user">
       {/* Before the hero in the HTML, so it runs before the hero paints. */}
       <script dangerouslySetInnerHTML={{ __html: LANDING_INTRO_SCRIPT }} />
       <LandingHeader />
       <main>
         <LandingHero />
-        <LandingToday />
-        <LandingTry />
+        <LandingPain />
+        <LandingFeatures />
+        <LandingSearch />
+        <LandingNoAccount />
+        <LandingFaq />
         <LandingRoadmap />
         <LandingFinal />
       </main>
       <LandingFooter />
-    </>
+    </MotionConfig>
   );
 }

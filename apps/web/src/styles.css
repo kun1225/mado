@@ -8,11 +8,14 @@
   --font-accent: var(--poise-font-accent);
   --spacing-section: 80px;
 
-  --animate-marquee-y: marquee-y 80s linear infinite;
+  --animate-bob: bob 5s ease-in-out infinite alternate;
 
-  @keyframes marquee-y {
+  @keyframes bob {
+    from {
+      translate: 0 calc(var(--bob, 0px) * -1);
+    }
     to {
-      translate: 0 -50%;
+      translate: 0 var(--bob, 0px);
     }
   }
 }

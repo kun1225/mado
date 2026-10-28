@@ -8,7 +8,7 @@ import { Accent, LANDING_H2 } from './landing-ui';
 
 export function LandingRoadmap() {
   return (
-    <section className="py-section">
+    <section id="roadmap" className="scroll-mt-16 py-section">
       <RevealText as="h2" className={cn(LANDING_H2, 'px-edge')}>
         What comes <Accent>next</Accent>.
       </RevealText>

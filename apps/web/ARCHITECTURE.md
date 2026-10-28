@@ -47,8 +47,6 @@ graph LR
   search -->|types only| collections
   search -->|types only| sources
   search -->|account for recent searches| storage
-  landing -->|LibraryView, add button| sources
-  landing -->|LibraryView, sample collections| collections
 ```
 
 | Domain        | Depends on                                                                           | Why                                                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -63,7 +61,7 @@ graph LR
 | `export`      | `collections`, `sources`, `storage`                                                  | Reads every record and media file; builds the zip in the account's OPFS folder when there is no save picker                                                                                                                                                                                                                                                                                                                                     |
 | `import`      | `export`, `sources`, `collections`, `storage`                                        | Reads `library.json` with export's schema; saves files through `sources`; writes records with their own ids                                                                                                                                                                                                                                                                                                                                     |
 | `feedback`    | none                                                                                 | Sends a message to the API; it stores nothing on the device                                                                                                                                                                                                                                                                                                                                                                                     |
-| `landing`     | `sources`, `collections`                                                             | The page at `/` shows the real library (`LibraryView`, `ActionDockAddSource`) in a "try it" frame, and adds sample collections and sources (`useCreateCollection`, `useCreateSources`) the first time the library is empty. It lives under `(app)`, so it shares the account and local data with `/library`                                                                                                                                     |
+| `landing`     | none                                                                                 | The page at `/` shows a picture of the library built from static files in `public/landing`, so it reads no local data. It still lives under `(app)`, which adds the session check                                                                                                                                                                                                                                                               |
 
 **Known coupling:** `collections` and `sources` import each other, in both actions and hooks. It works because nesting rules (`collectBranchIds`) live in `sources`. If this grows, move the shared nesting helpers into `collections` or a small shared module.
 
@@ -75,7 +73,6 @@ graph LR
 | `better-auth` client                   | `auth/auth-client.ts`              | Google sign-in, sign-out (and email forms when turned on)                           |
 | `POST /api/v1/sites/preview`, `/image` | `sources/source-media.ts`          | Site metadata, embed mode, OG image (the browser can't fetch these because of CORS) |
 | `POST /api/v1/feedback`                | `feedback/feedback-actions.ts`     | Saves a feedback message (and an optional email) in Postgres                        |
-| `GET thumb.wikimedia.org` images       | `landing/landing-seed.ts`          | Sample sources for an empty library in the landing page's "try it" frame, once      |
 
 The API lives in `apps/api`. Everything else stays on the device.
 

@@ -1,21 +1,53 @@
-export type LandingGalleryItem =
-  | {
-      kind: 'image';
-      id: string;
-      src: string;
-      width: number;
-      height: number;
-      name: string;
-    }
-  | { kind: 'text'; id: string; text: string; name: string }
-  | { kind: 'site'; id: string; specimen: string; name: string };
+export type LandingTile = {
+  id: string;
+  name: string;
+  collection: string;
+  kind: 'image' | 'video';
+  src: string;
+  width: number;
+  height: number;
+};
 
-export type LandingTodayArt = 'device' | 'open' | 'sort';
+/** Where a hero tile floats, as a fraction of the stage, before it moves into the library grid. */
+export type LandingFloat = {
+  x: number;
+  y: number;
+  scale: number;
+  rotate: number;
+};
 
-export type LandingTodayItem = {
+export type LandingRect = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
+
+export type LandingTilePose = {
+  x: number;
+  y: number;
+  scale: number;
+  rotate: number;
+};
+
+export type LandingFeatureDemo = 'all-types' | 'sort' | 'local';
+
+export type LandingFeature = {
   title: string;
   line: string;
-  art: LandingTodayArt;
+  demo: LandingFeatureDemo;
+};
+
+export type LandingSearchQuery = {
+  text: string;
+  mode: 'Name' | 'Collection' | 'Describe';
+  isSoon: boolean;
+  tileIds: string[];
+};
+
+export type LandingFaqItem = {
+  question: string;
+  answer: string;
 };
 
 export type LandingRoadmapItem = {
@@ -23,15 +55,4 @@ export type LandingRoadmapItem = {
   name: string;
   line: string;
   isLive: boolean;
-};
-
-export type LandingSeedCollection = 'Typography' | 'Pattern' | 'Brand';
-
-export type LandingSeedSource = {
-  collection: LandingSeedCollection;
-  name: string;
-  /** A thumbnail on a host that allows cross-origin fetch, so the browser can save it. */
-  src: string;
-  /** The public page the image comes from, shown as the source's link. */
-  url: string;
 };

@@ -1,106 +1,142 @@
 import type {
-  LandingGalleryItem,
+  LandingFaqItem,
+  LandingFeature,
   LandingRoadmapItem,
-  LandingSeedCollection,
-  LandingSeedSource,
-  LandingTodayItem,
+  LandingSearchQuery,
+  LandingTile,
 } from './landing.type';
 
 export const LANDING_APP_HREF = '/library';
 
-// Open-licensed photos from the brand moodboard.
-// TODO(launch): CC BY and CC BY-SA need credit on the page. Kunsthaus Bregenz (CC BY-SA 3.0), 21st Century Museum Kanazawa (CC0),
-// Glass House window (CC BY 4.0), Glass House sculpture gallery (CC BY-SA 3.0), Church of the Light (CC BY 2.0), Louisiana Museum café (CC BY-SA 4.0).
-// The direct upload host, because it allows cross-origin fetch, which seeding the "try it" library needs.
-// `hashPath` is the first one and two hex digits of the file name's MD5. Wikimedia serves only fixed widths, like 960.
-// TODO(launch): swap for screenshots of a real Mado library, hosted with the app.
-const commons = (hashPath: string, file: string) =>
-  `https://upload.wikimedia.org/wikipedia/commons/thumb/${hashPath}/${file}/960px-${file}`;
+export const LANDING_TILES: LandingTile[] = [
+  tile('neuro-pop', 'NEURO POP moodboard', 'Brand', 720, 498),
+  tile('pattern', 'Gradient pattern', 'Patterns', 720, 846),
+  tile('house-of-honey', 'House of Honey', 'Web Design', 720, 378),
+  tile('heist-button', 'Heist button', 'Button', 640, 774, 'video'),
+  tile('thiings', 'Thiings 3D icons', 'Design Curated', 720, 406),
+  tile('cleo-y-teo', 'Cleo y Teo', 'Brand', 720, 468),
+  tile('typography', 'Cartier type specimen', 'Typography', 720, 272),
+  tile('supahero', 'Supahero hero library', 'Design Curated', 720, 728),
+  tile('nothin', "Nothin' home", 'Web Design', 720, 378),
+  tile('sotd', 'Explore new worlds', 'Unsorted', 640, 480, 'video'),
+  tile('petrichor', 'Petrichor sign', 'Brand', 720, 956),
+  tile('cole-derochie', 'Cole Derochie', 'Web Design', 720, 378),
+  tile(
+    'microinteraction',
+    'Card microinteraction',
+    'Microinteraction',
+    640,
+    360,
+    'video',
+  ),
+  tile('logosystem', 'Logosystem', 'Design Curated', 720, 406),
+  tile('melike', 'me · like carousel', 'Carousel', 720, 378),
+  tile('doodle-type', 'Doodles with type', 'Unsorted', 640, 800, 'video'),
+  tile('posts-design', 'posts.design', 'Design Curated', 720, 640),
+  tile('era', 'Era illustrator', 'Web Design', 720, 406),
+  tile('sour-turn', 'Sour turn 404', '404', 720, 648),
+  tile('catalog', 'Catalog studio', 'Web Design', 720, 378),
+];
 
-export const LANDING_GALLERY: LandingGalleryItem[] = [
+export const LANDING_COLLECTIONS = [
   {
-    kind: 'image',
-    id: 'bregenz',
-    src: commons('3/33', 'Bregenz_kunsthaus_zumthor_2002_02.jpg'),
-    width: 3,
-    height: 4,
-    name: 'Kunsthaus Bregenz',
+    name: 'Brand',
+    saves: 5,
+    previews: ['cleo-y-teo', 'neuro-pop', 'petrichor'],
+  },
+  { name: 'Web Design', saves: 38, previews: ['nothin', 'era', 'catalog'] },
+  {
+    name: 'Design Curated',
+    saves: 14,
+    previews: ['thiings', 'supahero', 'logosystem'],
+  },
+  { name: 'Typography', saves: 1, previews: ['typography'] },
+  { name: 'Patterns', saves: 2, previews: ['pattern'] },
+];
+
+export const LANDING_FEATURES: LandingFeature[] = [
+  {
+    title: 'Every file in one place',
+    line: 'Images, videos, websites and notes. Drop, paste or drag them in.',
+    demo: 'all-types',
   },
   {
-    kind: 'text',
-    id: 'brief',
-    text: 'Calm, exact, a little human. Not luxury. Not cold.',
-    name: 'brief.md',
+    title: 'Sort the way you think',
+    line: 'Collections, and folders inside them. Drag a card to move it.',
+    demo: 'sort',
   },
   {
-    kind: 'image',
-    id: 'kanazawa',
-    src: commons('9/9a', '21st_Century_Museum_260123.jpg'),
-    width: 4,
-    height: 3,
-    name: '21st Century Museum, Kanazawa',
-  },
-  {
-    kind: 'image',
-    id: 'glass-window',
-    src: commons('9/9e', 'Phillip_Johnson_Glass_House_Window.jpg'),
-    width: 2,
-    height: 3,
-    name: 'Glass House window',
-  },
-  {
-    kind: 'site',
-    id: 'specimen',
-    specimen: 'Aa Rr',
-    name: 'Cormorant Garamond specimen',
-  },
-  {
-    kind: 'image',
-    id: 'church',
-    src: commons('c/cd', 'Ibaraki_Kasugaoka_Church_20080914.jpg'),
-    width: 3,
-    height: 4,
-    name: 'Church of the Light',
-  },
-  {
-    kind: 'image',
-    id: 'sculpture',
-    src: commons(
-      'd/da',
-      'Sculpture-gallery-interior-philip-johnson-glass-house.jpg',
-    ),
-    width: 1,
-    height: 1,
-    name: 'Glass House sculpture gallery',
-  },
-  {
-    kind: 'image',
-    id: 'louisiana',
-    src: commons('1/1a', 'Louisiana_Museum_of_Modern_Art_Cafeen.jpg'),
-    width: 4,
-    height: 3,
-    name: 'Louisiana Museum café',
+    title: 'Yours, on your computer',
+    line: 'Nothing leaves your device. Export it all as a zip, and import it back anytime.',
+    demo: 'local',
   },
 ];
 
-export const LANDING_TODAY_LINE =
-  'Mado is early, but the base is solid. These three work right now.';
+export const LANDING_SEARCH_TILE_IDS = [
+  'typography',
+  'cleo-y-teo',
+  'pattern',
+  'neuro-pop',
+  'nothin',
+  'doodle-type',
+  'petrichor',
+  'melike',
+  'supahero',
+  'thiings',
+  'sotd',
+  'house-of-honey',
+];
 
-export const LANDING_TODAY: LandingTodayItem[] = [
+export const LANDING_SEARCH_QUERIES: LandingSearchQuery[] = [
   {
-    title: 'Stays on your device',
-    line: 'Your files live in this browser. Nothing is uploaded, so your references stay yours.',
-    art: 'device',
+    text: 'type',
+    mode: 'Name',
+    isSoon: false,
+    tileIds: ['typography', 'doodle-type'],
   },
   {
-    title: 'No sign-up',
-    line: 'Open it and start. An account is optional, and only for later.',
-    art: 'open',
+    text: 'Brand',
+    mode: 'Collection',
+    isSoon: false,
+    tileIds: ['cleo-y-teo', 'neuro-pop', 'petrichor'],
   },
   {
-    title: 'Drop and sort',
-    line: 'Drag in images, videos, sites and notes. Sort them into collections and folders.',
-    art: 'sort',
+    text: 'bold, playful color',
+    mode: 'Describe',
+    isSoon: true,
+    tileIds: ['neuro-pop', 'melike', 'thiings', 'sotd'],
+  },
+];
+
+export const LANDING_FAQ: LandingFaqItem[] = [
+  {
+    question: 'Is Mado free?',
+    answer:
+      'Yes. The library is free and stays free. Later, cloud and AI extras may be paid, because they cost us money each time you use them.',
+  },
+  {
+    question: 'Where are my files?',
+    answer:
+      'In your browser, on your device. Nothing is uploaded, so we never see them.',
+  },
+  {
+    question: 'Can I use it on more than one device?',
+    answer:
+      'Not yet. Cloud backup and sync are coming. For now, export your library on one device and import it on the other.',
+  },
+  {
+    question: 'What can I save?',
+    answer: 'Images, videos, websites and notes. Fonts and PDFs come later.',
+  },
+  {
+    question: 'What happens if I clear my browser data?',
+    answer:
+      'Your library is deleted with it. Export a backup from time to time, so you can import it again.',
+  },
+  {
+    question: 'Do I need an account?',
+    answer:
+      'No. An account is optional, and only needed for cloud features later.',
   },
 ];
 
@@ -125,102 +161,47 @@ export const LANDING_ROADMAP: LandingRoadmapItem[] = [
   },
   {
     phase: '03',
-    name: 'AI that shows its sources',
-    line: 'Two or three brand directions, each linked to the sources behind it. Opt-in.',
+    name: 'Cloud backup',
+    line: 'Back up your library and use it on more than one device.',
     isLive: false,
   },
   {
     phase: '04',
-    name: 'Present and share',
-    line: 'Frames become slides. Clients comment and pick a direction, no account needed.',
+    name: 'Search by feeling',
+    line: 'Describe what you remember, like "calm, warm, handmade", and find it.',
+    isLive: false,
+  },
+  {
+    phase: '05',
+    name: 'AI that shows its sources',
+    line: 'Two or three brand directions, each linked to the sources behind it. Opt-in.',
     isLive: false,
   },
 ];
 
-// Created newest first, so this order shows as Typography, Pattern, Brand.
-export const LANDING_SEED_COLLECTIONS: LandingSeedCollection[] = [
-  'Brand',
-  'Pattern',
-  'Typography',
-];
+export function findLandingTile(id: string) {
+  const found = LANDING_TILES.find((item) => item.id === id);
+  if (!found) throw new Error(`Unknown landing tile: ${id}`);
+  return found;
+}
 
-// Public domain images on Wikimedia Commons, so they need no credit.
-const thumb = (path: string) =>
-  `https://thumb.wikimedia.org/wikipedia/commons/thumb/${path}`;
-const filePage = (file: string) =>
-  `https://commons.wikimedia.org/wiki/File:${file}`;
-
-export const LANDING_SEED_SOURCES: LandingSeedSource[] = [
-  {
-    collection: 'Typography',
-    name: 'Bodoni, Manuale Tipografico (1818)',
-    src: thumb('7/75/Manuale-Tipografico1.jpg/960px-Manuale-Tipografico1.jpg'),
-    url: filePage('Manuale-Tipografico1.jpg'),
-  },
-  {
-    collection: 'Typography',
-    name: 'Caslon type specimen (1734)',
-    src: thumb(
-      '4/45/A_Specimen_by_William_Caslon.jpg/960px-A_Specimen_by_William_Caslon.jpg',
-    ),
-    url: filePage('A_Specimen_by_William_Caslon.jpg'),
-  },
-  {
-    collection: 'Typography',
-    name: 'Fournier, Manuel Typographique (1766)',
-    src: thumb(
-      '7/72/Fournier-Manuel-Typographique-Vol-2.jpg/960px-Fournier-Manuel-Typographique-Vol-2.jpg',
-    ),
-    url: filePage('Fournier-Manuel-Typographique-Vol-2.jpg'),
-  },
-  {
-    collection: 'Pattern',
-    name: 'Morris, Strawberry Thief (1883)',
-    src: thumb(
-      '2/2a/Morris_Strawberry_Thief_1883.jpg/960px-Morris_Strawberry_Thief_1883.jpg',
-    ),
-    url: filePage('Morris_Strawberry_Thief_1883.jpg'),
-  },
-  {
-    collection: 'Pattern',
-    name: 'Owen Jones, The Grammar of Ornament, plate 43',
-    src: thumb(
-      '1/15/Owen_Jones_-_Grammar_of_Ornament_-_1868_-_plate_043_-_300ppi.jpg/960px-Owen_Jones_-_Grammar_of_Ornament_-_1868_-_plate_043_-_300ppi.jpg',
-    ),
-    url: filePage(
-      'Owen_Jones_-_Grammar_of_Ornament_-_1868_-_plate_043_-_300ppi.jpg',
-    ),
-  },
-  {
-    collection: 'Pattern',
-    name: 'Ise katagami stencil',
-    src: thumb(
-      '1/1a/Ise_Katagami_%28%E4%BC%8A%E5%8B%A2%E5%9E%8B%E7%B4%99%29_3.png/960px-Ise_Katagami_%28%E4%BC%8A%E5%8B%A2%E5%9E%8B%E7%B4%99%29_3.png',
-    ),
-    url: filePage('Ise_Katagami_(%E4%BC%8A%E5%8B%A2%E5%9E%8B%E7%B4%99)_3.png'),
-  },
-  {
-    collection: 'Brand',
-    name: 'Michelin, Bibendum poster (1898)',
-    src: thumb('8/88/Michelin_Poster_1898.jpg/960px-Michelin_Poster_1898.jpg'),
-    url: filePage('Michelin_Poster_1898.jpg'),
-  },
-  {
-    collection: 'Brand',
-    name: 'Peter Behrens, AEG lamp poster (1907)',
-    src: thumb(
-      'f/f9/1907_Peter_Behrens_Plakat_AEG-Metallfadenlampe.jpg/960px-1907_Peter_Behrens_Plakat_AEG-Metallfadenlampe.jpg',
-    ),
-    url: filePage('1907_Peter_Behrens_Plakat_AEG-Metallfadenlampe.jpg'),
-  },
-  {
-    collection: 'Brand',
-    name: 'NASA worm on Artemis I (2020)',
-    src: thumb(
-      '6/6c/Artemis_I_-_NASA_Worm-ESA_Logo_%28KSC-20200920-PH-CSH01_0083%29.jpg/960px-Artemis_I_-_NASA_Worm-ESA_Logo_%28KSC-20200920-PH-CSH01_0083%29.jpg',
-    ),
-    url: filePage(
-      'Artemis_I_-_NASA_Worm-ESA_Logo_(KSC-20200920-PH-CSH01_0083).jpg',
-    ),
-  },
-];
+// *** tile ***
+function tile(
+  id: string,
+  name: string,
+  collection: string,
+  width: number,
+  height: number,
+  kind: LandingTile['kind'] = 'image',
+): LandingTile {
+  const extension = kind === 'video' ? 'mp4' : 'webp';
+  return {
+    id,
+    name,
+    collection,
+    kind,
+    src: `/landing/${id}.${extension}`,
+    width,
+    height,
+  };
+}
