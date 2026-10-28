@@ -83,6 +83,9 @@ export const LANDING_GALLERY: LandingGalleryItem[] = [
   },
 ];
 
+export const LANDING_TODAY_LINE =
+  'Mado is early, but the base is solid. These three work right now.';
+
 export const LANDING_TODAY: LandingTodayItem[] = [
   {
     title: 'Stays on your device',

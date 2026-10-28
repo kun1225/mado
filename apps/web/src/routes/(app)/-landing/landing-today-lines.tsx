@@ -1,16 +1,21 @@
-import { cn } from 'cn';
 import { useReducedMotion } from 'motion/react';
 import type { CSSProperties } from 'react';
+
+import { cn } from '@repo/ui/cn';
 
 import type { LandingTodayArt } from '#/features/landing/landing.type';
 
 const ARTS: LandingTodayArt[] = ['device', 'open', 'sort'];
-// Grows until the outer ring passes the corners of a wide screen.
-const RING_SIZES = Array.from({ length: 8 }, (_, ring) => 150 * 1.32 ** ring);
+// Few rings, spaced wide, so the outer one still passes the corners of a wide screen.
+const RING_SIZES = Array.from({ length: 5 }, (_, ring) => 150 * 1.55 ** ring);
 const EASE_IN_OUT = 'cubic-bezier(0.76, 0, 0.24, 1)';
 
 /** Thin rings of the active item's shape fill the section; each new shape draws from the middle out. */
-export function TodayLines({ activeArt }: { activeArt: LandingTodayArt }) {
+export function TodayLines({
+  activeArt,
+}: {
+  activeArt: LandingTodayArt | null;
+}) {
   const prefersReducedMotion = useReducedMotion() ?? false;
 
   return (
@@ -36,7 +41,7 @@ export function TodayLines({ activeArt }: { activeArt: LandingTodayArt }) {
   );
 }
 
-/** The same shape, small, as the item's icon. */
+/** The same shape, small, as the card's icon. */
 export function TodayIcon({
   art,
   className,
@@ -53,7 +58,32 @@ export function TodayIcon({
       className={cn('fill-none stroke-current', className)}
     >
       <path d={SHAPES[art](52)} />
-      <path d={SHAPES[art](30)} />
+    </svg>
+  );
+}
+
+/** A hairline frame that draws itself around a hovered card, 8px outside it. */
+export function TodayFrame({ isActive }: { isActive: boolean }) {
+  const prefersReducedMotion = useReducedMotion() ?? false;
+
+  return (
+    <svg
+      aria-hidden
+      className="pointer-events-none absolute -inset-2 size-[calc(100%+1rem)] overflow-visible fill-none stroke-fg"
+    >
+      <rect
+        x="0.5"
+        y="0.5"
+        // The card's 12px radius plus the 8px gap, so the corners stay concentric.
+        rx="20"
+        pathLength={1}
+        strokeDasharray={1}
+        style={{
+          width: 'calc(100% - 1px)',
+          height: 'calc(100% - 1px)',
+          ...frameStyle(isActive, prefersReducedMotion),
+        }}
+      />
     </svg>
   );
 }
@@ -84,6 +114,33 @@ function ringStyle(
         strokeDashoffset: 1,
         opacity: 0,
         transition: 'opacity 400ms, stroke-dashoffset 0s 400ms',
+      };
+}
+
+// *** frameStyle ***
+// Faster than the rings, because it answers the mouse directly.
+function frameStyle(
+  isActive: boolean,
+  prefersReducedMotion: boolean,
+): CSSProperties {
+  if (prefersReducedMotion) {
+    return {
+      strokeDashoffset: 0,
+      opacity: isActive ? 1 : 0,
+      transition: 'opacity 200ms',
+    };
+  }
+
+  return isActive
+    ? {
+        strokeDashoffset: 0,
+        opacity: 1,
+        transition: `opacity 150ms, stroke-dashoffset 900ms ${EASE_IN_OUT}`,
+      }
+    : {
+        strokeDashoffset: 1,
+        opacity: 0,
+        transition: 'opacity 250ms, stroke-dashoffset 0s 250ms',
       };
 }
 
