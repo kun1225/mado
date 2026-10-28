@@ -5,10 +5,10 @@ import {
   Link01Icon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { cn } from 'cn';
 import { Liquid } from 'liquid-gooey';
 
 import { Button } from '@repo/ui/button';
+import { cn } from '@repo/ui/cn';
 import { Dialog, DialogContent, DialogTitle } from '@repo/ui/dialog';
 import { Input } from '@repo/ui/input';
 import {
@@ -278,11 +278,11 @@ function WebsiteUrlDialog({
           onSubmit={handleSubmit}
           className="w-full max-w-md rounded-xl bg-bg p-6 text-fg shadow-xl"
         >
-          <DialogTitle className="text-lg">Add website</DialogTitle>
-          <p className="mt-1 text-sm text-muted-fg">
+          <DialogTitle>Add website</DialogTitle>
+          <p className="mt-1 t-b-3 text-muted-fg">
             Paste a website URL to save it as a source.
           </p>
-          <label className="mt-5 flex flex-col gap-2 text-sm">
+          <label className="mt-5 flex flex-col gap-2 t-b-3">
             Website URL
             <Input
               autoFocus

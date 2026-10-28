@@ -1,6 +1,5 @@
 import { Delete02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { cn } from 'cn';
 
 import {
   AlertDialog,
@@ -12,6 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@repo/ui/alert-dialog';
+import { cn } from '@repo/ui/cn';
 
 import type { Collection } from '#/features/collections/collection-types';
 
@@ -50,11 +50,9 @@ export function CollectionDeleteDialog({
               <HugeiconsIcon icon={Delete02Icon} size={22} strokeWidth={1.5} />
             </span>
 
-            <p className="text-sm font-medium text-pretty break-all">
-              {collection.name}
-            </p>
+            <p className="t-l-2 text-pretty break-all">{collection.name}</p>
 
-            <p className="mt-1 text-xs text-muted-fg tabular-nums">
+            <p className="mt-1 t-b-4 text-muted-fg tabular-nums">
               {collection.saveCount.toLocaleString()} {saveLabel}
             </p>
           </div>
@@ -72,7 +70,7 @@ export function CollectionDeleteDialog({
           </AlertDialogHeader>
 
           {isError && (
-            <p className="text-sm text-danger">
+            <p className="t-b-3 text-danger">
               Failed to delete the collection. Please try again.
             </p>
           )}

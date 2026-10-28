@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { cn } from 'cn';
+
+import { cn } from '@repo/ui/cn';
 
 import type { SettingsStorageSectionProps } from '#/features/settings/settings.type';
 import { formatBytes } from '#/features/storage/storage-usage';
@@ -19,13 +20,13 @@ export function SettingsStorageSection({
 
   return (
     <section aria-labelledby={STORAGE_TITLE_ID} className="space-y-4">
-      <h3 id={STORAGE_TITLE_ID} className="text-sm font-medium">
+      <h3 id={STORAGE_TITLE_ID} className="t-l-2">
         Storage
       </h3>
-      <p className="text-2xl font-medium tabular-nums">
+      <p className="t-h-5 tabular-nums">
         {formatBytes(breakdown.total)}
         {breakdown.quota != null && (
-          <span className="ml-2 text-sm font-normal text-muted-fg">
+          <span className="ml-2 t-b-3 text-muted-fg">
             of {formatBytes(breakdown.quota)} available
           </span>
         )}
@@ -50,7 +51,7 @@ export function SettingsStorageSection({
             />
           ))}
       </div>
-      <ul className="space-y-2 text-sm tabular-nums">
+      <ul className="space-y-2 t-b-3 tabular-nums">
         {breakdown.parts.map((part) => (
           <li key={part.kind} className="flex items-center gap-2">
             <span
@@ -62,7 +63,7 @@ export function SettingsStorageSection({
           </li>
         ))}
       </ul>
-      <p className="text-sm text-muted-fg">
+      <p className="t-b-3 text-muted-fg">
         Everything is saved on this device. Other is previews, thumbnails and
         app data.
       </p>

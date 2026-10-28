@@ -21,7 +21,7 @@ export const Route = createFileRoute('/(app)/')({
     links: [
       {
         rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@1,6..96,600&display=swap',
+        href: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600&display=swap',
       },
       {
         // Only the one glyph the intro uses, so the whole Japanese font isn't loaded.

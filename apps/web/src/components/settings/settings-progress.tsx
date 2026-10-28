@@ -23,7 +23,7 @@ export function SettingsProgress({
           style={{ transform: `scaleX(${ratio})` }}
         />
       </div>
-      <p className="text-xs text-muted-fg tabular-nums">{label}</p>
+      <p className="t-b-4 text-muted-fg tabular-nums">{label}</p>
     </div>
   );
 }

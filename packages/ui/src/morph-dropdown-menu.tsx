@@ -15,7 +15,7 @@ import {
   type MorphItemVariant,
   type MorphPopupProps,
 } from './morph-menu-core';
-import { cn } from 'cn';
+import { cn } from './cn';
 import * as React from 'react';
 
 export type MorphDropdownMenuProps = Omit<Primitive.Root.Props, 'actionsRef'>;
@@ -43,7 +43,7 @@ function MorphDropdownMenuTrigger({
     <Primitive.Trigger
       data-slot="morph-dropdown-menu-trigger"
       className={cn(
-        'group relative flex h-10 w-fit min-w-0 cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-bg px-3 py-2 text-sm text-fg',
+        'group relative flex h-10 w-fit min-w-0 cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-bg px-3 py-2 t-b-3 text-fg',
         'active:scale-98',
         'hover:not-data-disabled:bg-muted data-popup-open:not-data-disabled:bg-muted',
         'outline-2 outline-offset-2 outline-transparent focus-visible:outline-ring',
@@ -235,7 +235,7 @@ function MorphDropdownMenuGroupLabel({
   return (
     <Primitive.GroupLabel
       data-slot="morph-dropdown-menu-group-label"
-      className={cn('px-2 py-1.5 text-xs font-medium text-muted-fg', className)}
+      className={cn('px-2 py-1.5 t-l-3 text-muted-fg', className)}
       {...props}
     />
   );
@@ -261,7 +261,7 @@ function MorphDropdownMenuShortcut({
   return (
     <span
       data-slot="morph-dropdown-menu-shortcut"
-      className={cn('ml-auto text-xs tracking-widest text-muted-fg', className)}
+      className={cn('ml-auto t-b-4 tracking-widest text-muted-fg', className)}
       {...props}
     />
   );

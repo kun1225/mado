@@ -136,7 +136,7 @@ function CollectionPage() {
           onBlur={handleNameBlur}
           onKeyDown={handleNameKeyDown}
           aria-invalid={updateCollectionMutation.isError}
-          className="field-sizing-content h-8 w-auto border-transparent px-3 text-2xl font-semibold"
+          className="field-sizing-content h-8 w-auto border-transparent px-3 t-h-5"
         />
 
         <CollectionMenu
@@ -149,7 +149,7 @@ function CollectionPage() {
       </div>
 
       {updateCollectionMutation.isError && (
-        <p role="alert" className="mt-1 text-sm text-danger">
+        <p role="alert" className="mt-1 t-b-3 text-danger">
           Failed to update collection name.
         </p>
       )}
@@ -183,7 +183,7 @@ function CollectionPage() {
         {sourcesQuery.isPending ? (
           <SourceGridSkeleton />
         ) : sourcesQuery.isError ? (
-          <p className="flex grow items-center justify-center py-6 text-sm text-danger">
+          <p className="flex grow items-center justify-center py-6 t-b-3 text-danger">
             Unable to load the saves in this collection.
           </p>
         ) : sourcesQuery.data.length > 0 ? (
@@ -226,11 +226,8 @@ function CollectionPageSkeleton() {
 function CollectionMissing({ message }: { message: string }) {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-3 text-center">
-      <p className="text-sm text-muted-fg">{message}</p>
-      <Link
-        to="/library"
-        className="text-sm font-medium underline underline-offset-4"
-      >
+      <p className="t-b-3 text-muted-fg">{message}</p>
+      <Link to="/library" className="t-l-2 underline underline-offset-4">
         Back to library
       </Link>
     </div>

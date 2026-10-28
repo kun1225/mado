@@ -7,10 +7,10 @@ import {
 } from '@hugeicons/core-free-icons';
 import type { IconSvgElement } from '@hugeicons/react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { cn } from 'cn';
 
 import { Button } from '@repo/ui/button';
 import { useClipHighlight } from '@repo/ui/clip-highlight';
+import { cn } from '@repo/ui/cn';
 import {
   Dialog,
   DialogClose,
@@ -39,7 +39,7 @@ const GOOGLE_BUTTON_ID = 'settings-auth-google';
 // The active layer copies the tab list, so both must share one layout.
 const TAB_LIST_CLASS = 'flex items-center gap-0.5 sm:flex-col sm:items-stretch';
 const TAB_CLASS =
-  'flex h-9.5 items-center gap-2 rounded-md px-2.5 text-sm font-medium sm:px-4';
+  'flex h-9.5 items-center gap-2 rounded-md px-2.5 t-l-2 sm:px-4';
 // Phones show icons only, so three tabs and the sign-in action fit in one row. The header names the tab.
 const TAB_LABEL_CLASS = 'max-sm:sr-only';
 
@@ -82,9 +82,7 @@ export function SettingsDialog({ authUser }: SettingsDialogProps) {
           />
           <section className="flex min-h-0 flex-1 flex-col">
             <header className="flex h-14 shrink-0 items-center justify-between px-6">
-              <DialogTitle className="text-lg font-medium">
-                {activeLabel}
-              </DialogTitle>
+              <DialogTitle>{activeLabel}</DialogTitle>
               <DialogClose
                 render={
                   <Button
@@ -136,7 +134,7 @@ function SettingsSidebar({
       aria-label="Settings"
       className="flex shrink-0 items-center gap-2 border-b border-border p-3 sm:w-52 sm:flex-col sm:items-stretch sm:border-r sm:border-b-0"
     >
-      <p className="hidden px-3 pt-2 pb-3 text-xs text-muted-fg sm:block">
+      <p className="hidden px-3 pt-2 pb-3 t-b-4 text-muted-fg sm:block">
         Settings
       </p>
       <SettingsSidebarTabs
@@ -259,7 +257,7 @@ function SettingsSidebarAction({
         {pending ? 'Signing out…' : 'Sign out'}
       </Button>
       {error && (
-        <p role="alert" className="px-3 text-xs text-danger">
+        <p role="alert" className="px-3 t-b-4 text-danger">
           {error}
         </p>
       )}

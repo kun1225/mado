@@ -6,9 +6,9 @@ import {
   PencilEdit02Icon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { cn } from 'cn';
 
 import { Button } from '@repo/ui/button';
+import { cn } from '@repo/ui/cn';
 import { Input } from '@repo/ui/input';
 import {
   MorphDropdownMenu,
@@ -58,8 +58,8 @@ export function SourceDetailPanel({
         )}
       >
         <header className="flex flex-col gap-0.5 border-b border-border pb-3">
-          <h2 className="text-sm font-medium">Details</h2>
-          <p className="text-xs text-muted-fg">{describe(source)}</p>
+          <h2 className="t-l-2">Details</h2>
+          <p className="t-b-4 text-muted-fg">{describe(source)}</p>
         </header>
 
         {(canEmbedSite(source) || source.kind === 'text') && (
@@ -109,7 +109,7 @@ function SourceDetailThumbnail({
   const label = objectUrl ? 'Replace thumbnail' : 'Add thumbnail';
 
   return (
-    <div className="flex flex-col gap-1.5 text-xs text-muted-fg">
+    <div className="flex flex-col gap-1.5 t-b-4 text-muted-fg">
       Thumbnail
       <div
         {...replace.getRootProps({
@@ -175,7 +175,7 @@ function SourceDetailFields({ source }: { source: Source }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1.5 text-xs text-muted-fg">
+      <label className="flex flex-col gap-1.5 t-b-4 text-muted-fg">
         Name
         <Input
           value={name.draft}
@@ -183,7 +183,7 @@ function SourceDetailFields({ source }: { source: Source }) {
           onBlur={name.commit}
           onKeyDown={blurOnEnter}
           aria-invalid={name.error !== null}
-          className="h-9 text-base text-fg md:text-sm"
+          className="h-9 t-b-2 text-fg md:t-b-3"
         />
         <FieldError message={name.error} />
       </label>
@@ -191,7 +191,7 @@ function SourceDetailFields({ source }: { source: Source }) {
       <SourceDetailUrlField source={source} onKeyDown={blurOnEnter} />
 
       {isNoteOpen || note.draft !== '' ? (
-        <label className="flex flex-col gap-1.5 text-xs text-muted-fg">
+        <label className="flex flex-col gap-1.5 t-b-4 text-muted-fg">
           Note
           <textarea
             autoFocus={isNoteOpen}
@@ -200,7 +200,7 @@ function SourceDetailFields({ source }: { source: Source }) {
             onChange={(event) => note.setDraft(event.target.value)}
             onBlur={note.commit}
             aria-invalid={note.error !== null}
-            className="resize-none rounded-md border border-border bg-transparent px-2.5 py-2 text-base text-fg outline-none focus-visible:border-ring aria-invalid:border-danger md:text-sm"
+            className="resize-none rounded-md border border-border bg-transparent px-2.5 py-2 t-b-2 text-fg outline-none focus-visible:border-ring aria-invalid:border-danger md:t-b-3"
           />
           <FieldError message={note.error} />
         </label>
@@ -208,7 +208,7 @@ function SourceDetailFields({ source }: { source: Source }) {
         <button
           type="button"
           onClick={() => setIsNoteOpen(true)}
-          className="self-start text-sm text-muted-fg hover:text-fg"
+          className="self-start t-b-3 text-muted-fg hover:text-fg"
         >
           + Add a note
         </button>
@@ -239,7 +239,7 @@ function SourceDetailUrlField({
   const isLink = !isEditing && url.error === null && href !== '';
 
   return (
-    <div className="flex flex-col gap-1.5 text-xs text-muted-fg">
+    <div className="flex flex-col gap-1.5 t-b-4 text-muted-fg">
       <label htmlFor={inputId}>URL</label>
       <div className="relative">
         {/* One input in both modes, so padding and border can animate between them. */}
@@ -261,7 +261,7 @@ function SourceDetailUrlField({
           onKeyDown={onKeyDown}
           aria-invalid={url.error !== null}
           className={cn(
-            'h-9 text-base text-ellipsis text-fg underline underline-offset-2 transition-[padding,border-color,text-decoration-color] duration-base ease-standard motion-reduce:transition-none md:text-sm',
+            'h-9 t-b-2 text-ellipsis text-fg underline underline-offset-2 transition-[padding,border-color,text-decoration-color] duration-base ease-standard motion-reduce:transition-none md:t-b-3',
             isLink ? 'border-transparent pr-10 pl-0' : 'decoration-transparent',
           )}
         />
@@ -300,7 +300,7 @@ function FieldError({ message }: { message: string | null }) {
   if (message === null) return null;
 
   return (
-    <p role="alert" className="mt-1 text-xs text-danger">
+    <p role="alert" className="mt-1 t-b-4 text-danger">
       {message}
     </p>
   );
@@ -329,7 +329,7 @@ function SourceDetailCollections({ source }: { source: Source }) {
 
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="flex items-center gap-1.5 text-xs text-muted-fg">
+      <h3 className="flex items-center gap-1.5 t-b-4 text-muted-fg">
         <HugeiconsIcon icon={Folder01Icon} size={14} strokeWidth={1.5} />
         Collections
       </h3>
@@ -344,12 +344,12 @@ function SourceDetailCollections({ source }: { source: Source }) {
         ))}
 
         <MorphDropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-          <MorphDropdownMenuTrigger className="h-auto rounded-full px-2.5 py-0.5 text-xs text-muted-fg hover:text-fg">
+          <MorphDropdownMenuTrigger className="h-auto rounded-full px-2.5 py-0.5 t-b-4 text-muted-fg hover:text-fg">
             + Add
           </MorphDropdownMenuTrigger>
           <MorphDropdownMenuContent align="start">
             {nodes.length === 0 && (
-              <p className="px-2 py-1.5 text-xs text-muted-fg">
+              <p className="px-2 py-1.5 t-b-4 text-muted-fg">
                 {collections.length === 0
                   ? 'No collections yet.'
                   : 'In every collection already.'}
@@ -442,7 +442,7 @@ function SourceDetailChip({
   onRemove: () => void;
 }) {
   return (
-    <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-muted py-0.5 pr-1 pl-2.5 text-xs text-fg">
+    <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-muted py-0.5 pr-1 pl-2.5 t-b-4 text-fg">
       <span className="truncate">{label}</span>
       <button
         type="button"

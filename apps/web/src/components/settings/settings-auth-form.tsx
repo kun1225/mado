@@ -55,7 +55,7 @@ function SettingsGoogleAuth({
   const google = useGoogleSignIn();
   return (
     <section className="space-y-5" aria-labelledby="settings-auth-title">
-      <h3 id="settings-auth-title" className="text-base font-medium">
+      <h3 id="settings-auth-title" className="t-h-9">
         Sign in
       </h3>
       <SettingsGoogleSignIn
@@ -93,12 +93,12 @@ function SettingsGoogleSignIn({
         {google.pending ? 'Connecting…' : 'Continue with Google'}
       </Button>
       {error && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="t-b-3 text-danger">
           {error}
         </p>
       )}
       {showEmailDivider && (
-        <div className="flex items-center gap-3 text-xs text-muted-fg">
+        <div className="flex items-center gap-3 t-b-4 text-muted-fg">
           <span className="h-px flex-1 bg-border" />
           or use email
           <span className="h-px flex-1 bg-border" />
@@ -189,7 +189,7 @@ function SettingsEmailAuthForm({
             transition: reduceMotion ? NO_MOTION : MODE_EXIT,
           }}
         >
-          <h3 id="settings-auth-title" className="text-base font-medium">
+          <h3 id="settings-auth-title" className="t-h-9">
             {copy[mode].title}
           </h3>
           <SettingsAuthLinkStatus
@@ -206,7 +206,7 @@ function SettingsEmailAuthForm({
             />
           )}
           {invalidResetLink ? (
-            <p role="alert" className="text-sm">
+            <p role="alert" className="t-b-3">
               This reset link is missing or expired.{' '}
               <button
                 type="button"
@@ -313,14 +313,14 @@ function SettingsAuthLinkStatus({
   if (mode !== 'sign-in' || !verified) return null;
   if (linkError) {
     return (
-      <p role="alert" className="text-sm text-danger">
+      <p role="alert" className="t-b-3 text-danger">
         This verification link is invalid or expired. Sign in to request a new
         one.
       </p>
     );
   }
   return (
-    <p role="status" className="text-sm">
+    <p role="status" className="t-b-3">
       Your email is verified. You can sign in now.
     </p>
   );
@@ -379,10 +379,7 @@ function SettingsAuthFields({
             className="h-11"
           />
           {isNewPassword && (
-            <p
-              id="settings-auth-password-help"
-              className="text-xs text-muted-fg"
-            >
+            <p id="settings-auth-password-help" className="t-b-4 text-muted-fg">
               Use at least 12 characters.
             </p>
           )}
@@ -399,7 +396,7 @@ function SettingsAuthFields({
 function SettingsAuthField({ id, label, children }: SettingsAuthFieldProps) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="text-sm">
+      <label htmlFor={id} className="t-b-3">
         {label}
       </label>
       {children}
@@ -418,12 +415,12 @@ function SettingsAuthFeedback({
   return (
     <>
       {auth.error && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="t-b-3 text-danger">
           {auth.error}
         </p>
       )}
       {auth.message && (
-        <p role="status" className="text-sm">
+        <p role="status" className="t-b-3">
           {auth.message}
         </p>
       )}
@@ -458,10 +455,7 @@ function SettingsAuthModeLinks({
       : [{ mode: 'sign-in', label: 'Back to sign in' }];
 
   return (
-    <nav
-      className="flex flex-wrap gap-x-5 gap-y-3 text-sm"
-      aria-label="Account"
-    >
+    <nav className="flex flex-wrap gap-x-5 gap-y-3 t-b-3" aria-label="Account">
       {links.map((link) => (
         <button
           key={link.mode}

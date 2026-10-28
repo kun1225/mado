@@ -27,8 +27,9 @@ Photo references (Wikimedia Commons, open licenses):
 ## Type
 
 - **Clean sans for almost everything:** Geist, already used in the app.
-- **One or two words in a sharp serif in a title**, set in a high-contrast italic like Bodoni Moda. For example: "Frame what _you see_." The serif marks the word that matters, like one light line in a dark room.
+- **One or two words in a sharp serif in a title**, set in a high-contrast italic like Cormorant Garamond. For example: "Frame what _you see_." The serif marks the word that matters, like one light line in a dark room.
 - Never more than two serif words in a title. Body text is always sans.
+- **Sizes come from the `t-*` classes** in `packages/ui/src/styles.css`, not raw `text-*`, `font-*` or `tracking-*` classes: `t-h-*` headings, `t-b-*` body, `t-l-*` one-line labels. Heading levels may use a different family (accent italic, serif, or sans). Each class reads `--t-*-family`, `-size`, `-leading` and `-weight` tokens on `:root`; change them per viewport in the `@media (width < 40rem)` block. All of them are shown at `/ui-system`. Merge classes with `cn` from `@repo/ui/cn`, which knows that two `t-*` classes clash. Only inline emphasis (a bold word, inline code at `0.875em`) may set weight or size by hand.
 
 ## Color
 

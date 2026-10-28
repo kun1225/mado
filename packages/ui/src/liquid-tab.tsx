@@ -2,7 +2,7 @@
 
 import { Tabs as Primitive } from '@base-ui/react/tabs';
 import { eases, springs } from './motion';
-import { cn } from 'cn';
+import { cn } from './cn';
 import {
   animate,
   motion,
@@ -181,7 +181,7 @@ function LiquidTabsList({
 }
 
 const liquidTabTrigger = cn(
-  'relative z-1 flex h-9 cursor-pointer items-center justify-center rounded-md px-4 text-sm font-medium whitespace-nowrap text-muted-fg',
+  'relative z-1 flex h-9 cursor-pointer items-center justify-center rounded-md px-4 t-l-2 whitespace-nowrap text-muted-fg',
   'not-data-active:hover:text-fg',
   // Until the pill is measured (SSR + hydration), paint the active tab in CSS.
   'group-not-data-placed/liquid:data-active:bg-accent',
@@ -377,7 +377,7 @@ function LiquidTabsPanel({ className, ...props }: LiquidTabsPanelProps) {
   return (
     <Primitive.Panel
       data-slot="liquid-tabs-panel"
-      className={cn('flex-1 text-sm outline-none', className)}
+      className={cn('flex-1 t-b-3 outline-none', className)}
       {...props}
     />
   );

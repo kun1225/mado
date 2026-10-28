@@ -1,7 +1,7 @@
 'use client';
 
 import { Dialog as Primitive } from '@base-ui/react/dialog';
-import { cn } from 'cn';
+import { cn } from './cn';
 
 function Dialog(props: Primitive.Root.Props) {
   return <Primitive.Root data-slot="dialog" {...props} />;
@@ -49,7 +49,7 @@ function DialogTitle({ className, ...props }: Primitive.Title.Props) {
   return (
     <Primitive.Title
       data-slot="dialog-title"
-      className={cn('text-base font-semibold', className)}
+      className={cn('t-h-8', className)}
       {...props}
     />
   );

@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
-import { cn } from 'cn';
+
+import { cn } from '@repo/ui/cn';
 
 import { CollectionContextMenu } from '#/components/collection-context-menu/collection-context-menu';
 import { useCollectionPreviews } from '#/features/collections/collection-hooks';
@@ -32,8 +33,8 @@ export function CollectionCard({ collection }: { collection: Collection }) {
           </div>
 
           <div className="absolute inset-x-4 bottom-3 min-w-0">
-            <p className="truncate text-sm font-medium">{collection.name}</p>
-            <p className="text-sm text-muted-fg">
+            <p className="truncate t-l-2">{collection.name}</p>
+            <p className="t-b-3 text-muted-fg">
               {collection.saveCount}{' '}
               {collection.saveCount === 1 ? 'save' : 'saves'}
             </p>

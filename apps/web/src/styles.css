@@ -5,7 +5,7 @@
 
 @theme {
   /* The one or two serif words a title may have, per the brand direction. */
-  --font-accent: 'Bodoni Moda', 'Noto Serif JP', ui-serif, Georgia, serif;
+  --font-accent: var(--poise-font-accent);
 
   --animate-marquee-y: marquee-y 80s linear infinite;
 
@@ -42,7 +42,7 @@ body {
   min-height: 100vh;
   background: var(--color-bg);
   color: var(--color-fg);
-  font-family: Geist, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--poise-font-sans);
 }
 
 /* Fades the row edges only where there is more to scroll to. */

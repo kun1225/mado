@@ -64,7 +64,7 @@ export function LibraryView() {
         {sourcesQuery.isPending ? (
           <SourceGridSkeleton />
         ) : sourcesQuery.isError ? (
-          <p className="flex flex-1 items-center justify-center py-6 text-sm text-danger">
+          <p className="flex flex-1 items-center justify-center py-6 t-b-3 text-danger">
             Unable to load your library.
           </p>
         ) : sourcesQuery.data.length > 0 ? (

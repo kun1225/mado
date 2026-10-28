@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Delete02Icon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { cn } from 'cn';
 
 import { Button } from '@repo/ui/button';
+import { cn } from '@repo/ui/cn';
 
 import { useMediaObjectUrl } from '#/features/sources/hooks/source-hooks';
 import type { ToggleSelectOptions } from '#/features/sources/hooks/source-interaction-hooks';
@@ -122,12 +122,10 @@ export function SourceCard({
         <SourceCardProgressBlur />
 
         <div className="relative px-2 pt-1 pb-1.5 opacity-0 transition-opacity duration-base ease-standard group-focus-within:opacity-100 group-hover:opacity-100">
-          <p className="truncate text-xs font-medium text-bg">{source.name}</p>
+          <p className="truncate t-l-3 text-bg">{source.name}</p>
 
           {collectionName !== undefined && (
-            <p className="truncate text-[0.625rem] leading-tight text-bg/70">
-              {collectionName}
-            </p>
+            <p className="truncate t-l-4 text-bg/70">{collectionName}</p>
           )}
         </div>
       </figcaption>
@@ -190,7 +188,7 @@ function SourceCardTextTile({
     <div className="flex flex-col bg-muted">
       {/* Padding sits outside the clamp, or the cut line shows through it. */}
       <div className="p-4">
-        <p className="line-clamp-4 font-serif text-xl/snug text-pretty break-words">
+        <p className="line-clamp-4 t-h-7 text-pretty break-words">
           {toTextCardTitle(text, source.name)}
         </p>
       </div>
@@ -235,7 +233,7 @@ function SourceCardFile({
     return (
       <p
         role="alert"
-        className="flex size-full items-center justify-center bg-muted p-2 text-center text-xs text-muted-fg"
+        className="flex size-full items-center justify-center bg-muted p-2 text-center t-b-4 text-muted-fg"
       >
         This video format can't be played in this browser.
       </p>
@@ -286,9 +284,9 @@ function SourceCardWebsiteTile({ source }: { source: Source }) {
   return (
     <div className="flex size-full min-h-40 flex-col justify-end bg-muted p-4">
       {source.site?.domain && (
-        <p className="truncate text-xs text-muted-fg">{source.site.domain}</p>
+        <p className="truncate t-b-4 text-muted-fg">{source.site.domain}</p>
       )}
-      <p className="mt-1 line-clamp-2 text-sm font-medium">{source.name}</p>
+      <p className="mt-1 line-clamp-2 t-l-2">{source.name}</p>
     </div>
   );
 }

@@ -8,7 +8,7 @@ import {
   MorphPopup,
   type MorphPopupProps,
 } from './morph-menu-core';
-import { cn } from 'cn';
+import { cn } from './cn';
 import * as React from 'react';
 
 export type MorphContextMenuProps = Omit<Primitive.Root.Props, 'actionsRef'>;

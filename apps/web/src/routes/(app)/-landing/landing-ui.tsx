@@ -1,13 +1,12 @@
 import { Link } from '@tanstack/react-router';
-import { cn } from 'cn';
 import type { ReactNode } from 'react';
 
 import { buttonVariants } from '@repo/ui/button';
+import { cn } from '@repo/ui/cn';
 
 import { LANDING_APP_HREF } from '#/features/landing/landing-content';
 
-export const LANDING_H2 =
-  'text-4xl/[1.05] font-medium tracking-[-0.03em] text-balance sm:text-6xl/[1.02]';
+export const LANDING_H2 = 't-h-2 text-balance';
 
 /** The one or two serif words a title may have. */
 export function Accent({ children }: { children: ReactNode }) {
@@ -31,7 +30,7 @@ export function OpenMado({
       className={cn(
         buttonVariants({ size: size === 'sm' ? 'sm' : 'default' }),
         'active:translate-y-0 active:scale-[0.97]',
-        size === 'lg' && 'h-11 px-5 text-[15px]',
+        size === 'lg' && 'h-11 px-5 t-l-1',
         className,
       )}
     >
@@ -58,10 +57,7 @@ export function Logo({ className }: { className?: string }) {
 
 export function Wordmark() {
   return (
-    <Link
-      to="/"
-      className="flex items-center gap-2 text-[15px] font-semibold tracking-tight"
-    >
+    <Link to="/" className="flex items-center gap-2 t-l-1">
       <Logo />
       Mado
     </Link>

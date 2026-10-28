@@ -119,7 +119,7 @@ function SourceDetailTextEditor({
   return (
     <>
       <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-2">
-        <p className="text-xs text-muted-fg">
+        <p className="t-b-4 text-muted-fg">
           {error ?? (isDirty ? 'Unsaved changes' : 'Editing')}
         </p>
         <Button
@@ -144,7 +144,7 @@ function SourceDetailTextEditor({
         aria-invalid={error !== null}
         autoFocus
         spellCheck
-        className="min-h-0 flex-1 resize-none bg-transparent px-6 py-6 font-mono text-base/relaxed outline-none sm:px-12 md:text-sm/relaxed"
+        className="min-h-0 flex-1 resize-none bg-transparent px-6 py-6 t-b-2 font-mono outline-none sm:px-12 md:t-b-3"
       />
     </>
   );

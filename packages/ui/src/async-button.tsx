@@ -7,7 +7,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { type VariantProps } from 'class-variance-authority';
-import { cn } from 'cn';
+import { cn } from './cn';
 import * as React from 'react';
 
 import { Button, buttonVariants } from './button';

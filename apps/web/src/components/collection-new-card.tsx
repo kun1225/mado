@@ -5,7 +5,8 @@ import {
   WebDesign01Icon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { cn } from 'cn';
+
+import { cn } from '@repo/ui/cn';
 
 const TILE_CLASS = cn(
   'absolute flex size-11 scale-75 items-center justify-center rounded-sm border border-border bg-bg text-muted-fg opacity-0 shadow-md transition-[translate,rotate,scale,opacity] duration-fast ease-out-back',
@@ -68,7 +69,7 @@ export function CollectionNewCard({
         <HugeiconsIcon icon={WebDesign01Icon} size={20} strokeWidth={1.5} />
       </span>
 
-      <span className="absolute bottom-3 left-4 line-clamp-1 text-sm font-medium">
+      <span className="absolute bottom-3 left-4 line-clamp-1 t-l-2">
         {label}
       </span>
     </button>

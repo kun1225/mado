@@ -1,5 +1,6 @@
-import { cn } from 'cn';
 import type { CSSProperties } from 'react';
+
+import { cn } from '@repo/ui/cn';
 
 import type { CollectionColor } from '#/features/collections/collection-types';
 import { useMediaObjectUrl } from '#/features/sources/hooks/source-hooks';
@@ -114,7 +115,7 @@ function CollectionCardPreview({
       ) : objectUrl ? (
         <img src={objectUrl} alt="" className="size-full object-cover" />
       ) : (
-        <span className="flex size-full items-end p-1.5 text-[0.5625rem] leading-tight text-muted-fg">
+        <span className="flex size-full items-end p-1.5 t-l-4 text-muted-fg">
           {source.site?.domain ?? source.name}
         </span>
       )}

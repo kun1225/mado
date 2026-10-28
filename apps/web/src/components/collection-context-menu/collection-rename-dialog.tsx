@@ -59,9 +59,9 @@ function CollectionRenameForm({
       onSubmit={handleSubmit}
       className="w-full max-w-sm rounded-xl bg-bg p-6 text-fg shadow-xl"
     >
-      <DialogTitle className="text-lg">Rename collection</DialogTitle>
+      <DialogTitle>Rename collection</DialogTitle>
 
-      <label className="mt-5 flex flex-col gap-2 text-sm">
+      <label className="mt-5 flex flex-col gap-2 t-b-3">
         Name
         <Input
           autoFocus
@@ -75,7 +75,7 @@ function CollectionRenameForm({
       </label>
 
       {isError && (
-        <p role="alert" className="mt-2 text-sm text-danger">
+        <p role="alert" className="mt-2 t-b-3 text-danger">
           Could not rename the collection. Try again.
         </p>
       )}

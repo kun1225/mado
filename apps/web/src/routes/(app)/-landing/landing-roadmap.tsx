@@ -1,4 +1,4 @@
-import { cn } from 'cn';
+import { cn } from '@repo/ui/cn';
 
 import { Reveal, RevealText } from '#/components/reveal';
 import { ScrollFade } from '#/components/scroll-fade';
@@ -27,12 +27,10 @@ export function LandingRoadmap() {
               )}
             >
               <div className="flex items-start justify-between">
-                <span className="font-accent text-7xl/none font-semibold italic tabular-nums">
-                  {item.phase}
-                </span>
+                <span className="t-h-3 tabular-nums">{item.phase}</span>
                 <span
                   className={cn(
-                    'rounded-full px-2.5 py-1 text-xs font-medium',
+                    'rounded-full px-2.5 py-1 t-l-3',
                     item.isLive ? 'bg-bg text-fg' : 'bg-bg/70 text-muted-fg',
                   )}
                 >
@@ -40,9 +38,7 @@ export function LandingRoadmap() {
                 </span>
               </div>
               <div>
-                <p className="text-2xl font-medium tracking-[-0.02em]">
-                  {item.name}
-                </p>
+                <p className="t-h-5">{item.name}</p>
                 <p
                   className={cn(
                     'mt-2 max-w-[34ch] text-pretty',

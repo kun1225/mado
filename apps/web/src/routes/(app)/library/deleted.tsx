@@ -35,7 +35,7 @@ function Deleted() {
 
   if (deletedSourcesQuery.isError) {
     return (
-      <p className="flex flex-1 items-center justify-center py-6 text-sm text-danger">
+      <p className="flex flex-1 items-center justify-center py-6 t-b-3 text-danger">
         Unable to load deleted sources.
       </p>
     );
@@ -45,7 +45,7 @@ function Deleted() {
 
   if (sources.length === 0) {
     return (
-      <p className="flex flex-1 items-center justify-center py-6 text-sm text-muted-fg">
+      <p className="flex flex-1 items-center justify-center py-6 t-b-3 text-muted-fg">
         Nothing has been deleted yet.
       </p>
     );

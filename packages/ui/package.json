@@ -5,6 +5,7 @@
   "exports": {
     "./*": "./src/*.tsx",
     "./motion": "./src/motion.ts",
+    "./cn": "./src/cn.ts",
     "./styles.css": "./src/styles.css"
   },
   "scripts": {

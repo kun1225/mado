@@ -1,5 +1,6 @@
 import { useRef } from 'react';
-import { cn } from 'cn';
+
+import { cn } from '@repo/ui/cn';
 
 import { Reveal, RevealText } from '#/components/reveal';
 import type { LandingGalleryItem } from '#/features/landing/landing.type';
@@ -32,17 +33,13 @@ export function LandingHero() {
   return (
     <section ref={heroRef} className="pt-16 pb-28 sm:pt-24">
       <div className="flex flex-col items-center px-edge text-center">
-        <RevealText
-          as="h1"
-          trigger="manual"
-          className="text-5xl/[1.02] font-medium tracking-[-0.04em] text-balance sm:text-8xl/[0.98]"
-        >
+        <RevealText as="h1" trigger="manual" className="t-h-1 text-balance">
           Frame what <Accent>you see</Accent>.
         </RevealText>
         <RevealText
           trigger="manual"
           delay={250}
-          className="mt-6 max-w-[44ch] text-lg/relaxed text-pretty text-muted-fg"
+          className="mt-6 max-w-[44ch] t-b-1 text-pretty text-muted-fg"
         >
           Mado is a quiet library for brand designers. Collect what you see,
           sort it, and keep it all on your device.
@@ -53,7 +50,7 @@ export function LandingHero() {
           className="mt-10 flex items-center gap-5"
         >
           <OpenMado />
-          <span className="text-sm text-muted-fg">Free. No sign-up.</span>
+          <span className="t-b-3 text-muted-fg">Free. No sign-up.</span>
         </Reveal>
       </div>
 
@@ -105,7 +102,7 @@ function LandingGallery({ className }: { className?: string }) {
 
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 hidden text-3xl font-medium tracking-[-0.03em] in-data-[landing-intro=pending]:block sm:text-5xl"
+        className="pointer-events-none absolute inset-0 hidden t-h-2 in-data-[landing-intro=pending]:block"
       >
         <span
           data-intro-word="left"
@@ -153,9 +150,7 @@ function GalleryTile({ item }: { item: LandingGalleryItem }) {
     return (
       <div className={TILE}>
         <div className="flex aspect-[3/4] w-full items-end rounded-md bg-muted p-4 sm:p-6">
-          <p className="font-serif text-lg/snug text-pretty sm:text-2xl/snug">
-            {item.text}
-          </p>
+          <p className="t-h-7 text-pretty sm:t-h-6">{item.text}</p>
         </div>
       </div>
     );
@@ -164,10 +159,8 @@ function GalleryTile({ item }: { item: LandingGalleryItem }) {
   return (
     <div className={TILE}>
       <div className="flex aspect-square w-full flex-col justify-between rounded-md border border-border bg-bg p-4 sm:p-6">
-        <span className="text-xs text-muted-fg">{item.name}</span>
-        <span className="font-accent text-5xl font-semibold italic sm:text-7xl">
-          {item.specimen}
-        </span>
+        <span className="t-b-4 text-muted-fg">{item.name}</span>
+        <span className="t-h-3">{item.specimen}</span>
       </div>
     </div>
   );

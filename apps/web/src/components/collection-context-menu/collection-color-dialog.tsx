@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Tick02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { cn } from 'cn';
 
 import { Button } from '@repo/ui/button';
+import { cn } from '@repo/ui/cn';
 import { Dialog, DialogContent, DialogTitle } from '@repo/ui/dialog';
 
 import { CollectionCardPocket } from '#/components/collection-card-pocket';
@@ -66,8 +66,8 @@ function CollectionColorForm({
       onSubmit={handleSubmit}
       className="w-full max-w-sm rounded-xl bg-bg p-6 text-fg shadow-xl"
     >
-      <DialogTitle className="text-lg">Folder color</DialogTitle>
-      <p className="mt-1 truncate text-sm text-muted-fg">{collection.name}</p>
+      <DialogTitle>Folder color</DialogTitle>
+      <p className="mt-1 truncate t-b-3 text-muted-fg">{collection.name}</p>
 
       <div className="mt-5 flex justify-center">
         <CollectionCardPocket previews={[]} color={draft} />
@@ -88,7 +88,7 @@ function CollectionColorForm({
       </fieldset>
 
       {isError && (
-        <p role="alert" className="mt-4 text-sm text-danger">
+        <p role="alert" className="mt-4 t-b-3 text-danger">
           Could not change the color. Try again.
         </p>
       )}

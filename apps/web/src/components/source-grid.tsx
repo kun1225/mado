@@ -1,4 +1,4 @@
-import { cn } from 'cn';
+import { cn } from '@repo/ui/cn';
 
 import { useCollections } from '#/features/collections/collection-hooks';
 import {

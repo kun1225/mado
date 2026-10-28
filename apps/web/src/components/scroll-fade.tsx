@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { cn } from 'cn';
+
+import { cn } from '@repo/ui/cn';
 
 import type { ScrollFadeProps } from './scroll-fade.type';
 

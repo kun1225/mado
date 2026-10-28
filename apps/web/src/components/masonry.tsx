@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { cn } from 'cn';
 import type MasonryLayout from 'masonry-layout';
 import type { ReactNode } from 'react';
+
+import { cn } from '@repo/ui/cn';
 
 const ITEM_CLASS = 'masonry-item';
 const COLUMN_SIZER_CLASS = 'masonry-column-sizer';

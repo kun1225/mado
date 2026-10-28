@@ -48,7 +48,7 @@ function SettingsThemeSection() {
       aria-labelledby={THEME_TITLE_ID}
       className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3"
     >
-      <h3 id={THEME_TITLE_ID} className="text-sm font-medium">
+      <h3 id={THEME_TITLE_ID} className="t-l-2">
         Theme
       </h3>
       <LiquidTabs
@@ -82,7 +82,7 @@ function SettingsCollectionsSection() {
 
   return (
     <section aria-labelledby={COLLECTIONS_TITLE_ID} className="space-y-4">
-      <h3 id={COLLECTIONS_TITLE_ID} className="text-sm font-medium">
+      <h3 id={COLLECTIONS_TITLE_ID} className="t-l-2">
         Collections
       </h3>
       <SettingsSwitchRow
@@ -111,10 +111,10 @@ function SettingsSwitchRow({
   return (
     <label className="flex cursor-pointer items-start justify-between gap-4">
       <span className="space-y-0.5">
-        <span id={labelId} className="block text-sm">
+        <span id={labelId} className="block t-b-3">
           {label}
         </span>
-        <span id={hintId} className="block text-xs text-muted-fg">
+        <span id={hintId} className="block t-b-4 text-muted-fg">
           {hint}
         </span>
       </span>

@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertDialog as Primitive } from '@base-ui/react/alert-dialog';
-import { cn } from 'cn';
+import { cn } from './cn';
 import * as React from 'react';
 
 import { Button } from './button';
@@ -81,7 +81,7 @@ function AlertDialogTitle({ className, ...props }: Primitive.Title.Props) {
   return (
     <Primitive.Title
       data-slot="alert-dialog-title"
-      className={cn('text-base font-semibold', className)}
+      className={cn('t-h-9', className)}
       {...props}
     />
   );
@@ -94,7 +94,7 @@ function AlertDialogDescription({
   return (
     <Primitive.Description
       data-slot="alert-dialog-description"
-      className={cn('text-sm text-pretty text-muted-fg', className)}
+      className={cn('t-b-3 text-pretty text-muted-fg', className)}
       {...props}
     />
   );

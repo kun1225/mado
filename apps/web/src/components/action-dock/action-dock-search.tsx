@@ -8,7 +8,6 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useNavigate } from '@tanstack/react-router';
-import { cn } from 'cn';
 import {
   AnimatePresence,
   motion,
@@ -17,6 +16,7 @@ import {
 } from 'motion/react';
 
 import { Button } from '@repo/ui/button';
+import { cn } from '@repo/ui/cn';
 import {
   Command,
   CommandEmpty,
@@ -442,7 +442,7 @@ function ActionDockSearchRecent({
   return (
     <>
       {/* cmdk hides group headings from screen readers, so Clear lives outside the group. */}
-      <div className="flex items-center justify-between px-2.5 pt-1.5 pb-1 text-xs text-muted-fg">
+      <div className="flex items-center justify-between px-2.5 pt-1.5 pb-1 t-b-4 text-muted-fg">
         <span>Recent</span>
         <button
           type="button"

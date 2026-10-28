@@ -52,7 +52,7 @@ export function LibraryDeleteDialog({
         </AlertDialogHeader>
 
         {isError && (
-          <p className="text-sm text-danger">
+          <p className="t-b-3 text-danger">
             {single
               ? 'Failed to delete the file. Please try again.'
               : 'Failed to delete the files. Please try again.'}

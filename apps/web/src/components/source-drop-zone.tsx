@@ -1,7 +1,8 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Download04Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { cn } from 'cn';
+
+import { cn } from '@repo/ui/cn';
 
 import { useSourceDropzone } from '#/features/sources/hooks/source-interaction-hooks';
 import { MAX_FILE_MB } from '#/features/sources/source-types';
@@ -57,10 +58,10 @@ export function SourceDropZone({
           <span className="flex size-11 items-center justify-center rounded-full bg-muted text-fg">
             <HugeiconsIcon icon={Download04Icon} size={20} strokeWidth={1.5} />
           </span>
-          <p className="mt-4 line-clamp-2 text-base font-medium text-balance text-fg">
+          <p className="mt-4 line-clamp-2 t-h-9 text-balance text-fg">
             {toDropTitle(label, count)}
           </p>
-          <p className="mt-1 text-sm text-muted-fg">
+          <p className="mt-1 t-b-3 text-muted-fg">
             Images, videos and .txt or .md files, up to {MAX_FILE_MB} MB
           </p>
         </div>

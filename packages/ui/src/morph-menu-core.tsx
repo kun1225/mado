@@ -3,7 +3,7 @@
 import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu';
 import { Menu as Primitive } from '@base-ui/react/menu';
 import { type Spring } from './motion';
-import { cn } from 'cn';
+import { cn } from './cn';
 import { motion } from 'motion/react';
 import * as React from 'react';
 
@@ -249,7 +249,7 @@ type MorphItemVariant = 'default' | 'danger';
 /** Rows have no background, so the one overlay behind the list can slide between them. */
 const itemClassName = (variant: MorphItemVariant = 'default') =>
   cn(
-    'relative flex h-9 cursor-default items-center gap-2 rounded-sm px-2 text-sm text-fg outline-none select-none',
+    'relative flex h-9 cursor-default items-center gap-2 rounded-sm px-2 t-b-3 text-fg outline-none select-none',
     variant === 'danger' && 'text-danger',
     'data-disabled:pointer-events-none data-disabled:text-muted-fg',
     'transition-colors duration-fast ease-standard',

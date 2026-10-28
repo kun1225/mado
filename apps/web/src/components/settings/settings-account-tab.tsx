@@ -9,7 +9,7 @@ export function SettingsAccountTab({
 }: SettingsAccountTabProps) {
   if (authUser) {
     return (
-      <dl className="space-y-4 text-sm">
+      <dl className="space-y-4 t-b-3">
         <div className="space-y-1">
           <dt className="text-muted-fg">Name</dt>
           <dd>{authUser.name}</dd>
@@ -24,7 +24,7 @@ export function SettingsAccountTab({
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-muted-fg">
+      <p className="t-b-3 text-muted-fg">
         You are using Mado as a guest. Your saves only stay on this device.
       </p>
       <SettingsAuthForm

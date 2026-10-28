@@ -5,13 +5,14 @@ import {
   useEffect,
   useRef,
 } from 'react';
-import { cn } from 'cn';
 import type {
   CSSProperties,
   ElementType,
   ReactElement,
   ReactNode,
 } from 'react';
+
+import { cn } from '@repo/ui/cn';
 
 /**
  * Words slide up, fade in and sharpen one after another when the text scrolls into view.

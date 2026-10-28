@@ -1,5 +1,5 @@
 import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
-import { cn } from 'cn';
+import { cn } from './cn';
 
 const createTooltipHandle = TooltipPrimitive.createHandle;
 
@@ -32,7 +32,7 @@ const tooltipPositioner = cn(
 );
 
 const tooltipPopup = cn(
-  'relative h-(--popup-height,auto) w-(--popup-width,auto) max-w-xs origin-(--transform-origin) rounded-md bg-fg text-xs whitespace-nowrap text-bg',
+  'relative h-(--popup-height,auto) w-(--popup-width,auto) max-w-xs origin-(--transform-origin) rounded-md bg-fg t-b-4 whitespace-nowrap text-bg',
   'transition-[width,height,opacity,scale] duration-middle ease-out-quint data-instant:transition-none',
   'data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0',
 );

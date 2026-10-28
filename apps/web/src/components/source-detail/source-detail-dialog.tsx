@@ -10,10 +10,10 @@ import {
   SidebarRightIcon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { cn } from 'cn';
 import type { DragEvent, KeyboardEvent } from 'react';
 
 import { Button } from '@repo/ui/button';
+import { cn } from '@repo/ui/cn';
 import {
   Dialog,
   DialogClose,
@@ -329,7 +329,7 @@ function SourceDetailDropOverlay({ label }: { label: string }) {
   return (
     // An embedded page would swallow the drop, so this layer catches it first.
     <div className="pointer-events-auto absolute inset-0 flex items-center justify-center rounded-md border-2 border-dashed border-accent bg-accent/10">
-      <p className="rounded-full bg-accent px-4 py-2 text-sm text-accent-fg">
+      <p className="rounded-full bg-accent px-4 py-2 t-b-3 text-accent-fg">
         {label}
       </p>
     </div>
@@ -385,7 +385,7 @@ function SourceDetailToolbar({
       >
         <HugeiconsIcon icon={ArrowLeft01Icon} size={18} strokeWidth={1.5} />
       </Button>
-      <span className="text-xs tabular-nums">
+      <span className="t-b-4 tabular-nums">
         {position} / {total}
       </span>
       <Button
@@ -557,7 +557,7 @@ function SourceDetailViewer({
               className="pointer-events-auto size-full object-contain"
             />
           ) : (
-            <div className="flex max-w-xs flex-col items-center gap-3 text-center text-sm text-bg/70">
+            <div className="flex max-w-xs flex-col items-center gap-3 text-center t-b-3 text-bg/70">
               <p>
                 This website can't be embedded. Add an image or video to show
                 instead.
@@ -598,7 +598,7 @@ function SourceDetailViewer({
       {isUnplayable && !isCompressing && (
         <p
           role="alert"
-          className="m-auto max-w-xs text-center text-sm text-bg/70"
+          className="m-auto max-w-xs text-center t-b-3 text-bg/70"
         >
           This video format can't be played in this browser.
         </p>

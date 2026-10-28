@@ -3,7 +3,7 @@ import { useRef } from 'react';
 import { Search01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Command as CommandPrimitive, useCommandState } from 'cmdk';
-import { cn } from 'cn';
+import { cn } from './cn';
 
 import { useClipHighlight } from './clip-highlight';
 
@@ -36,7 +36,7 @@ function CommandInput({
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(
-          'h-10 w-full min-w-0 bg-transparent text-base outline-none placeholder:text-muted-fg disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm',
+          'h-10 w-full min-w-0 bg-transparent t-b-2 outline-none placeholder:text-muted-fg disabled:cursor-not-allowed disabled:opacity-50 sm:t-b-3',
           className,
         )}
         {...props}
@@ -93,7 +93,7 @@ function CommandEmpty({
   return (
     <CommandPrimitive.Empty
       data-slot="command-empty"
-      className={cn('py-6 text-center text-sm text-muted-fg', className)}
+      className={cn('py-6 text-center t-b-3 text-muted-fg', className)}
       {...props}
     />
   );
@@ -107,7 +107,7 @@ function CommandGroup({
     <CommandPrimitive.Group
       data-slot="command-group"
       className={cn(
-        '**:[[cmdk-group-heading]]:px-2.5 **:[[cmdk-group-heading]]:pt-1.5 **:[[cmdk-group-heading]]:pb-1 **:[[cmdk-group-heading]]:text-xs **:[[cmdk-group-heading]]:text-muted-fg',
+        '**:[[cmdk-group-heading]]:px-2.5 **:[[cmdk-group-heading]]:pt-1.5 **:[[cmdk-group-heading]]:pb-1 **:[[cmdk-group-heading]]:t-b-4 **:[[cmdk-group-heading]]:text-muted-fg',
         className,
       )}
       {...props}
@@ -136,7 +136,7 @@ function CommandItem({
     <CommandPrimitive.Item
       data-slot="command-item"
       className={cn(
-        'relative flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm outline-none select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50',
+        'relative flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 t-b-3 outline-none select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50',
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4.5",
         className,
       )}

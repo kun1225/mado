@@ -35,10 +35,10 @@ export function SettingsBackupSection({
   return (
     <section aria-labelledby={BACKUP_TITLE_ID} className="space-y-4">
       <div className="space-y-1">
-        <h3 id={BACKUP_TITLE_ID} className="text-sm font-medium">
+        <h3 id={BACKUP_TITLE_ID} className="t-l-2">
           Backup
         </h3>
-        <p className="min-h-5 text-sm text-muted-fg tabular-nums">{summary}</p>
+        <p className="min-h-5 t-b-3 text-muted-fg tabular-nums">{summary}</p>
       </div>
       <input
         ref={inputRef}

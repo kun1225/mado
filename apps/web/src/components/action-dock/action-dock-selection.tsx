@@ -1,8 +1,8 @@
 import { Delete02Icon, RestoreBinIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { cn } from 'cn';
 
 import { Button } from '@repo/ui/button';
+import { cn } from '@repo/ui/cn';
 import { Separator } from '@repo/ui/separator';
 import {
   createTooltipHandle,
@@ -48,7 +48,7 @@ export function ActionDockSelection({
             'pointer-events-auto relative animate-in duration-slow ease-out-back fade-in-0 slide-in-from-bottom-2',
           )}
         >
-          <p className="text-sm font-medium text-fg">{count} selected</p>
+          <p className="t-l-2 text-fg">{count} selected</p>
 
           <Button
             variant="ghost"
