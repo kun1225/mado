@@ -52,7 +52,7 @@ export const LANDING_GALLERY: LandingGalleryItem[] = [
     kind: 'site',
     id: 'specimen',
     specimen: 'Aa Rr',
-    name: 'Bodoni Moda specimen',
+    name: 'Cormorant Garamond specimen',
   },
   {
     kind: 'image',

@@ -71,7 +71,7 @@ const GALLERY_COLUMNS = [
   { offset: 2, duration: '105s', isReversed: true, className: 'max-lg:hidden' },
 ];
 
-/** A wall of 2, 3 or 4 columns that drift up and down forever. Paused on hover; still with reduced motion. */
+/** A wall of 2, 3 or 4 columns that drift up and down forever. Still with reduced motion. */
 function LandingGallery({ className }: { className?: string }) {
   return (
     <div className={cn('relative', className)}>
@@ -79,7 +79,7 @@ function LandingGallery({ className }: { className?: string }) {
         data-intro-band
         role="img"
         aria-label="A wall of saved references: architecture photos, a brief and a type specimen"
-        className="group/gallery grid h-[clamp(480px,88svh,900px)] grid-cols-2 gap-3 overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,#000_12%,#000_75%,transparent)] px-3 in-data-[landing-intro=pending]:[clip-path:inset(calc(50%-32px)_50%_calc(50%-32px)_50%_round_999px)] sm:grid-cols-3 lg:grid-cols-4"
+        className="grid h-[clamp(480px,88svh,900px)] grid-cols-2 gap-3 overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,#000_12%,#000_75%,transparent)] px-3 in-data-[landing-intro=pending]:[clip-path:inset(calc(50%-32px)_50%_calc(50%-32px)_50%_round_999px)] sm:grid-cols-3 lg:grid-cols-4"
       >
         {GALLERY_COLUMNS.map((column) => (
           <div
@@ -89,7 +89,7 @@ function LandingGallery({ className }: { className?: string }) {
               animationDirection: column.isReversed ? 'reverse' : 'normal',
             }}
             className={cn(
-              'flex animate-marquee-y flex-col group-hover/gallery:[animation-play-state:paused] motion-reduce:animate-none',
+              'flex animate-marquee-y flex-col motion-reduce:animate-none',
               column.className,
             )}
           >

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as appRouteRouteImport } from './routes/(app)/route'
+import { Route as UiSystemRouteImport } from './routes/ui-system'
 import { Route as appIndexRouteImport } from './routes/(app)/index'
 import { Route as appCollectionRouteRouteImport } from './routes/(app)/collection/route'
 import { Route as appLibraryRouteRouteImport } from './routes/(app)/library/route'
@@ -22,6 +23,11 @@ const appRouteRoute = appRouteRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const appIndexRoute = appIndexRouteImport.update({
+const UiSystemRoute = UiSystemRouteImport.update({
+  id: '/ui-system',
+  path: '/ui-system',
+  getParentRoute: () => rootRouteImport,
+} as any)
   id: '/',
   path: '/',
   getParentRoute: () => appRouteRoute,
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/collection/$collectionId': typeof appCollectionCollectionIdRoute
   '/library/deleted': typeof appLibraryDeletedRoute
   '/library/': typeof appLibraryIndexRoute
+  '/ui-system': typeof UiSystemRoute
 }
 export interface FileRoutesByTo {
   '/collection': typeof appCollectionRouteRouteWithChildren
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/library': typeof appLibraryIndexRoute
 }
 export interface FileRoutesById {
+  '/ui-system': typeof UiSystemRoute
   __root__: typeof rootRouteImport
   '/(app)': typeof appRouteRouteWithChildren
   '/(app)/collection': typeof appCollectionRouteRouteWithChildren
@@ -79,6 +87,7 @@ export interface FileRoutesById {
   '/(app)/library/': typeof appLibraryIndexRoute
 }
 export interface FileRouteTypes {
+  '/ui-system': typeof UiSystemRoute
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/collection'
@@ -90,6 +99,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/collection'
+    | '/ui-system'
     | '/'
     | '/collection/$collectionId'
     | '/library/deleted'
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/(app)'
     | '/(app)/collection'
     | '/(app)/library'
+    | '/ui-system'
     | '/(app)/'
     | '/(app)/collection/$collectionId'
     | '/(app)/library/deleted'
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   appRouteRoute: typeof appRouteRouteWithChildren
 }
+    | '/ui-system'
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
@@ -131,6 +143,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/collection'
       preLoaderRoute: typeof appCollectionRouteRouteImport
       parentRoute: typeof appRouteRoute
+    }
+    '/ui-system': {
+      id: '/ui-system'
+      path: '/ui-system'
+      fullPath: '/ui-system'
+      preLoaderRoute: typeof UiSystemRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/(app)/library': {
       id: '/(app)/library'
