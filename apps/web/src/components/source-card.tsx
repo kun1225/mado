@@ -187,8 +187,8 @@ function SourceCardTextTile({
   return (
     <div className="flex flex-col bg-muted">
       {/* Padding sits outside the clamp, or the cut line shows through it. */}
-      <div className="p-4">
-        <p className="line-clamp-4 t-h-7 text-pretty break-words">
+      <div className="p-5">
+        <p className="line-clamp-4 t-h-7 text-pretty wrap-break-word">
           {toTextCardTitle(text, source.name)}
         </p>
       </div>

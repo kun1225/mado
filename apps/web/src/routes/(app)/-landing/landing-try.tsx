@@ -32,8 +32,7 @@ export function LandingTry() {
           delay={150}
           className="mt-6 max-w-[44ch] t-b-1 text-pretty text-muted-fg"
         >
-          Collecting works today, and the rest is on the way. Try it below. It
-          is your real library, so what you add here is waiting when you open
+          It is your real library, so what you add here is waiting when you open
           Mado.
         </RevealText>
       </div>
@@ -53,7 +52,7 @@ function LibraryFrame() {
   useSeedEmptyLibrary();
 
   return (
-    <div className="relative isolate [transform:translateZ(0)] overflow-hidden rounded-xl border border-border bg-bg shadow-[0_1px_2px_rgb(0_0_0/0.04),0_12px_32px_rgb(0_0_0/0.06),0_32px_80px_rgb(0_0_0/0.06)]">
+    <div className="relative isolate transform-[translateZ(0)] overflow-hidden rounded-xl border border-border bg-bg shadow-[0_1px_2px_rgb(0_0_0/0.04),0_12px_32px_rgb(0_0_0/0.06),0_32px_80px_rgb(0_0_0/0.06)]">
       <div className="flex h-11 items-center justify-between border-b border-border px-4 t-b-4">
         <div aria-hidden className="flex gap-1.5">
           <span className="size-2.5 rounded-full bg-border" />
