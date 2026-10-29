@@ -1,11 +1,4 @@
 import { useRef, useState } from 'react';
-import {
-  ComputerIcon,
-  Files01Icon,
-  Folder01Icon,
-} from '@hugeicons/core-free-icons';
-import type { IconSvgElement } from '@hugeicons/react';
-import { HugeiconsIcon } from '@hugeicons/react';
 import type { MotionValue } from 'motion/react';
 import {
   AnimatePresence,
@@ -55,6 +48,8 @@ export function LandingFeatures() {
     transform([...PAIN_IN, ...CROSSFADE], [0, 1, 1, 0]),
   );
   const painScale = useTransform(scrollYProgress, PAIN_IN, [0.96, 1]);
+  // Leaves upward while the features rise in, so the hand-off reads as one move.
+  const painY = useTransform(scrollYProgress, CROSSFADE, [0, -24]);
   const featuresOpacity = useTransform(scrollYProgress, (value) =>
     phaseProgress(value, CROSSFADE[0], CROSSFADE[1]),
   );
@@ -83,8 +78,8 @@ export function LandingFeatures() {
       <div className="sticky top-0 h-svh">
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-edge">
           <motion.h2
-            style={{ opacity: painOpacity, scale: painScale }}
-            className="max-w-[18ch] text-center t-h-1 text-balance motion-reduce:scale-100!"
+            style={{ opacity: painOpacity, scale: painScale, y: painY }}
+            className="max-w-[18ch] text-center t-h-1 text-balance motion-reduce:transform-none!"
           >
             Saving ideas is easy. <Accent>Finding</Accent> them again
             isn&apos;t.
@@ -110,7 +105,6 @@ export function LandingFeatures() {
                 index={index}
                 title={feature.title}
                 line={feature.line}
-                icon={STEP_ICONS[feature.demo]}
                 isActive={index === activeIndex}
                 progress={stepsProgress}
               />
@@ -141,25 +135,17 @@ export function LandingFeatures() {
   );
 }
 
-const STEP_ICONS: Record<LandingFeatureDemo, IconSvgElement> = {
-  'all-types': Files01Icon,
-  sort: Folder01Icon,
-  local: ComputerIcon,
-};
-
 // *** FeatureStep ***
 function FeatureStep({
   index,
   title,
   line,
-  icon,
   isActive,
   progress,
 }: {
   index: number;
   title: string;
   line: string;
-  icon: IconSvgElement;
   isActive: boolean;
   progress: MotionValue<number>;
 }) {
@@ -175,20 +161,22 @@ function FeatureStep({
       )}
     >
       <div className="flex items-center gap-4">
-        <span className="t-l-3 tabular-nums">0{index + 1}</span>
-        <HugeiconsIcon icon={icon} size={20} strokeWidth={1.5} />
+        <span className="w-6 shrink-0 t-l-3 tabular-nums">0{index + 1}</span>
         <span className="t-h-5">{title}</span>
       </div>
-      {/* Phones show only the active line, so the sticky screen fits. */}
-      <p
+      {/* Only the active line shows, so the steps stay short and the eye goes to one. Grid rows animate the height. */}
+      <div
         className={cn(
-          'mt-2 max-w-[44ch] pl-[4.25rem] t-b-2 text-pretty',
-          !isActive && 'max-md:hidden',
-          isActive && 'text-muted-fg',
+          'grid transition-[grid-template-rows,opacity] duration-500 ease-out',
+          isActive
+            ? 'grid-rows-[1fr] opacity-100'
+            : 'grid-rows-[0fr] opacity-0',
         )}
       >
-        {line}
-      </p>
+        <p className="min-h-0 overflow-hidden pl-10 t-b-2 text-pretty text-muted-fg">
+          <span className="block max-w-[44ch] pt-2">{line}</span>
+        </p>
+      </div>
       <motion.span
         aria-hidden
         style={{ scaleX: fill }}

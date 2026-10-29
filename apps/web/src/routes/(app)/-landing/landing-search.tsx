@@ -1,7 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Search01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { useInView } from 'motion/react';
+import type { MotionValue } from 'motion/react';
+import {
+  motion,
+  useMotionValueEvent,
+  useScroll,
+  useTransform,
+} from 'motion/react';
 
 import { cn } from '@repo/ui/cn';
 
@@ -11,21 +17,27 @@ import {
   LANDING_SEARCH_QUERIES,
   LANDING_SEARCH_TILE_IDS,
 } from '#/features/landing/landing-content';
+import { searchFrame, stepProgress } from '#/features/landing/landing-motion';
 import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
 import { Accent, LANDING_H2, TileMedia } from './landing-ui';
 import { usePauseOffscreen } from './use-pause-offscreen';
 
-const TYPE_MS = 70;
-const HOLD_MS = 2400;
+const QUERY_COUNT = LANDING_SEARCH_QUERIES.length;
+const QUERY_LENGTHS = LANDING_SEARCH_QUERIES.map((query) => query.text.length);
 
-/** A search box types a few queries, and the sources that match stay bright. */
+/**
+ * The stage pins, and the scroll types a few queries; the sources that match stay bright.
+ * Why scroll and not a timer: the reader sets the pace, and each query holds until they move on.
+ */
 export function LandingSearch() {
   const sectionRef = useRef<HTMLElement>(null);
   const isSectionInView = usePauseOffscreen(sectionRef);
-  const demoRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(demoRef, { amount: 0.4 });
-  const { query, typed } = useTypingLoop(isInView);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start start', 'end end'],
+  });
+  const { query, typed } = useScrollTyping(scrollYProgress);
   const isDone = typed === query.text;
 
   return (
@@ -33,89 +45,117 @@ export function LandingSearch() {
       id="search"
       ref={sectionRef}
       data-offscreen={!isSectionInView || undefined}
-      className="scroll-mt-16 px-edge py-section"
+      className="relative h-[300svh] scroll-mt-16"
     >
-      <div className="flex flex-col items-center text-center">
-        <RevealText as="h2" className={LANDING_H2}>
-          Find anything in <Accent>seconds</Accent>.
-        </RevealText>
-        <RevealText
-          delay={150}
-          className="mt-6 max-w-[46ch] t-b-1 text-pretty text-muted-fg"
-        >
-          Search by a source&apos;s name or its collection. Soon, just describe
-          what you remember.
-        </RevealText>
-      </div>
-
-      <Reveal className="mx-auto mt-14 max-w-4xl">
-        <div ref={demoRef} className="rounded-xl bg-muted p-4 sm:p-6">
-          <div className="flex items-center gap-3 rounded-lg border border-border bg-bg px-4 py-3">
-            <HugeiconsIcon
-              icon={Search01Icon}
-              size={18}
-              strokeWidth={1.5}
-              className="shrink-0 text-muted-fg"
-            />
-            <span className="min-w-0 flex-1 truncate t-b-2">
-              {typed}
-              <span
-                aria-hidden
-                className="ml-px inline-block h-[1.1em] w-px translate-y-[0.2em] animate-pulse bg-fg in-data-offscreen:[animation-play-state:paused] motion-reduce:animate-none"
-              />
-            </span>
-            <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 t-l-3">
-              {query.mode}
-              {query.isSoon && <span className="text-muted-fg">· Soon</span>}
-            </span>
-          </div>
-
-          <div className="mt-4 grid grid-cols-3 gap-2.5 sm:mt-6 sm:grid-cols-4">
-            {LANDING_SEARCH_TILE_IDS.map((id) => {
-              const isMatch = !isDone || query.tileIds.includes(id);
-              return (
-                <div
-                  key={id}
-                  className={cn(
-                    'aspect-[4/3] overflow-hidden rounded-md transition-[opacity,scale] duration-500 ease-out',
-                    isMatch ? 'opacity-100' : 'scale-[0.97] opacity-15',
-                  )}
-                >
-                  <TileMedia tile={findLandingTile(id)} />
-                </div>
-              );
-            })}
-          </div>
+      {/* Padded under the sticky header, so the centered stage clears it. */}
+      <div className="sticky top-0 flex h-svh flex-col justify-center px-edge pt-16">
+        <div className="flex flex-col items-center text-center">
+          <RevealText as="h2" className={LANDING_H2}>
+            Find anything in <Accent>seconds</Accent>.
+          </RevealText>
+          <RevealText
+            delay={150}
+            className="mt-6 max-w-[46ch] t-b-1 text-pretty text-muted-fg"
+          >
+            Search by a source&apos;s name or its collection. Soon, just
+            describe what you remember.
+          </RevealText>
         </div>
-      </Reveal>
+
+        {/* On wide screens the width follows the screen height, so the pinned stage always fits. */}
+        <Reveal className="mx-auto mt-10 w-full max-w-4xl md:max-w-[min(56rem,calc((100svh-21rem)*1.45))]">
+          <div className="rounded-xl bg-muted p-4 sm:p-6">
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-bg px-4 py-3">
+              <HugeiconsIcon
+                icon={Search01Icon}
+                size={18}
+                strokeWidth={1.5}
+                className="shrink-0 text-muted-fg"
+              />
+              <span className="min-w-0 flex-1 truncate t-b-2">
+                {typed}
+                <span
+                  aria-hidden
+                  className="ml-px inline-block h-[1.1em] w-px translate-y-[0.2em] animate-pulse bg-fg in-data-offscreen:[animation-play-state:paused] motion-reduce:animate-none"
+                />
+              </span>
+              <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 t-l-3">
+                {query.mode}
+                {query.isSoon && <span className="text-muted-fg">· Soon</span>}
+              </span>
+            </div>
+
+            <div aria-hidden className="mt-3 flex gap-1.5">
+              {LANDING_SEARCH_QUERIES.map((item, index) => (
+                <QueryBar
+                  key={item.text}
+                  index={index}
+                  progress={scrollYProgress}
+                />
+              ))}
+            </div>
+
+            <div className="mt-4 grid grid-cols-3 gap-2.5 sm:mt-6 sm:grid-cols-4">
+              {LANDING_SEARCH_TILE_IDS.map((id) => {
+                const isMatch = !isDone || query.tileIds.includes(id);
+                return (
+                  <div
+                    key={id}
+                    className={cn(
+                      'aspect-[4/3] overflow-hidden rounded-md transition-[opacity,scale] duration-500 ease-out',
+                      isMatch ? 'opacity-100' : 'scale-[0.97] opacity-15',
+                    )}
+                  >
+                    <TileMedia tile={findLandingTile(id)} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </Reveal>
+      </div>
     </section>
   );
 }
 
-// *** useTypingLoop ***
-// Runs only while the demo is on screen. Reduced motion shows the first query, typed, and stops.
-function useTypingLoop(isRunning: boolean) {
+// *** useScrollTyping ***
+// Reduced motion skips the typing and shows each query whole.
+function useScrollTyping(progress: MotionValue<number>) {
   const prefersReducedMotion = usePrefersReducedMotion();
+  // Two numbers, not one object, so frames that change nothing don't re-render.
   const [queryIndex, setQueryIndex] = useState(0);
   const [length, setLength] = useState(0);
+  useMotionValueEvent(progress, 'change', (value) => {
+    const frame = searchFrame(value, QUERY_LENGTHS);
+    setQueryIndex(frame.index);
+    setLength(frame.length);
+  });
   const query = LANDING_SEARCH_QUERIES[queryIndex];
-
-  useEffect(() => {
-    if (!isRunning || prefersReducedMotion) return;
-    const isTyped = length >= query.text.length;
-    const timer = setTimeout(
-      () => {
-        if (!isTyped) return setLength(length + 1);
-        setLength(0);
-        setQueryIndex((queryIndex + 1) % LANDING_SEARCH_QUERIES.length);
-      },
-      isTyped ? HOLD_MS : TYPE_MS,
-    );
-    return () => clearTimeout(timer);
-  }, [isRunning, prefersReducedMotion, length, query, queryIndex]);
 
   return {
     query,
     typed: prefersReducedMotion ? query.text : query.text.slice(0, length),
   };
+}
+
+// *** QueryBar ***
+function QueryBar({
+  index,
+  progress,
+}: {
+  index: number;
+  progress: MotionValue<number>;
+}) {
+  const fill = useTransform(progress, (value) =>
+    stepProgress(value, QUERY_COUNT, index),
+  );
+
+  return (
+    <span className="h-0.5 flex-1 overflow-hidden rounded-full bg-border">
+      <motion.span
+        style={{ scaleX: fill }}
+        className="block size-full origin-left bg-fg"
+      />
+    </span>
+  );
 }

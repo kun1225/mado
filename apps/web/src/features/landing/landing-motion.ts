@@ -28,6 +28,21 @@ export function pickActiveSection(sections: LandingSectionBounds[], y: number) {
   );
 }
 
+/**
+ * Which search query shows, and how many of its letters are typed.
+ * Each query owns an equal share of the scroll: the first part types it, the rest holds it so the matches can be seen.
+ */
+export function searchFrame(progress: number, lengths: readonly number[]) {
+  const index = pickActiveStep(progress, lengths.length);
+  const local = stepProgress(progress, lengths.length, index);
+  return {
+    index,
+    length: Math.round(
+      phaseProgress(local, 0, SEARCH_TYPE_SHARE) * lengths[index],
+    ),
+  };
+}
+
 export function tilePose(
   slot: LandingRect,
   stage: { width: number; height: number },
@@ -45,6 +60,37 @@ export function tilePose(
     y: dy * left + 0,
     scale: float.scale + (1 - float.scale) * eased,
     rotate: float.rotate * left + 0,
+  };
+}
+
+/** Where a tile waits during the intro: in one row across the middle, all the same width. */
+export function introRowFloat(
+  rank: number,
+  count: number,
+  stage: { width: number; height: number },
+  slotWidth: number,
+): LandingFloat {
+  const width = Math.min(
+    INTRO_ROW_TILE_MAX,
+    stage.width / INTRO_ROW_TILES_ON_SCREEN,
+  );
+  const offset = (rank - (count - 1) / 2) * width * INTRO_ROW_SPACING;
+  return {
+    x: 0.5 + offset / stage.width,
+    y: 0.5,
+    scale: width / slotWidth,
+    rotate: 0,
+  };
+}
+
+export function mixFloat(from: LandingFloat, to: LandingFloat, t: number) {
+  // Weighted, so t = 1 lands exactly on `to` with no float error.
+  const mix = (a: number, b: number) => a * (1 - t) + b * t;
+  return {
+    x: mix(from.x, to.x),
+    y: mix(from.y, to.y),
+    scale: mix(from.scale, to.scale),
+    rotate: mix(from.rotate, to.rotate),
   };
 }
 
@@ -75,6 +121,11 @@ export function splitIntoColumns<T extends { width: number; height: number }>(
     }, empty)
     .map((column) => column.tiles);
 }
+
+const SEARCH_TYPE_SHARE = 0.5;
+const INTRO_ROW_TILE_MAX = 140;
+const INTRO_ROW_TILES_ON_SCREEN = 7;
+const INTRO_ROW_SPACING = 1.12;
 
 // *** clamp ***
 function clamp(value: number, min: number, max: number) {

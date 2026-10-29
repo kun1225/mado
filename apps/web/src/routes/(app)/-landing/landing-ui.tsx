@@ -1,7 +1,8 @@
+import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 
-import { buttonVariants } from '@repo/ui/button';
 import { cn } from '@repo/ui/cn';
 
 import type { LandingTile } from '#/features/landing/landing.type';
@@ -17,12 +18,11 @@ export function Accent({ children }: { children: ReactNode }) {
   );
 }
 
+/** Every call to action on the page looks like the header's, so the page has one button. */
 export function OpenMado({
-  size = 'lg',
   label = 'Open Mado',
   className,
 }: {
-  size?: 'lg' | 'sm';
   label?: string;
   className?: string;
 }) {
@@ -30,13 +30,14 @@ export function OpenMado({
     <Link
       to={LANDING_APP_HREF}
       className={cn(
-        buttonVariants({ size: size === 'sm' ? 'sm' : 'default' }),
-        'active:translate-y-0 active:scale-[0.97]',
-        size === 'lg' && 'h-11 px-5 t-l-1',
+        'flex h-10 items-center gap-2.5 rounded-lg bg-accent pr-1.5 pl-4 t-l-2 text-accent-fg transition-[background-color,scale] duration-150 ease-out outline-none hover:bg-accent/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg/40 active:scale-[0.97]',
         className,
       )}
     >
       {label}
+      <span className="grid size-7 place-items-center rounded-sm border border-accent-fg/25">
+        <HugeiconsIcon icon={ArrowRight01Icon} size={16} strokeWidth={1.5} />
+      </span>
     </Link>
   );
 }

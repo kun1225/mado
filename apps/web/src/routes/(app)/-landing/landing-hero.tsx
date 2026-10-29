@@ -5,15 +5,14 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { Link } from '@tanstack/react-router';
 import type { MotionValue } from 'motion/react';
 import {
   motion,
   transform,
+  useMotionValue,
   useMotionValueEvent,
   useScroll,
+  useSpring,
   useTransform,
 } from 'motion/react';
 import type { CSSProperties, RefObject } from 'react';
@@ -31,19 +30,20 @@ import type {
 } from '#/features/landing/landing.type';
 import {
   findLandingTile,
-  LANDING_APP_HREF,
   LANDING_COLLECTIONS,
   LANDING_NAV,
   LANDING_TILES,
 } from '#/features/landing/landing-content';
 import {
+  introRowFloat,
+  mixFloat,
   pickActiveSection,
   splitIntoColumns,
   tilePose,
 } from '#/features/landing/landing-motion';
 import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
-import { useLandingIntro } from './landing-intro';
+import { isLandingIntroPending, useLandingIntro } from './landing-intro';
 import { Accent, OpenMado, TileMedia, Wordmark } from './landing-ui';
 import { usePauseOffscreen } from './use-pause-offscreen';
 
@@ -97,15 +97,7 @@ export function LandingHeader({
           ))}
         </nav>
       </div>
-      <Link
-        to={LANDING_APP_HREF}
-        className="pointer-events-auto flex h-10 items-center gap-2.5 rounded-lg bg-accent pr-1.5 pl-4 t-l-2 text-accent-fg transition-[background-color,scale] duration-150 ease-out outline-none hover:bg-accent/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg/40 active:scale-[0.97]"
-      >
-        Open Mado
-        <span className="grid size-7 place-items-center rounded-sm border border-accent-fg/25">
-          <HugeiconsIcon icon={ArrowRight01Icon} size={16} strokeWidth={1.5} />
-        </span>
-      </Link>
+      <OpenMado className="pointer-events-auto" />
     </header>
   );
 }
@@ -176,8 +168,11 @@ export function LandingHero({
   sectionRef: RefObject<HTMLElement | null>;
 }) {
   const prefersReducedMotion = usePrefersReducedMotion();
-  useLandingIntro(sectionRef);
+  // 0 holds the tiles in the intro's row, 1 lets them float. The intro animates it.
+  const spread = useMotionValue(isLandingIntroPending() ? 0 : 1);
+  useLandingIntro(sectionRef, spread);
   const isInView = usePauseOffscreen(sectionRef);
+  const pointer = usePointer(isInView && !prefersReducedMotion);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -213,7 +208,12 @@ export function LandingHero({
         data-intro-band
         className="sticky top-0 h-svh overflow-hidden in-data-[landing-intro=pending]:[clip-path:inset(calc(50%-32px)_50%_calc(50%-32px)_50%_round_999px)]"
       >
-        <LibraryFrame progress={progress} chromeOpacity={chromeOpacity} />
+        <LibraryFrame
+          progress={progress}
+          spread={spread}
+          pointer={pointer}
+          chromeOpacity={chromeOpacity}
+        />
 
         <motion.div
           style={{ opacity: copyOpacity, visibility: copyVisibility }}
@@ -228,13 +228,40 @@ export function LandingHero({
   );
 }
 
+// *** usePointer ***
+// The mouse as -1 to 1 from the center of the screen, on a soft spring so the floats drift after it instead of snapping.
+type Pointer = { x: MotionValue<number>; y: MotionValue<number> };
+
+function usePointer(isEnabled: boolean): Pointer {
+  const x = useSpring(0, POINTER_SPRING);
+  const y = useSpring(0, POINTER_SPRING);
+
+  useEffect(() => {
+    if (!isEnabled) return;
+    function onMove(event: PointerEvent) {
+      // Touch has no hover, and a finger drag is a scroll.
+      if (event.pointerType !== 'mouse') return;
+      x.set((event.clientX / window.innerWidth) * 2 - 1);
+      y.set((event.clientY / window.innerHeight) * 2 - 1);
+    }
+    window.addEventListener('pointermove', onMove, { passive: true });
+    return () => window.removeEventListener('pointermove', onMove);
+  }, [isEnabled, x, y]);
+
+  return { x, y };
+}
+
 // *** LibraryFrame ***
 // Looks like the library but is only a picture of it. The real cards need the local store, and this one must move freely.
 function LibraryFrame({
   progress,
+  spread,
+  pointer,
   chromeOpacity,
 }: {
   progress: MotionValue<number>;
+  spread: MotionValue<number>;
+  pointer: Pointer;
   chromeOpacity: MotionValue<number>;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -273,6 +300,8 @@ function LibraryFrame({
                       index={index}
                       layout={layout}
                       progress={progress}
+                      spread={spread}
+                      pointer={pointer}
                     />
                   );
                 })}
@@ -371,22 +400,41 @@ function HeroTile({
   index,
   layout,
   progress,
+  spread,
+  pointer,
 }: {
   tile: LandingTile;
   float: LandingFloat;
   index: number;
   layout: SlotLayout | null;
   progress: MotionValue<number>;
+  spread: MotionValue<number>;
+  pointer: Pointer;
 }) {
   const slot = layout?.slots.get(tile.id);
-  const tileTransform = useTransform(progress, (value) => {
-    if (!layout || !slot) return 'none';
-    // Phone slots are wide, so full-size floats would cover the title.
-    const scale =
-      layout.stage.width < PHONE_WIDTH ? float.scale * 0.55 : float.scale;
-    const pose = tilePose(slot, layout.stage, { ...float, scale }, value);
-    return `translate(${pose.x}px, ${pose.y}px) scale(${pose.scale}) rotate(${pose.rotate}deg)`;
-  });
+  const tileTransform = useTransform(
+    [progress, spread, pointer.x, pointer.y],
+    ([value, spreadValue, pointerX, pointerY]: number[]) => {
+      if (!layout || !slot) return 'none';
+      // Phone slots are wide, so full-size floats would cover the title.
+      const scale =
+        layout.stage.width < PHONE_WIDTH ? float.scale * 0.55 : float.scale;
+      const row = introRowFloat(
+        INTRO_ROW_RANKS[index],
+        LANDING_TILES.length,
+        layout.stage,
+        slot.width,
+      );
+      const start = mixFloat(row, { ...float, scale }, spreadValue);
+      const pose = tilePose(slot, layout.stage, start, value);
+      // Bigger floats sit closer, so they move more. Gone by the time the grid forms, so the library stays still.
+      const depth =
+        -PARALLAX_PX * float.scale * spreadValue * Math.max(0, 1 - value * 2);
+      const x = pose.x + pointerX * depth;
+      const y = pose.y + pointerY * depth;
+      return `translate(${x}px, ${y}px) scale(${pose.scale}) rotate(${pose.rotate}deg)`;
+    },
+  );
   // On the bob element itself, so a change restyles only it, not the whole band.
   const bob = useTransform(progress, [0, 0.3], ['10px', '0px']);
 
@@ -493,7 +541,8 @@ function HeroCopy({ isVeiled }: { isVeiled: boolean }) {
           '-z-10',
           isVeiled
             ? 'fixed inset-0 bg-bg/85'
-            : 'absolute -inset-x-24 -inset-y-20 bg-[radial-gradient(closest-side,var(--color-bg)_55%,transparent)]',
+            : // Off during the intro, so it doesn't wash out the row of sources in the middle.
+              'absolute -inset-x-24 -inset-y-20 bg-[radial-gradient(closest-side,var(--color-bg)_55%,transparent)] transition-opacity duration-700 in-data-[landing-intro=pending]:opacity-0',
         )}
       />
       <RevealText as="h1" trigger="manual" className="t-h-1 text-balance">
@@ -543,6 +592,8 @@ function IntroWords() {
 }
 
 const PHONE_WIDTH = 640;
+const PARALLAX_PX = 40;
+const POINTER_SPRING = { stiffness: 60, damping: 20, mass: 0.6 };
 
 const MIN_COLUMNS = 2;
 const COLUMN_QUERIES = [
@@ -574,3 +625,10 @@ const FLOATS: LandingFloat[] = [
   { x: 0.8, y: 0.64, scale: 0.45, rotate: -6 },
   { x: 0.56, y: 0.76, scale: 0.4, rotate: -3 },
 ];
+
+// Each tile's place in the intro row, ordered by where it floats, so no two cross on the way out.
+const INTRO_ROW_RANKS = (() => {
+  const xs = LANDING_TILES.map((_, index) => FLOATS[index % FLOATS.length].x);
+  const order = xs.map((_, index) => index).sort((a, b) => xs[a] - xs[b]);
+  return xs.map((_, index) => order.indexOf(index));
+})();

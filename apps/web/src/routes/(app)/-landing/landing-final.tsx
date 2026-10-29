@@ -25,8 +25,9 @@ export function LandingNoAccount() {
 export function LandingFinal() {
   return (
     <section className="flex flex-col items-center px-edge py-section text-center">
-      <Reveal>
-        <Logo className="size-14" />
+      <Reveal className="flex items-center gap-3">
+        <Logo className="size-10" />
+        <span className="t-h-4 font-accent">Mado</span>
       </Reveal>
       <RevealText as="h2" delay={100} className={`mt-10 ${LANDING_H2}`}>
         Start your library <Accent>today</Accent>.

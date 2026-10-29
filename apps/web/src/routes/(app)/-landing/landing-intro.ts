@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { AnimationPlaybackControls } from 'motion';
 import { animate } from 'motion';
+import type { MotionValue } from 'motion/react';
 import type { RefObject } from 'react';
 
 import { revealWithin } from '#/components/reveal';
@@ -16,8 +17,15 @@ const EASE_IN_OUT = [0.76, 0, 0.24, 1] as const;
  */
 export const LANDING_INTRO_SCRIPT = `try{if(!sessionStorage.getItem('${SEEN_KEY}')&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.dataset.landingIntro='pending'}catch(e){}`;
 
-/** "Mado" splits into "Ma" and "do", a window opens between them and grows into the hero, then the hero text and header come in. */
-export function useLandingIntro(heroRef: RefObject<HTMLElement | null>) {
+/**
+ * "Mado" splits into "Ma" and "do", and a window opens between them onto a row of sources.
+ * The window grows into the hero, the sources spread to their float points, then the hero text and header come in.
+ * `spread` goes from 0 (the row) to 1 (floating).
+ */
+export function useLandingIntro(
+  heroRef: RefObject<HTMLElement | null>,
+  spread: MotionValue<number>,
+) {
   useEffect(() => {
     const hero = heroRef.current;
     if (!hero) return;
@@ -25,19 +33,29 @@ export function useLandingIntro(heroRef: RefObject<HTMLElement | null>) {
 
     if (!shouldPlayIntro()) {
       delete root.dataset.landingIntro;
+      spread.set(1);
       revealWithin(hero);
       return;
     }
 
     // A client-side visit never ran the script, so set the first frame here.
     root.dataset.landingIntro = 'pending';
-    const intro = playIntro(hero);
+    spread.set(0);
+    const intro = playIntro(hero, spread);
 
     return () => {
       intro.stop();
       delete root.dataset.landingIntro;
     };
-  }, [heroRef]);
+  }, [heroRef, spread]);
+}
+
+/** True while the first frame from `LANDING_INTRO_SCRIPT` is up, so the hero can start its tiles in the row. */
+export function isLandingIntroPending() {
+  return (
+    typeof document !== 'undefined' &&
+    document.documentElement.dataset.landingIntro === 'pending'
+  );
 }
 
 // *** shouldPlayIntro ***
@@ -51,7 +69,7 @@ function shouldPlayIntro() {
 }
 
 // *** playIntro ***
-function playIntro(hero: HTMLElement) {
+function playIntro(hero: HTMLElement, spread: MotionValue<number>) {
   const band = hero.querySelector<HTMLElement>('[data-intro-band]');
   const left = hero.querySelector<HTMLElement>('[data-intro-word="left"]');
   const right = hero.querySelector<HTMLElement>('[data-intro-word="right"]');
@@ -130,6 +148,9 @@ function playIntro(hero: HTMLElement) {
     );
     if (isStopped()) return;
 
+    await run(animate(spread, 1, { duration: 1.1, ease: EASE_IN_OUT }));
+    if (isStopped()) return;
+
     finish();
     try {
       sessionStorage.setItem(SEEN_KEY, '1');
@@ -140,6 +161,7 @@ function playIntro(hero: HTMLElement) {
 
   // Inline styles hold the last frame while the pending attribute is removed, so nothing flashes.
   function finish() {
+    spread.set(1);
     if (header) header.style.opacity = '0';
     band?.style.removeProperty('clip-path');
     delete document.documentElement.dataset.landingIntro;
@@ -161,6 +183,7 @@ function playIntro(hero: HTMLElement) {
     stop() {
       stopped = true;
       running.forEach((animation) => animation.stop());
+      spread.set(1);
       [band, left, right, header].forEach((element) =>
         element?.removeAttribute('style'),
       );
