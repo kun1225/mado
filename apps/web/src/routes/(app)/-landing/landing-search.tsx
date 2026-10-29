@@ -14,19 +14,26 @@ import {
 import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
 import { Accent, LANDING_H2, TileMedia } from './landing-ui';
+import { usePauseOffscreen } from './use-pause-offscreen';
 
 const TYPE_MS = 70;
 const HOLD_MS = 2400;
 
 /** A search box types a few queries, and the sources that match stay bright. */
 export function LandingSearch() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const isSectionInView = usePauseOffscreen(sectionRef);
   const demoRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(demoRef, { amount: 0.4 });
   const { query, typed } = useTypingLoop(isInView);
   const isDone = typed === query.text;
 
   return (
-    <section className="px-edge py-section">
+    <section
+      ref={sectionRef}
+      data-offscreen={!isSectionInView || undefined}
+      className="px-edge py-section"
+    >
       <div className="flex flex-col items-center text-center">
         <RevealText as="h2" className={LANDING_H2}>
           Find anything in <Accent>seconds</Accent>.
@@ -53,7 +60,7 @@ export function LandingSearch() {
               {typed}
               <span
                 aria-hidden
-                className="ml-px inline-block h-[1.1em] w-px translate-y-[0.2em] animate-pulse bg-fg motion-reduce:animate-none"
+                className="ml-px inline-block h-[1.1em] w-px translate-y-[0.2em] animate-pulse bg-fg in-data-offscreen:[animation-play-state:paused] motion-reduce:animate-none"
               />
             </span>
             <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 t-l-3">

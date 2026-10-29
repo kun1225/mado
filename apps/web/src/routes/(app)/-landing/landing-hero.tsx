@@ -23,6 +23,7 @@ import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
 import { useLandingIntro } from './landing-intro';
 import { Accent, OpenMado, TileMedia, Wordmark } from './landing-ui';
+import { usePauseOffscreen } from './use-pause-offscreen';
 
 // Hidden until the intro brings it in; see landing-intro.ts.
 const INTRO_HIDDEN = 'in-data-[landing-intro=pending]:opacity-0';
@@ -49,6 +50,7 @@ export function LandingHero() {
   const sectionRef = useRef<HTMLElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
   useLandingIntro(sectionRef);
+  const isInView = usePauseOffscreen(sectionRef);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -76,7 +78,11 @@ export function LandingHero() {
 
   return (
     // Pulled under the sticky header, so the stage fills the first screen.
-    <section ref={sectionRef} className="relative -mt-16 h-[300svh]">
+    <section
+      ref={sectionRef}
+      data-offscreen={!isInView || undefined}
+      className="relative -mt-16 h-[300svh]"
+    >
       <motion.div
         data-intro-band
         style={{ '--bob': bob } as unknown as CSSProperties}
@@ -273,9 +279,10 @@ function HeroTile({
       >
         <div
           style={{ animationDelay: `${index * -0.7}s` }}
-          className="size-full animate-bob motion-reduce:animate-none"
+          className="size-full animate-bob in-data-offscreen:[animation-play-state:paused] motion-reduce:animate-none"
         >
-          <TileMedia tile={tile} className="shadow-sm" />
+          {/* Eager: every tile floats on the first screen, even if its grid slot is below it. */}
+          <TileMedia tile={tile} loading="eager" className="shadow-sm" />
         </div>
       </motion.div>
     </div>

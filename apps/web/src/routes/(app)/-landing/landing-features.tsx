@@ -28,6 +28,7 @@ import {
 
 import { DemoAllTypes, DemoLocal, DemoSort } from './landing-feature-demos';
 import { Accent, LANDING_H2 } from './landing-ui';
+import { usePauseOffscreen } from './use-pause-offscreen';
 
 const STEP_COUNT = LANDING_FEATURES.length;
 
@@ -43,6 +44,7 @@ const CROSSFADE = [150, 230].map(toProgress);
  */
 export function LandingFeatures() {
   const sectionRef = useRef<HTMLElement>(null);
+  const isInView = usePauseOffscreen(sectionRef);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ['start end', 'end end'],
@@ -117,7 +119,8 @@ export function LandingFeatures() {
           {/* On wide screens the grid stretches the demo to the steps' height, so the two line up. */}
           <div className="relative h-[min(36svh,320px)] max-md:order-1 md:h-auto">
             <AnimatePresence mode="popLayout" initial={false}>
-              {isDemoShown && (
+              {/* Off screen it unmounts, because the local demo loops forever. */}
+              {isDemoShown && isInView && (
                 <motion.div
                   key={activeDemo}
                   initial={{ opacity: 0, y: 16 }}

@@ -24,6 +24,13 @@ export const Route = createFileRoute('/(app)/')({
       },
     ],
     links: [
+      // The accent font is on the first title, so connect early to cut the swap.
+      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+      {
+        rel: 'preconnect',
+        href: 'https://fonts.gstatic.com',
+        crossOrigin: 'anonymous',
+      },
       {
         rel: 'stylesheet',
         href: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600&display=swap',

@@ -46,9 +46,11 @@ export function OpenMado({
 /** A saved source as it looks in the library: the media, rounded, at its own aspect ratio. */
 export function TileMedia({
   tile,
+  loading = 'lazy',
   className,
 }: {
   tile: LandingTile;
+  loading?: 'lazy' | 'eager';
   className?: string;
 }) {
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -78,7 +80,7 @@ export function TileMedia({
       src={tile.src}
       alt=""
       draggable={false}
-      loading="lazy"
+      loading={loading}
       decoding="async"
       className={classes}
     />

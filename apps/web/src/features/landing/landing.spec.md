@@ -22,6 +22,10 @@ One column of sections with `px-edge` side padding. The header is sticky. All co
 7. **Call to action.** The logo, "Start your library _today_.", and "Open Mado".
 8. **Footer.** Wordmark, links to the library, roadmap and FAQ, and a copyright line.
 
+### Off screen
+
+- The hero, features and search sections each watch themselves with one observer. Off screen, their videos and CSS loops pause, and the looping local demo unmounts.
+
 ### Intro
 
 - First visit in a tab session: "Mado" appears in the middle of an empty screen. It splits into "Ma" and "do", and a pill-shaped window opens between them onto the hero. The window grows to the full screen, then the hero text and header come in.
@@ -50,7 +54,9 @@ One column of sections with `px-edge` side padding. The header is sticky. All co
 - **2026-10 — Scroll-linked opacity uses function transforms.** Motion's built-in scroll-timeline shortcut for `useTransform(progress, [range], [range])` on opacity mapped the range wrong (it faded back out after the end). A function transform (`transform(...)`) avoids that shortcut.
 - **2026-10 — Search by description is shown, marked "Soon".** It is on the roadmap (phase 4), and the label keeps the page honest.
 - **2026-10 — Scroll-linked motion is allowed here.** A marketing page is seen once, so it gets more motion than the app. Motion still follows input where it can.
-- **2026-10 — The serif accent is Cormorant Garamond italic, weight 600** (`font-accent`), loaded only on this page. At most two serif words per title.
+- **2026-10 — The serif accent is Cormorant Garamond italic, weight 600** (`font-accent`), loaded only on this page. At most two serif words per title. The page preconnects to Google Fonts, because the first title uses it and a late swap moves the text.
+- **2026-10 — Hero tiles load eager, the rest lazy.** Every hero tile floats on the first screen, even when its grid slot starts below it, so lazy loading showed empty boxes.
+- **2026-10 — Pausing off screen is one observer per section, not per media element.** Fewer observers, and one boolean pauses videos, CSS loops and the looping demo together.
 
 ## Known gaps
 
