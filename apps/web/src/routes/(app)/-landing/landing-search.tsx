@@ -30,9 +30,10 @@ export function LandingSearch() {
 
   return (
     <section
+      id="search"
       ref={sectionRef}
       data-offscreen={!isSectionInView || undefined}
-      className="px-edge py-section"
+      className="scroll-mt-16 px-edge py-section"
     >
       <div className="flex flex-col items-center text-center">
         <RevealText as="h2" className={LANDING_H2}>

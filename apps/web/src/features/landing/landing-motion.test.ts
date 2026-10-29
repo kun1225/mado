@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   phaseProgress,
+  pickActiveSection,
   pickActiveStep,
   splitIntoColumns,
   stepProgress,
@@ -101,5 +102,28 @@ describe('splitIntoColumns', () => {
       [],
       [],
     ]);
+  });
+});
+
+describe('pickActiveSection', () => {
+  const sections = [
+    { id: 'features', top: 100, bottom: 500 },
+    { id: 'faq', top: 800, bottom: 1200 },
+  ];
+
+  it('picks the section that crosses the line', () => {
+    expect(pickActiveSection(sections, 300)).toBe('features');
+    expect(pickActiveSection(sections, 900)).toBe('faq');
+  });
+
+  it('counts the top edge in and the bottom edge out', () => {
+    expect(pickActiveSection(sections, 100)).toBe('features');
+    expect(pickActiveSection(sections, 500)).toBeNull();
+  });
+
+  it('returns null between and outside the sections', () => {
+    expect(pickActiveSection(sections, 50)).toBeNull();
+    expect(pickActiveSection(sections, 650)).toBeNull();
+    expect(pickActiveSection([], 300)).toBeNull();
   });
 });

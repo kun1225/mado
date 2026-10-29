@@ -1,6 +1,7 @@
 import type {
   LandingFloat,
   LandingRect,
+  LandingSectionBounds,
   LandingTilePose,
 } from './landing.type';
 
@@ -17,6 +18,14 @@ export function pickActiveStep(progress: number, count: number) {
 /** How far a single step's bar is filled, 0 to 1. */
 export function stepProgress(progress: number, count: number, index: number) {
   return clamp(progress * count - index, 0, 1);
+}
+
+/** The id of the section that crosses the line `y`, or null when none does. */
+export function pickActiveSection(sections: LandingSectionBounds[], y: number) {
+  return (
+    sections.find((section) => section.top <= y && section.bottom > y)?.id ??
+    null
+  );
 }
 
 export function tilePose(

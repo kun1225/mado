@@ -8,7 +8,9 @@ The page at `/`. It shows what Mado is through scrolling, answers the first ques
 
 ## Behavior
 
-One column of sections with `px-edge` side padding. The header is sticky. It is clear over the hero, and turns `bg-bg/85` with a blur and a shadow once the hero ends and the page scrolls under it. All copy and card data live in `landing-content.ts`.
+One column of sections with `px-edge` side padding. All copy and card data live in `landing-content.ts`.
+
+**Header.** Sticky, 64px, made of two floating 40px blocks with no shadow. On the left, the logo and four section links (Features, Search, FAQ, Roadmap) on a frosted panel with a border; the panel gets more solid once the hero ends. On the right, "Open Mado" with an arrow in a small square. The link for the section that crosses 40% of the screen gets a box that slides between links as you scroll; between those sections no link is marked. Phones show only the logo and the button. The bar between the blocks takes no clicks.
 
 1. **Hero and gallery** (one section, three screens tall, the stage sticks). About twenty saved sources float and bob behind "Your _local_ design library.", one line about Mado, and "Try Mado". As you scroll, the title fades, each source moves from its float point into its slot in a library grid, and the window bar and collections row fade in. The collections row starts with a "New collection" card, like `/library`. The result looks like `/library` in a frame, but nothing in it can be clicked.
 2. **Pain point, then features**, on one sticky stage (four and a half screens).
@@ -58,6 +60,9 @@ One column of sections with `px-edge` side padding. The header is sticky. It is 
 - **2026-10 — Hero tiles load eager, the rest lazy.** Every hero tile floats on the first screen, even when its grid slot starts below it, so lazy loading showed empty boxes.
 - **2026-10 — `--bob` is set on each bob element, not on the hero band.** A CSS variable change restyles every element under it. On the band that was 230 elements each scroll frame; style recalc in the first part of the hero scroll fell about 45% after the move.
 - **2026-10 — Pausing off screen is one observer per section, not per media element.** Fewer observers, and one boolean pauses videos, CSS loops and the looping demo together.
+- **2026-10 — The header is two floating blocks with section links, picked from a prototype.** Compared at full size on the real page: the old clear-to-solid bar, a centered pill (Island), a bar that hides on scroll down (Retreat), an editorial bar with a text-link CTA (Masthead), and a section tracker (Chapters). The pick mixes Island and Chapters, with Mado's square-ish corners (12px outside, 8px inside), 40px tall, no shadow, and the CTA in `t-l-2`.
+  - Rejected: the old bar gave no way to jump to a section. Retreat hid the CTA while you read. Masthead covered the top of the hero and made the CTA weak. A round pill didn't look like Mado's square cards.
+  - The active link comes from `pickActiveSection` over the sections' ids, so each linked section needs its id (`features`, `search`, `faq`, `roadmap`).
 
 ## Known gaps
 

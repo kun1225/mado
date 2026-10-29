@@ -75,8 +75,9 @@ export function LandingFeatures() {
 
   return (
     <section
+      id="features"
       ref={sectionRef}
-      className="relative"
+      className="relative scroll-mt-16"
       style={{ height: `${SECTION_SVH}svh` }}
     >
       <div className="sticky top-0 h-svh">

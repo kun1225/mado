@@ -1,4 +1,13 @@
-import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
+import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Link } from '@tanstack/react-router';
 import type { MotionValue } from 'motion/react';
 import {
   motion,
@@ -16,15 +25,22 @@ import { CollectionNewCard } from '#/components/collection-new-card';
 import { Reveal, RevealText } from '#/components/reveal';
 import type {
   LandingFloat,
+  LandingNavItem,
   LandingRect,
   LandingTile,
 } from '#/features/landing/landing.type';
 import {
   findLandingTile,
+  LANDING_APP_HREF,
   LANDING_COLLECTIONS,
+  LANDING_NAV,
   LANDING_TILES,
 } from '#/features/landing/landing-content';
-import { splitIntoColumns, tilePose } from '#/features/landing/landing-motion';
+import {
+  pickActiveSection,
+  splitIntoColumns,
+  tilePose,
+} from '#/features/landing/landing-motion';
 import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
 import { useLandingIntro } from './landing-intro';
@@ -34,12 +50,17 @@ import { usePauseOffscreen } from './use-pause-offscreen';
 // Hidden until the intro brings it in; see landing-intro.ts.
 const INTRO_HIDDEN = 'in-data-[landing-intro=pending]:opacity-0';
 
+/**
+ * Two floating blocks: the logo with the section links, and "Open Mado".
+ * The link for the section you are reading gets a box that slides to the next one as you scroll.
+ */
 export function LandingHeader({
   heroRef,
 }: {
   heroRef: RefObject<HTMLElement | null>;
 }) {
   const [isSolid, setIsSolid] = useState(false);
+  const activeId = useActiveSection();
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end end'],
@@ -50,19 +71,98 @@ export function LandingHeader({
   );
 
   return (
+    // The bar itself takes no clicks, so the page between the two blocks stays usable.
     <header
       data-landing-header
       className={cn(
-        'sticky top-0 z-header transition-[background-color,box-shadow,backdrop-filter] duration-200',
-        isSolid && 'bg-bg/85 shadow-sm backdrop-blur-md',
+        'pointer-events-none sticky top-0 z-header flex h-16 items-center justify-between gap-4 px-edge',
         INTRO_HIDDEN,
       )}
     >
-      <div className="flex h-16 items-center justify-between px-edge">
+      {/* 12px outside and 4px padding, so the links inside take 8px. */}
+      <div
+        className={cn(
+          'pointer-events-auto flex h-10 items-center gap-2 rounded-lg p-1 pl-4 backdrop-blur-md transition-[background-color] duration-200 ease-out',
+          isSolid ? 'bg-bg/85' : 'bg-bg/70',
+        )}
+      >
         <Wordmark />
-        <OpenMado size="sm" />
+        <nav aria-label="Sections" className="ml-3 hidden items-center md:flex">
+          {LANDING_NAV.map((item) => (
+            <HeaderNavLink
+              key={item.id}
+              item={item}
+              isActive={activeId === item.id}
+            />
+          ))}
+        </nav>
       </div>
+      <Link
+        to={LANDING_APP_HREF}
+        className="pointer-events-auto flex h-10 items-center gap-2.5 rounded-lg bg-accent pr-1.5 pl-4 t-l-2 text-accent-fg transition-[background-color,scale] duration-150 ease-out outline-none hover:bg-accent/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg/40 active:scale-[0.97]"
+      >
+        Open Mado
+        <span className="grid size-7 place-items-center rounded-sm border border-accent-fg/25">
+          <HugeiconsIcon icon={ArrowRight01Icon} size={16} strokeWidth={1.5} />
+        </span>
+      </Link>
     </header>
+  );
+}
+
+// *** useActiveSection ***
+function useActiveSection() {
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const update = () => {
+      const sections = LANDING_NAV.flatMap(({ id }) => {
+        const rect = document.getElementById(id)?.getBoundingClientRect();
+        return rect ? [{ id, top: rect.top, bottom: rect.bottom }] : [];
+      });
+      // 40% down the screen, so a section counts once it fills most of the view.
+      setActiveId(pickActiveSection(sections, window.innerHeight * 0.4));
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
+
+  return activeId;
+}
+
+// *** HeaderNavLink ***
+function HeaderNavLink({
+  item,
+  isActive,
+}: {
+  item: LandingNavItem;
+  isActive: boolean;
+}) {
+  return (
+    <a
+      href={`#${item.id}`}
+      aria-current={isActive ? 'location' : undefined}
+      className={cn(
+        'relative inline-flex h-8 items-center rounded-md px-3 text-xs font-medium tracking-[0.08em] text-muted-fg uppercase transition-colors duration-150 ease-out outline-none hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg/40',
+        isActive && 'text-fg',
+      )}
+    >
+      {isActive && (
+        // One shared box that slides, so the move reads as going from one section to the next.
+        <motion.span
+          layoutId="landing-header-active"
+          aria-hidden
+          className="absolute inset-0 rounded-md border border-fg/20 bg-bg/60"
+          transition={{ type: 'spring', duration: 0.35, bounce: 0 }}
+        />
+      )}
+      <span className="relative">{item.label}</span>
+    </a>
   );
 }
 
@@ -405,7 +505,7 @@ function HeroCopy({ isVeiled }: { isVeiled: boolean }) {
         className="mt-6 max-w-[42ch] t-b-1 text-pretty text-muted-fg"
       >
         Mado is a quiet place for what inspires you. Collect images, videos,
-        sites and notes, sort them, and keep them on your device.
+        sites and notes, and keep them on your device.
       </RevealText>
       <Reveal
         trigger="manual"
@@ -413,7 +513,6 @@ function HeroCopy({ isVeiled }: { isVeiled: boolean }) {
         className="mt-10 flex items-center gap-5"
       >
         <OpenMado label="Try Mado" />
-        <span className="t-b-3 text-muted-fg">Free. No sign-up.</span>
       </Reveal>
     </div>
   );

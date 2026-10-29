@@ -91,7 +91,7 @@ export function Logo({ className }: { className?: string }) {
     <svg
       viewBox="48 48 160 160"
       aria-hidden
-      className={cn('size-5 fill-current', className)}
+      className={cn('size-3.5 fill-current', className)}
     >
       <path
         fillRule="evenodd"
@@ -103,9 +103,9 @@ export function Logo({ className }: { className?: string }) {
 
 export function Wordmark() {
   return (
-    <Link to="/" className="flex items-center gap-2 t-l-1">
+    <Link to="/" className="flex items-center gap-2 t-h-7">
       <Logo />
-      Mado
+      <span className="font-accent">Mado</span>
     </Link>
   );
 }

@@ -56,3 +56,15 @@ export type LandingRoadmapItem = {
   line: string;
   isLive: boolean;
 };
+
+export type LandingNavItem = {
+  id: string;
+  label: string;
+};
+
+/** A section's top and bottom edges, in viewport pixels. */
+export type LandingSectionBounds = {
+  id: string;
+  top: number;
+  bottom: number;
+};

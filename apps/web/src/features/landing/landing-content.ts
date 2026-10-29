@@ -1,12 +1,21 @@
 import type {
   LandingFaqItem,
   LandingFeature,
+  LandingNavItem,
   LandingRoadmapItem,
   LandingSearchQuery,
   LandingTile,
 } from './landing.type';
 
 export const LANDING_APP_HREF = '/library';
+
+/** The header links. Each id is the id of a section on the page. */
+export const LANDING_NAV: LandingNavItem[] = [
+  { id: 'features', label: 'Features' },
+  { id: 'search', label: 'Search' },
+  { id: 'faq', label: 'FAQ' },
+  { id: 'roadmap', label: 'Roadmap' },
+];
 
 export const LANDING_TILES: LandingTile[] = [
   tile('neuro-pop', 'NEURO POP moodboard', 'Brand', 720, 498),
