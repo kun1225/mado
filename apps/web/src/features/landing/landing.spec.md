@@ -56,6 +56,7 @@ One column of sections with `px-edge` side padding. The header is sticky. All co
 - **2026-10 — Scroll-linked motion is allowed here.** A marketing page is seen once, so it gets more motion than the app. Motion still follows input where it can.
 - **2026-10 — The serif accent is Cormorant Garamond italic, weight 600** (`font-accent`), loaded only on this page. At most two serif words per title. The page preconnects to Google Fonts, because the first title uses it and a late swap moves the text.
 - **2026-10 — Hero tiles load eager, the rest lazy.** Every hero tile floats on the first screen, even when its grid slot starts below it, so lazy loading showed empty boxes.
+- **2026-10 — `--bob` is set on each bob element, not on the hero band.** A CSS variable change restyles every element under it. On the band that was 230 elements each scroll frame; style recalc in the first part of the hero scroll fell about 45% after the move.
 - **2026-10 — Pausing off screen is one observer per section, not per media element.** Fewer observers, and one boolean pauses videos, CSS loops and the looping demo together.
 
 ## Known gaps

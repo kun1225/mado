@@ -74,7 +74,6 @@ export function LandingHero() {
     scrollYProgress,
     transform([0.5, 0.8], prefersReducedMotion ? [1, 1] : [0, 1]),
   );
-  const bob = useTransform(progress, [0, 0.3], ['10px', '0px']);
 
   return (
     // Pulled under the sticky header, so the stage fills the first screen.
@@ -83,9 +82,8 @@ export function LandingHero() {
       data-offscreen={!isInView || undefined}
       className="relative -mt-16 h-[300svh]"
     >
-      <motion.div
+      <div
         data-intro-band
-        style={{ '--bob': bob } as unknown as CSSProperties}
         className="sticky top-0 h-svh overflow-hidden in-data-[landing-intro=pending]:[clip-path:inset(calc(50%-32px)_50%_calc(50%-32px)_50%_round_999px)]"
       >
         <LibraryFrame progress={progress} chromeOpacity={chromeOpacity} />
@@ -96,7 +94,7 @@ export function LandingHero() {
         >
           <HeroCopy isVeiled={prefersReducedMotion} />
         </motion.div>
-      </motion.div>
+      </div>
 
       <IntroWords />
     </section>
@@ -262,6 +260,8 @@ function HeroTile({
     const pose = tilePose(slot, layout.stage, { ...float, scale }, value);
     return `translate(${pose.x}px, ${pose.y}px) scale(${pose.scale}) rotate(${pose.rotate}deg)`;
   });
+  // On the bob element itself, so a change restyles only it, not the whole band.
+  const bob = useTransform(progress, [0, 0.3], ['10px', '0px']);
 
   return (
     <div
@@ -277,13 +277,18 @@ function HeroTile({
           layout ? 'opacity-100' : 'opacity-0',
         )}
       >
-        <div
-          style={{ animationDelay: `${index * -0.7}s` }}
+        <motion.div
+          style={
+            {
+              '--bob': bob,
+              animationDelay: `${index * -0.7}s`,
+            } as unknown as CSSProperties
+          }
           className="size-full animate-bob in-data-offscreen:[animation-play-state:paused] motion-reduce:animate-none"
         >
           {/* Eager: every tile floats on the first screen, even if its grid slot is below it. */}
           <TileMedia tile={tile} loading="eager" className="shadow-sm" />
-        </div>
+        </motion.div>
       </motion.div>
     </div>
   );
