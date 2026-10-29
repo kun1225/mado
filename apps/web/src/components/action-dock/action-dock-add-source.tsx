@@ -17,7 +17,7 @@ import { Button } from '@repo/ui/button';
 import { cn } from '@repo/ui/cn';
 import { Dialog, DialogContent, DialogTitle } from '@repo/ui/dialog';
 import { Input } from '@repo/ui/input';
-import { springs } from '@repo/ui/motion';
+import { eases, springs } from '@repo/ui/motion';
 
 import { useCollections } from '#/features/collections/collection-hooks';
 import {
@@ -60,23 +60,46 @@ const PANEL_ID = 'action-dock-add-panel';
 // Same spring as the search panel, so both dock panels move alike.
 const PANEL_SPRING = springs.bouncy;
 
-// The panel grows out of the plus button, so it starts at the left edge.
+// The panel grows out of the plus button and shrinks back into it, so its
+// hidden shape is the button: same size, same spot, and invisible. A bigger
+// hidden shape is left over on top of the button while the spring settles.
+const TOGGLE_SIZE = 48;
+const PANEL_GAP = 8;
+const PANEL_TRANSITION = { ...PANEL_SPRING, opacity: eases.standard };
+
 const PANEL_VARIANTS = {
-  hidden: { y: 48, transition: PANEL_SPRING },
+  hidden: { y: TOGGLE_SIZE + PANEL_GAP, transition: PANEL_SPRING },
   shown: { y: 0, transition: PANEL_SPRING },
 };
+// `calc` on both ends, so motion can blend the two values.
 const PANEL_BOX_VARIANTS = {
-  hidden: { left: '0%', right: '75%', height: 32, transition: PANEL_SPRING },
-  shown: { left: '0%', right: '0%', height: '100%', transition: PANEL_SPRING },
+  hidden: {
+    left: '0%',
+    right: `calc(100% - ${TOGGLE_SIZE}px)`,
+    height: TOGGLE_SIZE,
+    borderRadius: TOGGLE_SIZE / 2,
+    opacity: 0,
+    transition: PANEL_TRANSITION,
+  },
+  shown: {
+    left: '0%',
+    right: 'calc(0% - 0px)',
+    height: '100%',
+    borderRadius: 16,
+    opacity: 1,
+    transition: PANEL_TRANSITION,
+  },
 };
 const PANEL_ROWS_VARIANTS = {
   hidden: {
-    clipPath: 'inset(calc(100% - 32px) 75% 0% 0% round 16px)',
-    transition: PANEL_SPRING,
+    clipPath: `inset(calc(100% - ${TOGGLE_SIZE}px) calc(100% - ${TOGGLE_SIZE}px) 0% 0% round ${TOGGLE_SIZE / 2}px)`,
+    opacity: 0,
+    transition: PANEL_TRANSITION,
   },
   shown: {
-    clipPath: 'inset(calc(0% - 0px) 0% 0% 0% round 16px)',
-    transition: PANEL_SPRING,
+    clipPath: 'inset(calc(0% - 0px) calc(0% - 0px) 0% 0% round 16px)',
+    opacity: 1,
+    transition: PANEL_TRANSITION,
   },
 };
 const PANEL_FADE_VARIANTS = {
