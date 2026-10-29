@@ -6,19 +6,20 @@ import {
   NoteAddIcon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Liquid } from 'liquid-gooey';
+import {
+  AnimatePresence,
+  motion,
+  useIsPresent,
+  useReducedMotion,
+} from 'motion/react';
 
 import { Button } from '@repo/ui/button';
 import { cn } from '@repo/ui/cn';
 import { Dialog, DialogContent, DialogTitle } from '@repo/ui/dialog';
 import { Input } from '@repo/ui/input';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@repo/ui/tooltip';
+import { springs } from '@repo/ui/motion';
 
+import { useCollections } from '#/features/collections/collection-hooks';
 import {
   useCreateSources,
   useCreateWebsiteSource,
@@ -29,30 +30,59 @@ import { ACCEPTED_FILE_TYPES } from '#/features/sources/source-media';
 import { toNoteFile } from '#/features/sources/text-source';
 
 import { MarkdownNoteDialog } from './action-dock-markdown-dialog';
-
-// Same height as the search and selection bars, so the dock lines up.
-const TOGGLE_SIZE = 48;
-const ACTION_SIZE = 40;
-const ACTION_GAP = 14;
-const ACTION_INSET = (TOGGLE_SIZE - ACTION_SIZE) / 2;
-
-const STAGGER_MS = 50;
-const ICON_FADE_DELAY_MS = 100;
-const ICON_FADE_MS = 200;
-
-const CIRCLE_BUTTON =
-  'group hit-area-1 pointer-events-auto flex items-center justify-center rounded-full text-accent-fg outline-none duration-fast ease-out-quart focus-visible:ring-3 focus-visible:ring-ring/50 active:scale-[0.96] disabled:pointer-events-none motion-reduce:transition-none';
-
-const ICON_HOVER =
-  'transition-transform ease-out-quart group-hover:scale-110 motion-reduce:transition-none';
+import { FLOATING_SURFACE } from '.';
 
 const ACTIONS = [
-  { key: 'image', label: 'Add file', icon: Image01FreeIcons },
-  { key: 'website', label: 'Add website', icon: Link01Icon },
-  { key: 'markdown', label: 'Add markdown', icon: NoteAddIcon },
+  {
+    key: 'image',
+    label: 'Add file',
+    hint: 'Images, videos, text',
+    icon: Image01FreeIcons,
+  },
+  {
+    key: 'website',
+    label: 'Add website',
+    hint: 'From a link',
+    icon: Link01Icon,
+  },
+  {
+    key: 'markdown',
+    label: 'Add markdown',
+    hint: 'Write a note',
+    icon: NoteAddIcon,
+  },
 ] as const;
 
 type ActionKey = (typeof ACTIONS)[number]['key'];
+
+const PANEL_ID = 'action-dock-add-panel';
+
+// Same spring as the search panel, so both dock panels move alike.
+const PANEL_SPRING = springs.bouncy;
+
+// The panel grows out of the plus button, so it starts at the left edge.
+const PANEL_VARIANTS = {
+  hidden: { y: 48, transition: PANEL_SPRING },
+  shown: { y: 0, transition: PANEL_SPRING },
+};
+const PANEL_BOX_VARIANTS = {
+  hidden: { left: '0%', right: '75%', height: 32, transition: PANEL_SPRING },
+  shown: { left: '0%', right: '0%', height: '100%', transition: PANEL_SPRING },
+};
+const PANEL_ROWS_VARIANTS = {
+  hidden: {
+    clipPath: 'inset(calc(100% - 32px) 75% 0% 0% round 16px)',
+    transition: PANEL_SPRING,
+  },
+  shown: {
+    clipPath: 'inset(calc(0% - 0px) 0% 0% 0% round 16px)',
+    transition: PANEL_SPRING,
+  },
+};
+const PANEL_FADE_VARIANTS = {
+  hidden: { opacity: 0 },
+  shown: { opacity: 1 },
+};
 
 export function ActionDockAddSource({
   collectionId,
@@ -66,20 +96,21 @@ export function ActionDockAddSource({
   const { mutate: createWebsiteEmbedSource, isPending } =
     useCreateWebsiteSource();
   const isCreating = useIsCreatingSources();
+  const reduceMotion = useReducedMotion();
+  const collections = useCollections().data;
   const [open, setOpen] = useState(false);
   const [websiteDialogOpen, setWebsiteDialogOpen] = useState(false);
   const [markdownDialogOpen, setMarkdownDialogOpen] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(false);
+
+  const placeName =
+    collections?.find((collection) => collection.id === collectionId)?.name ??
+    'Library';
 
   const handlePasteMedia = (file: File) =>
     createSources([{ collectionId, file }]);
   const handlePasteWebsite = (url: string) =>
     createWebsiteEmbedSource({ collectionId, url });
   usePasteSource(handlePasteMedia, handlePasteWebsite);
-
-  useEffect(() => {
-    setReducedMotion(matchMedia('(prefers-reduced-motion: reduce)').matches);
-  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -137,10 +168,8 @@ export function ActionDockAddSource({
     });
   }
 
-  const transition = reducedMotion ? { duration: 0 } : ('bouncy' as const);
-
   return (
-    <TooltipProvider delay={200}>
+    <>
       <input
         ref={fileInputRef}
         type="file"
@@ -150,105 +179,54 @@ export function ActionDockAddSource({
         className="hidden"
       />
 
-      <div ref={rootRef} className="relative shrink-0">
-        <Liquid
-          blur={8}
-          contrast={20}
-          fill="var(--poise-color-accent)"
-          shadow="0 1px 3px rgba(0,0,0,.14), 0 8px 20px -6px rgba(0,0,0,.34)"
-          className="pointer-events-none"
-          style={{
-            width: TOGGLE_SIZE,
-            height: TOGGLE_SIZE + (ACTION_SIZE + ACTION_GAP) * ACTIONS.length,
-          }}
+      {/* Not `relative`: the panel spans the whole dock row, so it sizes to the row in `ActionDock`. */}
+      <div ref={rootRef} className="shrink-0">
+        <button
+          ref={toggleRef}
+          type="button"
+          aria-label={open ? 'Close menu' : 'Add new source'}
+          aria-expanded={open}
+          aria-controls={PANEL_ID}
+          onClick={() => setOpen((value) => !value)}
+          disabled={isCreating}
+          className={cn(
+            FLOATING_SURFACE,
+            'group hit-area-1 pointer-events-auto flex size-12 items-center justify-center rounded-full text-fg outline-none',
+            'transition-[scale,background-color,border-color,color] duration-fast ease-out-quart focus-visible:ring-3 focus-visible:ring-ring/50 active:scale-[0.96] disabled:pointer-events-none motion-reduce:transition-none',
+            'hover:bg-muted aria-expanded:border-accent aria-expanded:bg-accent aria-expanded:text-accent-fg',
+          )}
         >
-          {ACTIONS.map((action, index) => {
-            const rise =
-              TOGGLE_SIZE + ACTION_GAP + index * (ACTION_SIZE + ACTION_GAP);
-
-            return (
-              <Liquid.Item
-                key={action.key}
-                x={ACTION_INSET}
-                y={open ? -rise : 0}
-                scale={open ? 1 : 0.1}
-                radius={ACTION_SIZE / 2}
-                transition={transition}
-                delay={reducedMotion || !open ? 0 : index * STAGGER_MS}
-                className="absolute bottom-0 left-0"
-              >
-                <div inert={!open}>
-                  <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <button
-                          type="button"
-                          aria-label={action.label}
-                          onClick={() => handleAction(action.key)}
-                          className={cn(
-                            CIRCLE_BUTTON,
-                            'size-10 transition-[scale,opacity]',
-                            open ? 'opacity-100' : 'opacity-0',
-                          )}
-                          style={{
-                            transitionDelay:
-                              open && !reducedMotion
-                                ? `0ms, ${ICON_FADE_DELAY_MS + index * STAGGER_MS}ms`
-                                : '0ms',
-                            transitionDuration: open
-                              ? `120ms, ${ICON_FADE_MS}ms`
-                              : '120ms',
-                          }}
-                        />
-                      }
-                    >
-                      <HugeiconsIcon
-                        icon={action.icon}
-                        size={18}
-                        strokeWidth={1.8}
-                        className={cn(ICON_HOVER, 'duration-fast')}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent side="right" sideOffset={8}>
-                      {action.label}
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </Liquid.Item>
-            );
-          })}
-
-          <Liquid.Item className="absolute bottom-0 left-0">
-            <button
-              ref={toggleRef}
-              type="button"
-              aria-label={open ? 'Close menu' : 'Add new source'}
-              aria-expanded={open}
-              onClick={() => setOpen((value) => !value)}
-              disabled={isCreating}
-              className={cn(CIRCLE_BUTTON, 'size-12 transition-[scale]')}
-            >
-              {isCreating ? (
-                <span
-                  aria-hidden
-                  className="size-5 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none"
-                />
-              ) : (
-                <HugeiconsIcon
-                  icon={Add01Icon}
-                  size={26}
-                  strokeWidth={1.5}
-                  className={cn(
-                    ICON_HOVER,
-                    'duration-base',
-                    open && 'rotate-45',
-                  )}
-                />
+          {isCreating ? (
+            <span
+              aria-hidden
+              className="size-5 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none"
+            />
+          ) : (
+            <HugeiconsIcon
+              icon={Add01Icon}
+              size={22}
+              strokeWidth={1.5}
+              className={cn(
+                'transition-transform duration-base ease-out-quart motion-reduce:transition-none',
+                open && 'rotate-45',
               )}
-            </button>
-          </Liquid.Item>
-        </Liquid>
+            />
+          )}
+        </button>
+
+        {/* After the button, so Tab moves from the button into the rows. */}
+        <AnimatePresence>
+          {open && (
+            <ActionDockAddSourcePanel key="panel" reduceMotion={reduceMotion}>
+              <ActionDockAddSourceRows
+                placeName={placeName}
+                onAction={handleAction}
+              />
+            </ActionDockAddSourcePanel>
+          )}
+        </AnimatePresence>
       </div>
+
       {websiteDialogOpen && (
         <WebsiteUrlDialog
           open={websiteDialogOpen}
@@ -265,7 +243,96 @@ export function ActionDockAddSource({
           isSaving={isSavingNote}
         />
       )}
-    </TooltipProvider>
+    </>
+  );
+}
+
+// *** ActionDockAddSourcePanel ***
+function ActionDockAddSourcePanel({
+  reduceMotion,
+  children,
+}: {
+  reduceMotion: boolean | null;
+  children: React.ReactNode;
+}) {
+  // An exiting panel must not take clicks, or a row could still fire.
+  const isPresent = useIsPresent();
+
+  if (reduceMotion) {
+    return (
+      <motion.div
+        id={PANEL_ID}
+        inert={!isPresent}
+        variants={PANEL_FADE_VARIANTS}
+        initial="hidden"
+        animate="shown"
+        exit="hidden"
+        className={cn(
+          FLOATING_SURFACE,
+          'pointer-events-auto absolute inset-x-0 bottom-full mb-2 rounded-2xl bg-bg/95',
+        )}
+      >
+        {children}
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      id={PANEL_ID}
+      inert={!isPresent}
+      variants={PANEL_VARIANTS}
+      initial="hidden"
+      animate="shown"
+      exit="hidden"
+      className="pointer-events-auto absolute inset-x-0 bottom-full mb-2"
+    >
+      {/* Only the rows are clipped. On a clipped element's child, Chrome blurs a square box. */}
+      <motion.div
+        variants={PANEL_BOX_VARIANTS}
+        className={cn(
+          FLOATING_SURFACE,
+          'absolute bottom-0 rounded-2xl bg-bg/95',
+        )}
+      />
+      <motion.div variants={PANEL_ROWS_VARIANTS} className="relative">
+        {children}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// *** ActionDockAddSourceRows ***
+function ActionDockAddSourceRows({
+  placeName,
+  onAction,
+}: {
+  placeName: string;
+  onAction: (key: ActionKey) => void;
+}) {
+  return (
+    <div className="p-1.5">
+      <p className="truncate px-2.5 pt-1.5 pb-1 t-b-4 text-muted-fg">
+        Add to {placeName}
+      </p>
+      {ACTIONS.map((action) => (
+        <button
+          key={action.key}
+          type="button"
+          onClick={() => onAction(action.key)}
+          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left t-b-3 outline-none hover:bg-muted focus-visible:bg-muted"
+        >
+          <HugeiconsIcon
+            icon={action.icon}
+            size={18}
+            strokeWidth={1.5}
+            className="text-muted-fg"
+          />
+          <span className="min-w-0 flex-1 truncate">{action.label}</span>
+          <span className="shrink-0 t-b-4 text-muted-fg">{action.hint}</span>
+        </button>
+      ))}
+    </div>
   );
 }
 

@@ -25,10 +25,13 @@ export function ActionDock({
         'motion-safe:data-scrolled-away:not-focus-within:invisible motion-safe:data-scrolled-away:not-focus-within:translate-y-[calc(100%+1.5rem)] motion-safe:data-scrolled-away:not-focus-within:opacity-0',
       )}
     >
-      {addSource && (
-        <ActionDockAddSource collectionId={addSource.collectionId} />
-      )}
-      <ActionDockSearch />
+      {/* The add panel is as wide as this row, so it measures itself against it. */}
+      <div className="relative flex max-w-full min-w-0 items-end gap-3">
+        {addSource && (
+          <ActionDockAddSource collectionId={addSource.collectionId} />
+        )}
+        <ActionDockSearch />
+      </div>
     </div>
   );
 }

@@ -13,9 +13,7 @@ export const LANDING_H2 = 't-h-2 text-balance';
 /** The one or two serif words a title may have. */
 export function Accent({ children }: { children: ReactNode }) {
   return (
-    <em className="font-accent font-semibold tracking-[-0.01em] italic">
-      {children}
-    </em>
+    <em className="font-accent font-bold tracking-[-0.01em]">{children}</em>
   );
 }
 

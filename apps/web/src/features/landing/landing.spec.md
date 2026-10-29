@@ -8,7 +8,7 @@ The page at `/`. It shows what Mado is through scrolling, answers the first ques
 
 ## Behavior
 
-One column of sections with `px-edge` side padding. The header is sticky. All copy and card data live in `landing-content.ts`.
+One column of sections with `px-edge` side padding. The header is sticky. It is clear over the hero, and turns `bg-bg/85` with a blur and a shadow once the hero ends and the page scrolls under it. All copy and card data live in `landing-content.ts`.
 
 1. **Hero and gallery** (one section, three screens tall, the stage sticks). About twenty saved sources float and bob behind "Your _local_ design library.", one line about Mado, and "Try Mado". As you scroll, the title fades, each source moves from its float point into its slot in a library grid, and the window bar and collections row fade in. The collections row starts with a "New collection" card, like `/library`. The result looks like `/library` in a frame, but nothing in it can be clicked.
 2. **Pain point, then features**, on one sticky stage (four and a half screens).

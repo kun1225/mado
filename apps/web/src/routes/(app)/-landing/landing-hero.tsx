@@ -1,6 +1,12 @@
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { MotionValue } from 'motion/react';
-import { motion, transform, useScroll, useTransform } from 'motion/react';
+import {
+  motion,
+  transform,
+  useMotionValueEvent,
+  useScroll,
+  useTransform,
+} from 'motion/react';
 import type { CSSProperties, RefObject } from 'react';
 
 import { cn } from '@repo/ui/cn';
@@ -28,11 +34,29 @@ import { usePauseOffscreen } from './use-pause-offscreen';
 // Hidden until the intro brings it in; see landing-intro.ts.
 const INTRO_HIDDEN = 'in-data-[landing-intro=pending]:opacity-0';
 
-export function LandingHeader() {
+export function LandingHeader({
+  heroRef,
+}: {
+  heroRef: RefObject<HTMLElement | null>;
+}) {
+  const [isSolid, setIsSolid] = useState(false);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end end'],
+  });
+  // At 1 the hero stops sticking and the library starts to slide under the header.
+  useMotionValueEvent(scrollYProgress, 'change', (value) =>
+    setIsSolid(value >= 1),
+  );
+
   return (
     <header
       data-landing-header
-      className={cn('sticky top-0 z-header bg-bg', INTRO_HIDDEN)}
+      className={cn(
+        'sticky top-0 z-header transition-[background-color,box-shadow,backdrop-filter] duration-200',
+        isSolid && 'bg-bg/85 shadow-sm backdrop-blur-md',
+        INTRO_HIDDEN,
+      )}
     >
       <div className="flex h-16 items-center justify-between px-edge">
         <Wordmark />
@@ -46,8 +70,11 @@ export function LandingHeader() {
  * Sources float behind the title. Scrolling pulls each one into its slot in the library, so the hero becomes the gallery.
  * The stage sticks for two screens of scroll, which drive the whole move.
  */
-export function LandingHero() {
-  const sectionRef = useRef<HTMLElement>(null);
+export function LandingHero({
+  sectionRef,
+}: {
+  sectionRef: RefObject<HTMLElement | null>;
+}) {
   const prefersReducedMotion = usePrefersReducedMotion();
   useLandingIntro(sectionRef);
   const isInView = usePauseOffscreen(sectionRef);

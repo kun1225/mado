@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { MotionConfig } from 'motion/react';
 
@@ -41,14 +42,17 @@ export const Route = createFileRoute('/(app)/')({
 });
 
 function LandingPage() {
+  // Shared, because the header turns solid when the hero ends.
+  const heroRef = useRef<HTMLElement>(null);
+
   return (
     // "user" turns movement off with reduced motion, but keeps fades.
     <MotionConfig reducedMotion="user">
       {/* Before the hero in the HTML, so it runs before the hero paints. */}
       <script dangerouslySetInnerHTML={{ __html: LANDING_INTRO_SCRIPT }} />
-      <LandingHeader />
+      <LandingHeader heroRef={heroRef} />
       <main>
-        <LandingHero />
+        <LandingHero sectionRef={heroRef} />
         <LandingFeatures />
         <LandingSearch />
         <LandingNoAccount />

@@ -20,6 +20,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - A pasted URL becomes a website source with a preview. An X/Twitter post that has a video becomes a video source instead. If that download fails, it stays a website.
 - If the preview fails, the toast says why: the server cannot be reached, the link is not valid, the link points to a private or local address, or the website could not be loaded.
 - A whole folder can be imported from Settings → Data (see `import.spec.md`).
+- The plus button in the dock opens a panel as wide as the dock, with **Add file**, **Add website** and **Add markdown**. Its top line says where new sources go ("Add to Library" or the collection name). It springs open like the search panel; with reduced motion it only fades. Escape or a click outside closes it.
 - The plus menu has **Add markdown**: a dialog with an optional title and a text box. It saves a text source in the current collection. **Add markdown** is disabled while the text is empty, and over 1 MB it shows the limit. Cmd/Ctrl+Enter saves. If saving fails, the dialog keeps the text.
 
 ### Text sources
