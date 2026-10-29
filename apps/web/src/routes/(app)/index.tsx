@@ -10,7 +10,6 @@ import {
 } from './-landing/landing-final';
 import { LandingHeader, LandingHero } from './-landing/landing-hero';
 import { LANDING_INTRO_SCRIPT } from './-landing/landing-intro';
-import { LandingPain } from './-landing/landing-pain';
 import { LandingRoadmap } from './-landing/landing-roadmap';
 import { LandingSearch } from './-landing/landing-search';
 
@@ -43,7 +42,6 @@ function LandingPage() {
       <LandingHeader />
       <main>
         <LandingHero />
-        <LandingPain />
         <LandingFeatures />
         <LandingSearch />
         <LandingNoAccount />

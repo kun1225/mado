@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 import { cn } from '@repo/ui/cn';
 
@@ -21,6 +21,32 @@ export function CollectionCardPocket({
   previews: Source[];
   color: CollectionColor | null;
 }) {
+  return (
+    <CollectionPocket
+      color={color}
+      previews={previews.map((source) => ({
+        id: source.id,
+        width: source.width,
+        height: source.height,
+        media: <SourcePreviewMedia source={source} />,
+      }))}
+    />
+  );
+}
+
+/** The folder without the local store, so the landing page can draw the same folder with static images. */
+export function CollectionPocket({
+  previews,
+  color,
+}: {
+  previews: {
+    id: string;
+    width?: number | null;
+    height?: number | null;
+    media: ReactNode;
+  }[];
+  color: CollectionColor | null;
+}) {
   const offsets = PREVIEW_OFFSETS[previews.length] ?? [];
 
   return (
@@ -33,13 +59,15 @@ export function CollectionCardPocket({
       <div className="absolute bottom-18 left-0 h-2 w-10 rounded-t-md bg-[var(--pocket-back,var(--color-border))] transition-colors duration-base" />
 
       <div className="absolute inset-0 [clip-path:inset(-100%_-100%_0_-100%)]">
-        {previews.map((source, index) => (
-          <CollectionCardPreview
-            key={source.id}
-            source={source}
+        {previews.map((preview, index) => (
+          <CollectionPocketPreview
+            key={preview.id}
+            size={fitPreview(preview)}
             offset={offsets[index]}
             delayMs={index * 40}
-          />
+          >
+            {preview.media}
+          </CollectionPocketPreview>
         ))}
       </div>
 
@@ -67,23 +95,18 @@ function pocketColorStyle(color: CollectionColor | null): CSSProperties {
   } as CSSProperties;
 }
 
-// *** CollectionCardPreview ***
-function CollectionCardPreview({
-  source,
+// *** CollectionPocketPreview ***
+function CollectionPocketPreview({
+  size,
   offset,
   delayMs,
+  children,
 }: {
-  source: Source;
+  size: { width: number; height: number };
   offset: number;
   delayMs: number;
+  children: ReactNode;
 }) {
-  const objectUrl = useMediaObjectUrl(
-    source.storageKey,
-    source.mimeType,
-    source.sizeBytes,
-  );
-  const size = fitPreview(source);
-
   return (
     <div
       style={
@@ -104,21 +127,7 @@ function CollectionCardPreview({
         'group-focus-visible:[translate:calc(var(--offset)*34px)_-25%] group-focus-visible:rotate-[calc(var(--offset)*9deg)]',
       )}
     >
-      {objectUrl && isVideoMimeType(source.mimeType) ? (
-        <video
-          src={`${objectUrl}#t=0.1`}
-          muted
-          playsInline
-          preload="metadata"
-          className="size-full object-cover"
-        />
-      ) : objectUrl ? (
-        <img src={objectUrl} alt="" className="size-full object-cover" />
-      ) : (
-        <span className="flex size-full items-end p-1.5 t-l-4 text-muted-fg">
-          {source.site?.domain ?? source.name}
-        </span>
-      )}
+      {children}
     </div>
   );
 }
@@ -130,10 +139,13 @@ const PREVIEW_PEEK = 22;
 const PREVIEW_BOX = { width: 64, height: 56 };
 const PREVIEW_RATIO = { min: 0.6, max: 1.8, fallback: 0.75 };
 
-function fitPreview(source: Source): { width: number; height: number } {
+function fitPreview(preview: {
+  width?: number | null;
+  height?: number | null;
+}): { width: number; height: number } {
   const rawRatio =
-    source.width && source.height
-      ? source.width / source.height
+    preview.width && preview.height
+      ? preview.width / preview.height
       : PREVIEW_RATIO.fallback;
   const ratio = Math.min(
     Math.max(rawRatio, PREVIEW_RATIO.min),
@@ -142,4 +154,33 @@ function fitPreview(source: Source): { width: number; height: number } {
   const height = Math.min(PREVIEW_BOX.width / ratio, PREVIEW_BOX.height);
 
   return { width: Math.round(height * ratio), height: Math.round(height) };
+}
+
+// *** SourcePreviewMedia ***
+function SourcePreviewMedia({ source }: { source: Source }) {
+  const objectUrl = useMediaObjectUrl(
+    source.storageKey,
+    source.mimeType,
+    source.sizeBytes,
+  );
+
+  if (objectUrl && isVideoMimeType(source.mimeType)) {
+    return (
+      <video
+        src={`${objectUrl}#t=0.1`}
+        muted
+        playsInline
+        preload="metadata"
+        className="size-full object-cover"
+      />
+    );
+  }
+  if (objectUrl) {
+    return <img src={objectUrl} alt="" className="size-full object-cover" />;
+  }
+  return (
+    <span className="flex size-full items-end p-1.5 t-l-4 text-muted-fg">
+      {source.site?.domain ?? source.name}
+    </span>
+  );
 }

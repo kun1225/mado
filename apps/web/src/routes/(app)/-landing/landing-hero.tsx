@@ -1,10 +1,12 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { MotionValue } from 'motion/react';
 import { motion, transform, useScroll, useTransform } from 'motion/react';
 import type { CSSProperties, RefObject } from 'react';
 
 import { cn } from '@repo/ui/cn';
 
+import { CollectionPocket } from '#/components/collection-card-pocket';
+import { CollectionNewCard } from '#/components/collection-new-card';
 import { Reveal, RevealText } from '#/components/reveal';
 import type {
   LandingFloat,
@@ -16,7 +18,7 @@ import {
   LANDING_COLLECTIONS,
   LANDING_TILES,
 } from '#/features/landing/landing-content';
-import { tilePose } from '#/features/landing/landing-motion';
+import { splitIntoColumns, tilePose } from '#/features/landing/landing-motion';
 import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
 import { useLandingIntro } from './landing-intro';
@@ -105,7 +107,8 @@ function LibraryFrame({
   chromeOpacity: MotionValue<number>;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
-  const layout = useSlotLayout(stageRef);
+  const columnCount = useColumnCount();
+  const layout = useSlotLayout(stageRef, columnCount);
 
   return (
     <div ref={stageRef} className="absolute inset-0 px-edge pt-22">
@@ -126,16 +129,23 @@ function LibraryFrame({
             <CollectionsRow />
           </motion.div>
 
-          <div className="columns-2 gap-2.5 px-4 sm:columns-3 sm:px-6 lg:columns-4 xl:columns-5">
-            {LANDING_TILES.map((tile, index) => (
-              <HeroTile
-                key={tile.id}
-                tile={tile}
-                float={FLOATS[index % FLOATS.length]}
-                index={index}
-                layout={layout}
-                progress={progress}
-              />
+          <div className="flex items-start gap-2.5 px-4 sm:px-6">
+            {splitIntoColumns(LANDING_TILES, columnCount).map((column, i) => (
+              <div key={i} className="min-w-0 flex-1">
+                {column.map((tile) => {
+                  const index = LANDING_TILES.indexOf(tile);
+                  return (
+                    <HeroTile
+                      key={tile.id}
+                      tile={tile}
+                      float={FLOATS[index % FLOATS.length]}
+                      index={index}
+                      layout={layout}
+                      progress={progress}
+                    />
+                  );
+                })}
+              </div>
             ))}
           </div>
         </div>
@@ -157,7 +167,10 @@ type SlotLayout = {
   slots: Map<string, LandingRect>;
 };
 
-function useSlotLayout(stageRef: RefObject<HTMLDivElement | null>) {
+function useSlotLayout(
+  stageRef: RefObject<HTMLDivElement | null>,
+  columnCount: number,
+) {
   const [layout, setLayout] = useState<SlotLayout | null>(null);
 
   useLayoutEffect(() => {
@@ -187,9 +200,37 @@ function useSlotLayout(stageRef: RefObject<HTMLDivElement | null>) {
     const observer = new ResizeObserver(measure);
     observer.observe(stage);
     return () => observer.disconnect();
-  }, [stageRef]);
+    // The column count moves every slot, so it must re-measure.
+  }, [stageRef, columnCount]);
 
   return layout;
+}
+
+// *** useColumnCount ***
+// Same steps as the library grid's breakpoints: 2, then 3 at sm, 4 at lg, 5 at xl.
+function useColumnCount() {
+  return useSyncExternalStore(
+    subscribeToColumns,
+    getColumnCount,
+    () => MIN_COLUMNS,
+  );
+}
+
+// *** subscribeToColumns ***
+function subscribeToColumns(onChange: () => void) {
+  const queries = COLUMN_QUERIES.map((query) => matchMedia(query));
+  queries.forEach((query) => query.addEventListener('change', onChange));
+
+  return () =>
+    queries.forEach((query) => query.removeEventListener('change', onChange));
+}
+
+// *** getColumnCount ***
+function getColumnCount() {
+  return (
+    MIN_COLUMNS +
+    COLUMN_QUERIES.filter((query) => matchMedia(query).matches).length
+  );
 }
 
 // *** HeroTile ***
@@ -258,31 +299,43 @@ function WindowBar() {
 
 // *** CollectionsRow ***
 function CollectionsRow() {
+  // The real cards, inert: the frame is a picture, so the new-collection button must not take focus.
   return (
-    <div className="flex gap-3 overflow-hidden px-4 pt-5 pb-5 sm:gap-4 sm:px-6">
+    <div
+      inert
+      className="flex gap-4 overflow-hidden px-4 pt-5 pb-5 *:shrink-0 sm:px-6"
+    >
+      <CollectionNewCard />
       {LANDING_COLLECTIONS.map((collection) => (
         <div
           key={collection.name}
-          className="relative size-32 shrink-0 rounded-md border border-border sm:size-40"
+          className="relative size-48 rounded-md border border-border"
         >
-          <div className="absolute inset-x-0 top-0 bottom-12 flex items-center justify-center">
-            <div className="relative h-14 w-18 rounded-md rounded-tl-none bg-border">
-              {collection.previews.map((id, index) => (
-                <img
-                  key={id}
-                  src={findLandingTile(id).src}
-                  alt=""
-                  style={{
-                    rotate: `${(index - (collection.previews.length - 1) / 2) * 10}deg`,
-                  }}
-                  className="absolute bottom-3 left-1/2 h-12 w-9 -translate-x-1/2 rounded-sm object-cover shadow-sm"
-                />
-              ))}
-            </div>
+          <div className="absolute inset-x-0 top-0 bottom-14 flex items-center justify-center">
+            <CollectionPocket
+              color={null}
+              previews={collection.previews.map((id) => {
+                const tile = findLandingTile(id);
+                return {
+                  id,
+                  width: tile.width,
+                  height: tile.height,
+                  media: (
+                    <img
+                      src={tile.src}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  ),
+                };
+              })}
+            />
           </div>
-          <div className="absolute inset-x-3 bottom-2.5 min-w-0">
-            <p className="truncate t-l-3 sm:t-l-2">{collection.name}</p>
-            <p className="t-b-4 text-muted-fg">{collection.saves} saves</p>
+          <div className="absolute inset-x-4 bottom-3 min-w-0">
+            <p className="truncate t-l-2">{collection.name}</p>
+            <p className="t-b-3 text-muted-fg">
+              {collection.saves} {collection.saves === 1 ? 'save' : 'saves'}
+            </p>
           </div>
         </div>
       ))}
@@ -352,6 +405,13 @@ function IntroWords() {
 }
 
 const PHONE_WIDTH = 640;
+
+const MIN_COLUMNS = 2;
+const COLUMN_QUERIES = [
+  '(min-width: 640px)',
+  '(min-width: 1024px)',
+  '(min-width: 1280px)',
+];
 
 // Fractions of the stage. They ring the title and leave its middle clear.
 const FLOATS: LandingFloat[] = [

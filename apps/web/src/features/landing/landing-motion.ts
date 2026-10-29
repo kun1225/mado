@@ -4,6 +4,11 @@ import type {
   LandingTilePose,
 } from './landing.type';
 
+/** How far a scroll progress is through the phase from `start` to `end`, 0 to 1. */
+export function phaseProgress(progress: number, start: number, end: number) {
+  return clamp((progress - start) / (end - start), 0, 1);
+}
+
 /** Which of `count` equal steps a scroll progress (0 to 1) is in. */
 export function pickActiveStep(progress: number, count: number) {
   return clamp(Math.floor(progress * count), 0, count - 1);
@@ -32,6 +37,34 @@ export function tilePose(
     scale: float.scale + (1 - float.scale) * eased,
     rotate: float.rotate * left + 0,
   };
+}
+
+/**
+ * Masonry by hand: each tile goes to the column that is shortest so far.
+ * Why not CSS `columns`: Safari doesn't paint transformed or animated children in any column but the first.
+ */
+export function splitIntoColumns<T extends { width: number; height: number }>(
+  tiles: readonly T[],
+  count: number,
+): T[][] {
+  const empty = Array.from({ length: count }, () => ({
+    tiles: [] as T[],
+    height: 0,
+  }));
+  return tiles
+    .reduce((columns, tile) => {
+      const heights = columns.map((column) => column.height);
+      const shortest = heights.indexOf(Math.min(...heights));
+      return columns.map((column, index) =>
+        index === shortest
+          ? {
+              tiles: [...column.tiles, tile],
+              height: column.height + tile.height / tile.width,
+            }
+          : column,
+      );
+    }, empty)
+    .map((column) => column.tiles);
 }
 
 // *** clamp ***

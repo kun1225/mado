@@ -8,7 +8,9 @@ export function LandingNoAccount() {
   return (
     <section className="flex flex-col items-center px-edge py-section text-center">
       <RevealText as="h2" className="t-h-1 text-balance">
-        No sign-up. No login. <Accent>Just start.</Accent>
+        No sign-up. No login.
+        <br />
+        <Accent>Just start.</Accent>
       </RevealText>
       <RevealText delay={200} className="mt-6 t-b-1 text-muted-fg">
         Open Mado and drop in your first save. It takes a second.
