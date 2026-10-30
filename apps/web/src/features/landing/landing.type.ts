@@ -1,3 +1,11 @@
+import type { MotionValue } from 'motion/react';
+
+export type LandingPainWordProps = {
+  word: string;
+  index: number;
+  progress: MotionValue<number>;
+};
+
 export type LandingTile = {
   id: string;
   name: string;

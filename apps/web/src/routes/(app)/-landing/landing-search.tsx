@@ -78,7 +78,6 @@ export function LandingSearch() {
               </span>
               <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 t-l-3">
                 {query.mode}
-                {query.isSoon && <span className="text-muted-fg">· Soon</span>}
               </span>
             </div>
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   demoSlice,
-  introRowFloat,
+  introClusterFloat,
   mixFloat,
   phaseProgress,
   pickActiveSection,
@@ -150,21 +150,24 @@ describe('searchFrame', () => {
   });
 });
 
-describe('introRowFloat', () => {
+describe('introClusterFloat', () => {
   const stage = { width: 1000, height: 800 };
 
-  it('puts the tiles in one row across the middle, left to right', () => {
-    const first = introRowFloat(0, 3, stage, 200);
-    const middle = introRowFloat(1, 3, stage, 200);
-    const last = introRowFloat(2, 3, stage, 200);
-    expect(middle).toEqual({ x: 0.5, y: 0.5, scale: middle.scale, rotate: 0 });
-    expect(first.x).toBeLessThan(middle.x);
-    expect(last.x - middle.x).toBeCloseTo(middle.x - first.x);
+  it('overlaps cards in a compact cluster with varied heights and angles', () => {
+    const poses = Array.from({ length: 20 }, (_, rank) =>
+      introClusterFloat(rank, 20, stage, 200),
+    );
+    expect(new Set(poses.map((pose) => pose.y)).size).toBeGreaterThan(10);
+    expect(new Set(poses.map((pose) => pose.rotate)).size).toBeGreaterThan(10);
+    for (const pose of poses) {
+      expect(Math.abs(pose.x - 0.5) * stage.width).toBeLessThanOrEqual(135);
+      expect(Math.abs(pose.y - 0.5) * stage.height).toBeLessThanOrEqual(92);
+    }
   });
 
   it('scales every tile to the same width', () => {
-    const narrow = introRowFloat(0, 3, stage, 100);
-    const wide = introRowFloat(0, 3, stage, 200);
+    const narrow = introClusterFloat(0, 3, stage, 100);
+    const wide = introClusterFloat(0, 3, stage, 200);
     expect(narrow.scale * 100).toBeCloseTo(wide.scale * 200);
   });
 });

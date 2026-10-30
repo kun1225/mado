@@ -14,7 +14,7 @@ One column of sections with `px-edge` side padding. All copy and card data live 
 
 1. **Hero and gallery** (one section, three screens tall, the stage sticks). About twenty saved sources float and bob behind "Your _local_ design library.", one line about Mado, and "Try Mado". The floats drift a little against the mouse, bigger ones more; the drift fades out as the grid forms. Not on touch or with reduced motion. As you scroll, the title fades, each source moves from its float point into its slot in a library grid, and the window bar and collections row fade in. The collections row starts with a "New collection" card, like `/library`. The result looks like `/library` in a frame, but nothing in it can be clicked.
 2. **Pain point, then features**, on one sticky stage (four and a half screens).
-   - **Pain point.** One big line, "Saving ideas is easy. _Finding_ them again isn't.", fades in as the stage comes up and holds in the middle.
+   - **Pain point.** One big line, "Saving ideas is easy. _Finding_ them again isn't.", reveals word by word as you scroll: each word fades in, rises 12px and sharpens from a 6px blur. The word ranges overlap, finish before the crossfade, and reverse when scrolling back. The sentence holds in the middle, with its serif accent and normal word wrapping preserved. Reduced motion keeps the word fades without blur or movement.
    - **Crossfade.** In the same spot, the pain line fades out and slides up 24px while the features fade in and slide up the same 24px. The first demo starts as the fade starts.
    - **Features.** The title across the top (half the width on desktop). Under it, three numbered steps (number, title, line) on the left and a demo for the active step on the right, as tall as the steps. Each third of the remaining scroll makes the next step active and fills a line under it. Only the active step shows its line; it opens and fades in as the step turns active. Demos: four kinds of saves drop in (image, video, website, note); four cards fly into two collections and their counts go up; a zip goes out of a computer and back in. A demo replays each time its step turns active. Phones put the demo on top.
 3. **Find anything.** The stage pins for two screens of scroll. The scroll types three queries into a search box, by name, by collection, and by description (marked "Soon"): each query owns a third, typed in its first half and held in the second. Three bars under the box fill with the scroll. Cards that don't match dim. On wide screens the demo's width follows the screen height, so the stage fits.
@@ -30,7 +30,7 @@ One column of sections with `px-edge` side padding. All copy and card data live 
 
 ### Intro
 
-- First visit in a tab session: "Mado" appears in the middle of an empty screen. It splits into "Ma" and "do", and a pill-shaped window opens between them onto a row of sources across the middle, ordered left to right by where each one floats. The window grows to the full screen, the sources spread to their float points, then the hero text and header come in. The title's veil stays off until then, so it doesn't wash out the row.
+- First visit in a tab session: "Mado" appears in the middle of an empty screen. It splits into "Ma" and "do", and a rounded rectangular window (up to 280px wide, 144px tall, 16px corners) opens between them onto an overlapping cluster of sources. The window grows to the full screen, the clustered sources spread to their existing float points, then the hero text and header come in. The title's veil stays off until then, so it doesn't wash out the cluster.
 - Plays once per session (`sessionStorage`). Never plays with reduced motion or blocked storage.
 - While it plays, the page starts at the top and cannot scroll. The page keeps room for the scrollbar the whole time (`scrollbar-gutter: stable`), so it doesn't jump sideways when scrolling comes back.
 - A small inline script sets the first frame before paint, so the end state never flashes.
@@ -66,7 +66,9 @@ One column of sections with `px-edge` side padding. All copy and card data live 
 
 - **2026-10 — The search demo follows the scroll, not a timer.** The reader sets the pace, and a query holds until they scroll on. The timer kept typing while you read and you missed queries.
 - **2026-10 — One button style on the page.** The header's "Open Mado" (accent, arrow in a square) is used for every call to action, so the page asks for one thing in one way.
-- **2026-10 — The intro row and the floats are one motion value (`spread`).** The tiles are the same elements in the row, the floats and the grid, so nothing is handed off. `introRowFloat` and `mixFloat` give the start pose that `tilePose` already moves into the grid.
+- **2026-10 — The intro cluster and the floats are one motion value (`spread`).** The tiles are the same elements in the cluster, the floats and the grid, so nothing is handed off. `introClusterFloat` and `mixFloat` give the start pose that `tilePose` already moves into the grid.
+
+- **2026-10 — Cluster chosen from `/proto/intro`.** Sources overlap in a compact, irregular collage before spreading to the existing hero positions. The opening is 144px tall with 16px corners, replacing the 64px pill so more of the collage shows. It holds briefly before spreading. Rejected: the straight row felt boring; Fan was wide, Stack hid too much, and Ribbon still felt like a horizontal strip. The hero float positions stay the same.
 
 ## Known gaps
 

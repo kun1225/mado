@@ -78,6 +78,12 @@ The API lives in `apps/api`. Everything else stays on the device.
 
 ## Key flows
 
+### Landing intro
+
+The landing intro clips an overlapping cluster into a rounded rectangular opening, then spreads the same tiles to their hero float positions. `introClusterFloat` and `mixFloat` share `spread` with the existing scroll-to-library move. Reduced motion skips the intro.
+
+The features stage uses the same section scroll progress for the pain sentence's word-by-word fade, rise and blur reveal, then crossfades the sentence into the feature demos. Word motion values update without React renders; reduced motion removes the rise and blur.
+
 ### Action dock scrolling
 
 `ActionDock` uses `useHideOnScroll` to hide after 200px of downward scrolling and return on upward scrolling. CSS limits scroll hiding to `prefers-reduced-motion: no-preference`, so the dock stays visible during scrolling with reduced motion enabled, including before hydration and when the preference changes. Focus inside the dock also keeps it visible.

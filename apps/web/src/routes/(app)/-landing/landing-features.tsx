@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import type { MotionValue } from 'motion/react';
 import {
   AnimatePresence,
@@ -11,7 +11,10 @@ import {
 
 import { cn } from '@repo/ui/cn';
 
-import type { LandingFeatureDemo } from '#/features/landing/landing.type';
+import type {
+  LandingFeatureDemo,
+  LandingPainWordProps,
+} from '#/features/landing/landing.type';
 import { LANDING_FEATURES } from '#/features/landing/landing-content';
 import {
   phaseProgress,
@@ -28,7 +31,8 @@ const STEP_COUNT = LANDING_FEATURES.length;
 
 /** The scroll story in svh, from the section's top entering the screen. The stage pins at 100. */
 const SECTION_SVH = 480;
-const PAIN_IN = [30, 90].map(toProgress);
+const PAIN_IN = [30, 120].map(toProgress);
+const PAIN_WORDS = "Saving ideas is easy. Finding them again isn't.".split(' ');
 const CROSSFADE = [150, 230].map(toProgress);
 /** Where in a step a click lands: late, so the scrubbed demo shows its finished state. */
 const STEP_CLICK_TARGET = 0.8;
@@ -48,9 +52,8 @@ export function LandingFeatures() {
   // Function transforms, because motion's scroll-timeline shortcut for opacity mapped ranges wrong.
   const painOpacity = useTransform(
     scrollYProgress,
-    transform([...PAIN_IN, ...CROSSFADE], [0, 1, 1, 0]),
+    transform(CROSSFADE, [1, 0]),
   );
-  const painScale = useTransform(scrollYProgress, PAIN_IN, [0.96, 1]);
   // Leaves upward while the features rise in, so the hand-off reads as one move.
   const painY = useTransform(scrollYProgress, CROSSFADE, [0, -24]);
   const featuresOpacity = useTransform(scrollYProgress, (value) =>
@@ -98,11 +101,19 @@ export function LandingFeatures() {
       <div className="sticky top-0 h-svh">
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-edge">
           <motion.h2
-            style={{ opacity: painOpacity, scale: painScale, y: painY }}
+            style={{ opacity: painOpacity, y: painY }}
             className="max-w-[18ch] text-center t-h-1 text-balance motion-reduce:transform-none!"
           >
-            Saving ideas is easy. <Accent>Finding</Accent> them again
-            isn&apos;t.
+            {PAIN_WORDS.map((word, index) => (
+              <Fragment key={word}>
+                {index > 0 && ' '}
+                <PainWord
+                  word={word}
+                  index={index}
+                  progress={scrollYProgress}
+                />
+              </Fragment>
+            ))}
           </motion.h2>
         </div>
 
@@ -150,6 +161,29 @@ export function LandingFeatures() {
         </motion.div>
       </div>
     </section>
+  );
+}
+
+// *** PainWord ***
+function PainWord({ word, index, progress }: LandingPainWordProps) {
+  // Overlapping ranges keep the words flowing while the reader controls the pace.
+  const start =
+    PAIN_IN[0] + (index / (PAIN_WORDS.length + 1)) * (PAIN_IN[1] - PAIN_IN[0]);
+  const end = start + (2 / (PAIN_WORDS.length + 1)) * (PAIN_IN[1] - PAIN_IN[0]);
+  const reveal = useTransform(progress, (value) =>
+    phaseProgress(value, start, end),
+  );
+  const opacity = useTransform(reveal, (value) => value);
+  const y = useTransform(reveal, (value) => (1 - value) * 12);
+  const filter = useTransform(reveal, (value) => `blur(${(1 - value) * 6}px)`);
+
+  return (
+    <motion.span
+      style={{ opacity, y, filter }}
+      className="inline-block motion-reduce:transform-none! motion-reduce:filter-none!"
+    >
+      {word === 'Finding' ? <Accent>{word}</Accent> : word}
+    </motion.span>
   );
 }
 

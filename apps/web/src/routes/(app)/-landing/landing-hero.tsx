@@ -35,7 +35,7 @@ import {
   LANDING_TILES,
 } from '#/features/landing/landing-content';
 import {
-  introRowFloat,
+  introClusterFloat,
   mixFloat,
   pickActiveSection,
   splitIntoColumns,
@@ -168,7 +168,7 @@ export function LandingHero({
   sectionRef: RefObject<HTMLElement | null>;
 }) {
   const prefersReducedMotion = usePrefersReducedMotion();
-  // 0 holds the tiles in the intro's row, 1 lets them float. The intro animates it.
+  // 0 holds the tiles in the intro's cluster, 1 lets them float. The intro animates it.
   const spread = useMotionValue(isLandingIntroPending() ? 0 : 1);
   useLandingIntro(sectionRef, spread);
   const isInView = usePauseOffscreen(sectionRef);
@@ -206,7 +206,7 @@ export function LandingHero({
     >
       <div
         data-intro-band
-        className="sticky top-0 h-svh overflow-hidden in-data-[landing-intro=pending]:[clip-path:inset(calc(50%-32px)_50%_calc(50%-32px)_50%_round_999px)]"
+        className="sticky top-0 h-svh overflow-hidden in-data-[landing-intro=pending]:[clip-path:inset(calc(50%-72px)_50%_calc(50%-72px)_50%_round_16px)]"
       >
         <LibraryFrame
           progress={progress}
@@ -419,13 +419,13 @@ function HeroTile({
       // Phone slots are wide, so full-size floats would cover the title.
       const scale =
         layout.stage.width < PHONE_WIDTH ? float.scale * 0.55 : float.scale;
-      const row = introRowFloat(
-        INTRO_ROW_RANKS[index],
+      const cluster = introClusterFloat(
+        INTRO_CLUSTER_RANKS[index],
         LANDING_TILES.length,
         layout.stage,
         slot.width,
       );
-      const start = mixFloat(row, { ...float, scale }, spreadValue);
+      const start = mixFloat(cluster, { ...float, scale }, spreadValue);
       const pose = tilePose(slot, layout.stage, start, value);
       // Bigger floats sit closer, so they move more. Gone by the time the grid forms, so the library stays still.
       const depth =
@@ -541,7 +541,7 @@ function HeroCopy({ isVeiled }: { isVeiled: boolean }) {
           '-z-10',
           isVeiled
             ? 'fixed inset-0 bg-bg/85'
-            : // Off during the intro, so it doesn't wash out the row of sources in the middle.
+            : // Off during the intro, so it doesn't wash out the cluster of sources in the middle.
               'absolute -inset-x-24 -inset-y-20 bg-[radial-gradient(closest-side,var(--color-bg)_55%,transparent)] transition-opacity duration-700 in-data-[landing-intro=pending]:opacity-0',
         )}
       />
@@ -626,8 +626,8 @@ const FLOATS: LandingFloat[] = [
   { x: 0.56, y: 0.76, scale: 0.4, rotate: -3 },
 ];
 
-// Each tile's place in the intro row, ordered by where it floats, so no two cross on the way out.
-const INTRO_ROW_RANKS = (() => {
+// Stable ranks keep the chosen collage unchanged when the grid changes columns.
+const INTRO_CLUSTER_RANKS = (() => {
   const xs = LANDING_TILES.map((_, index) => FLOATS[index % FLOATS.length].x);
   const order = xs.map((_, index) => index).sort((a, b) => xs[a] - xs[b]);
   return xs.map((_, index) => order.indexOf(index));

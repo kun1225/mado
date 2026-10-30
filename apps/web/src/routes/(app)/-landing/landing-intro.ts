@@ -7,7 +7,7 @@ import type { RefObject } from 'react';
 import { revealWithin } from '#/components/reveal';
 
 const SEEN_KEY = 'mado:landing-intro-seen';
-const PILL_HEIGHT = 64;
+const OPENING_HEIGHT = 480;
 const EASE_OUT = [0.25, 1, 0.5, 1] as const;
 const EASE_IN_OUT = [0.76, 0, 0.24, 1] as const;
 
@@ -18,9 +18,9 @@ const EASE_IN_OUT = [0.76, 0, 0.24, 1] as const;
 export const LANDING_INTRO_SCRIPT = `try{if(!sessionStorage.getItem('${SEEN_KEY}')&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.dataset.landingIntro='pending'}catch(e){}`;
 
 /**
- * "Mado" splits into "Ma" and "do", and a window opens between them onto a row of sources.
+ * "Mado" splits into "Ma" and "do", and a window opens between them onto a cluster of sources.
  * The window grows into the hero, the sources spread to their float points, then the hero text and header come in.
- * `spread` goes from 0 (the row) to 1 (floating).
+ * `spread` goes from 0 (the cluster) to 1 (floating).
  */
 export function useLandingIntro(
   heroRef: RefObject<HTMLElement | null>,
@@ -90,38 +90,42 @@ function playIntro(hero: HTMLElement, spread: MotionValue<number>) {
     window.scrollTo(0, 0);
     const rect = band.getBoundingClientRect();
     const { width, height } = rect;
-    // The pill opens in the middle of the part of the band you can see.
+
+    // The opening sits in the middle of the part of the band you can see.
     const visibleTop = Math.max(rect.top, 0);
     const visibleBottom = Math.min(rect.bottom, window.innerHeight);
     const centerY = (visibleTop + visibleBottom) / 2 - rect.top;
-    const top = centerY - PILL_HEIGHT / 2;
-    const bottom = height - centerY - PILL_HEIGHT / 2;
+    const top = centerY - OPENING_HEIGHT / 2;
+    const bottom = height - centerY - OPENING_HEIGHT / 2;
     left.style.top = `${centerY}px`;
     right.style.top = `${centerY}px`;
-    const pill = (openWidth: number) =>
-      `inset(${top}px ${(width - openWidth) / 2}px ${bottom}px ${(width - openWidth) / 2}px round 999px)`;
-    const openWidth = Math.min(280, width * 0.42);
 
+    const opening = (openWidth: number) =>
+      `inset(${top}px ${(width - openWidth) / 2}px ${bottom}px ${(width - openWidth) / 2}px round 16px)`;
+    const openWidth = Math.min(600, width * 0.7);
+
+    // Mado words appear
     await run(
       animate(
         left,
         { opacity: [0, 1], y: [16, 0] },
-        { duration: 0.6, ease: EASE_OUT },
+        { duration: 0.8, ease: EASE_OUT },
       ),
       animate(
         right,
         { opacity: [0, 1], y: [16, 0] },
-        { duration: 0.6, ease: EASE_OUT },
+        { duration: 0.8, ease: EASE_OUT },
       ),
     );
     if (isStopped()) return;
 
     // The words meet at the center, so each moves half the window's width.
-    const shift = openWidth / 2;
+    const shift = openWidth / 2 + 24;
+    // Clip-path opens; Mado words split
     await run(
       animate(
         band,
-        { clipPath: [pill(0), pill(openWidth)] },
+        { clipPath: [opening(0), opening(openWidth)] },
         { duration: 0.8, ease: EASE_IN_OUT },
       ),
       animate(left, { x: -shift }, { duration: 0.8, ease: EASE_IN_OUT }),
@@ -129,26 +133,30 @@ function playIntro(hero: HTMLElement, spread: MotionValue<number>) {
     );
     if (isStopped()) return;
 
+    // Clip-path fills the screen; Mado words exit
     await run(
       animate(
         band,
-        { clipPath: [pill(openWidth), `inset(0px 0px 0px 0px round 0px)`] },
-        { duration: 1.1, ease: EASE_IN_OUT, delay: 0.15 },
+        { clipPath: [opening(openWidth), `inset(0px 0px 0px 0px round 0px)`] },
+        { duration: 1, ease: EASE_IN_OUT, delay: 0.35 },
       ),
       animate(
         left,
         { x: -width / 2, opacity: 0 },
-        { duration: 0.9, ease: EASE_IN_OUT, delay: 0.15 },
+        { duration: 0.8, ease: EASE_IN_OUT, delay: 0.35 },
       ),
       animate(
         right,
         { x: width / 2, opacity: 0 },
-        { duration: 0.9, ease: EASE_IN_OUT, delay: 0.15 },
+        { duration: 0.8, ease: EASE_IN_OUT, delay: 0.35 },
       ),
     );
     if (isStopped()) return;
 
-    await run(animate(spread, 1, { duration: 1.1, ease: EASE_IN_OUT }));
+    // Sources spread into the hero
+    await run(
+      animate(spread, 1, { duration: 1.1, ease: EASE_IN_OUT, delay: 0.2 }),
+    );
     if (isStopped()) return;
 
     finish();
@@ -167,6 +175,7 @@ function playIntro(hero: HTMLElement, spread: MotionValue<number>) {
     delete document.documentElement.dataset.landingIntro;
     revealWithin(hero);
     if (header) {
+      // Header appears
       run(
         animate(
           header,

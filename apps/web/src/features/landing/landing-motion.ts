@@ -76,23 +76,22 @@ export function tilePose(
   };
 }
 
-/** Where a tile waits during the intro: in one row across the middle, all the same width. */
-export function introRowFloat(
+/** The cluster keeps the opening full without a rigid row of cards. */
+export function introClusterFloat(
   rank: number,
   count: number,
   stage: { width: number; height: number },
   slotWidth: number,
 ): LandingFloat {
-  const width = Math.min(
-    INTRO_ROW_TILE_MAX,
-    stage.width / INTRO_ROW_TILES_ON_SCREEN,
-  );
-  const offset = (rank - (count - 1) / 2) * width * INTRO_ROW_SPACING;
+  const angle = rank * 2.4;
+  const radius =
+    Math.sqrt(rank / Math.max(1, count - 1)) * Math.min(180, stage.width * 0.3);
+  const cardWidth = Math.min(200, stage.width * 0.3);
   return {
-    x: 0.5 + offset / stage.width,
-    y: 0.5,
-    scale: width / slotWidth,
-    rotate: 0,
+    x: 0.5 + (Math.cos(angle) * radius) / stage.width,
+    y: 0.5 + (Math.sin(angle) * radius * 0.8) / stage.height,
+    scale: cardWidth / slotWidth,
+    rotate: Math.sin(rank * 3) * 20,
   };
 }
 
@@ -136,9 +135,6 @@ export function splitIntoColumns<T extends { width: number; height: number }>(
 }
 
 const SEARCH_TYPE_SHARE = 0.5;
-const INTRO_ROW_TILE_MAX = 140;
-const INTRO_ROW_TILES_ON_SCREEN = 7;
-const INTRO_ROW_SPACING = 1.12;
 
 // *** clamp ***
 function clamp(value: number, min: number, max: number) {
