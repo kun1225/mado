@@ -268,22 +268,10 @@
   }
 }
 
-/*
- * Typography: use t-h-* (headings), t-b-* (body) and t-l-* (one-line labels)
- * instead of raw text-*, font-* and tracking-* classes. A level may use its own
- * family. Change the tokens per viewport in the media query below.
- *
- * No size goes below 0.875rem (14px): smaller text is hard to read.
- *
- * Longhand tokens, not one `font` shorthand: the shorthand also resets
- * font-variant-numeric, and Tailwind sorts it after other utilities, so
- * `tabular-nums` and `font-mono` would silently lose.
- */
 :root {
   --poise-font-sans: Geist, ui-sans-serif, system-ui, sans-serif;
   --poise-font-serif:
     ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
-  /* The one or two serif words a title may have, per the brand direction. */
   --poise-font-accent:
     'Cormorant Garamond', 'Noto Serif JP', ui-serif, Georgia, serif;
 
@@ -373,12 +361,23 @@
   --t-l-4-weight: 400;
 }
 
-/* Same as Tailwind's `sm`, so the change lines up with the layout. */
-@media (width < 40rem) {
+/* Same as Tailwind's `lg` */
+@media (width < 1024px) {
+  :root {
+    --t-h-1-size: 4.5rem;
+    --t-h-1-leading: 1.02;
+    --t-h-2-size: 3.25rem;
+    --t-h-2-leading: 1.05;
+    --t-h-3-size: 3.75rem;
+  }
+}
+
+/* Same as Tailwind's `md` */
+@media (width < 768px) {
   :root {
     --t-h-1-size: 3rem;
     --t-h-1-leading: 1.02;
-    --t-h-2-size: 2.25rem;
+    --t-h-2-size: 2.75rem;
     --t-h-2-leading: 1.05;
     --t-h-3-size: 3rem;
   }

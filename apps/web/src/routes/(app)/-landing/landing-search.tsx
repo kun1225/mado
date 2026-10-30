@@ -26,10 +26,6 @@ import { usePauseOffscreen } from './use-pause-offscreen';
 const QUERY_COUNT = LANDING_SEARCH_QUERIES.length;
 const QUERY_LENGTHS = LANDING_SEARCH_QUERIES.map((query) => query.text.length);
 
-/**
- * The stage pins, and the scroll types a few queries; the sources that match stay bright.
- * Why scroll and not a timer: the reader sets the pace, and each query holds until they move on.
- */
 export function LandingSearch() {
   const sectionRef = useRef<HTMLElement>(null);
   const isSectionInView = usePauseOffscreen(sectionRef);
@@ -48,22 +44,23 @@ export function LandingSearch() {
       className="relative h-[300svh] scroll-mt-16"
     >
       {/* Padded under the sticky header, so the centered stage clears it. */}
-      <div className="sticky top-0 flex h-svh flex-col justify-center px-edge pt-16">
+      <div className="sticky top-0 flex h-svh flex-col justify-center px-edge">
         <div className="flex flex-col items-center text-center">
           <RevealText as="h2" className={LANDING_H2}>
             Find anything in <Accent>seconds</Accent>.
           </RevealText>
           <RevealText
             delay={150}
-            className="mt-6 max-w-[46ch] t-b-1 text-pretty text-muted-fg"
+            className="mt-2 max-w-[46ch] t-b-1 text-pretty text-muted-fg"
           >
-            Search by a source&apos;s name or its collection. Soon, just
-            describe what you remember.
+            Search by a source&apos;s name or its collection,
+            <br />
+            or just describe what you remember.
           </RevealText>
         </div>
 
         {/* On wide screens the width follows the screen height, so the pinned stage always fits. */}
-        <Reveal className="mx-auto mt-10 w-full max-w-4xl md:max-w-[min(56rem,calc((100svh-21rem)*1.45))]">
+        <Reveal className="mx-auto mt-4 w-full max-w-4xl md:max-w-[min(72rem,calc((100svh-120px)))]">
           <div className="rounded-xl bg-muted p-4 sm:p-6">
             <div className="flex items-center gap-3 rounded-lg border border-border bg-bg px-4 py-3">
               <HugeiconsIcon
@@ -76,7 +73,7 @@ export function LandingSearch() {
                 {typed}
                 <span
                   aria-hidden
-                  className="ml-px inline-block h-[1.1em] w-px translate-y-[0.2em] animate-pulse bg-fg in-data-offscreen:[animation-play-state:paused] motion-reduce:animate-none"
+                  className="ml-px inline-block h-[1.1em] w-px translate-y-[0.2em] animate-pulse bg-fg in-data-offscreen:paused motion-reduce:animate-none"
                 />
               </span>
               <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 t-l-3">

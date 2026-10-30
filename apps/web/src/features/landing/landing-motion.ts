@@ -20,6 +20,19 @@ export function stepProgress(progress: number, count: number, index: number) {
   return clamp(progress * count - index, 0, 1);
 }
 
+/**
+ * The part of a step's progress that demo item `index` moves in.
+ * Slices overlap so the items flow together, and the last ends early so the finished demo holds a moment.
+ */
+export function demoSlice(index: number): [number, number] {
+  const start = DEMO_SLICE_START + index * DEMO_SLICE_GAP;
+  return [start, start + DEMO_SLICE_LENGTH];
+}
+
+const DEMO_SLICE_START = 0.05;
+const DEMO_SLICE_GAP = 0.15;
+const DEMO_SLICE_LENGTH = 0.25;
+
 /** The id of the section that crosses the line `y`, or null when none does. */
 export function pickActiveSection(sections: LandingSectionBounds[], y: number) {
   return (

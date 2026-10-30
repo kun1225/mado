@@ -551,7 +551,7 @@ function HeroCopy({ isVeiled }: { isVeiled: boolean }) {
       <RevealText
         trigger="manual"
         delay={250}
-        className="mt-6 max-w-[42ch] t-b-1 text-pretty text-muted-fg"
+        className="mt-4 max-w-[42ch] t-b-1 text-pretty text-muted-fg"
       >
         Mado is a quiet place for what inspires you. Collect images, videos,
         sites and notes, and keep them on your device.
@@ -559,7 +559,7 @@ function HeroCopy({ isVeiled }: { isVeiled: boolean }) {
       <Reveal
         trigger="manual"
         delay={650}
-        className="mt-10 flex items-center gap-5"
+        className="mt-8 flex items-center gap-5"
       >
         <OpenMado label="Try Mado" />
       </Reveal>

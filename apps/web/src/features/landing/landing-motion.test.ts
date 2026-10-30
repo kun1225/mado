@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  demoSlice,
   introRowFloat,
   mixFloat,
   phaseProgress,
@@ -180,5 +181,18 @@ describe('mixFloat', () => {
     expect(half.y).toBeCloseTo(0.3);
     expect(half.scale).toBeCloseTo(0.4);
     expect(half.rotate).toBeCloseTo(-4);
+  });
+});
+
+describe('demoSlice', () => {
+  it('gives each item its own overlapping part of a step', () => {
+    expect(demoSlice(0)).toEqual([0.05, 0.3]);
+    const [start, end] = demoSlice(1);
+    expect(start).toBeCloseTo(0.2);
+    expect(end).toBeCloseTo(0.45);
+  });
+
+  it('ends the fourth item before the step ends, so the finished demo holds', () => {
+    expect(demoSlice(3)[1]).toBeLessThan(1);
   });
 });

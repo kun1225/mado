@@ -18,6 +18,7 @@ import {
   pickActiveStep,
   stepProgress,
 } from '#/features/landing/landing-motion';
+import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
 import { DemoAllTypes, DemoLocal, DemoSort } from './landing-feature-demos';
 import { Accent, LANDING_H2 } from './landing-ui';
@@ -29,11 +30,13 @@ const STEP_COUNT = LANDING_FEATURES.length;
 const SECTION_SVH = 480;
 const PAIN_IN = [30, 90].map(toProgress);
 const CROSSFADE = [150, 230].map(toProgress);
+/** Where in a step a click lands: late, so the scrubbed demo shows its finished state. */
+const STEP_CLICK_TARGET = 0.8;
 
 /**
  * The pain line, then the features, on one pinned stage.
  * Why one stage: the problem fades out while the answer fades in at the same spot, so they read as one scene.
- * After the crossfade, each third of the scroll makes the next step active and fills its bar.
+ * After the crossfade, each third of the scroll makes the next step active, fills its bar, and plays its demo.
  */
 export function LandingFeatures() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -57,6 +60,11 @@ export function LandingFeatures() {
   const stepsProgress = useTransform(scrollYProgress, (value) =>
     phaseProgress(value, CROSSFADE[1], 1),
   );
+  // The active step's own progress. The demos follow it, so they play back when you scroll back.
+  const stepLocal = useTransform(stepsProgress, (value) =>
+    stepProgress(value, STEP_COUNT, pickActiveStep(value, STEP_COUNT)),
+  );
+  const prefersReducedMotion = usePrefersReducedMotion();
   const [activeIndex, setActiveIndex] = useState(0);
   // The first demo mounts when the crossfade starts, so it plays while you can see it.
   const [isDemoShown, setIsDemoShown] = useState(false);
@@ -67,6 +75,18 @@ export function LandingFeatures() {
     setActiveIndex(pickActiveStep(value, STEP_COUNT)),
   );
   const activeDemo = LANDING_FEATURES[activeIndex].demo;
+
+  function goToStep(index: number) {
+    const section = sectionRef.current;
+    if (!section) return;
+    const top = section.getBoundingClientRect().top + window.scrollY;
+    const steps = (index + STEP_CLICK_TARGET) / STEP_COUNT;
+    const progress = CROSSFADE[1] + steps * (1 - CROSSFADE[1]);
+    window.scrollTo({
+      top: top - window.innerHeight + progress * section.offsetHeight,
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    });
+  }
 
   return (
     <section
@@ -86,33 +106,31 @@ export function LandingFeatures() {
           </motion.h2>
         </div>
 
+        {/* The title sits above the steps, so the demo gets the stage's full height. */}
         <motion.div
           style={{ opacity: featuresOpacity, y: featuresY }}
-          className="grid h-full content-center gap-8 px-edge py-20 motion-reduce:transform-none! md:grid-cols-2 md:gap-x-16 md:gap-y-14"
+          className="grid h-full content-center items-center gap-8 px-edge motion-reduce:transform-none! md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]"
         >
-          <h2
-            className={cn(
-              LANDING_H2,
-              'max-md:order-2 md:col-span-2 md:max-w-1/2',
-            )}
-          >
-            One <Accent>calm</Accent> place for everything you save.
-          </h2>
-          <ol className="max-md:order-3">
-            {LANDING_FEATURES.map((feature, index) => (
-              <FeatureStep
-                key={feature.title}
-                index={index}
-                title={feature.title}
-                line={feature.line}
-                isActive={index === activeIndex}
-                progress={stepsProgress}
-              />
-            ))}
-          </ol>
+          <div className="gap flex flex-col">
+            <h2 className={LANDING_H2}>
+              One <Accent>calm</Accent> place for everything you save.
+            </h2>
+            <ol className="mt-4">
+              {LANDING_FEATURES.map((feature, index) => (
+                <FeatureStep
+                  key={feature.title}
+                  index={index}
+                  title={feature.title}
+                  line={feature.line}
+                  isActive={index === activeIndex}
+                  progress={stepsProgress}
+                  onSelect={() => goToStep(index)}
+                />
+              ))}
+            </ol>
+          </div>
 
-          {/* On wide screens the grid stretches the demo to the steps' height, so the two line up. */}
-          <div className="relative h-[min(36svh,320px)] max-md:order-1 md:h-auto">
+          <div className="relative h-[min(44svh,380px)] md:h-[min(70svh,680px)]">
             <AnimatePresence mode="popLayout" initial={false}>
               {/* Off screen it unmounts, because the local demo loops forever. */}
               {isDemoShown && isInView && (
@@ -124,7 +142,7 @@ export function LandingFeatures() {
                   transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
                   className="absolute inset-0"
                 >
-                  <FeatureDemo demo={activeDemo} />
+                  <FeatureDemo demo={activeDemo} progress={stepLocal} />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -142,12 +160,14 @@ function FeatureStep({
   line,
   isActive,
   progress,
+  onSelect,
 }: {
   index: number;
   title: string;
   line: string;
   isActive: boolean;
   progress: MotionValue<number>;
+  onSelect: () => void;
 }) {
   const fill = useTransform(progress, (value) =>
     stepProgress(value, STEP_COUNT, index),
@@ -160,10 +180,16 @@ function FeatureStep({
         isActive ? 'text-fg' : 'text-muted-fg/60',
       )}
     >
-      <div className="flex items-center gap-4">
+      {/* A button, so a reader can jump to a step instead of scrolling to it. */}
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-current={isActive ? 'step' : undefined}
+        className="-mx-2 flex w-[calc(100%+1rem)] cursor-pointer items-center gap-4 rounded-md px-2 text-left transition-colors duration-150 outline-none hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg/40"
+      >
         <span className="w-6 shrink-0 t-l-3 tabular-nums">0{index + 1}</span>
         <span className="t-h-5">{title}</span>
-      </div>
+      </button>
       {/* Only the active line shows, so the steps stay short and the eye goes to one. Grid rows animate the height. */}
       <div
         className={cn(
@@ -192,8 +218,14 @@ function toProgress(svh: number) {
 }
 
 // *** FeatureDemo ***
-function FeatureDemo({ demo }: { demo: LandingFeatureDemo }) {
-  if (demo === 'all-types') return <DemoAllTypes />;
-  if (demo === 'sort') return <DemoSort />;
-  return <DemoLocal />;
+function FeatureDemo({
+  demo,
+  progress,
+}: {
+  demo: LandingFeatureDemo;
+  progress: MotionValue<number>;
+}) {
+  if (demo === 'all-types') return <DemoAllTypes progress={progress} />;
+  if (demo === 'sort') return <DemoSort progress={progress} />;
+  return <DemoLocal progress={progress} />;
 }
