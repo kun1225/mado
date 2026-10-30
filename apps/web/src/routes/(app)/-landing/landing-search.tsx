@@ -41,7 +41,7 @@ export function LandingSearch() {
       id="search"
       ref={sectionRef}
       data-offscreen={!isSectionInView || undefined}
-      className="relative h-[300svh] scroll-mt-16"
+      className="relative h-[360svh] scroll-mt-16"
     >
       {/* Padded under the sticky header, so the centered stage clears it. */}
       <div className="sticky top-0 flex h-svh flex-col justify-center px-edge">

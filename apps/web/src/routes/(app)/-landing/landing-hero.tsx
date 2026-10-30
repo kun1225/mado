@@ -418,7 +418,7 @@ function HeroTile({
       if (!layout || !slot) return 'none';
       // Phone slots are wide, so full-size floats would cover the title.
       const scale =
-        layout.stage.width < PHONE_WIDTH ? float.scale * 0.55 : float.scale;
+        layout.stage.width < PHONE_WIDTH ? float.scale * 0.85 : float.scale;
       const cluster = introClusterFloat(
         INTRO_CLUSTER_RANKS[index],
         LANDING_TILES.length,

@@ -3,7 +3,6 @@ import type { MotionValue } from 'motion/react';
 import {
   AnimatePresence,
   motion,
-  transform,
   useMotionValueEvent,
   useScroll,
   useTransform,
@@ -33,7 +32,8 @@ const STEP_COUNT = LANDING_FEATURES.length;
 const SECTION_SVH = 480;
 const PAIN_IN = [30, 120].map(toProgress);
 const PAIN_WORDS = "Saving ideas is easy. Finding them again isn't.".split(' ');
-const CROSSFADE = [150, 230].map(toProgress);
+const FEATURES_THRESHOLD = toProgress(150);
+const STEPS_START = toProgress(230);
 /** Where in a step a click lands: late, so the scrubbed demo shows its finished state. */
 const STEP_CLICK_TARGET = 0.8;
 
@@ -49,19 +49,8 @@ export function LandingFeatures() {
     target: sectionRef,
     offset: ['start end', 'end end'],
   });
-  // Function transforms, because motion's scroll-timeline shortcut for opacity mapped ranges wrong.
-  const painOpacity = useTransform(
-    scrollYProgress,
-    transform(CROSSFADE, [1, 0]),
-  );
-  // Leaves upward while the features rise in, so the hand-off reads as one move.
-  const painY = useTransform(scrollYProgress, CROSSFADE, [0, -24]);
-  const featuresOpacity = useTransform(scrollYProgress, (value) =>
-    phaseProgress(value, CROSSFADE[0], CROSSFADE[1]),
-  );
-  const featuresY = useTransform(featuresOpacity, [0, 1], [24, 0]);
   const stepsProgress = useTransform(scrollYProgress, (value) =>
-    phaseProgress(value, CROSSFADE[1], 1),
+    phaseProgress(value, STEPS_START, 1),
   );
   // The active step's own progress. The demos follow it, so they play back when you scroll back.
   const stepLocal = useTransform(stepsProgress, (value) =>
@@ -69,10 +58,10 @@ export function LandingFeatures() {
   );
   const prefersReducedMotion = usePrefersReducedMotion();
   const [activeIndex, setActiveIndex] = useState(0);
-  // The first demo mounts when the crossfade starts, so it plays while you can see it.
-  const [isDemoShown, setIsDemoShown] = useState(false);
+  // A threshold lets the fade finish even when the reader stops scrolling.
+  const [isFeaturesShown, setIsFeaturesShown] = useState(false);
   useMotionValueEvent(scrollYProgress, 'change', (value) =>
-    setIsDemoShown(value >= CROSSFADE[0]),
+    setIsFeaturesShown(value >= FEATURES_THRESHOLD),
   );
   useMotionValueEvent(stepsProgress, 'change', (value) =>
     setActiveIndex(pickActiveStep(value, STEP_COUNT)),
@@ -84,7 +73,7 @@ export function LandingFeatures() {
     if (!section) return;
     const top = section.getBoundingClientRect().top + window.scrollY;
     const steps = (index + STEP_CLICK_TARGET) / STEP_COUNT;
-    const progress = CROSSFADE[1] + steps * (1 - CROSSFADE[1]);
+    const progress = STEPS_START + steps * (1 - STEPS_START);
     window.scrollTo({
       top: top - window.innerHeight + progress * section.offsetHeight,
       behavior: prefersReducedMotion ? 'auto' : 'smooth',
@@ -101,7 +90,12 @@ export function LandingFeatures() {
       <div className="sticky top-0 h-svh">
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-edge">
           <motion.h2
-            style={{ opacity: painOpacity, y: painY }}
+            initial={false}
+            animate={{
+              opacity: isFeaturesShown ? 0 : 1,
+              y: isFeaturesShown ? -24 : 0,
+            }}
+            transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
             className="max-w-[18ch] text-center t-h-1 text-balance motion-reduce:transform-none!"
           >
             {PAIN_WORDS.map((word, index) => (
@@ -119,7 +113,13 @@ export function LandingFeatures() {
 
         {/* The title sits above the steps, so the demo gets the stage's full height. */}
         <motion.div
-          style={{ opacity: featuresOpacity, y: featuresY }}
+          initial={false}
+          animate={{
+            opacity: isFeaturesShown ? 1 : 0,
+            y: isFeaturesShown ? 0 : 24,
+          }}
+          transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
+          inert={!isFeaturesShown}
           className="grid h-full content-center items-center gap-8 px-edge motion-reduce:transform-none! md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]"
         >
           <div className="gap flex flex-col">
@@ -144,7 +144,7 @@ export function LandingFeatures() {
           <div className="relative h-[min(44svh,380px)] md:h-[min(70svh,680px)]">
             <AnimatePresence mode="popLayout" initial={false}>
               {/* Off screen it unmounts, because the local demo loops forever. */}
-              {isDemoShown && isInView && (
+              {isFeaturesShown && isInView && (
                 <motion.div
                   key={activeDemo}
                   initial={{ opacity: 0, y: 16 }}
