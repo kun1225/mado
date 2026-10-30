@@ -25,6 +25,11 @@
   overflow: hidden;
 }
 
+/* Keeps the scrollbar's space when scroll is locked, so the page doesn't jump sideways when it unlocks. */
+:root {
+  scrollbar-gutter: stable;
+}
+
 /* Lets other bottom bars move aside when the selection bar shows, without sharing selection state. */
 @custom-variant selecting (body:has([data-source-selection-bar]) &);
 

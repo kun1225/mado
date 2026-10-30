@@ -32,7 +32,7 @@ One column of sections with `px-edge` side padding. All copy and card data live 
 
 - First visit in a tab session: "Mado" appears in the middle of an empty screen. It splits into "Ma" and "do", and a pill-shaped window opens between them onto a row of sources across the middle, ordered left to right by where each one floats. The window grows to the full screen, the sources spread to their float points, then the hero text and header come in. The title's veil stays off until then, so it doesn't wash out the row.
 - Plays once per session (`sessionStorage`). Never plays with reduced motion or blocked storage.
-- While it plays, the page starts at the top and cannot scroll.
+- While it plays, the page starts at the top and cannot scroll. The page keeps room for the scrollbar the whole time (`scrollbar-gutter: stable`), so it doesn't jump sideways when scrolling comes back.
 - A small inline script sets the first frame before paint, so the end state never flashes.
 
 ### Reveal
