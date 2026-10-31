@@ -37,6 +37,23 @@ Each phase ships alone. Mado is a side project, so phases are small.
 | 7     | AI images              | Mood images to fill gaps, mockups, logo sketches                                                                                          | Yes, paid                 | —                                                                                                                                            |
 | Later | Teams                  | Two-way sync, permissions, collaboration, brand guideline export, Figma export                                                            | Yes                       | —                                                                                                                                            |
 
+## Clients
+
+The web app is the first client. More clients come after the backend, in this order. Each one saves into the same cloud library through the same `/api/v1`.
+
+| Order | Client            | What it does                                                                                   | Needs                              |
+| ----- | ----------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------- |
+| 1     | Backend (phase 3) | Accounts, one API for every client, media upload                                               | —                                  |
+| 2     | Chrome extension  | Save the page, or an image or video you right-click, into your library without leaving the tab | Phase 3                            |
+| 3     | iOS app           | A share sheet action "Save to Mado", then browse the library                                   | Phase 3, and the extension is used |
+| 4     | macOS app         | Same as iOS, only if people ask for it                                                         | The iOS app                        |
+
+Why the backend is first: the library lives in the browser today (IndexedDB and OPFS). No other client can reach it, so every client needs the cloud base.
+
+Why the extension is second: designers collect on a desktop browser, so it is where most saving happens. It is a small web project, and it reuses the web app's code and the API. Collecting is the step of the product that is most often repeated.
+
+Why the native apps are last: a native app is a new codebase, a new release process (App Store review) and a new place to keep bugs. It earns its place only for saving from a phone. Decide after the extension ships, by looking at how people use it.
+
 ## Launch (target: a few weeks from 2026-10)
 
 The launch is Mado's own brand and the landing page, on top of the library we have today. Facets, projects and the canvas (phases 1–2) come after the launch.
@@ -83,6 +100,7 @@ Each type gets its own card and detail view, the same facets and tags as other s
 - **2026-10 — Video compression stays in the browser.** It already runs there with `mediabunny`. It's free for us, keeps the free version local, and makes phase 3 uploads smaller. Compressing on a server needs `ffmpeg`, which Workers can't run.
 - **2026-10 — Host the web app and the API on Cloudflare Workers (proposed).** One platform with R2, cheap for a side project. Postgres stays on a hosted service (Neon) and is reached through Hyperdrive. Confirm after the spike in [`plans/cloudflare-deploy-plan.md`](plans/cloudflare-deploy-plan.md).
 
+- **2026-10 — Client order: backend, Chrome extension, then iOS and macOS.** All clients use `/api/v1`, so the backend must come first. A native app is not decided yet; see "Clients".
 - **2026-10 — More file types, text first.** `.txt` and `.md` come first, then font, PDF and voice. See "More file types" above.
 - **2026-10 — Text sources live in IndexedDB, not OPFS.** The record keeps the text, so search can read it, and the one OPFS file is the optional thumbnail. In the cloud, the text goes into Postgres and the thumbnail into R2. See `sources.spec.md`.
 
@@ -92,3 +110,5 @@ Each type gets its own card and detail view, the same facets and tags as other s
 - AI providers: Claude for vision, tagging and writing. AI images (phase 7) need a second provider.
 - Can people without an account comment on a shared link, or only view it?
 - How the paid plan counts AI use (credits per action, or a monthly limit).
+- Is saving from the Chrome extension free? It needs an account and cloud storage, which breaks "Free is local, paid is cloud".
+- Native apps: SwiftUI for iOS and macOS together, or only an iOS share extension. Sign in with Apple is required if Google sign-in is offered.
