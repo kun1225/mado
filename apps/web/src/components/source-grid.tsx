@@ -1,6 +1,7 @@
 import { cn } from '@repo/ui/cn';
 
 import { useCollections } from '#/features/collections/collection-hooks';
+import { useShortcuts } from '#/features/shortcuts/shortcuts-hooks';
 import {
   useCompressingSourceIds,
   useDeleteSource,
@@ -58,10 +59,23 @@ export function SourceGrid({
   );
 
   const selectedIds = selection.selectedSources.map((source) => source.id);
+  const isPending = isBulkPending ?? deleteSourcesMutation.isPending;
 
   function handleBulkDelete() {
     (onBulkDelete ?? deleteSourcesMutation.mutate)(selectedIds);
   }
+
+  // The same path as the Delete button, so the trash still asks before it deletes for good.
+  useShortcuts(
+    {
+      // With nothing to select, leave Cmd/Ctrl+A to the browser.
+      'select-all': sources.length > 0 ? selection.selectAll : undefined,
+      'delete-selected': () => {
+        if (!isPending) handleBulkDelete();
+      },
+    },
+    selection.isSelectionMode,
+  );
 
   function handleBulkRestore() {
     onBulkRestore?.(selectedIds);
@@ -120,7 +134,7 @@ export function SourceGrid({
           onClear={selection.clear}
           onDelete={handleBulkDelete}
           onRestore={onBulkRestore && handleBulkRestore}
-          isPending={isBulkPending ?? deleteSourcesMutation.isPending}
+          isPending={isPending}
         />
       )}
     </>

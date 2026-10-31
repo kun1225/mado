@@ -12,6 +12,7 @@ import {
   getSelectedIds,
   getSelectedSources,
   resolveSourceDetail,
+  selectAllSources,
   toggleSelection,
   toRejectionMessage,
 } from './source-interaction-hooks';
@@ -129,6 +130,32 @@ describe('the anchor', () => {
     expect([
       ...getSelectedIds(applyClick(state, SOURCES, '4', SHIFT_CLICK), SOURCES),
     ]).toEqual(['4']);
+  });
+});
+
+describe('selectAllSources', () => {
+  it('selects every source', () => {
+    const state = selectAllSources(SOURCES);
+
+    expect(
+      getSelectedSources(SOURCES, getSelectedIds(state, SOURCES)).map(
+        ({ id }) => id,
+      ),
+    ).toEqual(['1', '2', '3', '4', '5', '6']);
+  });
+
+  it('lets a click deselect one card afterwards', () => {
+    const state = applyClick(selectAllSources(SOURCES), SOURCES, '3', CLICK);
+
+    expect(
+      getSelectedSources(SOURCES, getSelectedIds(state, SOURCES)).map(
+        ({ id }) => id,
+      ),
+    ).toEqual(['1', '2', '4', '5', '6']);
+  });
+
+  it('selects nothing when there are no sources', () => {
+    expect(selectAllSources([])).toEqual(EMPTY_SELECTION_STATE);
   });
 });
 

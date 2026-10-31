@@ -12,6 +12,7 @@ describe('visibleSettingsTabs', () => {
       'general',
       'account',
       'data',
+      'shortcuts',
       'feedback',
     ]);
   });
@@ -19,7 +20,12 @@ describe('visibleSettingsTabs', () => {
   it('hides the account tab from guests when every sign-in method is off', () => {
     vi.stubEnv('VITE_FLAG_AUTH_GOOGLE', 'false');
     vi.stubEnv('VITE_FLAG_AUTH_EMAIL_PASSWORD', 'false');
-    expect(visibleSettingsTabs(false)).toEqual(['general', 'data', 'feedback']);
+    expect(visibleSettingsTabs(false)).toEqual([
+      'general',
+      'data',
+      'shortcuts',
+      'feedback',
+    ]);
   });
 
   it('keeps the account tab for a signed-in user', () => {
@@ -29,6 +35,7 @@ describe('visibleSettingsTabs', () => {
       'general',
       'account',
       'data',
+      'shortcuts',
       'feedback',
     ]);
   });

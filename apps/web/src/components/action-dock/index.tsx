@@ -12,7 +12,8 @@ export function ActionDock({
 }: {
   addSource?: { collectionId: string | null };
 }) {
-  const isScrolledAway = useHideOnScroll(HIDE_AFTER_SCROLL_PX);
+  const { isHidden: isScrolledAway, reveal } =
+    useHideOnScroll(HIDE_AFTER_SCROLL_PX);
 
   return (
     <div
@@ -30,7 +31,7 @@ export function ActionDock({
         {addSource && (
           <ActionDockAddSource collectionId={addSource.collectionId} />
         )}
-        <ActionDockSearch />
+        <ActionDockSearch onReveal={reveal} />
       </div>
     </div>
   );

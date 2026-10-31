@@ -13,6 +13,7 @@ export const SETTINGS_TABS = [
   'general',
   'account',
   'data',
+  'shortcuts',
   'feedback',
 ] as const;
 

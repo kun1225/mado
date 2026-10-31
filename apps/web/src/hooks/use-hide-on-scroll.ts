@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type ScrollHideState = {
   isHidden: boolean;
@@ -8,6 +8,7 @@ type ScrollHideState = {
 
 export function useHideOnScroll(threshold: number) {
   const [isHidden, setIsHidden] = useState(false);
+  const revealRef = useRef(() => {});
 
   useEffect(() => {
     let state: ScrollHideState = {
@@ -21,11 +22,17 @@ export function useHideOnScroll(threshold: number) {
       setIsHidden(state.isHidden);
     }
 
+    // A shortcut can need the dock while it is hidden. Counting restarts here, so it hides again only after a new scroll down.
+    revealRef.current = () => {
+      state = { isHidden: false, lastY: scrollY, downStartY: scrollY };
+      setIsHidden(false);
+    };
+
     addEventListener('scroll', handleScroll, { passive: true });
     return () => removeEventListener('scroll', handleScroll);
   }, [threshold]);
 
-  return isHidden;
+  return { isHidden, reveal: () => revealRef.current() };
 }
 
 // *** nextScrollHideState ***

@@ -35,6 +35,12 @@ describe('parseSettingsSearch', () => {
     expect(parseSettingsSearch({ settings: 'data' }).tab).toBe('data');
   });
 
+  it('opens the shortcuts tab', () => {
+    expect(parseSettingsSearch({ settings: 'shortcuts' }).tab).toBe(
+      'shortcuts',
+    );
+  });
+
   it('opens the general tab', () => {
     expect(parseSettingsSearch({ settings: 'general' }).tab).toBe('general');
   });

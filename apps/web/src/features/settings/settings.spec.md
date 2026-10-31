@@ -2,15 +2,15 @@
 
 ## Purpose
 
-One place for app settings. Today it holds general preferences (whether collections show their folders' sources), the theme, the account (sign in, sign up, reset a password, see who you are, sign out) your data (export all sources, import a folder), and a feedback form.
+One place for app settings. Today it holds general preferences (whether collections show their folders' sources), the theme, the account (sign in, sign up, reset a password, see who you are, sign out) your data (export all sources, import a folder), and a list of keyboard shortcuts, and a feedback form.
 
-**Depends on:** `auth`, `collections`, `export`, `feedback`, `import`. **Used by:** every `(app)` page, opened from the settings button next to the search bar. See `apps/web/ARCHITECTURE.md`.
+**Depends on:** `auth`, `collections`, `export`, `feedback`, `import`, `shortcuts`. **Used by:** every `(app)` page, opened from the settings button next to the search bar. See `apps/web/ARCHITECTURE.md`.
 
 ## Behavior
 
 - The settings button opens a dialog. It fills the screen on phones and is a centered card on larger screens.
-- The sidebar lists the tabs: **General**, **Account**, **Data** and **Feedback**. The settings button opens General. Switching tabs replaces the URL, so Back closes the panel instead of stepping through tabs.
-- On phones the tabs show icons only, so four tabs and Sign in/out fit in one row. The header names the open tab, and each tab keeps its label for screen readers.
+- The sidebar lists the tabs: **General**, **Account**, **Data**, **Shortcuts** and **Feedback**. The settings button opens General. Switching tabs replaces the URL, so Back closes the panel instead of stepping through tabs.
+- On phones the tabs show icons only, so five tabs and Sign in/out fit in one row. The header names the open tab, and each tab keeps its label for screen readers.
 - The bottom of the sidebar shows **Sign out** when signed in, or **Sign in** for a guest. Sign in opens the Account tab, from any tab, and moves focus to the email field.
 - **General, Theme:** a three-part switch, **Light**, **Dark** and **System**, built on `LiquidTabs` like the library tabs, above Collections. The pill slides to the choice and the chosen part shows its icon (sun, moon, screen). System is the default. A choice applies at once, with no Save button.
 - **General, Collections:** the **Show sources from folders** switch (see `collections.spec.md`). It saves at once, with no Save button. Clicking the label flips it too.
@@ -24,6 +24,7 @@ One place for app settings. Today it holds general preferences (whether collecti
 - **Account, guest, with email turned back on:** the Google button, an "or use email" line, then the email form. The form switches between sign-in, sign-up, forgot password and reset password without leaving the panel. On a switch, the old form fades out and the new one fades in and rises a little. With reduced motion it switches at once.
 - **Data, Storage:** the total the browser says this site uses, with the most it allows ("of 12.0 GB available", left out when the browser gives no limit), a bar split into Videos, Images and Other, and a row for each with its size. The bar grows in once. With reduced motion it shows at once. Videos and Images add up the files of every source, trash included, because trashed files still use space. Other is the rest: thumbnails, previews and the database. A short note under the rows says everything is saved on this device and what Other means. The section is hidden while loading, or when the browser has no `navigator.storage.estimate()`. The numbers are read again when the number of sources changes (an import, a delete, emptying the trash).
 - **Data, Backup:** how many sources and collections there are, then **Export .zip** (see `export.spec.md`) and **Import folder** (see `import.spec.md`) side by side. The progress bar of the one that runs shows below the buttons. Only one of the two runs at a time. "How it works" folds the long explanation of both.
+- **Shortcuts:** the keyboard shortcuts as a list of keys (see `shortcuts.spec.md`). Pressing `?` anywhere in the app opens this tab, unless a dialog is open or the focus is in a text field.
 - **Feedback:** the feedback form (see `feedback.spec.md`).
 - Esc, the close button and a click outside close the panel. Closing removes every settings param from the URL and keeps the rest (for example `?source=`).
 - Switching forms drops the link's `token`, `verified` and `error`, so an old status message doesn't follow you to another form.
@@ -32,7 +33,7 @@ One place for app settings. Today it holds general preferences (whether collecti
 
 | Param               | Values                                                    | Set by                                              |
 | ------------------- | --------------------------------------------------------- | --------------------------------------------------- |
-| `settings`          | `general`, `account`, `data`, `feedback`                  | the settings button, tabs                           |
+| `settings`          | `general`, `account`, `data`, `shortcuts`, `feedback`     | the settings button, tabs                           |
 | `auth`              | `sign-up`, `forgot-password`, `reset-password` (or empty) | the form, the reset email                           |
 | `token`             | reset token                                               | better-auth, on reset links                         |
 | `verified`          | `true`                                                    | the verification email                              |
@@ -63,6 +64,7 @@ Unknown values fall back to closed, or to the sign-in form.
 
 ## Known gaps
 
+- Five tabs and the Sign in button on a very narrow phone were not checked.
 - No component tests. The web app has no `@testing-library` yet, so the dialog is checked by hand.
 - Colors with transitions (buttons, tabs) fade when the theme changes, instead of switching at once.
 - Embedded websites may not follow the app theme.

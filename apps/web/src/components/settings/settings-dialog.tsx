@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import {
   Cancel01Icon,
   Database01Icon,
+  KeyboardIcon,
   MessageEdit01Icon,
   PreferenceHorizontalIcon,
   UserCircleIcon,
@@ -29,11 +30,13 @@ import type {
 } from '#/features/settings/settings.type';
 import { useSettingsSearch } from '#/features/settings/settings-hooks';
 import { visibleSettingsTabs } from '#/features/settings/settings-tabs';
+import { useShortcuts } from '#/features/shortcuts/shortcuts-hooks';
 
 import { SettingsAccountTab } from './settings-account-tab';
 import { SettingsDataTab } from './settings-data-tab';
 import { SettingsFeedbackTab } from './settings-feedback-tab';
 import { SettingsGeneralTab } from './settings-general-tab';
+import { SettingsShortcutsTab } from './settings-shortcuts-tab';
 
 const EMAIL_FIELD_ID = 'settings-auth-email';
 const GOOGLE_BUTTON_ID = 'settings-auth-google';
@@ -42,7 +45,7 @@ const GOOGLE_BUTTON_ID = 'settings-auth-google';
 const TAB_LIST_CLASS = 'flex items-center gap-0.5 sm:flex-col sm:items-stretch';
 const TAB_CLASS =
   'flex h-9.5 items-center gap-2 rounded-md px-2.5 t-l-2 sm:px-4';
-// Phones show icons only, so four tabs and the sign-in action fit in one row. The header names the tab.
+// Phones show icons only, so five tabs and the sign-in action fit in one row. The header names the tab.
 const TAB_LABEL_CLASS = 'max-sm:sr-only';
 
 const SETTINGS_TAB_ITEMS: readonly {
@@ -53,11 +56,19 @@ const SETTINGS_TAB_ITEMS: readonly {
   { tab: 'general', label: 'General', icon: PreferenceHorizontalIcon },
   { tab: 'account', label: 'Account', icon: UserCircleIcon },
   { tab: 'data', label: 'Data', icon: Database01Icon },
+  { tab: 'shortcuts', label: 'Shortcuts', icon: KeyboardIcon },
   { tab: 'feedback', label: 'Feedback', icon: MessageEdit01Icon },
 ];
 
 export function SettingsDialog({ authUser }: SettingsDialogProps) {
-  const { search, close, selectTab, setAuthMode } = useSettingsSearch();
+  const {
+    search,
+    open: openSettings,
+    close,
+    selectTab,
+    setAuthMode,
+  } = useSettingsSearch();
+  useShortcuts({ 'show-shortcuts': () => openSettings('shortcuts') });
   const tabs = visibleSettingsTabs(authUser !== null);
   // A link can still name a hidden tab, so it falls back to General.
   const activeTab =
@@ -114,6 +125,7 @@ export function SettingsDialog({ authUser }: SettingsDialogProps) {
                   />
                 )}
                 {activeTab === 'data' && <SettingsDataTab />}
+                {activeTab === 'shortcuts' && <SettingsShortcutsTab />}
                 {activeTab === 'feedback' && (
                   <SettingsFeedbackTab authUser={authUser} />
                 )}

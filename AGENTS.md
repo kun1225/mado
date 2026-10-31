@@ -30,5 +30,6 @@
 | [`apps/web/src/features/import/import.spec.md`](apps/web/src/features/import/import.spec.md)                     | Import a folder or an unzipped export: ids, skipped files, the folder-to-collection rule              |
 | [`apps/web/src/features/feedback/feedback.spec.md`](apps/web/src/features/feedback/feedback.spec.md)             | The Feedback tab in settings and `POST /api/v1/feedback`: fields, rate limit, why not Google Sheets   |
 | [`apps/web/src/features/landing/landing.spec.md`](apps/web/src/features/landing/landing.spec.md)                 | The landing page at `/`: sections, the intro, word reveal, the real library in a "try it" frame       |
+| [`apps/web/src/features/shortcuts/shortcuts.spec.md`](apps/web/src/features/shortcuts/shortcuts.spec.md)         | Keyboard shortcuts: search, select all, delete, the `?` list, and why Space does not open a card      |
 | [`apps/web/src/features/projects/projects.spec.md`](apps/web/src/features/projects/projects.spec.md)             | (Planned) Brand projects: brief, picked sources, canvases                                             |
 | [`apps/web/src/features/canvas/canvas.spec.md`](apps/web/src/features/canvas/canvas.spec.md)                     | (Planned) The infinite canvas in a project, and the canvas library choice                             |

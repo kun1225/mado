@@ -23,6 +23,11 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - The plus button in the dock opens a panel as wide as the dock, with **Add file**, **Add website** and **Add markdown**. Its top line says where new sources go ("Add to Library" or the collection name). It springs open like the search panel; with reduced motion it only fades. Escape or a click outside closes it.
 - The plus menu has **Add markdown**: a dialog with an optional title and a text box. It saves a text source in the current collection. **Add markdown** is disabled while the text is empty, and over 1 MB it shows the limit. Cmd/Ctrl+Enter saves. If saving fails, the dialog keeps the text.
 
+### Selecting and deleting
+
+- The circle on a card selects it. Shift-clicking another circle selects the range between them. **Cmd/Ctrl+A** selects every source in the grid, and **Esc** clears the selection.
+- **Delete** or **Backspace** deletes the selection, the same as the Delete button: to the trash with an Undo toast, or, in the trash, for good after a question. See `shortcuts.spec.md`.
+
 ### Text sources
 
 - The text lives in the record (`text: { body, format, fileName }`), not in OPFS. Like a website, its `storageKey` and media fields describe its optional **thumbnail**, an image or a video.

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import {
   Cancel01Icon,
   Folder01Icon,
@@ -44,6 +45,7 @@ import {
 } from '#/features/search/search-action';
 import type { SearchResults } from '#/features/search/search-type';
 import { useSettingsSearch } from '#/features/settings/settings-hooks';
+import { useShortcuts } from '#/features/shortcuts/shortcuts-hooks';
 import {
   useAllSources,
   useMediaObjectUrl,
@@ -90,7 +92,7 @@ const NO_MOTION = { duration: 0 };
 // Growing in place does not move the bar across the screen, so it is safe with reduced motion.
 const REDUCED_DOCK_WIDTH = eases.inOut;
 
-export function ActionDockSearch() {
+export function ActionDockSearch({ onReveal }: { onReveal: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const rootRef = useRef<HTMLDivElement>(null);
@@ -114,6 +116,13 @@ export function ActionDockSearch() {
   }
 
   useDismissOnPointerDownOutside(rootRef, isOpen, close);
+
+  useShortcuts({
+    'focus-search': () => {
+      flushSync(onReveal);
+      focusWhenVisible(inputRef.current);
+    },
+  });
 
   // Tabbing away must close the panel too, or its pointerdown listener stays alive.
   function handleBlur(event: React.FocusEvent) {
@@ -212,6 +221,17 @@ function useDismissOnPointerDownOutside(
     document.addEventListener('pointerdown', handlePointerDown);
     return () => document.removeEventListener('pointerdown', handlePointerDown);
   }, [ref, isActive, onDismiss]);
+}
+
+// *** focusWhenVisible ***
+// A hidden element cannot take focus. The dock shows through a CSS transition, so it can still count as hidden in the frame it was revealed.
+function focusWhenVisible(input: HTMLInputElement | null, triesLeft = 5) {
+  if (!input) return;
+
+  input.focus();
+  if (document.activeElement === input || triesLeft === 0) return;
+
+  requestAnimationFrame(() => focusWhenVisible(input, triesLeft - 1));
 }
 
 // *** keepInputFocus ***

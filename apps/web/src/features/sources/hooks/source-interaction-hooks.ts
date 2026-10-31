@@ -90,6 +90,7 @@ export type SourceSelection = {
   isSelectionMode: boolean;
   isSelected: (id: string) => boolean;
   toggle: (id: string, options: ToggleSelectOptions) => void;
+  selectAll: () => void;
   clear: () => void;
 };
 
@@ -118,6 +119,10 @@ export function useSourceSelection(sources: Source[]): SourceSelection {
     setState((current) => applyClick(current, sources, id, options));
   }
 
+  function selectAll() {
+    setState(selectAllSources(sources));
+  }
+
   function clear() {
     setState(EMPTY_SELECTION_STATE);
   }
@@ -127,7 +132,19 @@ export function useSourceSelection(sources: Source[]): SourceSelection {
     isSelectionMode,
     isSelected: (id) => selectedIds.has(id),
     toggle,
+    selectAll,
     clear,
+  };
+}
+
+export function selectAllSources(sources: Source[]): SelectionState {
+  if (sources.length === 0) return EMPTY_SELECTION_STATE;
+
+  // No anchor, so a Shift-click after this starts a new range instead of reusing an old one.
+  return {
+    baseIds: new Set(sources.map(({ id }) => id)),
+    anchorId: null,
+    rangeTargetId: null,
   };
 }
 

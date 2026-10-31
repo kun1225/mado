@@ -29,5 +29,6 @@ This directory is the maintained source for verifying what a user does in the Ma
 - [Add a source](./add-source.md): add images and text files to the library and to a collection through the file input, check the records, the OPFS files and the background compression. Covers delete to the trash.
 - [Collections](./collections.md): create, rename, delete a collection, the sources it keeps and the ones that go to the trash.
 - [Search](./search.md): fuzzy name search, opening a result, recent searches.
+- [Shortcuts](./shortcuts.md): `/` and `Cmd/Ctrl+K` focus search (also when the dock is hidden), `Cmd/Ctrl+A` and Delete on the grid and in the trash, `?` opens Settings → Shortcuts, and the keys stay off in dialogs and text fields.
 - [Settings and theme](./settings-and-theme.md): the dialog, URL params, Light, Dark and System, and the folder sources switch.
 - [Export and import](./export-and-import.md): export the library as a zip and read it, import a plain folder.
