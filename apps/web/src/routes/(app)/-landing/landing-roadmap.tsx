@@ -13,7 +13,7 @@ export function LandingRoadmap() {
         What comes <Accent>next</Accent>.
       </RevealText>
 
-      <ScrollFade className="mt-14" contentClassName="px-edge">
+      <ScrollFade className="mt-8" contentClassName="px-edge">
         <ol className="flex gap-4">
           {LANDING_ROADMAP.map((item, index) => (
             <Reveal
@@ -21,7 +21,7 @@ export function LandingRoadmap() {
               key={item.name}
               delay={index * 80}
               className={cn(
-                'flex h-[min(56svh,460px)] min-h-[320px] w-[min(80vw,400px)] shrink-0 flex-col justify-between rounded-lg p-8',
+                'flex h-[min(56svh,460px)] min-h-80 w-[min(80vw,400px)] shrink-0 flex-col justify-between rounded-lg p-8',
                 item.isLive ? 'bg-fg text-bg' : 'bg-muted',
               )}
             >

@@ -5,11 +5,8 @@ import { MotionConfig } from 'motion/react';
 
 import { LandingFaq } from './-landing/landing-faq';
 import { LandingFeatures } from './-landing/landing-features';
-import {
-  LandingFinal,
-  LandingFooter,
-  LandingNoAccount,
-} from './-landing/landing-final';
+import { LandingFinal, LandingNoAccount } from './-landing/landing-final';
+import { LandingFooter } from './-landing/landing-footer';
 import { LandingHeader, LandingHero } from './-landing/landing-hero';
 import { LANDING_INTRO_SCRIPT } from './-landing/landing-intro';
 import { LandingRoadmap } from './-landing/landing-roadmap';

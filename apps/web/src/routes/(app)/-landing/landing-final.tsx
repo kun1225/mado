@@ -1,8 +1,6 @@
-import { Link } from '@tanstack/react-router';
-
 import { Reveal, RevealText } from '#/components/reveal';
 
-import { Accent, LANDING_H2, Logo, OpenMado, Wordmark } from './landing-ui';
+import { Accent, LANDING_H2, Logo, OpenMado } from './landing-ui';
 
 export function LandingNoAccount() {
   return (
@@ -12,10 +10,10 @@ export function LandingNoAccount() {
         <br />
         <Accent>Just start.</Accent>
       </RevealText>
-      <RevealText delay={200} className="mt-6 t-b-1 text-muted-fg">
+      <RevealText delay={200} className="mt-4 t-b-1 text-muted-fg">
         Open Mado and drop in your first save. It takes a second.
       </RevealText>
-      <Reveal delay={400} className="mt-10">
+      <Reveal delay={400} className="mt-8">
         <OpenMado />
       </Reveal>
     </section>
@@ -29,37 +27,15 @@ export function LandingFinal() {
         <Logo className="size-10" />
         <span className="t-h-4 font-accent">Mado</span>
       </Reveal>
-      <RevealText as="h2" delay={100} className={`mt-10 ${LANDING_H2}`}>
+      <RevealText as="h2" delay={100} className={`mt-8 ${LANDING_H2}`}>
         Start your library <Accent>today</Accent>.
       </RevealText>
-      <RevealText delay={300} className="mt-5 t-b-1 text-muted-fg">
+      <RevealText delay={300} className="mt-4 t-b-1 text-muted-fg">
         Free. No account. Your files stay with you.
       </RevealText>
-      <Reveal delay={500} className="mt-10">
+      <Reveal delay={500} className="mt-8">
         <OpenMado />
       </Reveal>
     </section>
-  );
-}
-
-export function LandingFooter() {
-  return (
-    <footer className="border-t border-border px-edge pt-10 pb-16">
-      <div className="flex flex-wrap items-center justify-between gap-6 t-b-3">
-        <Wordmark />
-        <nav className="flex gap-6 text-muted-fg">
-          <Link to="/library" className="hover:text-fg">
-            Library
-          </Link>
-          <a href="#roadmap" className="hover:text-fg">
-            Roadmap
-          </a>
-          <a href="#faq" className="hover:text-fg">
-            FAQ
-          </a>
-        </nav>
-        <span className="text-muted-fg">© 2026 Mado. Made for designers.</span>
-      </div>
-    </footer>
   );
 }

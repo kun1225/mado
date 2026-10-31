@@ -16,17 +16,19 @@ One column of sections with `px-edge` side padding. All copy and card data live 
 2. **Pain point, then features**, on one sticky stage (four and a half screens).
    - **Pain point.** One big line, "Saving ideas is easy. _Finding_ them again isn't.", reveals word by word as you scroll: each word fades in, rises 12px and sharpens from a 6px blur. The word ranges overlap, finish before the crossfade, and reverse when scrolling back. The sentence holds in the middle, with its serif accent and normal word wrapping preserved. Reduced motion keeps the word fades without blur or movement.
    - **Crossfade.** At 150svh of section scroll progress, a fixed 400ms fade switches from the pain line to the features, with a 24px upward move. The fade finishes even if scrolling stops and reverses when scrolling back below the threshold. Reduced motion keeps only the fade. Hidden features cannot receive focus or clicks. The first demo starts at the threshold; step progress still starts at 230svh.
-   - **Features.** The title across the top (half the width on desktop). Under it, three numbered steps (number, title, line) on the left and a demo for the active step on the right, as tall as the steps. Each third of the remaining scroll makes the next step active and fills a line under it. Only the active step shows its line; it opens and fades in as the step turns active. Demos: four kinds of saves drop in (image, video, website, note); four cards fly into two collections and their counts go up; a zip goes out of a computer and back in. A demo replays each time its step turns active. Phones put the demo on top.
+   - **Features.** On the left, the title and under it three numbered steps (number, title, line). On the right, a tall demo for the active step (`min(76svh, 720px)`). Each third of the remaining scroll makes the next step active and fills a line under it. Only the active step shows its line; it opens and fades in as the step turns active. Clicking a step's title scrolls to late in that step, so its demo shows finished.
+   - **Demos follow the scroll.** Each demo moves with its step's own progress, so it plays back when you scroll back: four kinds of saves drop in (image, video, website, note); four cards fly into two collections and their counts go up as each lands; a zip goes out of a computer and back in. Each item owns a slice of the step (`demoSlice`), and the last slice ends early so the finished demo holds.
+   - **Depth.** The demo panel tilts up to 6° toward the mouse and a soft light follows it. Cards, folders and the computer lift on hover. Mouse only, and off with reduced motion. Phones put the demo on top and scale the sort and computer demos down.
 3. **Find anything.** The stage pins for two screens of scroll. The scroll types three queries into a search box, by name, by collection, and by description (marked "Soon"): each query owns a third, typed in its first half and held in the second. Three bars under the box fill with the scroll. Cards that don't match dim. On wide screens the demo's width follows the screen height, so the stage fits.
 4. **No account.** "No sign-up. No login. _Just start._" and "Open Mado".
 5. **FAQ.** A `MorphAccordion` from `@repo/ui`: one card that splits around the open question, one open at a time. The closed questions shrink a little, dim and blur, so the open one comes forward. Questions: free, where files live, more than one device, what you can save, clearing browser data, accounts.
 6. **Roadmap.** Cards you scroll sideways. The edges fade only where there is more to see (`ScrollFade`).
 7. **Call to action.** The logo with "Mado" beside it, like the header, then "Start your library _today_.", and "Open Mado".
-8. **Footer.** Wordmark, links to the library, roadmap and FAQ, and a copyright line.
+8. **Footer** (two screens tall, the stage sticks). It closes the intro's window. A full-screen cluster of sources shrinks into a rounded window (up to 280px wide, 144px tall, 16px corners) while "Ma" and "do" slide in from the sides and meet around it. Then the links (Library and the four header links) and the copyright line fade in. The links show at once when they get keyboard focus. Reduced motion shows the finished footer on one screen.
 
 ### Off screen
 
-- The hero, features and search sections each watch themselves with one observer. Off screen, their videos and CSS loops pause, and the looping local demo unmounts.
+- The hero, features and search sections each watch themselves with one observer. Off screen, their videos and CSS loops pause, and the feature demo unmounts.
 
 ### Intro
 
@@ -71,6 +73,10 @@ One column of sections with `px-edge` side padding. All copy and card data live 
 - **2026-10 — The intro cluster and the floats are one motion value (`spread`).** The tiles are the same elements in the cluster, the floats and the grid, so nothing is handed off. `introClusterFloat` and `mixFloat` give the start pose that `tilePose` already moves into the grid.
 
 - **2026-10 — Cluster chosen from `/proto/intro`.** Sources overlap in a compact, irregular collage before spreading to the existing hero positions. The opening is 144px tall with 16px corners, replacing the 64px pill so more of the collage shows. It holds briefly before spreading. Rejected: the straight row felt boring; Fan was wide, Stack hid too much, and Ribbon still felt like a horizontal strip. The hero float positions stay the same.
+- **2026-10 — Feature demos: Scrubbed with Depth, chosen from `/proto/features`.** The demo was as tall as the steps and looked squat, so the title moved above the steps and the demo takes the stage's height. Demos follow the scroll, like the search demo, and the panel tilts under the mouse.
+  - Rejected: Hands-on (drag, click to file, export button) asked readers to stop and click, and most scroll past. Depth alone kept timer demos that run ahead of the reader. The old timer demos replayed from the start on every step change.
+
+- **2026-10 — Footer chosen from `/proto/footer`: the window closes.** It mirrors the intro, so the page ends where it began, and "Mado" means window. Rejected: the desk drawer (dragging inside the tray blocks scrolling on phones, and it is a gimmick), "your library has zero" with a device label (text only, and a second call to action right after the final one), link folders built from `CollectionPocket` (five links is too few for three folders), and a big wordmark filled with drifting sources (a common footer, and light sources fade into the page). The footer's cluster is its own list in `landing-footer.tsx`, not the intro's `introClusterFloat`, because it is a still collage and not a hand-off between poses.
 
 ## Known gaps
 

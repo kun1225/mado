@@ -459,7 +459,7 @@ function HeroTile({
               animationDelay: `${index * -0.7}s`,
             } as unknown as CSSProperties
           }
-          className="size-full animate-bob in-data-offscreen:[animation-play-state:paused] motion-reduce:animate-none"
+          className="size-full animate-bob in-data-offscreen:paused motion-reduce:animate-none"
         >
           {/* Eager: every tile floats on the first screen, even if its grid slot is below it. */}
           <TileMedia tile={tile} loading="eager" className="shadow-sm" />

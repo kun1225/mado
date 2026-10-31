@@ -18,7 +18,7 @@ export function LandingFaq() {
           Good <Accent>questions</Accent>.
         </RevealText>
 
-        <Reveal className="mt-12">
+        <Reveal className="mt-8">
           <MorphAccordion depth>
             {LANDING_FAQ.map((item) => (
               <MorphAccordionItem key={item.question}>
