@@ -6,7 +6,11 @@ import type { Collection } from '#/features/collections/collection-types';
 import type { Source } from '#/features/sources/source-types';
 import { getStorageAccount } from '#/features/storage/storage-account';
 
-import type { SearchIndex, SearchResults } from './search-type';
+import type {
+  SearchIndex,
+  SearchResults,
+  SearchSourceText,
+} from './search-type';
 
 const MAX_COLLECTIONS = 5;
 const MAX_SOURCES = 6;
@@ -17,13 +21,6 @@ const FUSE_OPTIONS: Omit<IFuseOptions<unknown>, 'keys'> = {
   // Lets a typo or two through without matching unrelated names.
   threshold: 0.35,
   // Save names are long titles, and the matching word often sits near the end.
-  ignoreLocation: true,
-};
-
-// Notes and URLs are long, so a fuzzy match would find "cat" in "hat" and "mat". They match exactly.
-const SOURCE_TEXT_OPTIONS: IFuseOptions<Source> = {
-  keys: ['note', 'url'],
-  threshold: 0,
   ignoreLocation: true,
 };
 
@@ -40,7 +37,7 @@ export function createSearchIndex(
   return {
     collections: new Fuse(collections, { ...FUSE_OPTIONS, keys: ['name'] }),
     sources: new Fuse(sources, { ...FUSE_OPTIONS, keys: ['name'] }),
-    sourceTexts: new Fuse(sources, SOURCE_TEXT_OPTIONS),
+    sourceTexts: sources.map(toSourceText),
   };
 }
 
@@ -64,11 +61,31 @@ export function searchLibrary(
 // Name matches come first, so a note that only mentions the word never outranks a save named after it.
 function searchSources(index: SearchIndex, term: string): Source[] {
   const byName = index.sources.search(term, { limit: MAX_SOURCES });
-  const byText = index.sourceTexts.search(term, { limit: MAX_SOURCES });
-  const matches = [...byName, ...byText].map(({ item }) => item);
+  const byText = searchSourceTexts(index.sourceTexts, term);
+  const matches = [...byName.map(({ item }) => item), ...byText];
   const uniqueById = new Map(matches.map((source) => [source.id, source]));
 
   return [...uniqueById.values()].slice(0, MAX_SOURCES);
+}
+
+// *** searchSourceTexts ***
+// Fuse splits a query longer than 32 characters into pieces and accepts one matching piece, so a pasted URL could match unrelated notes. A plain substring check cannot.
+function searchSourceTexts(texts: SearchSourceText[], term: string): Source[] {
+  const needle = term.toLowerCase();
+
+  return texts
+    .filter(({ text }) => text.includes(needle))
+    .slice(0, MAX_SOURCES)
+    .map(({ source }) => source);
+}
+
+// *** toSourceText ***
+// A line break between the two, so a query can never run from the end of a note into the URL.
+function toSourceText(source: Source): SearchSourceText {
+  return {
+    source,
+    text: `${source.note ?? ''}\n${source.url ?? ''}`.toLowerCase(),
+  };
 }
 
 // Storage can be blocked (private mode, site data off); search still works without it.

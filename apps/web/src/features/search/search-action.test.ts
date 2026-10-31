@@ -145,6 +145,32 @@ describe('searchLibrary', () => {
     expect(ids(search('CERAMICS').sources)).toEqual(['s4']);
   });
 
+  it('needs the whole of a long query to be in the note', () => {
+    const query = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    const sources = [
+      buildSource('partial', 'Shot A', {
+        note: 'abcdefghijklmnopqrstuvwxyz012345 totally different',
+      }),
+      buildSource('whole', 'Shot B', { note: `see ${query} here` }),
+    ];
+
+    const results = searchLibrary(createSearchIndex([], sources), query);
+
+    expect(ids(results.sources)).toEqual(['whole']);
+  });
+
+  it('finds a save by a whole pasted URL', () => {
+    const url = 'https://www.pinterest.com/pin/1234567890/?utm_source=share';
+    const sources = [
+      buildSource('a', 'Shot A', { url }),
+      buildSource('b', 'Shot B', { url: 'https://www.pinterest.com/pin/99/' }),
+    ];
+
+    const results = searchLibrary(createSearchIndex([], sources), url);
+
+    expect(ids(results.sources)).toEqual(['a']);
+  });
+
   it('lists each save once when the name and the note both match', () => {
     const sources = [
       buildSource('both', 'Pinterest board', { note: 'pinterest ideas' }),

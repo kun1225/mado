@@ -21,7 +21,7 @@ Find a collection, folder or source by its name, fast and on the device.
 
 - **2026-10 — Search runs on the client, on data already loaded.** The library lives in the browser, so there's no server to ask.
 - **2026-10 — The index is built once per data change** (`createSearchIndex`). Searching is the cheap part.
-- **2026-10 — Names match loosely, notes and URLs match exactly.** A note can be 2,000 characters, and a loose match on that much text finds "cat" in "hat" and "mat", so every short query would match half the library. A second index (`sourceTexts`, `threshold: 0`) reads notes and URLs, and its results come after the name matches.
+- **2026-10 — Names match loosely, notes and URLs match exactly.** A note can be 2,000 characters, and a loose match on that much text finds "cat" in "hat" and "mat", so every short query would match half the library. Notes and URLs are checked with a plain lower-case substring test (`sourceTexts`), and their results come after the name matches. Fuse is not used for them, because it splits a query longer than 32 characters into pieces and accepts one matching piece, so a pasted URL could match unrelated notes.
 - **2026-10 — `threshold: 0.35` and `ignoreLocation: true`.** Names are long titles, and the matching word is often near the end.
 - **2026-10 — Recent searches are in `localStorage`.** If storage is blocked (private mode), search still works and the list is just empty. Bad stored data is read as an empty list.
 - **2026-10 — The server renders an empty recent list**, and the client fills it in after hydration. This avoids a hydration mismatch.

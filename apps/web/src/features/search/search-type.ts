@@ -6,8 +6,14 @@ import type { Source } from '#/features/sources/source-types';
 export type SearchIndex = {
   collections: Fuse<Collection>;
   sources: Fuse<Source>;
-  /** Its own index, because names match loosely and these must match exactly. */
-  sourceTexts: Fuse<Source>;
+  /** A plain list, because names match loosely and these must match exactly. */
+  sourceTexts: SearchSourceText[];
+};
+
+export type SearchSourceText = {
+  source: Source;
+  /** The note and the URL in lower case, ready to be searched. */
+  text: string;
 };
 
 export type SearchResults = {
