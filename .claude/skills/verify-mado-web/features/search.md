@@ -9,6 +9,7 @@ A user finds a collection or a source by its name from the search bar in the doc
 - `search-typo` a close misspelling still matches.
 - `search-empty` a query with no match says so.
 - `search-recent` a search is kept under `mado:recent-searches`, newest first, with no duplicates by case.
+- `search-note-url` a source also matches a word in its note or URL, exactly as typed. A typo in a note matches nothing.
 
 ## How to get to it (user POV)
 
@@ -32,4 +33,5 @@ Preconditions: the baseline in `README.md`, plus a collection named `Moodboard` 
 - Search shows at most 5 collections and 6 sources, and an empty query shows nothing.
 - Fuzzy matching is loose: `verifyred` matched every `verify-*` source. Assert that the expected option is present, not that it is the only one.
 - Results are built from the data already loaded. Add files and wait for the card before searching for them.
-- Search only reads names, not notes or links.
+- Collections match by name only. Sources match by name, note and URL. To test a note or URL, add them in the detail dialog (the `URL` textbox, then `+ Add a note`, then Enter to save), close it, and search a word that is only there. Search `ceramcs` for a note that says `ceramics`: no match, because notes are exact.
+- Open the search bar with `/`; see `shortcuts.md`.

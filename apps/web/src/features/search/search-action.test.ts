@@ -27,7 +27,11 @@ function buildCollection(
   };
 }
 
-function buildSource(id: string, name: string): Source {
+function buildSource(
+  id: string,
+  name: string,
+  extra: Partial<Source> = {},
+): Source {
   return {
     id,
     name,
@@ -46,6 +50,7 @@ function buildSource(id: string, name: string): Source {
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
     deletedAt: null,
+    ...extra,
   };
 }
 
@@ -62,6 +67,12 @@ const SOURCES = [
   ),
   buildSource('s2', 'Coffee bag mockup'),
   buildSource('s3', 'Brutalist type specimen'),
+  buildSource('s4', 'Shot 04', {
+    note: 'Warm earthy palette for the ceramics client',
+  }),
+  buildSource('s5', 'Shot 05', {
+    url: 'https://www.pinterest.com/pin/1234567890/',
+  }),
 ];
 
 function search(query: string) {
@@ -95,6 +106,57 @@ describe('searchLibrary', () => {
 
   it('puts the closest match first', () => {
     expect(ids(search('coffee bag').sources)[0]).toBe('s2');
+  });
+
+  it('finds a save by its note', () => {
+    expect(ids(search('ceramics').sources)).toEqual(['s4']);
+  });
+
+  it('finds a save by its URL', () => {
+    expect(ids(search('pinterest').sources)).toEqual(['s5']);
+  });
+
+  it('ranks a name match above a note match', () => {
+    const sources = [
+      buildSource('note', 'Shot', { note: 'a pinterest board' }),
+      buildSource('name', 'Pinterest board'),
+    ];
+
+    const results = searchLibrary(createSearchIndex([], sources), 'pinterest');
+
+    expect(ids(results.sources)).toEqual(['name', 'note']);
+  });
+
+  it('ignores a note that is not close', () => {
+    expect(search('zebra').sources).toEqual([]);
+  });
+
+  it('does not forgive typos inside notes', () => {
+    const sources = [
+      buildSource('note', 'Shot', { note: 'The hat is on the mat' }),
+    ];
+
+    expect(
+      searchLibrary(createSearchIndex([], sources), 'cat').sources,
+    ).toEqual([]);
+  });
+
+  it('matches a note regardless of case', () => {
+    expect(ids(search('CERAMICS').sources)).toEqual(['s4']);
+  });
+
+  it('lists each save once when the name and the note both match', () => {
+    const sources = [
+      buildSource('both', 'Pinterest board', { note: 'pinterest ideas' }),
+    ];
+
+    const results = searchLibrary(createSearchIndex([], sources), 'pinterest');
+
+    expect(ids(results.sources)).toEqual(['both']);
+  });
+
+  it('does not search the notes of collections', () => {
+    expect(search('ceramics').collections).toEqual([]);
   });
 
   it('ignores names that are not close', () => {

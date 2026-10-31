@@ -13,11 +13,17 @@ const MAX_SOURCES = 6;
 const MAX_RECENT = 5;
 const RECENT_STORAGE_KEY = 'mado:recent-searches';
 
-const FUSE_OPTIONS: IFuseOptions<{ name: string }> = {
-  keys: ['name'],
+const FUSE_OPTIONS: Omit<IFuseOptions<unknown>, 'keys'> = {
   // Lets a typo or two through without matching unrelated names.
   threshold: 0.35,
   // Save names are long titles, and the matching word often sits near the end.
+  ignoreLocation: true,
+};
+
+// Notes and URLs are long, so a fuzzy match would find "cat" in "hat" and "mat". They match exactly.
+const SOURCE_TEXT_OPTIONS: IFuseOptions<Source> = {
+  keys: ['note', 'url'],
+  threshold: 0,
   ignoreLocation: true,
 };
 
@@ -32,8 +38,9 @@ export function createSearchIndex(
   sources: Source[],
 ): SearchIndex {
   return {
-    collections: new Fuse(collections, FUSE_OPTIONS),
-    sources: new Fuse(sources, FUSE_OPTIONS),
+    collections: new Fuse(collections, { ...FUSE_OPTIONS, keys: ['name'] }),
+    sources: new Fuse(sources, { ...FUSE_OPTIONS, keys: ['name'] }),
+    sourceTexts: new Fuse(sources, SOURCE_TEXT_OPTIONS),
   };
 }
 
@@ -49,10 +56,19 @@ export function searchLibrary(
     collections: index.collections
       .search(term, { limit: MAX_COLLECTIONS })
       .map(({ item }) => item),
-    sources: index.sources
-      .search(term, { limit: MAX_SOURCES })
-      .map(({ item }) => item),
+    sources: searchSources(index, term),
   };
+}
+
+// *** searchSources ***
+// Name matches come first, so a note that only mentions the word never outranks a save named after it.
+function searchSources(index: SearchIndex, term: string): Source[] {
+  const byName = index.sources.search(term, { limit: MAX_SOURCES });
+  const byText = index.sourceTexts.search(term, { limit: MAX_SOURCES });
+  const matches = [...byName, ...byText].map(({ item }) => item);
+  const uniqueById = new Map(matches.map((source) => [source.id, source]));
+
+  return [...uniqueById.values()].slice(0, MAX_SOURCES);
 }
 
 // Storage can be blocked (private mode, site data off); search still works without it.
