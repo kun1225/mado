@@ -133,7 +133,6 @@ function playIntro(hero: HTMLElement, spread: MotionValue<number>) {
     );
     if (isStopped()) return;
 
-    // Clip-path fills the screen; Mado words exit
     await run(
       animate(
         band,
@@ -150,12 +149,7 @@ function playIntro(hero: HTMLElement, spread: MotionValue<number>) {
         { x: width / 2, opacity: 0 },
         { duration: 0.8, ease: EASE_IN_OUT, delay: 0.35 },
       ),
-    );
-    if (isStopped()) return;
-
-    // Sources spread into the hero
-    await run(
-      animate(spread, 1, { duration: 1.1, ease: EASE_IN_OUT, delay: 0.2 }),
+      animate(spread, 1, { duration: 1.1, ease: EASE_IN_OUT, delay: 0.35 }),
     );
     if (isStopped()) return;
 

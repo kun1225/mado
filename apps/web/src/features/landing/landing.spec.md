@@ -32,7 +32,7 @@ One column of sections with `px-edge` side padding. All copy and card data live 
 
 ### Intro
 
-- First visit in a tab session: "Mado" appears in the middle of an empty screen. It splits into "Ma" and "do", and a rounded rectangular window (up to 280px wide, 144px tall, 16px corners) opens between them onto an overlapping cluster of sources. The window grows to the full screen, the clustered sources spread to their existing float points, then the hero text and header come in. The title's veil stays off until then, so it doesn't wash out the cluster.
+- First visit in a tab session: "Mado" appears in the middle of an empty screen. It splits into "Ma" and "do", and a rounded rectangular window (up to 600px wide, 480px tall, 16px corners) opens between them onto an overlapping cluster of sources. After a brief pause, the wordmark fades out, the window grows to the full screen, and the clustered sources spread to their existing float points together. Then the hero text and header come in. The title's veil stays off until then, so it doesn't wash out the cluster.
 - Plays once per session (`sessionStorage`). Never plays with reduced motion or blocked storage.
 - While it plays, the page starts at the top and cannot scroll. The page keeps room for the scrollbar the whole time (`scrollbar-gutter: stable`), so it doesn't jump sideways when scrolling comes back.
 - A small inline script sets the first frame before paint, so the end state never flashes.
