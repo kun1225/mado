@@ -41,18 +41,24 @@ Each phase ships alone. Mado is a side project, so phases are small.
 
 The web app is the first client. More clients come after the backend, in this order. Each one saves into the same cloud library through the same `/api/v1`.
 
-| Order | Client            | What it does                                                                                   | Needs                              |
-| ----- | ----------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------- |
-| 1     | Backend (phase 3) | Accounts, one API for every client, media upload                                               | —                                  |
-| 2     | Chrome extension  | Save the page, or an image or video you right-click, into your library without leaving the tab | Phase 3                            |
-| 3     | iOS app           | A share sheet action "Save to Mado", then browse the library                                   | Phase 3, and the extension is used |
-| 4     | macOS app         | Same as iOS, only if people ask for it                                                         | The iOS app                        |
+| Order | Client            | What it does                                                                                   | Needs   |
+| ----- | ----------------- | ---------------------------------------------------------------------------------------------- | ------- |
+| 1     | Backend (phase 3) | Accounts, one API for every client, media upload                                               | —       |
+| 2     | Chrome extension  | Save the page, or an image or video you right-click, into your library without leaving the tab | Phase 3 |
+| 3     | iOS and macOS     | A share sheet action "Save to Mado", then browse the library. One SwiftUI project for both     | Phase 3 |
 
 Why the backend is first: the library lives in the browser today (IndexedDB and OPFS). No other client can reach it, so every client needs the cloud base.
 
 Why the extension is second: designers collect on a desktop browser, so it is where most saving happens. It is a small web project, and it reuses the web app's code and the API. Collecting is the step of the product that is most often repeated.
 
-Why the native apps are last: a native app is a new codebase, a new release process (App Store review) and a new place to keep bugs. It earns its place only for saving from a phone. Decide after the extension ships, by looking at how people use it.
+Why the native apps are last: they are a new codebase with a new release process (App Store review) and a new place to keep bugs. They come after the backend and the extension have proven that the library works across devices. iOS and macOS are one step because they can share one SwiftUI project.
+
+### In parallel: canvas and AI
+
+These run beside the clients, not after them.
+
+- **Canvas (phase 2):** needs no cloud, so it can be built now while the backend is built. First pick the canvas library (see "Open questions" and `canvas.spec.md`).
+- **AI (phases 4–5):** it needs images on a server, so it ships after the backend. Until then, research only: pick providers, test prompts on real sources, and estimate the cost per use. Throwaway scripts are fine; nothing ships before phase 3.
 
 ## Launch (target: a few weeks from 2026-10)
 
@@ -100,7 +106,8 @@ Each type gets its own card and detail view, the same facets and tags as other s
 - **2026-10 — Video compression stays in the browser.** It already runs there with `mediabunny`. It's free for us, keeps the free version local, and makes phase 3 uploads smaller. Compressing on a server needs `ffmpeg`, which Workers can't run.
 - **2026-10 — Host the web app and the API on Cloudflare Workers (proposed).** One platform with R2, cheap for a side project. Postgres stays on a hosted service (Neon) and is reached through Hyperdrive. Confirm after the spike in [`plans/cloudflare-deploy-plan.md`](plans/cloudflare-deploy-plan.md).
 
-- **2026-10 — Client order: backend, Chrome extension, then iOS and macOS.** All clients use `/api/v1`, so the backend must come first. A native app is not decided yet; see "Clients".
+- **2026-10 — Client order: backend, Chrome extension, then iOS and macOS.** All clients use `/api/v1`, so the backend must come first. Canvas and AI research run in parallel; see "Clients".
+- **2026-10 — Work happens on `main` directly.** Mado has one developer, so branches add steps without adding review.
 - **2026-10 — More file types, text first.** `.txt` and `.md` come first, then font, PDF and voice. See "More file types" above.
 - **2026-10 — Text sources live in IndexedDB, not OPFS.** The record keeps the text, so search can read it, and the one OPFS file is the optional thumbnail. In the cloud, the text goes into Postgres and the thumbnail into R2. See `sources.spec.md`.
 
