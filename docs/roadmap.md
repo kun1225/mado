@@ -30,35 +30,43 @@ Each phase ships alone. Mado is a side project, so phases are small.
 | 0     | Launch + Now/Next      | Mado branding and landing page (launch), copy an image to paste in Figma, drop a folder to import, a more fun embed loading state         | No                        | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md)                                                                        |
 | 1     | Facets                 | Tag sources by Emotion, Style, Color, Type and Industry, plus free tags. A color palette taken from images on the device. Filter by facet | No                        | [`sources.spec.md`](../apps/web/src/features/sources/sources.spec.md)                                                                        |
 | 2     | Brand project + canvas | A project per client brand with a brief, picked sources and many canvases. A canvas with sources, text, frames, groups, and copy to Figma | No                        | [`projects.spec.md`](../apps/web/src/features/projects/projects.spec.md), [`canvas.spec.md`](../apps/web/src/features/canvas/canvas.spec.md) |
-| 3     | Cloud base             | Accounts for AI, media upload, one-way backup, AI credits                                                                                 | **Yes**, unlocks the rest | —                                                                                                                                            |
+| 3     | Cloud base             | Accounts, media upload, two-way sync of one person's library across devices, AI credits                                                   | **Yes**, unlocks the rest | —                                                                                                                                            |
 | 4     | AI understanding       | Fill facets with AI, related sources, search by feeling ("calm, warm, handmade"), pull out palette, type style and keywords               | Yes                       | —                                                                                                                                            |
 | 5     | AI synthesis           | 2–3 brand directions placed on the canvas, and a strategy doc (positioning, personality, tone, do/don't). Both show their sources         | Yes, paid                 | —                                                                                                                                            |
 | 6     | Present and share      | Present mode (frames become slides), a share link that works without an account, comments and votes on frames, client picks a direction   | Yes, paid                 | —                                                                                                                                            |
 | 7     | AI images              | Mood images to fill gaps, mockups, logo sketches                                                                                          | Yes, paid                 | —                                                                                                                                            |
-| Later | Teams                  | Two-way sync, permissions, collaboration, brand guideline export, Figma export                                                            | Yes                       | —                                                                                                                                            |
+| Later | Teams                  | Shared libraries, permissions, collaboration, brand guideline export, Figma export                                                        | Yes                       | —                                                                                                                                            |
 
-## Clients
+## Build order
 
-The web app is the first client. More clients come after the backend, in this order. Each one saves into the same cloud library through the same `/api/v1`.
+Five things come next, in this order. After step 1, everything saves into the same cloud library through the same `/api/v1`.
 
-| Order | Client            | What it does                                                                                   | Needs   |
-| ----- | ----------------- | ---------------------------------------------------------------------------------------------- | ------- |
-| 1     | Backend (phase 3) | Accounts, one API for every client, media upload                                               | —       |
-| 2     | Chrome extension  | Save the page, or an image or video you right-click, into your library without leaving the tab | Phase 3 |
-| 3     | iOS and macOS     | A share sheet action "Save to Mado", then browse the library. One SwiftUI project for both     | Phase 3 |
+| Order | What               | What it does                                                                                   | Needs |
+| ----- | ------------------ | ---------------------------------------------------------------------------------------------- | ----- |
+| 1     | Sync (phase 3)     | Accounts, media upload, and the same library on every device of one person                     | —     |
+| 2     | macOS and iOS apps | Browse the library, and a share sheet action "Save to Mado". One SwiftUI project for both      | Sync  |
+| 3     | Browser extension  | Save the page, or an image or video you right-click, into your library without leaving the tab | Sync  |
+| 4     | Canvas (phase 2)   | Brand projects and the canvas. Local first; sync carries them to other devices later           | —     |
+| 5     | AI (phases 4–5)    | Understand sources, then brand directions and a strategy doc                                   | Sync  |
 
-Why the backend is first: the library lives in the browser today (IndexedDB and OPFS). No other client can reach it, so every client needs the cloud base.
+Why sync is first: the library lives in the browser today (IndexedDB and OPFS). No other client can reach it, so every client needs the cloud base. The sync is two-way, because the web app, iOS and macOS must show the same library, and a one-way backup is not enough. Design the records so new kinds (facets, projects, canvases) can sync later without a rewrite.
 
-Why the extension is second: designers collect on a desktop browser, so it is where most saving happens. It is a small web project, and it reuses the web app's code and the API. Collecting is the step of the product that is most often repeated.
+Why the apps come before the extension: the owner chose this order on 2026-10-31. The extension is a small web project, so it can move up if the native work takes longer than planned.
 
-Why the native apps are last: they are a new codebase with a new release process (App Store review) and a new place to keep bugs. They come after the backend and the extension have proven that the library works across devices. iOS and macOS are one step because they can share one SwiftUI project.
+Why AI is last: it needs images on a server, so it needs the media upload from sync.
 
 ### In parallel: canvas and AI
 
-These run beside the clients, not after them.
+These can run beside steps 1–3.
 
-- **Canvas (phase 2):** needs no cloud, so it can be built now while the backend is built. First pick the canvas library (see "Open questions" and `canvas.spec.md`).
-- **AI (phases 4–5):** it needs images on a server, so it ships after the backend. Until then, research only: pick providers, test prompts on real sources, and estimate the cost per use. Throwaway scripts are fine; nothing ships before phase 3.
+- **Canvas:** needs no cloud, so it can be built any time. First pick the canvas library (see "Open questions" and `canvas.spec.md`).
+- **AI:** research only until sync ships. Pick providers, test prompts on real sources, and estimate the cost per use. Throwaway scripts are fine; nothing ships before phase 3.
+
+## Small features
+
+Small things that make the app nicer to use. Each one ships alone, any time.
+
+- **Keyboard shortcuts.** Today the app has only a few: `Esc` clears the selection and closes the add panel, the arrow keys move through the detail dialog, `e` edits a text source, `Cmd/Ctrl+Enter` sends a form, and paste adds a source. A shortcut for search, selecting all, and deleting is missing. The full list goes in a spec when this is picked up.
 
 ## Launch (target: a few weeks from 2026-10)
 
@@ -106,7 +114,7 @@ Each type gets its own card and detail view, the same facets and tags as other s
 - **2026-10 — Video compression stays in the browser.** It already runs there with `mediabunny`. It's free for us, keeps the free version local, and makes phase 3 uploads smaller. Compressing on a server needs `ffmpeg`, which Workers can't run.
 - **2026-10 — Host the web app and the API on Cloudflare Workers (proposed).** One platform with R2, cheap for a side project. Postgres stays on a hosted service (Neon) and is reached through Hyperdrive. Confirm after the spike in [`plans/cloudflare-deploy-plan.md`](plans/cloudflare-deploy-plan.md).
 
-- **2026-10 — Client order: backend, Chrome extension, then iOS and macOS.** All clients use `/api/v1`, so the backend must come first. Canvas and AI research run in parallel; see "Clients".
+- **2026-10 — Build order: sync, macOS and iOS apps, browser extension, canvas, AI.** All clients use `/api/v1`, so sync comes first, and it is two-way so every device shows the same library. Canvas and AI research run in parallel; see "Build order". This replaces the earlier order (backend, Chrome extension, then iOS and macOS).
 - **2026-10 — Work happens on `main` directly.** Mado has one developer, so branches add steps without adding review.
 - **2026-10 — More file types, text first.** `.txt` and `.md` come first, then font, PDF and voice. See "More file types" above.
 - **2026-10 — Text sources live in IndexedDB, not OPFS.** The record keeps the text, so search can read it, and the one OPFS file is the optional thumbnail. In the cloud, the text goes into Postgres and the thumbnail into R2. See `sources.spec.md`.
@@ -117,5 +125,7 @@ Each type gets its own card and detail view, the same facets and tags as other s
 - AI providers: Claude for vision, tagging and writing. AI images (phase 7) need a second provider.
 - Can people without an account comment on a shared link, or only view it?
 - How the paid plan counts AI use (credits per action, or a monthly limit).
-- Is saving from the Chrome extension free? It needs an account and cloud storage, which breaks "Free is local, paid is cloud".
+- Is saving from the browser extension free? It needs an account and cloud storage, which breaks "Free is local, paid is cloud".
+- Sync rule when two devices change the same record: last write wins per record, or something better? Deletes (the trash) and moving a file between collections need an answer too.
+- Guest data: a guest library should move into the account on sign-up. It is a known gap in `auth.spec.md`, and sync makes it a must.
 - Native apps: SwiftUI for iOS and macOS together, or only an iOS share extension. Sign in with Apple is required if Google sign-in is offered.
