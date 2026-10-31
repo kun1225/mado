@@ -49,9 +49,9 @@ Five things come next, in this order. After step 1, everything saves into the sa
 | 4     | Canvas (phase 2)   | Brand projects and the canvas. Local first; sync carries them to other devices later           | —     |
 | 5     | AI (phases 4–5)    | Understand sources, then brand directions and a strategy doc                                   | Sync  |
 
-Why sync is first: the library lives in the browser today (IndexedDB and OPFS). No other client can reach it, so every client needs the cloud base. The sync is two-way, because the web app, iOS and macOS must show the same library, and a one-way backup is not enough. Design the records so new kinds (facets, projects, canvases) can sync later without a rewrite.
+Why sync is first: the library lives in the browser today (IndexedDB and OPFS). No other client can reach it, so every client needs the cloud base. The sync is two-way, because the web app, iOS and macOS must show the same library, and a one-way backup is not enough. Changes travel both ways, but the server database is the source of truth, so the server's copy wins when two devices disagree. That means no merge logic to write. Design the records so new kinds (facets, projects, canvases) can sync later without a rewrite.
 
-Why the apps come before the extension: the owner chose this order on 2026-10-31. The extension is a small web project, so it can move up if the native work takes longer than planned.
+Why the apps come before the extension: the owner plans to build the AI features mainly on macOS, so the macOS app is where AI lives first. The extension is a small web project, so it can move up if the native work takes longer than planned.
 
 Why AI is last: it needs images on a server, so it needs the media upload from sync.
 
@@ -114,6 +114,7 @@ Each type gets its own card and detail view, the same facets and tags as other s
 - **2026-10 — Video compression stays in the browser.** It already runs there with `mediabunny`. It's free for us, keeps the free version local, and makes phase 3 uploads smaller. Compressing on a server needs `ffmpeg`, which Workers can't run.
 - **2026-10 — Host the web app and the API on Cloudflare Workers (proposed).** One platform with R2, cheap for a side project. Postgres stays on a hosted service (Neon) and is reached through Hyperdrive. Confirm after the spike in [`plans/cloudflare-deploy-plan.md`](plans/cloudflare-deploy-plan.md).
 
+- **2026-10 — With an account, the server database is the source of truth.** Each device keeps a local copy so the app stays fast and works offline. It sends its changes up and pulls the server's state down. If two devices changed the same record, the server's copy wins. Without an account, the device is the source of truth.
 - **2026-10 — Build order: sync, macOS and iOS apps, browser extension, canvas, AI.** All clients use `/api/v1`, so sync comes first, and it is two-way so every device shows the same library. Canvas and AI research run in parallel; see "Build order". This replaces the earlier order (backend, Chrome extension, then iOS and macOS).
 - **2026-10 — Work happens on `main` directly.** Mado has one developer, so branches add steps without adding review.
 - **2026-10 — More file types, text first.** `.txt` and `.md` come first, then font, PDF and voice. See "More file types" above.
@@ -126,6 +127,6 @@ Each type gets its own card and detail view, the same facets and tags as other s
 - Can people without an account comment on a shared link, or only view it?
 - How the paid plan counts AI use (credits per action, or a monthly limit).
 - Is saving from the browser extension free? It needs an account and cloud storage, which breaks "Free is local, paid is cloud".
-- Sync rule when two devices change the same record: last write wins per record, or something better? Deletes (the trash) and moving a file between collections need an answer too.
+- How the server decides which change is newer: the latest `updatedAt` of a record, or a version counter? An edit made offline can arrive late. Deletes (the trash) and moving a file between collections need an answer too.
 - Guest data: a guest library should move into the account on sign-up. It is a known gap in `auth.spec.md`, and sync makes it a must.
 - Native apps: SwiftUI for iOS and macOS together, or only an iOS share extension. Sign in with Apple is required if Google sign-in is offered.
