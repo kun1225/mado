@@ -20,7 +20,7 @@ Keyboard shortcuts for the library, so a user can search, select and delete with
 - Shortcuts are off while a dialog or a menu is open, while the focus is in a text field, while an IME is composing, and for a held key. `Cmd/Ctrl + K` is the one that still works in a text field.
 - `/` also works when scrolling has hidden the dock. The dock comes back, then the search bar takes focus.
 - A key that has no meaning on the current page is left to the browser. `Cmd/Ctrl + A` on a page with no grid still selects the page text.
-- Settings → Shortcuts shows the list. It is written by hand in `shortcut-list.ts`, so change it together with the keys.
+- Settings → Shortcuts shows the list, with each key drawn as a `Kbd` chip from `@repo/ui/kbd` (a combo like `Cmd/Ctrl + K` is one chip per key). It is written by hand in `shortcut-list.ts`, so change it together with the keys.
 
 ## Decisions
 
