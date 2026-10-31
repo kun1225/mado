@@ -1,5 +1,6 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
+import Lenis from 'lenis';
 import { MotionConfig } from 'motion/react';
 
 import { LandingFaq } from './-landing/landing-faq';
@@ -44,6 +45,19 @@ export const Route = createFileRoute('/(app)/')({
 function LandingPage() {
   // Shared, because the header turns solid when the hero ends.
   const heroRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const lenis = new Lenis({
+      autoRaf: true,
+      anchors: true,
+      autoToggle: true,
+      allowNestedScroll: true,
+      respectReducedMotion: true,
+      stopInertiaOnNavigate: true,
+    });
+
+    return () => lenis.destroy();
+  }, []);
 
   return (
     // "user" turns movement off with reduced motion, but keeps fades.

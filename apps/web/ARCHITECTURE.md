@@ -80,6 +80,8 @@ The API lives in `apps/api`. Everything else stays on the device.
 
 ### Landing intro
 
+The landing route owns a Lenis instance for smooth wheel scrolling and anchor links. Its automatic frame loop and listeners are destroyed when leaving the page. Lenis respects reduced motion, allows nested scroll areas, and pauses when root overflow is hidden during the intro or a dialog.
+
 The landing intro clips an overlapping cluster into a rounded rectangular opening, then spreads the same tiles to their hero float positions. `introClusterFloat` and `mixFloat` share `spread` with the existing scroll-to-library move. Reduced motion skips the intro.
 
 The features stage uses the same section scroll progress for the pain sentence's word-by-word fade, rise and blur reveal, then triggers a 400ms crossfade into the feature demos at a fixed scroll threshold, independent of further scrolling. Word motion values update without React renders; reduced motion removes the rise and blur.

@@ -41,6 +41,8 @@ One column of sections with `px-edge` side padding. All copy and card data live 
 
 ### Reduced motion
 
+- Lenis smooths wheel scrolling and section anchor links on this page only. Touch scrolling stays native. Reduced motion disables smoothing; nested scroll areas keep their native scrolling. Root overflow locks pause Lenis during the intro and dialogs. Leaving the page destroys the instance.
+
 - No intro, no bobbing. The gallery is already built, and the hero title sits on a veil that fades as you scroll. Fades still follow the scroll; movement doesn't (`MotionConfig reducedMotion="user"`).
 - Videos don't autoplay. The search demo shows each query whole, with no typing.
 
