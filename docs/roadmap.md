@@ -44,14 +44,14 @@ Five things come next, in this order. After step 1, everything saves into the sa
 | Order | What               | What it does                                                                                   | Needs |
 | ----- | ------------------ | ---------------------------------------------------------------------------------------------- | ----- |
 | 1     | Sync (phase 3)     | Accounts, media upload, and the same library on every device of one person                     | —     |
-| 2     | macOS and iOS apps | Browse the library, and a share sheet action "Save to Mado". One SwiftUI project for both      | Sync  |
+| 2     | macOS and iOS apps | macOS: Electron app that reuses the web UI. iOS: SwiftUI, with a share sheet "Save to Mado"    | Sync  |
 | 3     | Browser extension  | Save the page, or an image or video you right-click, into your library without leaving the tab | Sync  |
 | 4     | Canvas (phase 2)   | Brand projects and the canvas. Local first; sync carries them to other devices later           | —     |
 | 5     | AI (phases 4–5)    | Understand sources, then brand directions and a strategy doc                                   | Sync  |
 
 Why sync is first: the library lives in the browser today (IndexedDB and OPFS). No other client can reach it, so every client needs the cloud base. The sync is two-way, because the web app, iOS and macOS must show the same library, and a one-way backup is not enough. Changes travel both ways, but the server database is the source of truth, so the server's copy wins when two devices disagree. That means no merge logic to write. Design the records so new kinds (facets, projects, canvases) can sync later without a rewrite.
 
-Why the apps come before the extension: the owner plans to build the AI features mainly on macOS, so the macOS app is where AI lives first. The extension is a small web project, so it can move up if the native work takes longer than planned.
+Why the apps come before the extension: the owner plans to build the AI features mainly on macOS, so the macOS app is where AI lives first. It can run the user's own Claude Code or Codex CLI (like Conductor does), which iOS cannot. The extension is a small web project, so it can move up if the native work takes longer than planned.
 
 Why AI is last: it needs images on a server, so it needs the media upload from sync.
 
@@ -116,6 +116,8 @@ Each type gets its own card and detail view, the same facets and tags as other s
 
 - **2026-10 — With an account, the server database is the source of truth.** Each device keeps a local copy so the app stays fast and works offline. It sends its changes up and pulls the server's state down. If two devices changed the same record, the server's copy wins. Without an account, the device is the source of truth.
 - **2026-10 — Build order: sync, macOS and iOS apps, browser extension, canvas, AI.** All clients use `/api/v1`, so sync comes first, and it is two-way so every device shows the same library. Canvas and AI research run in parallel; see "Build order". This replaces the earlier order (backend, Chrome extension, then iOS and macOS).
+- **2026-11 — macOS app: Electron, not SwiftUI or Tauri. iOS app: SwiftUI.** The macOS app must look like the web app and host the canvas, so it reuses the web UI; a SwiftUI rewrite would double the UI work, and Swift has no mature infinite-canvas library. The web app already depends on Chromium-first APIs (`mediabunny` on WebCodecs, OPFS, IndexedDB), and Electron ships the same Chromium we test with. The whole repo is TypeScript, so the main process can start the CLI with `child_process` and needs no Rust. Tauri (Safari's WKWebView) is smaller, and we pick it only if a one-day spike passes all four checks: large-file OPFS read and write, IndexedDB kept after a restart, `mediabunny` compressing real videos, and a smooth canvas with many images. iOS needs a native share sheet, so it stays SwiftUI and shares no code with macOS.
+- **2026-11 — The macOS app runs the user's own Claude Code or Codex CLI** as a subprocess (`claude -p --output-format stream-json`, `codex exec`), signed in with the user's own login. Mado never reads or stores their OAuth token, because Anthropic does not allow third-party apps to offer claude.ai login. Re-read the current terms before shipping. The app ships as a notarized DMG, not on the Mac App Store, because the sandbox blocks running other CLIs.
 - **2026-10 — Work happens on `main` directly.** Mado has one developer, so branches add steps without adding review.
 - **2026-10 — More file types, text first.** `.txt` and `.md` come first, then font, PDF and voice. See "More file types" above.
 - **2026-10 — Text sources live in IndexedDB, not OPFS.** The record keeps the text, so search can read it, and the one OPFS file is the optional thumbnail. In the cloud, the text goes into Postgres and the thumbnail into R2. See `sources.spec.md`.
@@ -129,4 +131,4 @@ Each type gets its own card and detail view, the same facets and tags as other s
 - Is saving from the browser extension free? It needs an account and cloud storage, which breaks "Free is local, paid is cloud".
 - How the server decides which change is newer: the latest `updatedAt` of a record, or a version counter? An edit made offline can arrive late. Deletes (the trash) and moving a file between collections need an answer too.
 - Guest data: a guest library should move into the account on sign-up. It is a known gap in `auth.spec.md`, and sync makes it a must.
-- Native apps: SwiftUI for iOS and macOS together, or only an iOS share extension. Sign in with Apple is required if Google sign-in is offered.
+- Native apps: macOS is Electron and iOS is SwiftUI (see Decisions). Does the Tauri spike change that? Sign in with Apple is required on iOS if Google sign-in is offered.
