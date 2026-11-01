@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mado · Desktop library folder plan</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: light-dark(#f6f6f3, #181919);
+        --surface: light-dark(#fff, #222424);
+        --fg: light-dark(#242727, #edf0ee);
+        --muted: light-dark(#59615c, #b2bcb5);
+        --line: light-dark(#d5dad6, #404842);
+        --accent: light-dark(#256044, #9bd4ae);
+        --good: light-dark(#256044, #9bd4ae);
+        --bad: light-dark(#9a3b2e, #f0a89c);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          16px/1.65 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 1060px;
+        margin: auto;
+        padding: 48px 24px 80px;
+      }
+      header {
+        padding-bottom: 24px;
+        border-bottom: 2px solid var(--fg);
+      }
+      h1 {
+        font-size: clamp(32px, 6vw, 54px);
+        line-height: 1.1;
+        letter-spacing: -0.04em;
+        margin: 12px 0;
+      }
+      h2 {
+        margin: 44px 0 12px;
+        font-size: 25px;
+      }
+      h3 {
+        font-size: 18px;
+        margin: 20px 0 6px;
+      }
+      p,
+      li {
+        max-width: 70ch;
+      }
+      .lead {
+        font-size: 20px;
+        color: var(--muted);
+      }
+      .tag {
+        font-size: 12px;
+        letter-spacing: 0.13em;
+        color: var(--accent);
+        font-weight: 700;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-top: 16px;
+      }
+      a {
+        color: var(--accent);
+        text-underline-offset: 4px;
+      }
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .card,
+      details {
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        border-radius: 8px;
+      }
+      .card h3 {
+        margin-top: 0;
+      }
+      .card ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+      .pro h3 {
+        color: var(--good);
+      }
+      .con h3 {
+        color: var(--bad);
+      }
+      details {
+        margin: 10px 0;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .table-wrap {
+        overflow: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--surface);
+      }
+      td,
+      th {
+        padding: 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: light-dark(#eceee9, #2b2e2c);
+      }
+      code {
+        font-size: 0.9em;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        padding: 18px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: auto;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      pre code {
+        font-size: inherit;
+      }
+      .note {
+        padding: 14px 18px;
+        border-left: 4px solid var(--accent);
+        background: var(--surface);
+        border-radius: 0 8px 8px 0;
+      }
+      @media (max-width: 760px) {
+        .two {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="tag">PLAN · v2 · 2026-11-01</span>
+        <h1>Desktop library folder</h1>
+        <p class="lead">
+          In the desktop app, the library is a folder the user picks. It holds
+          the files and the records as plain files, so Finder shows them and an
+          AI agent (Claude Code, Codex) can read and edit them.
+        </p>
+        <nav>
+          <a href="#goal">Goal</a>
+          <a href="#pros-cons">Pros and cons</a>
+          <a href="#layout">Folder layout</a>
+          <a href="#add">What we add</a>
+          <a href="#reuse">What we reuse</a>
+          <a href="#platform">Web vs desktop</a>
+          <a href="#data-flow">Data flow</a>
+          <a href="#control-flow">Control flow</a>
+          <a href="#pseudo">Pseudo code</a>
+          <a href="#verify">Verify</a>
+          <a href="#risks">Risks</a>
+          <a href="#order">Build order</a>
+        </nav>
+      </header>
+
+      <h2 id="goal">1. Goal and decisions</h2>
+      <ul>
+        <li>
+          <strong>Desktop only.</strong> The web app keeps IndexedDB and OPFS,
+          and its behavior does not change.
+        </li>
+        <li>
+          <strong>The user picks the folder.</strong> The UI calls it the
+          <strong>Library folder</strong>. It is shown in Settings → Data →
+          Storage and can be changed there.
+        </li>
+        <li>
+          <strong>No browser storage on desktop.</strong> The storage quota is
+          hidden on desktop, because the browser's number says nothing about a
+          folder on disk.
+        </li>
+        <li>
+          <strong>One small JSON file per source.</strong> This is the change
+          from v1 of this plan. An agent opens one small file, edits
+          <code>tags</code>, and saves it. The app notices and reloads it.
+        </li>
+        <li>
+          <strong>Files are the truth, memory is the index.</strong> The app
+          reads the folder at start and keeps the records in memory for fast
+          search. A disposable cache can come later.
+        </li>
+        <li>
+          <strong>No sync yet.</strong> Desktop and web are separate libraries
+          until there is a backend. A web user moves over with Export, then
+          Import.
+        </li>
+        <li>
+          <strong>Out of scope for now:</strong> the CLI runner, the API, the
+          canvas file, moving a library to a new folder, and a lock file.
+        </li>
+      </ul>
+
+      <h2 id="pros-cons">2. Pros and cons</h2>
+      <div class="two">
+        <div class="card pro">
+          <h3>Pros</h3>
+          <ul>
+            <li>The user sees and owns the files in Finder.</li>
+            <li>
+              An agent can read and edit one small record. No SQL, no locked
+              database file, and a clean diff.
+            </li>
+            <li>
+              Time Machine, iCloud Drive or Dropbox can back the folder up with
+              no work from us.
+            </li>
+            <li>No browser quota, and the browser can't clear the data.</li>
+            <li>
+              The folder survives deleting the app, and moves to another Mac.
+            </li>
+            <li>
+              One small file is rewritten per change, so it scales better than
+              one big file.
+            </li>
+            <li>The web app is unchanged.</li>
+            <li>
+              The <code>LibraryStore</code> seam is where sync plugs in later.
+            </li>
+          </ul>
+        </div>
+        <div class="card con">
+          <h3>Cons</h3>
+          <ul>
+            <li>
+              A real refactor: raw IndexedDB calls in three files move behind a
+              store. A careless change can break the web app.
+            </li>
+            <li>Two storage paths to test and keep working.</li>
+            <li>
+              Many small files, so the first scan at start is slower than
+              reading one file. A cache fixes this later.
+            </li>
+            <li>
+              No transactions. Deleting a collection touches many files, and a
+              crash can leave it half done.
+            </li>
+            <li>
+              An agent can write bad JSON or edit while the user edits. The app
+              must validate, and a rule must pick the winner.
+            </li>
+            <li>
+              Big videos can't be copied over IPC in one piece. We write in
+              chunks and read through a custom protocol.
+            </li>
+            <li>
+              A folder in iCloud or Dropbox can evict files or make conflict
+              copies, and two Macs on one folder will clash.
+            </li>
+            <li>
+              macOS asks permission for Desktop, Documents and external drives.
+              An unplugged drive means a missing folder.
+            </li>
+            <li>
+              Files in <code>media/</code> have random names, so Finder is not
+              yet nice to browse.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Options for storing the records</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Option</th>
+              <th>Pros</th>
+              <th>Cons</th>
+              <th>Pick?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <strong>A. One <code>library.json</code></strong>
+              </td>
+              <td>Simplest. Close to the export file.</td>
+              <td>
+                Rewrites everything on each change. Hard for an agent at a large
+                size.
+              </td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td><strong>A2. One JSON file per source</strong></td>
+              <td>
+                Small writes. An agent edits one file. Readable. No native
+                module.
+              </td>
+              <td>
+                Many files. Needs a startup scan, a watcher and validation.
+              </td>
+              <td><strong>Yes</strong></td>
+            </tr>
+            <tr>
+              <td><strong>B. SQLite in the folder</strong></td>
+              <td>Fastest at any size. Real queries.</td>
+              <td>
+                Native module to build and sign. Binary file, awkward and risky
+                for an agent.
+              </td>
+              <td>No. Maybe as a disposable cache</td>
+            </tr>
+            <tr>
+              <td><strong>C. IndexedDB cache, folder as truth</strong></td>
+              <td>No rewrite of the feature queries.</td>
+              <td>Two copies to keep in step. More bugs.</td>
+              <td>No</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="layout">3. Folder layout</h2>
+      <pre><code>&lt;folder the user picked&gt;/Mado Library/
+├── AGENTS.md           rules for an AI agent: the schema and what it may change
+├── collections.json    every collection, with its parent
+├── sources/
+│   ├── 5f0c…a1.json    one source: name, note, tags, collections, sizes…
+│   └── 9b21…e7.json
+└── media/
+    ├── 5f0c…a1         the file, named by its storageKey
+    └── 9b21…e7</code></pre>
+      <ul>
+        <li>
+          A source's JSON is the same shape the app already uses (the
+          <code>Source</code> type), so a text body and a website preview stay
+          inside the record.
+        </li>
+        <li>
+          The record names its file by <code>storageKey</code>, not by a full
+          path. Moving or renaming the folder breaks nothing.
+        </li>
+        <li>
+          The pointer to the folder is in
+          <code>~/Library/Application Support/Mado/config.json</code>. It holds
+          only the folder path.
+        </li>
+        <li>
+          Later: <code>projects/&lt;id&gt;/canvas.json</code> for each canvas.
+          Tldraw and Excalidraw files are plain JSON, so an agent can edit them.
+          (Pen's own <code>.pen</code> files are encrypted, so they are not a
+          model for this.)
+        </li>
+      </ul>
+
+      <h2 id="add">4. What we add</h2>
+      <h3>Desktop (main process)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Where</th>
+              <th>Job</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>library-folder</code></td>
+              <td><code>apps/desktop/src/main/library-folder.js</code></td>
+              <td>
+                Pick, save, read and check the Library folder. Create
+                <code>AGENTS.md</code>.
+              </td>
+            </tr>
+            <tr>
+              <td><code>library-records</code></td>
+              <td><code>apps/desktop/src/main/library-records.js</code></td>
+              <td>
+                Load all records into memory, answer queries, write one file per
+                change, safely.
+              </td>
+            </tr>
+            <tr>
+              <td><code>library-watcher</code></td>
+              <td><code>apps/desktop/src/main/library-watcher.js</code></td>
+              <td>
+                Watch the folder. When a record file changes outside the app,
+                validate it and reload it.
+              </td>
+            </tr>
+            <tr>
+              <td><code>library-media</code></td>
+              <td><code>apps/desktop/src/main/library-media.js</code></td>
+              <td>
+                Write in chunks, delete, and serve reads with a
+                <code>mado-media://</code> protocol.
+              </td>
+            </tr>
+            <tr>
+              <td>IPC and preload</td>
+              <td>
+                <code>apps/desktop/src/main/ipc.js</code>,
+                <code>src/preload.cjs</code>
+              </td>
+              <td>The small, safe bridge: <code>window.madoDesktop</code>.</td>
+            </tr>
+            <tr>
+              <td>Window safety</td>
+              <td><code>apps/desktop/src/main.js</code></td>
+              <td>
+                Open outside links in the browser, so a foreign page never gets
+                the bridge.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Web (renderer)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Where</th>
+              <th>Job</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>LibraryStore</code> type</td>
+              <td><code>features/storage/library-store.type.ts</code></td>
+              <td>The one contract both platforms follow.</td>
+            </tr>
+            <tr>
+              <td><code>getLibraryStore()</code></td>
+              <td><code>features/storage/library-store.ts</code></td>
+              <td>
+                Pick the desktop store when the bridge exists, else the
+                IndexedDB store.
+              </td>
+            </tr>
+            <tr>
+              <td>IndexedDB store</td>
+              <td><code>features/storage/library-store-indexeddb.ts</code></td>
+              <td>
+                Today's code, moved behind the contract. No behavior change.
+              </td>
+            </tr>
+            <tr>
+              <td>Desktop store</td>
+              <td><code>features/storage/library-store-desktop.ts</code></td>
+              <td>Calls the bridge.</td>
+            </tr>
+            <tr>
+              <td>Desktop bridge</td>
+              <td>
+                <code>features/desktop/desktop-bridge.ts</code>,
+                <code>.type.ts</code>
+              </td>
+              <td>
+                The one place that asks "are we on desktop?" and returns the
+                typed bridge.
+              </td>
+            </tr>
+            <tr>
+              <td>Folder gate</td>
+              <td><code>components/desktop-library-gate.tsx</code></td>
+              <td>
+                On desktop with no folder yet, show "Choose where to keep your
+                library".
+              </td>
+            </tr>
+            <tr>
+              <td>Library folder row</td>
+              <td>
+                <code>components/settings/settings-storage-section.tsx</code>
+              </td>
+              <td>
+                Show the path with "Change folder" and "Show in Finder". Hide
+                the quota on desktop.
+              </td>
+            </tr>
+            <tr>
+              <td>Live reload</td>
+              <td><code>features/desktop/use-library-changes.ts</code></td>
+              <td>
+                When the main process says a record changed, refresh the sources
+                and collections queries.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="reuse">5. What we reuse</h2>
+      <ul>
+        <li>
+          <code>writeMediaFile</code>, <code>readMediaFile</code> and
+          <code>deleteMediaFile</code> in <code>source-media.ts</code>. They are
+          already a small seam.
+        </li>
+        <li>
+          The existing action tests (<code>source-actions</code>,
+          <code>collection-actions</code>, <code>import-actions</code>,
+          <code>export-actions</code>). They run on IndexedDB and prove the
+          refactor changed nothing on the web.
+        </li>
+        <li>
+          The <code>Source</code> and <code>Collection</code> shapes. No new
+          data model.
+        </li>
+        <li>
+          Import and Export, as the way to move a web library into the desktop
+          app.
+        </li>
+        <li>
+          <code>mediabunny</code> compression, which keeps running in the
+          renderer.
+        </li>
+        <li>The Electron shell on this branch (<code>apps/desktop</code>).</li>
+      </ul>
+
+      <h2 id="platform">6. Separating web and desktop</h2>
+      <pre><code>apps/web       all UI and features. The only place UI lives.
+apps/desktop   Electron main + preload only. No UI.</code></pre>
+      <ol>
+        <li>
+          <strong>Interfaces for anything platform-specific.</strong>
+          <code>LibraryStore</code> and the media functions have a web version
+          and a desktop version. Later: <code>AgentRunner</code> and
+          <code>FolderPicker</code>.
+        </li>
+        <li>
+          <strong>One place decides the platform.</strong>
+          <code>getDesktopBridge()</code> returns the bridge or
+          <code>undefined</code>. Feature code asks for a capability, and never
+          checks "isDesktop" on its own.
+        </li>
+        <li>
+          <strong>Desktop-only UI hides by capability.</strong> The folder gate,
+          the Library folder row and the live reload render only when the bridge
+          exists.
+        </li>
+        <li>
+          <strong>Dependency rule.</strong> <code>apps/web</code> never imports
+          from <code>apps/desktop</code>. The desktop holds no UI. The bridge
+          type lives in the web app, and the desktop implements it.
+        </li>
+      </ol>
+
+      <h2 id="data-flow">7. Data flow</h2>
+      <pre><code>Renderer (web UI)                  Main process (Node)                 Disk
+─────────────────                  ───────────────────                 ────
+source-actions.ts
+  └─ store.putSource(source) ─IPC─▶ library-records.js
+                                      ├─ update the in-memory index
+                                      └─ write sources/&lt;id&gt;.json ──────▶ sources/&lt;id&gt;.json
+                                           (temp file, then rename)
+
+source-media.ts
+  └─ write(key, file) ─IPC chunks─▶ library-media.js ───────────────────▶ media/&lt;key&gt;
+  fetch("mado-media://&lt;key&gt;") ◀─ protocol.handle ◀─ library-media.js ◀── media/&lt;key&gt;
+
+An agent edits sources/&lt;id&gt;.json
+                                    library-watcher.js ◀──────────────── file change
+                                      ├─ read + validate
+                                      ├─ update the in-memory index
+                                      └─ send "library:changed" ─▶ renderer refreshes its queries</code></pre>
+      <p class="muted">
+        Reads of media go through a protocol, not IPC, so the browser can stream
+        big videos.
+      </p>
+
+      <h2 id="control-flow">8. Control flow</h2>
+      <h3>First run</h3>
+      <ol>
+        <li>The gate asks the bridge for the Library folder. There is none.</li>
+        <li>It shows "Choose where to keep your library".</li>
+        <li>
+          The user picks a folder. Main creates <code>Mado Library/</code>,
+          writes <code>AGENTS.md</code> and saves the path.
+        </li>
+        <li>
+          Main loads the (empty) library and starts the watcher. The app opens.
+        </li>
+      </ol>
+      <h3>Add a source</h3>
+      <ol>
+        <li>The renderer compresses the file, as it does today.</li>
+        <li>
+          It writes the bytes to <code>media/&lt;storageKey&gt;</code> in
+          chunks. The file appears only when complete.
+        </li>
+        <li>
+          Only then does it save the record, so a failure leaves no half record.
+        </li>
+      </ol>
+      <h3>An agent edits a record</h3>
+      <ol>
+        <li>
+          The agent changes <code>tags</code> in
+          <code>sources/&lt;id&gt;.json</code>.
+        </li>
+        <li>
+          The watcher sees the change and waits a moment for the write to
+          finish.
+        </li>
+        <li>
+          If the new text equals what the app last wrote, it is the app's own
+          write. Ignore it.
+        </li>
+        <li>
+          If it is valid, update the index and tell the renderer. If it is not
+          valid, keep the last good record and log the problem.
+        </li>
+      </ol>
+      <h3>Next start</h3>
+      <ol>
+        <li>Main reads the saved path and checks the folder exists.</li>
+        <li>
+          It reads <code>collections.json</code> and every file in
+          <code>sources/</code>. A broken file is skipped and logged, never
+          fatal.
+        </li>
+      </ol>
+      <h3>The folder is missing (drive unplugged, folder renamed)</h3>
+      <ol>
+        <li>The app does not create a new empty library by itself.</li>
+        <li>
+          The gate shows "We can't find your library" with "Choose folder".
+        </li>
+      </ol>
+      <h3>Change folder (Settings)</h3>
+      <ol>
+        <li>The user picks another folder.</li>
+        <li>
+          The app opens the library there, or creates one. It does not move or
+          copy files, and tells the user the old files stay where they are.
+        </li>
+      </ol>
+
+      <h2 id="pseudo">9. Pseudo code</h2>
+
+      <details open>
+        <summary><code>LibraryStore</code> (the contract)</summary>
+        <pre><code>interface LibraryStore
+  listCollections() -> Collection[]
+  getCollection(id) -> Collection | undefined
+  putCollections(collections)
+  deleteCollections(ids)
+  listSources() -> Source[]                  // trash included
+  getSource(id) -> Source | undefined
+  listSourcesInCollection(collectionId) -> Source[]
+  addSource(source)                          // fails if the id exists (import needs this)
+  putSources(sources)
+  deleteSources(ids)</code></pre>
+        <p class="muted">
+          These are the only operations the three feature files use today.
+        </p>
+      </details>
+
+      <details>
+        <summary>
+          <code>getDesktopBridge()</code> and
+          <code>getLibraryStore()</code> (renderer)
+        </summary>
+        <pre><code>function getDesktopBridge()
+  // The bridge exists only inside the Electron window.
+  return window.madoDesktop   // undefined on the web
+
+function getLibraryStore()
+  bridge = getDesktopBridge()
+  return bridge ? desktopStore(bridge) : indexedDbStore</code></pre>
+      </details>
+
+      <details>
+        <summary><code>chooseLibraryFolder()</code> (main)</summary>
+        <pre><code>async function chooseLibraryFolder()
+  picked = await dialog.showOpenDialog({ properties: [openDirectory, createDirectory] })
+  if picked.canceled
+    return null
+  root = join(picked.filePaths[0], "Mado Library")
+  create root/sources and root/media
+  write root/AGENTS.md if missing
+  // A path in a config file survives restarts with no permission prompt.
+  writeConfig({ libraryRoot: root })
+  return root</code></pre>
+      </details>
+
+      <details>
+        <summary><code>openLibrary(root)</code> and writes (main)</summary>
+        <pre><code>function openLibrary(root)
+  collections = readJson(root/collections.json) or []
+  sources = new Map()
+  for file in list(root/sources/*.json)
+    try
+      record = parse(read(file))
+      if isValidSource(record, file) then sources.set(record.id, record)
+      else log("skipped", file)
+    catch log("skipped", file)
+  return { collections, sources }
+
+async function writeSource(root, source)
+  text = stringify(source, indent 2)
+  remember(source.id, text)                  // lets the watcher ignore our own write
+  writeAtomic(root/sources/id.json, text)    // temp file, then rename
+
+async function putSources(sources)
+  for source in sources
+    index.set(source.id, source)             // never mutate the old object
+    await writeSource(root, source)
+
+async function deleteSources(ids)
+  for id in ids
+    index.delete(id)
+    unlink(root/sources/id.json), ignoring "not found"</code></pre>
+      </details>
+
+      <details>
+        <summary><code>watchLibrary(root, onChange)</code> (main)</summary>
+        <pre><code>function watchLibrary(root, onChange)
+  watch(root, recursive, event =>
+    debounce 150 ms per file, then
+      if file is sources/*.json
+        text = read(file) or null              // null: the file was deleted
+        if text equals remembered(id)  return  // our own write
+        if text is null
+          index.delete(id)
+        else
+          record = tryParse(text)
+          if not isValidSource(record, file)
+            return log("bad edit, kept the last good record", file)
+          index.set(id, record)
+        onChange({ kind: "sources" })
+      if file is collections.json
+        reload collections, onChange({ kind: "collections" }))</code></pre>
+      </details>
+
+      <details>
+        <summary>Media write, read and remove (main)</summary>
+        <pre><code>async function beginWrite(key)             -> handle with an open temp file
+async function appendChunk(handle, bytes)  // 8 MB at a time, so IPC memory stays small
+async function finishWrite(handle)
+  close(temp)
+  rename(temp, media/key)                  // the file appears only when complete
+
+async function removeMedia(key)
+  try unlink(media/key) catch NotFound -> ignore
+
+function registerMediaProtocol()
+  protocol.handle("mado-media", request =>
+    key = parseKey(request.url)            // only letters, digits and "-"
+    return net.fetch(pathToFileURL(media/key))   // range requests work, so video seeks)</code></pre>
+      </details>
+
+      <details>
+        <summary>Preload bridge and window safety</summary>
+        <pre><code>contextBridge.exposeInMainWorld("madoDesktop", {
+  library: { listSources, putSources, ... },   // each is ipcRenderer.invoke
+  media:   { beginWrite, appendChunk, finishWrite, remove },
+  folder:  { get, choose, reveal },
+  onChange(callback)                           // returns an unsubscribe function
+})
+// Only named functions. The page never gets ipcRenderer or Node.
+
+win.webContents.setWindowOpenHandler(url =>
+  open url in the system browser
+  return { action: "deny" })                   // a foreign page never gets the bridge</code></pre>
+      </details>
+
+      <details>
+        <summary>Settings: the Library folder row</summary>
+        <pre><code>function SettingsStorageSection({ breakdown })
+  bridge = getDesktopBridge()
+  quota text: show only when not bridge
+  if bridge
+    show "Library folder", the path, and two buttons:
+      "Change folder"  -> bridge.folder.choose(), then reload the queries
+      "Show in Finder" -> bridge.folder.reveal()
+    footnote: "Everything is saved in your library folder."</code></pre>
+      </details>
+
+      <h2 id="verify">10. How we verify</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Check</th>
+              <th>How</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>The web app did not break</td>
+              <td>
+                The existing action tests pass unchanged after the refactor (a
+                baseline run before it). Then the
+                <code>verify-mado-web</code> flow.
+              </td>
+            </tr>
+            <tr>
+              <td>Both stores behave the same</td>
+              <td>
+                One contract test suite runs on the IndexedDB store and on the
+                desktop store (with a fake bridge).
+              </td>
+            </tr>
+            <tr>
+              <td>The main-process code works</td>
+              <td>
+                <code>node --test</code> on a temp folder: write, reload,
+                delete, bad files skipped, atomic writes, key checks.
+              </td>
+            </tr>
+            <tr>
+              <td>The watcher reloads agent edits</td>
+              <td>
+                Test: edit a record file on disk, see the index change. A bad
+                edit is ignored. The app's own writes do not echo back.
+              </td>
+            </tr>
+            <tr>
+              <td>It works in the real app</td>
+              <td>
+                Start Electron with <code>--remote-debugging-port</code>, add a
+                source, and look in the folder. Edit <code>tags</code> by hand
+                and watch the card update.
+              </td>
+            </tr>
+            <tr>
+              <td>Settings UI</td>
+              <td>
+                On desktop: the Library folder row shows, and the quota text is
+                gone. On web: the quota shows and the row is gone.
+              </td>
+            </tr>
+            <tr>
+              <td>Bad file names</td>
+              <td>
+                Unit-test the media key check with <code>../x</code> and
+                <code>a/b</code>. All rejected.
+              </td>
+            </tr>
+            <tr>
+              <td>Big video (manual)</td>
+              <td>Add a 1 GB video. Memory stays flat, it plays and seeks.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="risks">11. Risks and open questions</h2>
+      <ul>
+        <li>
+          <strong>Refactor size.</strong> <code>source-actions.ts</code> has
+          many call sites. We change them in small steps, and the tests run
+          after each.
+        </li>
+        <li>
+          <strong>Read then write across IPC is not one transaction.</strong>
+          IndexedDB gave us that. With one user it is fine. If a race shows up,
+          add an <code>updateSource(id, fn)</code> that runs in the main
+          process.
+        </li>
+        <li>
+          <strong>User and agent edit the same record.</strong> v1 rule: the
+          file on disk wins, and the renderer reloads. Revisit when the CLI
+          runner exists. It may need an "AI is editing" state.
+        </li>
+        <li>
+          <strong>Accounts.</strong> The web keeps one database per account. The
+          desktop library is one per folder, so it ignores the signed-in account
+          for now. Revisit with sync.
+        </li>
+        <li>
+          <strong>Folder in iCloud, Dropbox or a network drive.</strong> Warn
+          later, and add a lock file so two instances do not write together.
+        </li>
+        <li>
+          <strong>Large reads in the renderer.</strong>
+          <code>readMediaFile</code> loads a whole file as a Blob. Fine for
+          images, heavy for a 1 GB video. A direct <code>mado-media://</code>
+          URL for the player is the next step.
+        </li>
+        <li>
+          <strong>Readable names in Finder.</strong> A mirrored view like the
+          export layout is a later phase.
+        </li>
+        <li>
+          <strong>Export on desktop</strong> uses the browser save picker. Check
+          that it works in Electron.
+        </li>
+      </ul>
+
+      <h2 id="order">12. Build order</h2>
+      <ol>
+        <li>
+          <strong>Baseline.</strong> Run the web tests. (Done: 455 pass, 1
+          unrelated failure in <code>landing-motion</code>.)
+        </li>
+        <li>
+          <strong>Records in the main process.</strong>
+          <code>library-records</code>, <code>library-folder</code> and their
+          tests.
+        </li>
+        <li>
+          <strong>Media in the main process.</strong> <code>library-media</code>
+          and the protocol.
+        </li>
+        <li><strong>Bridge.</strong> IPC, preload and window safety.</li>
+        <li>
+          <strong>Web seam.</strong> <code>LibraryStore</code>, the IndexedDB
+          store (tests still green), then the desktop store.
+        </li>
+        <li>
+          <strong>Move the three feature files</strong> onto the store, then the
+          media functions.
+        </li>
+        <li>
+          <strong>UI.</strong> Folder gate, Library folder row, hidden quota,
+          live reload.
+        </li>
+        <li><strong>Watcher.</strong> Agent edits reload the app.</li>
+        <li>
+          <strong>Docs.</strong> <code>desktop.spec.md</code>, a row in
+          <code>AGENTS.md</code>, <code>storage.spec.md</code>,
+          <code>settings.spec.md</code>, <code>ARCHITECTURE.md</code> and the
+          roadmap, in the same commits as the behavior.
+        </li>
+      </ol>
+      <p class="note">
+        Later, not in this round: the canvas file, the CLI runner, moving a
+        library, a lock file, and a disposable index cache.
+      </p>
+    </main>
+  </body>
+</html>
