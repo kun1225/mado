@@ -1,5 +1,7 @@
 import type { MotionValue } from 'motion/react';
 
+import type { CollectionColor } from '#/features/collections/collection-types';
+
 export type LandingPainWordProps = {
   word: string;
   index: number;
@@ -46,6 +48,15 @@ export type LandingFeature = {
   demo: LandingFeatureDemo;
 };
 
+/** A folder in the sort demo. `saves` counts the saves already in it before any card lands. */
+export type LandingSortFolder = {
+  name: string;
+  color: CollectionColor | null;
+  left: number;
+  saves: number;
+  previewTileIds: string[];
+};
+
 export type LandingSearchQuery = {
   text: string;
   mode: 'Name' | 'Collection' | 'Describe';
@@ -56,13 +67,6 @@ export type LandingSearchQuery = {
 export type LandingFaqItem = {
   question: string;
   answer: string;
-};
-
-export type LandingRoadmapItem = {
-  phase: string;
-  name: string;
-  line: string;
-  isLive: boolean;
 };
 
 export type LandingNavItem = {
