@@ -1,6 +1,7 @@
 import { Reveal, RevealText } from '#/components/reveal';
 
-import { Accent, LANDING_H2, Logo, OpenMado } from './landing-ui';
+import { OpenMado } from './landing-open-mado';
+import { Accent, LANDING_H2, Logo } from './landing-ui';
 
 export function LandingNoAccount() {
   return (

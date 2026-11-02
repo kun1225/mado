@@ -10,6 +10,9 @@ Mado is a design inspiration curation app.
 
 ## Development
 
+Use pnpm 11.25.0. `pnpm install` downloads the project's Node 24 runtime,
+and pnpm uses it for project scripts.
+
 Install dependencies:
 
 ```sh

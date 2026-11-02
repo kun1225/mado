@@ -8,7 +8,7 @@ import type { Collection } from '#/features/collections/collection-types';
 import { MAX_COLLECTION_NAME_LENGTH } from '#/features/collections/collection-types';
 
 type CollectionRenameDialogProps = {
-  collection: Collection;
+  collection: Pick<Collection, 'name'>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (name: string) => void;

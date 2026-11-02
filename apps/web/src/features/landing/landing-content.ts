@@ -2,7 +2,6 @@ import type {
   LandingFaqItem,
   LandingFeature,
   LandingNavItem,
-  LandingRoadmapItem,
   LandingSearchQuery,
   LandingTile,
 } from './landing.type';
@@ -14,7 +13,6 @@ export const LANDING_NAV: LandingNavItem[] = [
   { id: 'features', label: 'Features' },
   { id: 'search', label: 'Search' },
   { id: 'faq', label: 'FAQ' },
-  { id: 'roadmap', label: 'Roadmap' },
 ];
 
 export const LANDING_TILES: LandingTile[] = [
@@ -146,45 +144,6 @@ export const LANDING_FAQ: LandingFaqItem[] = [
     question: 'Do I need an account?',
     answer:
       'No. An account is optional, and only needed for cloud features later.',
-  },
-];
-
-export const LANDING_ROADMAP: LandingRoadmapItem[] = [
-  {
-    phase: 'Now',
-    name: 'The library',
-    line: 'Save images, videos, sites and notes. Sort them into collections.',
-    isLive: true,
-  },
-  {
-    phase: '01',
-    name: 'Facets',
-    line: 'Tag sources by emotion, style, color, type and industry. Pull a palette from any image.',
-    isLive: false,
-  },
-  {
-    phase: '02',
-    name: 'Projects and canvas',
-    line: 'A project per client with a brief, picked sources and an infinite canvas.',
-    isLive: false,
-  },
-  {
-    phase: '03',
-    name: 'Cloud backup',
-    line: 'Back up your library and use it on more than one device.',
-    isLive: false,
-  },
-  {
-    phase: '04',
-    name: 'Search by feeling',
-    line: 'Describe what you remember, like "calm, warm, handmade", and find it.',
-    isLive: false,
-  },
-  {
-    phase: '05',
-    name: 'AI that shows its sources',
-    line: 'Two or three brand directions, each linked to the sources behind it. Opt-in.',
-    isLive: false,
   },
 ];
 

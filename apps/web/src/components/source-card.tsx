@@ -58,7 +58,9 @@ export function SourceCard({
       aria-busy={isCompressing}
       className={cn(
         'group relative overflow-hidden rounded-md select-none',
-        'transition-shadow duration-base ease-standard',
+        'transition-[box-shadow,scale] duration-base ease-standard',
+        // Only the open trigger shrinks the card, not the checkbox or delete.
+        'has-[[data-slot=source-open]:active]:scale-[0.97]',
         selection.isSelected && 'ring-2 ring-fg ring-offset-2 ring-offset-bg',
       )}
     >
@@ -94,6 +96,7 @@ export function SourceCard({
       {!selection.isActive && onOpen && (
         <button
           type="button"
+          data-slot="source-open"
           aria-label={`Open ${source.name}`}
           onClick={onOpen}
           className="absolute inset-0 z-10 cursor-zoom-in"

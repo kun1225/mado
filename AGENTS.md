@@ -1,6 +1,8 @@
 ## Code Organization
 
 - Keep the primary exported function near the top of its implementation file so the developer can see the prmiary function when they get into the file.
+- Keep the main flow short and easy to scan. Move distinct steps, such as visibility checks, bounds calculations, validation, and cleanup, into small, clearly named helper functions instead of long inline blocks, including inside effects and callbacks.
+- Each helper should do one clear job. Extract helpers when their names make the caller easier to understand, even when used only once; keep simple expressions inline when a helper would add no clarity.
 - Order functions by their call hierarchy. Place the primary function first, then place each helper after its caller in call order.
 - Add a `// *** FunctionName ***` comment before each secondary function to make the call hierarchy visible.
 - Keep helper functions private by default. Export a helper only when direct testing provides real value, and place test-facing exports in a final export block.
@@ -31,5 +33,7 @@
 | [`apps/web/src/features/feedback/feedback.spec.md`](apps/web/src/features/feedback/feedback.spec.md)             | The Feedback tab in settings and `POST /api/v1/feedback`: fields, rate limit, why not Google Sheets   |
 | [`apps/web/src/features/landing/landing.spec.md`](apps/web/src/features/landing/landing.spec.md)                 | The landing page at `/`: sections, the intro, word reveal, the real library in a "try it" frame       |
 | [`apps/web/src/features/shortcuts/shortcuts.spec.md`](apps/web/src/features/shortcuts/shortcuts.spec.md)         | Keyboard shortcuts: search, select all, delete, the `?` list, and why Space does not open a card      |
+| [`apps/web/src/features/pwa/pwa.spec.md`](apps/web/src/features/pwa/pwa.spec.md)                                 | Browser installation, app icons, and current offline limits                                           |
+| [`apps/desktop/desktop.spec.md`](apps/desktop/desktop.spec.md)                                                   | The macOS Electron app: the library folder, files Finder and AI agents can edit, and the bridge       |
 | [`apps/web/src/features/projects/projects.spec.md`](apps/web/src/features/projects/projects.spec.md)             | (Planned) Brand projects: brief, picked sources, canvases                                             |
 | [`apps/web/src/features/canvas/canvas.spec.md`](apps/web/src/features/canvas/canvas.spec.md)                     | (Planned) The infinite canvas in a project, and the canvas library choice                             |

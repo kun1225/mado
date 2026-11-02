@@ -55,8 +55,8 @@ export function CollectionPocket({
       style={pocketColorStyle(color)}
       className="relative h-24 w-28 drop-shadow-md perspective-[400px]"
     >
-      <div className="absolute inset-x-0 bottom-0 h-18 rounded-md rounded-tl-none bg-[var(--pocket-back,var(--color-border))] transition-colors duration-base" />
-      <div className="absolute bottom-18 left-0 h-2 w-10 rounded-t-md bg-[var(--pocket-back,var(--color-border))] transition-colors duration-base" />
+      <div className="absolute inset-x-0 bottom-0 h-18 rounded-md rounded-tl-none bg-(--pocket-back,var(--color-border)) transition-colors duration-base" />
+      <div className="absolute bottom-18 left-0 h-2 w-10 rounded-t-md bg-(--pocket-back,var(--color-border)) transition-colors duration-base" />
 
       <div className="absolute inset-0 [clip-path:inset(-100%_-100%_0_-100%)]">
         {previews.map((preview, index) => (

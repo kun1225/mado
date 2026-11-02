@@ -9,7 +9,6 @@ import { LandingFinal, LandingNoAccount } from './-landing/landing-final';
 import { LandingFooter } from './-landing/landing-footer';
 import { LandingHeader, LandingHero } from './-landing/landing-hero';
 import { LANDING_INTRO_SCRIPT } from './-landing/landing-intro';
-import { LandingRoadmap } from './-landing/landing-roadmap';
 import { LandingSearch } from './-landing/landing-search';
 
 export const Route = createFileRoute('/(app)/')({
@@ -68,7 +67,6 @@ function LandingPage() {
         <LandingSearch />
         <LandingNoAccount />
         <LandingFaq />
-        <LandingRoadmap />
         <LandingFinal />
       </main>
       <LandingFooter />

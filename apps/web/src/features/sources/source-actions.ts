@@ -3,13 +3,8 @@ import type {
   CollectionSourceOptions,
 } from '#/features/collections/collection-types';
 import { WITH_FOLDER_SOURCES } from '#/features/collections/collection-types';
-import {
-  openDatabase,
-  SOURCES_COLLECTION_INDEX,
-  STORES,
-  toCompletion,
-  toPromise,
-} from '#/features/storage/database';
+import { withLibraryLock } from '#/features/storage/library-lock';
+import { getLibraryStore } from '#/features/storage/library-store';
 
 import type { SiteSourceInput } from './site-source.type';
 import {
@@ -116,11 +111,7 @@ export async function createSource(input: NewSourceInput): Promise<Source> {
   await writeMediaFile(id, file);
 
   try {
-    const database = await openDatabase();
-    const transaction = database.transaction(STORES.sources, 'readwrite');
-
-    transaction.objectStore(STORES.sources).put(source);
-    await toCompletion(transaction);
+    await getLibraryStore().putSources([source]);
   } catch (error) {
     await deleteMediaFile(id);
     throw new Error(`Failed to save "${file.name}".`, { cause: error });
@@ -170,10 +161,7 @@ async function createTextSource({
   };
 
   try {
-    const database = await openDatabase();
-    const transaction = database.transaction(STORES.sources, 'readwrite');
-    transaction.objectStore(STORES.sources).put(source);
-    await toCompletion(transaction);
+    await getLibraryStore().putSources([source]);
   } catch (error) {
     throw new Error(`Failed to save "${file.name}".`, { cause: error });
   }
@@ -229,10 +217,7 @@ export async function createWebsiteSource(
 
   try {
     if (cover) await writeMediaFile(id, cover);
-    const database = await openDatabase();
-    const transaction = database.transaction(STORES.sources, 'readwrite');
-    transaction.objectStore(STORES.sources).put(source);
-    await toCompletion(transaction);
+    await getLibraryStore().putSources([source]);
   } catch (error) {
     if (cover) await deleteMediaFile(id);
     throw new Error(`Failed to save "${source.name}".`, { cause: error });
@@ -293,30 +278,29 @@ async function runCompression(source: Source): Promise<Source> {
 
   await writeMediaFile(storageKey, compressed);
 
-  const database = await openDatabase();
-  const transaction = database.transaction(STORES.sources, 'readwrite');
-  const store = transaction.objectStore(STORES.sources);
-  const existing = await toPromise<Source | undefined>(store.get(source.id));
+  return withLibraryLock(async () => {
+    const store = getLibraryStore();
+    const existing = await store.getSource(source.id);
 
-  if (!existing || existing.storageKey !== storageKey) {
-    // The source was deleted or replaced while compressing, so nothing uses this file now.
-    await deleteMediaFile(storageKey);
-    return existing ?? source;
-  }
+    if (!existing || existing.storageKey !== storageKey) {
+      // The source was deleted or replaced while compressing, so nothing uses this file now.
+      await deleteMediaFile(storageKey);
+      return existing ?? source;
+    }
 
-  const updated: Source = {
-    ...existing,
-    fileName: compressed.name,
-    mimeType: compressed.type,
-    sizeBytes: compressed.size,
-    ...metadata,
-    updatedAt: new Date().toISOString(),
-  };
+    const updated: Source = {
+      ...existing,
+      fileName: compressed.name,
+      mimeType: compressed.type,
+      sizeBytes: compressed.size,
+      ...metadata,
+      updatedAt: new Date().toISOString(),
+    };
 
-  store.put(updated);
-  await toCompletion(transaction);
+    await store.putSources([updated]);
 
-  return updated;
+    return updated;
+  });
 }
 
 // *** toMediaKind ***
@@ -335,23 +319,13 @@ export async function fetchSourcesByCollection(
   collectionId: string,
   { includeFolders }: CollectionSourceOptions = WITH_FOLDER_SOURCES,
 ): Promise<Source[]> {
-  const database = await openDatabase();
-  const transaction = database.transaction(
-    [STORES.collections, STORES.sources],
-    'readonly',
-  );
-  const collections = await toPromise<Collection[]>(
-    transaction.objectStore(STORES.collections).getAll(),
-  );
-  const index = transaction
-    .objectStore(STORES.sources)
-    .index(SOURCES_COLLECTION_INDEX);
+  const store = getLibraryStore();
+  const collections = await store.listCollections();
   const ids = includeFolders
     ? collectBranchIds(collections, collectionId)
     : [collectionId];
-  // Start all reads in the same tick, or the transaction closes.
   const lists = await Promise.all(
-    ids.map((id) => toPromise<Source[]>(index.getAll(id))),
+    ids.map((id) => store.listSourcesInCollection(id)),
   );
   // A source in both a folder and its child comes back twice.
   const uniqueSources = new Map(
@@ -375,37 +349,16 @@ export function collectBranchIds(all: Collection[], rootId: string): string[] {
 }
 
 // *** fetchCollectionNodes ***
-async function fetchCollectionNodes(): Promise<Collection[]> {
-  const database = await openDatabase();
-
-  return toPromise<Collection[]>(
-    database
-      .transaction(STORES.collections, 'readonly')
-      .objectStore(STORES.collections)
-      .getAll(),
-  );
+function fetchCollectionNodes(): Promise<Collection[]> {
+  return getLibraryStore().listCollections();
 }
 
 export async function fetchAllSources(): Promise<Source[]> {
-  const database = await openDatabase();
-  const sources = await toPromise<Source[]>(
-    database
-      .transaction(STORES.sources, 'readonly')
-      .objectStore(STORES.sources)
-      .getAll(),
-  );
-
-  return toVisibleSources(sources);
+  return toVisibleSources(await getLibraryStore().listSources());
 }
 
 export async function fetchDeletedSources(): Promise<Source[]> {
-  const database = await openDatabase();
-  const sources = await toPromise<Source[]>(
-    database
-      .transaction(STORES.sources, 'readonly')
-      .objectStore(STORES.sources)
-      .getAll(),
-  );
+  const sources = await getLibraryStore().listSources();
 
   return sources
     .filter((source) => source.deletedAt !== null)
@@ -464,29 +417,28 @@ export async function updateSource(
 ): Promise<Source> {
   const { addCollectionIds, removeCollectionIds, ...fields } =
     updateSourceSchema.parse(input);
-  const database = await openDatabase();
-  const transaction = database.transaction(STORES.sources, 'readwrite');
-  const store = transaction.objectStore(STORES.sources);
 
-  const existing = await toPromise<Source | undefined>(store.get(id));
+  return withLibraryLock(async () => {
+    const store = getLibraryStore();
+    const existing = await store.getSource(id);
 
-  if (!existing) throw new Error(`Source not found: ${id}`);
+    if (!existing) throw new Error(`Source not found: ${id}`);
 
-  const merged = { ...existing, ...fields };
-  const source: Source = {
-    ...merged,
-    collectionIds: applyListChange(
-      merged.collectionIds,
-      addCollectionIds,
-      removeCollectionIds,
-    ),
-    updatedAt: new Date().toISOString(),
-  };
+    const merged = { ...existing, ...fields };
+    const source: Source = {
+      ...merged,
+      collectionIds: applyListChange(
+        merged.collectionIds,
+        addCollectionIds,
+        removeCollectionIds,
+      ),
+      updatedAt: new Date().toISOString(),
+    };
 
-  store.put(source);
-  await toCompletion(transaction);
+    await store.putSources([source]);
 
-  return source;
+    return source;
+  });
 }
 
 /** Saves an edit made in the detail dialog. Name, note and links never change here. */
@@ -570,33 +522,28 @@ async function updateTextSource(
   change: (current: Source & { text: TextSourceContent }) => Source,
   notTextMessage: string,
 ): Promise<Source> {
-  const database = await openDatabase();
-  const transaction = database.transaction(STORES.sources, 'readwrite');
-  const store = transaction.objectStore(STORES.sources);
-  const existing = await toPromise<Source | undefined>(store.get(id));
+  return withLibraryLock(async () => {
+    const store = getLibraryStore();
+    const existing = await store.getSource(id);
 
-  if (!existing) throw new Error(`Source not found: ${id}`);
-  if (existing.kind !== 'text' || !existing.text) {
-    throw new Error(notTextMessage);
-  }
+    if (!existing) throw new Error(`Source not found: ${id}`);
+    if (existing.kind !== 'text' || !existing.text) {
+      throw new Error(notTextMessage);
+    }
 
-  const source: Source = {
-    ...change({ ...existing, text: existing.text }),
-    updatedAt: new Date().toISOString(),
-  };
-  store.put(source);
-  await toCompletion(transaction);
+    const source: Source = {
+      ...change({ ...existing, text: existing.text }),
+      updatedAt: new Date().toISOString(),
+    };
+    await store.putSources([source]);
 
-  return source;
+    return source;
+  });
 }
 
 // *** readSource ***
 async function readSource(id: string): Promise<Source> {
-  const database = await openDatabase();
-  const store = database
-    .transaction(STORES.sources)
-    .objectStore(STORES.sources);
-  const existing = await toPromise<Source | undefined>(store.get(id));
+  const existing = await getLibraryStore().getSource(id);
 
   if (!existing) throw new Error(`Source not found: ${id}`);
   return existing;
@@ -625,29 +572,28 @@ async function saveReplacedFile(
     | 'storageKey'
   >,
 ): Promise<{ previous: Source; source: Source }> {
-  const database = await openDatabase();
-  const transaction = database.transaction(STORES.sources, 'readwrite');
-  const store = transaction.objectStore(STORES.sources);
-  // Read again: the user may have edited the name or note while the file was saving.
-  const previous = await toPromise<Source | undefined>(store.get(id));
+  return withLibraryLock(async () => {
+    const store = getLibraryStore();
+    // Read again: the user may have edited the name or note while the file was saving.
+    const previous = await store.getSource(id);
 
-  if (!previous) throw new Error(`Source not found: ${id}`);
+    if (!previous) throw new Error(`Source not found: ${id}`);
 
-  // Decide here, not from the first read, so the kind matches the record we overwrite.
-  const kind = toReplacementKind(previous, mediaKind);
-  // A leftover site preview would make the viewer show media as a website.
-  const { site: _site, ...media } = previous;
-  const source: Source = {
-    ...(kind === 'website' || kind === 'text' ? previous : media),
-    ...fields,
-    kind,
-    updatedAt: new Date().toISOString(),
-  };
+    // Decide here, not from the first read, so the kind matches the record we overwrite.
+    const kind = toReplacementKind(previous, mediaKind);
+    // A leftover site preview would make the viewer show media as a website.
+    const { site: _site, ...media } = previous;
+    const source: Source = {
+      ...(kind === 'website' || kind === 'text' ? previous : media),
+      ...fields,
+      kind,
+      updatedAt: new Date().toISOString(),
+    };
 
-  store.put(source);
-  await toCompletion(transaction);
+    await store.putSources([source]);
 
-  return { previous, source };
+    return { previous, source };
+  });
 }
 
 function applyListChange(
@@ -664,95 +610,86 @@ function applyListChange(
 
 /** Soft delete: keep the file so it can be restored from the trash. */
 export async function deleteSource(id: string): Promise<Source> {
-  const database = await openDatabase();
-  const transaction = database.transaction(STORES.sources, 'readwrite');
-  const store = transaction.objectStore(STORES.sources);
+  return withLibraryLock(async () => {
+    const store = getLibraryStore();
+    const existing = await store.getSource(id);
 
-  const existing = await toPromise<Source | undefined>(store.get(id));
+    if (!existing) throw new Error(`Source not found: ${id}`);
 
-  if (!existing) throw new Error(`Source not found: ${id}`);
+    const now = new Date().toISOString();
+    const source: Source = { ...existing, deletedAt: now, updatedAt: now };
 
-  const now = new Date().toISOString();
-  const source: Source = { ...existing, deletedAt: now, updatedAt: now };
+    await store.putSources([source]);
 
-  store.put(source);
-  await toCompletion(transaction);
-
-  return source;
+    return source;
+  });
 }
 
 /** The record and the file are both gone for good, so ask the user first. */
 export async function hardDeleteSource(id: string): Promise<Source> {
-  const database = await openDatabase();
-  const transaction = database.transaction(STORES.sources, 'readwrite');
-  const store = transaction.objectStore(STORES.sources);
+  return withLibraryLock(async () => {
+    const store = getLibraryStore();
+    const existing = await store.getSource(id);
 
-  const existing = await toPromise<Source | undefined>(store.get(id));
+    if (!existing) throw new Error(`Source not found: ${id}`);
 
-  if (!existing) throw new Error(`Source not found: ${id}`);
+    await store.deleteSources([id]);
 
-  store.delete(id);
-  await toCompletion(transaction);
+    // Delete the record first. A leftover file only wastes space, but a record
+    // with no file shows a card that never loads.
+    if (existing.storageKey) await deleteMediaFile(existing.storageKey);
 
-  // Delete the record first. A leftover file only wastes space, but a record
-  // with no file shows a card that never loads.
-  if (existing.storageKey) await deleteMediaFile(existing.storageKey);
-
-  return existing;
+    return existing;
+  });
 }
 
 /**
- * Uses the caller's transaction so the collection and its sources change together.
- *
  * A source only in this collection goes to the trash. A source also in another
  * collection just leaves this one.
  */
 export async function softDeleteSourcesInCollection(
-  store: IDBObjectStore,
   collectionId: string,
 ): Promise<void> {
-  const sources = await toPromise<Source[]>(
-    store.index(SOURCES_COLLECTION_INDEX).getAll(collectionId),
-  );
-  const now = new Date().toISOString();
+  return withLibraryLock(async () => {
+    const store = getLibraryStore();
+    const sources = await store.listSourcesInCollection(collectionId);
+    const now = new Date().toISOString();
 
-  for (const source of sources) {
-    const collectionIds = source.collectionIds.filter(
-      (id) => id !== collectionId,
+    await store.putSources(
+      sources.map((source) => {
+        const collectionIds = source.collectionIds.filter(
+          (id) => id !== collectionId,
+        );
+
+        return {
+          ...source,
+          collectionIds,
+          deletedAt:
+            collectionIds.length === 0
+              ? (source.deletedAt ?? now)
+              : source.deletedAt,
+          updatedAt: now,
+        };
+      }),
     );
-
-    store.put({
-      ...source,
-      collectionIds,
-      deletedAt:
-        collectionIds.length === 0
-          ? (source.deletedAt ?? now)
-          : source.deletedAt,
-      updatedAt: now,
-    });
-  }
+  });
 }
 
-/** One transaction, so all of them move to the trash or none do. */
+/** One write, so all of them move to the trash or none do. */
 export async function deleteSources(ids: string[]): Promise<Source[]> {
-  const database = await openDatabase();
-  const transaction = database.transaction(STORES.sources, 'readwrite');
-  const store = transaction.objectStore(STORES.sources);
+  return withLibraryLock(async () => {
+    const store = getLibraryStore();
+    const found = await Promise.all(ids.map((id) => store.getSource(id)));
+    const now = new Date().toISOString();
+    // Skip ids that are already gone, so one missing card does not stop the rest.
+    const sources = found
+      .filter((source): source is Source => source !== undefined)
+      .map((source) => ({ ...source, deletedAt: now, updatedAt: now }));
 
-  const found = await Promise.all(
-    ids.map((id) => toPromise<Source | undefined>(store.get(id))),
-  );
-  const now = new Date().toISOString();
-  // Skip ids that are already gone, so one missing card does not stop the rest.
-  const sources = found
-    .filter((source): source is Source => source !== undefined)
-    .map((source) => ({ ...source, deletedAt: now, updatedAt: now }));
+    await store.putSources(sources);
 
-  for (const source of sources) store.put(source);
-
-  await toCompletion(transaction);
-
-  return sources;
+    return sources;
+  });
 }
 
 /**
@@ -760,53 +697,43 @@ export async function deleteSources(ids: string[]): Promise<Source[]> {
  * Sources that were never deleted are skipped, so their `updatedAt` does not change.
  */
 export async function restoreSources(ids: string[]): Promise<Source[]> {
-  const database = await openDatabase();
-  const transaction = database.transaction(STORES.sources, 'readwrite');
-  const store = transaction.objectStore(STORES.sources);
+  return withLibraryLock(async () => {
+    const store = getLibraryStore();
+    const found = await Promise.all(ids.map((id) => store.getSource(id)));
+    const now = new Date().toISOString();
+    const sources = found
+      .filter((source): source is Source => source?.deletedAt != null)
+      .map((source) => ({ ...source, deletedAt: null, updatedAt: now }));
 
-  const found = await Promise.all(
-    ids.map((id) => toPromise<Source | undefined>(store.get(id))),
-  );
-  const now = new Date().toISOString();
-  const sources = found
-    .filter((source): source is Source => source?.deletedAt != null)
-    .map((source) => ({ ...source, deletedAt: null, updatedAt: now }));
+    await store.putSources(sources);
 
-  for (const source of sources) store.put(source);
-
-  await toCompletion(transaction);
-
-  return sources;
+    return sources;
+  });
 }
 
 export async function hardDeleteSources(ids: string[]): Promise<Source[]> {
-  const database = await openDatabase();
-  const transaction = database.transaction(STORES.sources, 'readwrite');
-  const store = transaction.objectStore(STORES.sources);
+  return withLibraryLock(async () => {
+    const store = getLibraryStore();
+    const found = await Promise.all(ids.map((id) => store.getSource(id)));
+    const sources = found.filter(
+      (source): source is Source => source !== undefined,
+    );
 
-  const found = await Promise.all(
-    ids.map((id) => toPromise<Source | undefined>(store.get(id))),
-  );
-  const sources = found.filter(
-    (source): source is Source => source !== undefined,
-  );
+    // Records first. A file with no record only wastes space, but a record with
+    // no file becomes a card that never loads.
+    await store.deleteSources(sources.map((source) => source.id));
 
-  for (const source of sources) store.delete(source.id);
+    // Keep going if one file fails, so the other files still get deleted.
+    await Promise.all(
+      sources
+        .flatMap((source) => (source.storageKey ? [source.storageKey] : []))
+        .map((storageKey) =>
+          deleteMediaFile(storageKey).catch((error: unknown) => {
+            console.error(`Failed to delete media file: ${storageKey}`, error);
+          }),
+        ),
+    );
 
-  // Records first. A file with no record only wastes space, but a record with
-  // no file becomes a card that never loads.
-  await toCompletion(transaction);
-
-  // Keep going if one file fails, so the other files still get deleted.
-  await Promise.all(
-    sources
-      .flatMap((source) => (source.storageKey ? [source.storageKey] : []))
-      .map((storageKey) =>
-        deleteMediaFile(storageKey).catch((error: unknown) => {
-          console.error(`Failed to delete media file: ${storageKey}`, error);
-        }),
-      ),
-  );
-
-  return sources;
+    return sources;
+  });
 }

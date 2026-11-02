@@ -14,7 +14,7 @@ import type {
 import { COLLECTION_COLORS } from '#/features/collections/collection-types';
 
 type CollectionColorDialogProps = {
-  collection: Collection;
+  collection: Pick<Collection, 'name' | 'color'>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (color: CollectionColor | null) => void;

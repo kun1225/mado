@@ -10,6 +10,8 @@ import {
   QUALITY_MEDIUM,
 } from 'mediabunny';
 
+import { getDesktopBridge } from '#/features/desktop/desktop-bridge';
+import type { MadoDesktopBridge } from '#/features/desktop/desktop-bridge.type';
 import { getAccountDirectory } from '#/features/storage/storage-directory';
 
 import type { SiteSourcePreview } from './site-source.type';
@@ -30,9 +32,13 @@ const VIDEO_OUTPUT_TYPE = 'video/mp4';
 const UNTOUCHED_IMAGE_TYPES = new Set(['image/gif', 'image/svg+xml']);
 
 export const isMediaStorageSupported =
-  typeof navigator !== 'undefined' &&
-  'storage' in navigator &&
-  typeof navigator.storage.getDirectory === 'function';
+  getDesktopBridge() !== undefined ||
+  (typeof navigator !== 'undefined' &&
+    'storage' in navigator &&
+    typeof navigator.storage.getDirectory === 'function');
+
+// Small enough that one IPC message never holds a big video in memory twice.
+const DESKTOP_WRITE_CHUNK_BYTES = 8 * 1024 * 1024;
 
 const SITES_API = `${import.meta.env.VITE_API_ORIGIN ?? 'http://localhost:4000'}/api/v1/sites`;
 
@@ -112,6 +118,9 @@ async function getMediaDirectory(): Promise<FileSystemDirectoryHandle> {
 }
 
 export async function writeMediaFile(key: string, file: File): Promise<void> {
+  const bridge = getDesktopBridge();
+  if (bridge) return writeDesktopMediaFile(bridge, key, file);
+
   const directory = await getMediaDirectory();
   const handle = await directory.getFileHandle(key, { create: true });
   const writable = await handle.createWritable();
@@ -128,12 +137,17 @@ export async function writeMediaFile(key: string, file: File): Promise<void> {
 }
 
 export async function readMediaFile(key: string): Promise<File> {
+  if (getDesktopBridge()) return readDesktopMediaFile(key);
+
   const directory = await getMediaDirectory();
   const handle = await directory.getFileHandle(key);
   return handle.getFile();
 }
 
 export async function deleteMediaFile(key: string): Promise<void> {
+  const bridge = getDesktopBridge();
+  if (bridge) return bridge.media.remove(key);
+
   const directory = await getMediaDirectory();
 
   try {
@@ -141,6 +155,47 @@ export async function deleteMediaFile(key: string): Promise<void> {
   } catch (error) {
     if ((error as DOMException).name !== 'NotFoundError') throw error;
   }
+}
+
+// *** writeDesktopMediaFile ***
+// The main process only shows the file under its real name once every chunk is in.
+async function writeDesktopMediaFile(
+  bridge: MadoDesktopBridge,
+  key: string,
+  file: File,
+): Promise<void> {
+  const writeId = await bridge.media.beginWrite(key);
+
+  try {
+    for (
+      let offset = 0;
+      offset < file.size;
+      offset += DESKTOP_WRITE_CHUNK_BYTES
+    ) {
+      const chunk = file.slice(offset, offset + DESKTOP_WRITE_CHUNK_BYTES);
+      await bridge.media.appendChunk(writeId, await chunk.arrayBuffer());
+    }
+    await bridge.media.finishWrite(writeId);
+  } catch (error) {
+    await bridge.media.abortWrite(writeId).catch(() => undefined);
+    throw new Error(`Failed to store "${file.name}" on this device.`, {
+      cause: error,
+    });
+  }
+}
+
+// *** readDesktopMediaFile ***
+async function readDesktopMediaFile(key: string): Promise<File> {
+  const response = await fetch(toDesktopMediaUrl(key));
+
+  if (!response.ok) throw new DOMException(key, 'NotFoundError');
+  return new File([await response.blob()], key);
+}
+
+// *** toDesktopMediaUrl ***
+// The host is fixed and the key is in the path, because a host is lower-cased and keys are not.
+function toDesktopMediaUrl(key: string): string {
+  return `mado-media://media/${encodeURIComponent(key)}`;
 }
 
 export async function downloadSource(source: Source): Promise<void> {

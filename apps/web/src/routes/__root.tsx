@@ -26,8 +26,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         {
           title: 'Mado',
         },
+        { name: 'theme-color', content: '#fafafa' },
       ],
       links: [
+        { rel: 'manifest', href: '/manifest.webmanifest' },
+        { rel: 'apple-touch-icon', href: '/icons/apple-touch-icon.png' },
         {
           rel: 'icon',
           type: 'image/svg+xml',

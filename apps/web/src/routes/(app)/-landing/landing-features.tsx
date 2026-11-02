@@ -52,10 +52,6 @@ export function LandingFeatures() {
   const stepsProgress = useTransform(scrollYProgress, (value) =>
     phaseProgress(value, STEPS_START, 1),
   );
-  // The active step's own progress. The demos follow it, so they play back when you scroll back.
-  const stepLocal = useTransform(stepsProgress, (value) =>
-    stepProgress(value, STEP_COUNT, pickActiveStep(value, STEP_COUNT)),
-  );
   const prefersReducedMotion = usePrefersReducedMotion();
   const [activeIndex, setActiveIndex] = useState(0);
   // A threshold lets the fade finish even when the reader stops scrolling.
@@ -153,7 +149,11 @@ export function LandingFeatures() {
                   transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
                   className="absolute inset-0"
                 >
-                  <FeatureDemo demo={activeDemo} progress={stepLocal} />
+                  <FeatureDemo
+                    demo={activeDemo}
+                    index={activeIndex}
+                    stepsProgress={stepsProgress}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -252,13 +252,24 @@ function toProgress(svh: number) {
 }
 
 // *** FeatureDemo ***
+/**
+ * Each demo follows its own step's progress, clamped to 0 to 1, so they play back when you scroll back.
+ * Why not one progress for the active step: a demo takes 0.4s to fade out, and a shared value jumps to the
+ * next step's edge (the finished state going back, the start going forward), so the leaving demo flashed it.
+ */
 function FeatureDemo({
   demo,
-  progress,
+  index,
+  stepsProgress,
 }: {
   demo: LandingFeatureDemo;
-  progress: MotionValue<number>;
+  index: number;
+  stepsProgress: MotionValue<number>;
 }) {
+  const progress = useTransform(stepsProgress, (value) =>
+    stepProgress(value, STEP_COUNT, index),
+  );
+
   if (demo === 'all-types') return <DemoAllTypes progress={progress} />;
   if (demo === 'sort') return <DemoSort progress={progress} />;
   return <DemoLocal progress={progress} />;

@@ -1,12 +1,9 @@
-import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 
 import { cn } from '@repo/ui/cn';
 
 import type { LandingTile } from '#/features/landing/landing.type';
-import { LANDING_APP_HREF } from '#/features/landing/landing-content';
 import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
 export const LANDING_H2 = 't-h-2 text-balance';
@@ -15,30 +12,6 @@ export const LANDING_H2 = 't-h-2 text-balance';
 export function Accent({ children }: { children: ReactNode }) {
   return (
     <em className="font-accent font-bold tracking-[-0.01em]">{children}</em>
-  );
-}
-
-/** Every call to action on the page looks like the header's, so the page has one button. */
-export function OpenMado({
-  label = 'Open Mado',
-  className,
-}: {
-  label?: string;
-  className?: string;
-}) {
-  return (
-    <Link
-      to={LANDING_APP_HREF}
-      className={cn(
-        'flex h-10 items-center gap-2.5 rounded-lg bg-accent pr-1.5 pl-4 t-l-2 text-accent-fg transition-[background-color,scale] duration-150 ease-out outline-none hover:bg-accent/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg/40 active:scale-[0.97]',
-        className,
-      )}
-    >
-      {label}
-      <span className="grid size-7 place-items-center rounded-sm border border-accent-fg/25">
-        <HugeiconsIcon icon={ArrowRight01Icon} size={16} strokeWidth={1.5} />
-      </span>
-    </Link>
   );
 }
 

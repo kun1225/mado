@@ -4,12 +4,8 @@ import {
   softDeleteSourcesInCollection,
 } from '#/features/sources/source-actions';
 import type { Source } from '#/features/sources/source-types';
-import {
-  openDatabase,
-  STORES,
-  toCompletion,
-  toPromise,
-} from '#/features/storage/database';
+import { withLibraryLock } from '#/features/storage/library-lock';
+import { getLibraryStore } from '#/features/storage/library-store';
 
 import type {
   Collection,
@@ -25,13 +21,7 @@ import {
 export async function fetchAllCollections(
   options: CollectionSourceOptions = WITH_FOLDER_SOURCES,
 ): Promise<Collection[]> {
-  const database = await openDatabase();
-  const collections = await toPromise<Collection[]>(
-    database
-      .transaction(STORES.collections, 'readonly')
-      .objectStore(STORES.collections)
-      .getAll(),
-  );
+  const collections = await getLibraryStore().listCollections();
   const counts = await countSourcesByCollection(options);
 
   return collections
@@ -46,13 +36,7 @@ export async function fetchCollection(
   id: string,
   options: CollectionSourceOptions = WITH_FOLDER_SOURCES,
 ): Promise<Collection | null> {
-  const database = await openDatabase();
-  const collection = await toPromise<Collection | undefined>(
-    database
-      .transaction(STORES.collections, 'readonly')
-      .objectStore(STORES.collections)
-      .get(id),
-  );
+  const collection = await getLibraryStore().getCollection(id);
 
   if (!collection) return null;
 
@@ -74,23 +58,16 @@ export async function createCollection(
     createdAt: now,
     updatedAt: now,
   };
-  const database = await openDatabase();
-  const transaction = database.transaction(STORES.collections, 'readwrite');
-  const store = transaction.objectStore(STORES.collections);
+  const store = getLibraryStore();
 
   if (collection.parentId) {
-    const parent = await toPromise<Collection | undefined>(
-      store.get(collection.parentId),
-    );
+    const parent = await store.getCollection(collection.parentId);
 
-    if (!parent) {
-      transaction.abort();
+    if (!parent)
       throw new Error(`Collection not found: ${collection.parentId}`);
-    }
   }
 
-  store.put(collection);
-  await toCompletion(transaction);
+  await store.putCollections([collection]);
 
   return collection;
 }
@@ -100,24 +77,23 @@ export async function updateCollection(
   rawInput: UpdateCollectionInput,
 ): Promise<Collection> {
   const input = withoutUndefined(updateCollectionSchema.parse(rawInput));
-  const database = await openDatabase();
-  const transaction = database.transaction(STORES.collections, 'readwrite');
-  const store = transaction.objectStore(STORES.collections);
+  const collection = await withLibraryLock(async () => {
+    const store = getLibraryStore();
+    const existing = await store.getCollection(id);
 
-  const existing = await toPromise<Collection | undefined>(store.get(id));
+    if (!existing) throw new Error(`Collection not found: ${id}`);
 
-  if (!existing) throw new Error(`Collection not found: ${id}`);
+    const isColorOnly = Object.keys(input).every((key) => key === 'color');
+    const updated: Collection = {
+      ...normalizeCollection(existing),
+      ...input,
+      // Lists sort by updatedAt, so a recolored card would jump away.
+      updatedAt: isColorOnly ? existing.updatedAt : new Date().toISOString(),
+    };
 
-  const isColorOnly = Object.keys(input).every((key) => key === 'color');
-  const collection: Collection = {
-    ...normalizeCollection(existing),
-    ...input,
-    // Lists sort by updatedAt, so a recolored card would jump away.
-    updatedAt: isColorOnly ? existing.updatedAt : new Date().toISOString(),
-  };
-
-  store.put(collection);
-  await toCompletion(transaction);
+    await store.putCollections([updated]);
+    return updated;
+  });
 
   const counts = await countSourcesByCollection();
 
@@ -129,28 +105,18 @@ export async function updateCollection(
  * and can come back to the library. Child collections and their sources go too.
  */
 export async function deleteCollection(id: string): Promise<Collection> {
-  const database = await openDatabase();
-  const transaction = database.transaction(
-    [STORES.collections, STORES.sources],
-    'readwrite',
-  );
-  const store = transaction.objectStore(STORES.collections);
-
-  const existing = await toPromise<Collection | undefined>(store.get(id));
+  const store = getLibraryStore();
+  const existing = await store.getCollection(id);
 
   if (!existing) throw new Error(`Collection not found: ${id}`);
 
-  const all = await toPromise<Collection[]>(store.getAll());
+  const branchIds = collectBranchIds(await store.listCollections(), id);
 
-  for (const branchId of collectBranchIds(all, id)) {
-    await softDeleteSourcesInCollection(
-      transaction.objectStore(STORES.sources),
-      branchId,
-    );
-    store.delete(branchId);
+  // One branch at a time: a source in two branches must see the first change before the second.
+  for (const branchId of branchIds) {
+    await softDeleteSourcesInCollection(branchId);
   }
-
-  await toCompletion(transaction);
+  await store.deleteCollections(branchIds);
 
   return existing;
 }

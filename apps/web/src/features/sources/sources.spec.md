@@ -46,8 +46,9 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 ### Detail dialog
 
 - Arrow keys move to the previous/next source, except while typing in a field.
-- Website sources that can be embedded show the live page in an iframe. Their stored image is a **thumbnail**, shown only in the details panel.
-- Websites that cannot be embedded show their image. With no image, the viewer offers "Add a file".
+- On desktop, websites use an isolated native `WebContentsView` regardless of iframe policy, with the stored thumbnail and Open website link as loading/failure fallback. The native view is hidden during dialog motion and covered dialogs, and closed during file drags or when leaving the source.
+- In a browser, website sources that can be embedded show the live page in an iframe. Their stored image is a **thumbnail**, shown only in the details panel.
+- In a browser, websites that cannot be embedded show their image. With no image, the viewer offers "Add a file".
 - Opening a source grows it out of its grid card (FLIP), and closing shrinks it back into the card of the source shown last. An image or video flies on its own; a text sheet flies from its top, so its first line lands where the card's was; an embedded website flies its whole frame, showing its thumbnail until the page loads. Only the first source after opening flies; arrow keys swap without it. With no card on screen or reduced motion on, the dialog just fades.
 
 ### Replacing the file
