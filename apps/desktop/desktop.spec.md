@@ -60,3 +60,10 @@ Mado Library/
 - An edit made in the first moments after a library opens can be missed until the next start, because the native watcher takes a moment to begin.
 - The canvas file, the CLI runner and the production build (`app://`, SPA mode) are not built yet.
 - Export on desktop uses the browser save picker. It is not checked in Electron yet.
+
+### Website previews
+
+- Website details use an isolated Electron `WebContentsView`, including sites that block iframe embedding. The view has no Node.js, preload, library bridge, or device permissions, and uses a separate in-memory browser session. Only HTTP(S) URLs are accepted; popup windows are blocked.
+- The stored thumbnail remains visible during loading and opening/closing motion. The Open website link shows only when loading fails, so it never flashes over the thumbnail during loading or motion.
+- The view follows the viewer bounds and browser zoom. It hides during animations and when another dialog covers the viewer. Closing, changing sources, file dragging, renderer navigation, or destroying the window closes the view.
+- Native views have rectangular bounds; CSS rounded corners do not clip them. Keyboard shortcuts while focus is inside the website belong to that website; the dialog toolbar remains available.

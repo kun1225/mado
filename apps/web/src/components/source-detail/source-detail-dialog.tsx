@@ -21,6 +21,8 @@ import {
   DialogTitle,
 } from '@repo/ui/dialog';
 
+import { useDesktopBridge } from '#/features/desktop/desktop-hooks';
+import { DesktopSitePreview } from '#/features/desktop/desktop-site-preview';
 import {
   useCompressingSourceIds,
   useDeleteSource,
@@ -56,6 +58,7 @@ export function SourceDetailDialog({
   onActiveIdChange: (id: string | null) => void;
 }) {
   const deleteSourceMutation = useDeleteSource();
+  const hasDesktopBridge = useDesktopBridge() !== undefined;
   // On a phone the panel covers the image, so it starts closed.
   const [isPanelOpen, setIsPanelOpen] = useState(
     () => window.matchMedia('(min-width: 768px)').matches,
@@ -96,7 +99,8 @@ export function SourceDetailDialog({
   }
   // A text sheet and a live page fill the viewer, so the whole element flies.
   const fillsViewer =
-    source !== undefined && (source.kind === 'text' || canEmbedSite(source));
+    source !== undefined &&
+    (source.kind === 'text' || isEmbeddedSite(source, hasDesktopBridge));
   const aspectRatio =
     !fillsViewer && source?.width && source.height
       ? source.width / source.height
@@ -133,7 +137,7 @@ export function SourceDetailDialog({
   }, [isDialogOpen, media, opening, source?.id, aspectRatio, flipAnchor]);
 
   if (source === undefined) return null;
-  const isEmbedded = canEmbedSite(source);
+  const isEmbedded = isEmbeddedSite(source, hasDesktopBridge);
   const isText = source.kind === 'text';
   const replaceLabel = !(isEmbedded || isText)
     ? 'Replace file'
@@ -283,6 +287,12 @@ export function SourceDetailDialog({
                   key={`viewer-${source.id}`}
                   source={source}
                   objectUrl={objectUrl}
+                  nativePreviewActive={
+                    isDialogOpen &&
+                    !isFlipClosing &&
+                    !isDraggingFile &&
+                    !replace.isDragActive
+                  }
                   onAddImage={replace.open}
                   mediaRef={setMedia}
                 />
@@ -475,24 +485,47 @@ function SourceDetailToolbar({
   );
 }
 
+// *** isEmbeddedSite ***
+// On desktop every website is live, even when it refuses iframes.
+function isEmbeddedSite(source: Source, hasDesktopBridge: boolean) {
+  return (
+    canEmbedSite(source) || (source.kind === 'website' && hasDesktopBridge)
+  );
+}
+
 // *** SourceDetailViewer ***
 function SourceDetailViewer({
   source,
   objectUrl,
   onAddImage,
+  nativePreviewActive,
   mediaRef,
 }: {
   source: Source;
   objectUrl: string | null;
   onAddImage: () => void;
+  nativePreviewActive: boolean;
   mediaRef: (media: HTMLElement | null) => void;
 }) {
+  const hasDesktopBridge = useDesktopBridge() !== undefined;
   // Compression swaps the stored file, which breaks a video that is playing.
   const isCompressing = useCompressingSourceIds().has(source.id);
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const [isEmbedLoaded, setIsEmbedLoaded] = useState(false);
   const isUnplayable = objectUrl !== null && failedUrl === objectUrl;
   const isWaitingForVideo = isCompressing && source.kind === 'video';
+
+  if (source.kind === 'website' && source.site && hasDesktopBridge) {
+    return (
+      <DesktopSitePreview
+        url={source.site.finalUrl}
+        name={source.name}
+        thumbnailUrl={objectUrl}
+        active={nativePreviewActive}
+        mediaRef={mediaRef}
+      />
+    );
+  }
 
   if (source.kind === 'website' && source.site) {
     const embed = source.site.embed;

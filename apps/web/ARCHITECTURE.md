@@ -233,3 +233,7 @@ html.dark → .dark tokens in @repo/ui + color-scheme: dark
 ```
 
 Dark mode accents and focus rings use the light mode background color (`oklch(0.96 0 0)`), with dark text on accent fills.
+
+### Desktop website preview
+
+`SourceDetailViewer` → `DesktopSitePreview` → `getDesktopBridge().sitePreview` → trusted IPC → isolated Electron `WebContentsView`. The renderer sends a request id, HTTP(S) URL, and CSS bounds; the main process validates them and applies its zoom factor. Request ids prevent a late close or load from affecting a newer preview. Native content stays hidden until loading and dialog motion finish. Cleanup closes its web contents on source/dialog exit, renderer navigation, or window destruction. Browser previews retain the iframe/image fallback. Preview sites have no library bridge and use a separate in-memory session with device permissions denied.

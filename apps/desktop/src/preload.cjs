@@ -32,6 +32,7 @@ function bridgeMethods(prefix, names) {
 
 // Only named functions are exposed, so the page never gets `ipcRenderer` or Node.
 contextBridge.exposeInMainWorld('madoDesktop', {
+  sitePreview: bridgeMethods('sitePreview', ['open', 'resize', 'close']),
   library: bridgeMethods('library', LIBRARY_METHODS),
   media: bridgeMethods('media', MEDIA_METHODS),
   folder: bridgeMethods('folder', ['status', 'choose', 'reveal']),

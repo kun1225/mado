@@ -2,6 +2,8 @@ import { fileURLToPath } from 'node:url';
 
 import { app, BrowserWindow, protocol, shell } from 'electron';
 
+import { registerSitePreviewIpc } from './site-preview.js';
+
 import { MEDIA_SCHEME, registerLibraryIpc } from './ipc.js';
 
 // The desktop app skips the landing page at "/" and opens the library directly.
@@ -26,6 +28,7 @@ protocol.registerSchemesAsPrivileged([
 
 app.whenReady().then(async () => {
   await registerLibraryIpc({ send: sendToWindows, isTrustedSender });
+  registerSitePreviewIpc({ isTrustedSender });
   createWindow();
 });
 
