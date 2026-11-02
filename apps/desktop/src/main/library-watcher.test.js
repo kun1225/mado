@@ -54,6 +54,8 @@ describe('watchLibrary', () => {
     await library.addSource(makeSource('a'));
     const changes = [];
     stop = watchLibrary(root, library, (kind) => changes.push(kind));
+    // The native watcher needs a moment to start, and an edit before that is never seen. A real agent edits much later.
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     await writeFile(
       join(root, 'sources', 'a.json'),

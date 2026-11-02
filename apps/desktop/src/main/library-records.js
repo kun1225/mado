@@ -57,60 +57,69 @@ export async function openLibrary(root, { onProblem = () => {} } = {}) {
 }
 
 // *** addSource ***
-async function addSource(state, source) {
-  if (state.sources.has(source.id)) {
-    throw new Error(`Source already exists: ${source.id}`);
-  }
-  return putSources(state, [source]);
+function addSource(state, source) {
+  // The check runs inside the queue, so two adds of one id can't both pass it.
+  return enqueue(state, async () => {
+    if (state.sources.has(source.id)) {
+      throw new Error(`Source already exists: ${source.id}`);
+    }
+    await saveSources(state, [source]);
+  });
 }
 
 // *** putSources ***
 function putSources(state, sources) {
-  // The index changes first, so a read right after this call already sees the new record.
-  for (const source of sources) state.sources.set(source.id, source);
+  return enqueue(state, () => saveSources(state, sources));
+}
 
-  return enqueue(state, async () => {
-    for (const source of sources) {
-      const relativePath = toSourcePath(source.id);
-      const text = toJson(source);
-      await writeAtomic(join(state.root, relativePath), text);
-      state.written.set(relativePath, text);
-    }
-  });
+// *** saveSources ***
+// The index changes only after the file is saved, so a failed save never leaves a record that is not on disk.
+async function saveSources(state, sources) {
+  for (const source of sources) {
+    const relativePath = toSourcePath(source.id);
+    const text = toJson(source);
+    await writeAtomic(join(state.root, relativePath), text);
+    state.written.set(relativePath, text);
+    state.sources.set(source.id, source);
+  }
 }
 
 // *** deleteSources ***
 function deleteSources(state, ids) {
-  for (const id of ids) state.sources.delete(id);
-
   return enqueue(state, async () => {
     for (const id of ids) {
       const relativePath = toSourcePath(id);
       await removeIfExists(join(state.root, relativePath));
       state.written.set(relativePath, null);
+      state.sources.delete(id);
     }
   });
 }
 
 // *** putCollections ***
 function putCollections(state, collections) {
-  for (const collection of collections) {
-    state.collections.set(collection.id, collection);
-  }
-  return enqueue(state, () => writeCollections(state));
+  return enqueue(state, () => {
+    const next = new Map(state.collections);
+    for (const collection of collections) next.set(collection.id, collection);
+    return saveCollections(state, next);
+  });
 }
 
 // *** deleteCollections ***
 function deleteCollections(state, ids) {
-  for (const id of ids) state.collections.delete(id);
-  return enqueue(state, () => writeCollections(state));
+  return enqueue(state, () => {
+    const next = new Map(state.collections);
+    for (const id of ids) next.delete(id);
+    return saveCollections(state, next);
+  });
 }
 
-// *** writeCollections ***
-async function writeCollections(state) {
-  const text = toJson([...state.collections.values()]);
+// *** saveCollections ***
+async function saveCollections(state, next) {
+  const text = toJson([...next.values()]);
   await writeAtomic(join(state.root, COLLECTIONS_FILE), text);
   state.written.set(COLLECTIONS_FILE, text);
+  state.collections = next;
 }
 
 /**
@@ -174,10 +183,11 @@ async function loadSources(state) {
 
   for (const name of names.filter((entry) => entry.endsWith('.json'))) {
     const relativePath = `${SOURCES_DIRECTORY}/${name}`;
-    const text = await readTextOrNull(join(state.root, relativePath));
+    const text = await readTextOrProblem(state, relativePath, name);
     const record = text === null ? null : tryParse(text);
     const id = decodeId(name.slice(0, -'.json'.length));
 
+    if (text === null) continue;
     if (id === null || !isValidSource(record) || record.id !== id) {
       state.onProblem({ file: name, reason: 'Not a valid source.' });
       continue;
@@ -187,9 +197,24 @@ async function loadSources(state) {
   }
 }
 
+// *** readTextOrProblem ***
+// A file we can't read (no permission, or a folder named like a record) is reported and skipped.
+async function readTextOrProblem(state, relativePath, name) {
+  try {
+    return await readTextOrNull(join(state.root, relativePath));
+  } catch (error) {
+    state.onProblem({ file: name, reason: `Can't be read: ${error.code}` });
+    return null;
+  }
+}
+
 // *** loadCollections ***
 async function loadCollections(state) {
-  const text = await readTextOrNull(join(state.root, COLLECTIONS_FILE));
+  const text = await readTextOrProblem(
+    state,
+    COLLECTIONS_FILE,
+    COLLECTIONS_FILE,
+  );
   if (text === null) return;
 
   const records = tryParse(text);

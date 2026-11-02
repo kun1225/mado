@@ -277,3 +277,41 @@ describe('syncFromDisk', () => {
     assert.equal(await library.syncFromDisk('sources/a.json.tmp-1'), 'ignored');
   });
 });
+
+describe('failures', () => {
+  it('keeps a record out of memory when its file could not be saved', async () => {
+    const library = await openLibrary(root);
+    // A folder in the way makes the rename fail.
+    await mkdir(join(root, 'sources', 'a.json'));
+
+    await assert.rejects(library.putSources([makeSource('a')]));
+
+    assert.equal(library.getSource('a'), undefined);
+  });
+
+  it('skips a file it cannot read and still opens', async () => {
+    await mkdir(join(root, 'sources', 'x.json'), { recursive: true });
+    const problems = [];
+
+    const library = await openLibrary(root, {
+      onProblem: (problem) => problems.push(problem.file),
+    });
+
+    assert.deepEqual(library.listSources(), []);
+    assert.deepEqual(problems, ['x.json']);
+  });
+
+  it('lets only one of two adds of the same id win', async () => {
+    const library = await openLibrary(root);
+
+    const results = await Promise.allSettled([
+      library.addSource(makeSource('a')),
+      library.addSource(makeSource('a')),
+    ]);
+
+    assert.deepEqual(
+      results.map((result) => result.status),
+      ['fulfilled', 'rejected'],
+    );
+  });
+});

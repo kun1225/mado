@@ -6,6 +6,7 @@ import { MEDIA_SCHEME, registerLibraryIpc } from './ipc.js';
 
 // The desktop app skips the landing page at "/" and opens the library directly.
 const WEB_URL = process.env.MADO_WEB_URL ?? 'http://localhost:3100/library';
+const WEB_ORIGIN = new URL(WEB_URL).origin;
 const PRELOAD_PATH = fileURLToPath(new URL('../preload.cjs', import.meta.url));
 
 // Must run before the app is ready, or the web app can't `fetch` media URLs.
@@ -16,13 +17,15 @@ protocol.registerSchemesAsPrivileged([
       standard: true,
       secure: true,
       supportFetchAPI: true,
+      // The page is served from http://localhost, so reading these URLs is a cross-origin request.
+      corsEnabled: true,
       stream: true,
     },
   },
 ]);
 
-app.whenReady().then(() => {
-  registerLibraryIpc({ send: sendToWindows });
+app.whenReady().then(async () => {
+  await registerLibraryIpc({ send: sendToWindows, isTrustedSender });
   createWindow();
 });
 
@@ -49,13 +52,28 @@ function createWindow() {
     openExternally(url);
     return { action: 'deny' };
   });
-  win.webContents.on('will-navigate', (event, url) => {
-    if (new URL(url).origin === new URL(WEB_URL).origin) return;
-    event.preventDefault();
-    openExternally(url);
-  });
+  // A redirect can leave our origin without a `will-navigate`, so it gets the same check.
+  for (const eventName of ['will-navigate', 'will-redirect']) {
+    win.webContents.on(eventName, (event, url) => {
+      if (new URL(url).origin === WEB_ORIGIN) return;
+      event.preventDefault();
+      openExternally(url);
+    });
+  }
 
   win.loadURL(WEB_URL);
+}
+
+// *** isTrustedSender ***
+// Only the top frame of our own page may use the library, never an embedded or redirected page.
+function isTrustedSender(event) {
+  const frame = event.senderFrame;
+  if (!frame || frame !== event.sender.mainFrame) return false;
+  try {
+    return new URL(frame.url).origin === WEB_ORIGIN;
+  } catch {
+    return false;
+  }
 }
 
 // *** sendToWindows ***

@@ -33,7 +33,8 @@ async function beginWrite({ mediaRoot, writes, key }) {
 
 // *** appendChunk ***
 async function appendChunk(writes, writeId, bytes) {
-  await getWrite(writes, writeId).handle.write(Buffer.from(bytes));
+  // `write` may save fewer bytes than given, but `writeFile` keeps going until all are saved.
+  await getWrite(writes, writeId).handle.writeFile(Buffer.from(bytes));
 }
 
 // *** finishWrite ***

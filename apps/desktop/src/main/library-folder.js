@@ -11,21 +11,21 @@ const LIBRARY_FOLDER_NAME = 'Mado Library';
  *
  * `getStatus` and `choose` resolve to `{ status: 'none' | 'missing' | 'ready', path }`.
  */
-export function createLibraryFolder({ configPath, pickFolder }) {
+export function createLibraryFolder({ configPath, pickFolder, defaultRoot }) {
   return {
-    getStatus: () => getStatus(configPath),
-    choose: () => choose({ configPath, pickFolder }),
+    getStatus: () => getStatus(configPath, defaultRoot),
+    choose: () => choose({ configPath, pickFolder, defaultRoot }),
   };
 }
 
 // *** choose ***
-async function choose({ configPath, pickFolder }) {
+async function choose({ configPath, pickFolder, defaultRoot }) {
   const picked = await pickFolder();
   if (picked === null) return null;
 
   // Picking an existing library opens it, so libraries never nest.
   const root =
-    basename(picked) === LIBRARY_FOLDER_NAME
+    picked === defaultRoot || basename(picked) === LIBRARY_FOLDER_NAME
       ? picked
       : join(picked, LIBRARY_FOLDER_NAME);
 
@@ -38,9 +38,17 @@ async function choose({ configPath, pickFolder }) {
 }
 
 // *** getStatus ***
-async function getStatus(configPath) {
+async function getStatus(configPath, defaultRoot) {
   const config = await readConfig(configPath);
-  if (!config) return { status: 'none', path: null };
+  if (!config) {
+    if (!defaultRoot) return { status: 'none', path: null };
+
+    await mkdir(join(defaultRoot, 'sources'), { recursive: true });
+    await mkdir(join(defaultRoot, 'media'), { recursive: true });
+    await writeAgentGuide(defaultRoot);
+    await writeConfig(configPath, { libraryRoot: defaultRoot });
+    return { status: 'ready', path: defaultRoot };
+  }
 
   const exists = await isDirectory(config.libraryRoot);
   return { status: exists ? 'ready' : 'missing', path: config.libraryRoot };

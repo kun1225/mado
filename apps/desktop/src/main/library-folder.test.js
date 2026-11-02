@@ -33,6 +33,46 @@ function makeFolder(pickedPath) {
 }
 
 describe('getStatus', () => {
+  it('creates and remembers the default library without opening the picker', async () => {
+    const defaultRoot = join(base, 'Documents', 'mado');
+    const folder = createLibraryFolder({
+      configPath,
+      defaultRoot,
+      pickFolder: async () => assert.fail('The picker must not open'),
+    });
+
+    assert.deepEqual(await folder.getStatus(), {
+      status: 'ready',
+      path: defaultRoot,
+    });
+    assert.deepEqual((await readdir(defaultRoot)).sort(), [
+      'AGENTS.md',
+      'media',
+      'sources',
+    ]);
+    assert.deepEqual(await makeFolder(null).getStatus(), {
+      status: 'ready',
+      path: defaultRoot,
+    });
+
+    await rm(defaultRoot, { recursive: true });
+    assert.deepEqual(await folder.getStatus(), {
+      status: 'missing',
+      path: defaultRoot,
+    });
+  });
+
+  it('keeps a chosen library when a default is available', async () => {
+    const chosen = await makeFolder(base).choose();
+    const folder = createLibraryFolder({
+      configPath,
+      defaultRoot: join(base, 'Documents', 'mado'),
+      pickFolder: async () => null,
+    });
+
+    assert.deepEqual(await folder.getStatus(), chosen);
+  });
+
   it('says none before a folder is chosen', async () => {
     const folder = makeFolder(null);
 

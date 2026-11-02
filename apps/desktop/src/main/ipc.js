@@ -35,38 +35,49 @@ const MIME_TYPE = /^[\w.+-]+\/[\w.+-]+$/;
 
 /**
  * Connects the web app to the library folder. `send(channel, payload)` tells
- * every window about a change.
+ * every window about a change. `isTrustedSender(event)` says whether a call
+ * comes from our own page, because any page in a window could call the bridge.
  */
-export function registerLibraryIpc({ send }) {
+export async function registerLibraryIpc({ send, isTrustedSender }) {
   const folder = createLibraryFolder({
     configPath: join(app.getPath('userData'), 'config.json'),
+    defaultRoot: join(app.getPath('documents'), 'mado'),
     pickFolder,
   });
   const library = createLibrarySession({ send });
 
-  ipcMain.handle('folder:status', async () =>
-    library.open(await folder.getStatus()),
-  );
-  ipcMain.handle('folder:choose', async () =>
-    library.open(await folder.choose()),
-  );
-  ipcMain.handle('folder:reveal', async () => {
+  const handle = (channel, listener) =>
+    ipcMain.handle(channel, (event, ...args) => {
+      if (!isTrustedSender(event)) throw new Error('Untrusted sender.');
+      return listener(...args);
+    });
+
+  handle('folder:status', async () => library.open(await folder.getStatus()));
+  handle('folder:choose', async () => {
+    const status = await folder.choose();
+    // A closed picker changes nothing, so the open library stays open.
+    return status === null ? null : library.open(status);
+  });
+  handle('folder:reveal', async () => {
     const { path } = await folder.getStatus();
     if (path) await shell.openPath(path);
   });
 
   for (const name of LIBRARY_METHODS) {
-    ipcMain.handle(`library:${name}`, (_event, ...args) =>
+    handle(`library:${name}`, (...args) =>
       library.require().records[name](...args),
     );
   }
   for (const name of MEDIA_METHODS) {
-    ipcMain.handle(`media:${name}`, (_event, ...args) =>
+    handle(`media:${name}`, (...args) =>
       library.require().media[name](...args),
     );
   }
 
   registerMediaProtocol((key) => library.current()?.media.resolvePath(key));
+
+  // Open before any window exists, or a page can ask for records before the library is ready.
+  await library.open(await folder.getStatus());
 }
 
 // *** pickFolder ***
@@ -83,6 +94,19 @@ async function pickFolder() {
 // Holds the one open library, and swaps it when the user picks another folder.
 function createLibrarySession({ send }) {
   let session = null;
+  // Opens run one at a time, or two at once could both start a watcher and one would leak.
+  let queue = Promise.resolve();
+
+  const switchTo = async (status) => {
+    if (status?.status !== 'ready') {
+      await closeSession(session);
+      session = null;
+    } else if (session?.root !== status.path) {
+      await closeSession(session);
+      session = await openSession(status.path, send);
+    }
+    return status;
+  };
 
   return {
     current: () => session,
@@ -91,15 +115,10 @@ function createLibrarySession({ send }) {
       return session;
     },
     // Resolves to the status it was given, so a caller can return it as it is.
-    open: async (status) => {
-      if (status?.status !== 'ready') {
-        await closeSession(session);
-        session = null;
-      } else if (session?.root !== status.path) {
-        await closeSession(session);
-        session = await openSession(status.path, send);
-      }
-      return status;
+    open: (status) => {
+      const run = queue.then(() => switchTo(status));
+      queue = run.catch(() => {});
+      return run;
     },
   };
 }
