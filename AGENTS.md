@@ -1,6 +1,8 @@
 ## Code Organization
 
 - Keep the primary exported function near the top of its implementation file so the developer can see the prmiary function when they get into the file.
+- Keep the main flow short and easy to scan. Move distinct steps, such as visibility checks, bounds calculations, validation, and cleanup, into small, clearly named helper functions instead of long inline blocks, including inside effects and callbacks.
+- Each helper should do one clear job. Extract helpers when their names make the caller easier to understand, even when used only once; keep simple expressions inline when a helper would add no clarity.
 - Order functions by their call hierarchy. Place the primary function first, then place each helper after its caller in call order.
 - Add a `// *** FunctionName ***` comment before each secondary function to make the call hierarchy visible.
 - Keep helper functions private by default. Export a helper only when direct testing provides real value, and place test-facing exports in a final export block.
