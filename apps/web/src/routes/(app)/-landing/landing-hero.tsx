@@ -44,7 +44,8 @@ import {
 import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
 import { isLandingIntroPending, useLandingIntro } from './landing-intro';
-import { Accent, OpenMado, TileMedia, Wordmark } from './landing-ui';
+import { OpenMado } from './landing-open-mado';
+import { Accent, TileMedia, Wordmark } from './landing-ui';
 import { usePauseOffscreen } from './use-pause-offscreen';
 
 // Hidden until the intro brings it in; see landing-intro.ts.
