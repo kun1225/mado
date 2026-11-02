@@ -74,6 +74,10 @@ graph LR
 
 **Known coupling:** `collections` and `sources` import each other, in both actions and hooks. It works because nesting rules (`collectBranchIds`) live in `sources`. If this grows, move the shared nesting helpers into `collections` or a small shared module.
 
+## Web app installation
+
+The root document links to the static `public/manifest.webmanifest` and app icons. The installed app opens `/library` in a standalone window using the existing web storage and account flows. There is no service worker or offline startup path yet. See [PWA](src/features/pwa/pwa.spec.md).
+
 ## Outside the app
 
 | Call                                   | Where                              | Why                                                                                 |
