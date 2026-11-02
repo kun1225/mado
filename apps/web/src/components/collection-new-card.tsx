@@ -29,7 +29,7 @@ export function CollectionNewCard({
       onClick={onClick}
       className={cn(
         'group relative flex size-48 flex-col items-center justify-center rounded-md border border-dashed border-border p-6 text-left text-muted-fg',
-        'transition-colors duration-fast hover:border-fg hover:text-fg',
+        'transition-[color,border-color,scale] duration-fast hover:border-fg hover:text-fg enabled:active:scale-[0.97]',
       )}
     >
       <span

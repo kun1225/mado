@@ -21,7 +21,7 @@ export function CollectionCard({ collection }: { collection: Collection }) {
           to="/collection/$collectionId"
           params={{ collectionId: collection.id }}
           className={cn(
-            'group relative block size-48 rounded-md border border-border text-left text-fg transition-[border-color,background-color,scale] hover:border-fg',
+            'group relative block size-48 rounded-md border border-border text-left text-fg transition-[border-color,background-color,scale] hover:border-fg active:scale-[0.97]',
             isDragActive && 'scale-[1.02] border-accent bg-accent/10',
           )}
         >
