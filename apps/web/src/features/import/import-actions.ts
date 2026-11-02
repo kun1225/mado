@@ -9,12 +9,7 @@ import {
 import type { Source } from '#/features/sources/source-types';
 import { textBodySchema } from '#/features/sources/text-source';
 import type { TextSourceContent } from '#/features/sources/text-source.type';
-import {
-  openDatabase,
-  STORES,
-  toCompletion,
-  toPromise,
-} from '#/features/storage/database';
+import { getLibraryStore } from '#/features/storage/library-store';
 
 import type {
   ImportExistingIds,
@@ -99,21 +94,17 @@ async function readManifest(
 }
 
 // *** readExistingIds ***
-// Keys only, and trash included, so a trashed source is not brought back as a copy.
+// Trash included, so a trashed source is not brought back as a copy.
 async function readExistingIds(): Promise<ImportExistingIds> {
-  const database = await openDatabase();
-  const transaction = database.transaction(
-    [STORES.collections, STORES.sources],
-    'readonly',
-  );
-  const [collectionIds, sourceIds] = await Promise.all([
-    toPromise(transaction.objectStore(STORES.collections).getAllKeys()),
-    toPromise(transaction.objectStore(STORES.sources).getAllKeys()),
+  const store = getLibraryStore();
+  const [collections, sources] = await Promise.all([
+    store.listCollections(),
+    store.listSources(),
   ]);
 
   return {
-    collectionIds: new Set(collectionIds.map(String)),
-    sourceIds: new Set(sourceIds.map(String)),
+    collectionIds: new Set(collections.map(({ id }) => id)),
+    sourceIds: new Set(sources.map(({ id }) => id)),
   };
 }
 
@@ -121,11 +112,7 @@ async function readExistingIds(): Promise<ImportExistingIds> {
 async function saveCollections(collections: Collection[]): Promise<void> {
   if (collections.length === 0) return;
 
-  const database = await openDatabase();
-  const transaction = database.transaction(STORES.collections, 'readwrite');
-  const store = transaction.objectStore(STORES.collections);
-  collections.forEach((collection) => store.put(collection));
-  await toCompletion(transaction);
+  await getLibraryStore().putCollections(collections);
 }
 
 // *** saveItem ***
@@ -142,11 +129,8 @@ async function saveItem(item: ImportItem): Promise<Source> {
   if (file && source.storageKey) await writeMediaFile(source.storageKey, file);
 
   try {
-    const database = await openDatabase();
-    const transaction = database.transaction(STORES.sources, 'readwrite');
-    // `add`, not `put`: another tab may have saved this id since we checked.
-    transaction.objectStore(STORES.sources).add(source);
-    await toCompletion(transaction);
+    // `addSource`, not a put: another tab may have saved this id since we checked.
+    await getLibraryStore().addSource(source);
   } catch (error) {
     if (source.storageKey) await deleteMediaFile(source.storageKey);
     throw new Error(`Failed to save "${source.name}".`, { cause: error });

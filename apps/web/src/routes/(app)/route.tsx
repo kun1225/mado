@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 
+import { DesktopLibraryGate } from '#/components/desktop-library-gate';
 import { SettingsDialog } from '#/components/settings/settings-dialog';
 import type { AuthSignedInGuardProps } from '#/features/auth/auth.type';
 import { authClient } from '#/features/auth/auth-client';
@@ -21,7 +22,9 @@ function RouteComponent() {
   return (
     <>
       {authUser && <SignedInGuard userId={authUser.id} />}
-      <Outlet />
+      <DesktopLibraryGate>
+        <Outlet />
+      </DesktopLibraryGate>
       <SettingsDialog authUser={authUser} />
     </>
   );

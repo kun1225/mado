@@ -2,15 +2,20 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 
 import type { AuthFormMode } from '#/features/auth/auth.type';
+import { useDesktopBridge } from '#/features/desktop/desktop-hooks';
 import {
   useAllSources,
   useDeletedSources,
 } from '#/features/sources/hooks/source-hooks';
+import type { StorageUsage } from '#/features/storage/storage-usage';
 import { readStorageUsage } from '#/features/storage/storage-usage';
 
 import type { SettingsTab } from './settings.type';
 import { parseSettingsSearch, withoutSettingsSearch } from './settings-search';
 import { toStorageBreakdown } from './settings-storage';
+
+// The browser's number says nothing about a folder on disk, so the desktop app counts its own files and has no quota.
+const DESKTOP_STORAGE_USAGE: StorageUsage = { usage: 0, quota: null };
 
 // The panel lives in the URL, so email links can open it on the right form.
 export function useSettingsSearch() {
@@ -60,10 +65,12 @@ export function useSettingsSearch() {
 export function useStorageBreakdown() {
   const { data: sources } = useAllSources();
   const { data: deleted } = useDeletedSources();
+  const isDesktop = useDesktopBridge() !== undefined;
   const { data: estimate } = useQuery({
     // Counts in the key, so an import or a delete reads the usage again.
-    queryKey: ['storage-usage', sources?.length, deleted?.length],
-    queryFn: readStorageUsage,
+    queryKey: ['storage-usage', isDesktop, sources?.length, deleted?.length],
+    queryFn: () =>
+      isDesktop ? Promise.resolve(DESKTOP_STORAGE_USAGE) : readStorageUsage(),
     enabled: sources !== undefined && deleted !== undefined,
     // Reading the estimate never touches the network, so offline must not pause it.
     networkMode: 'always',

@@ -427,7 +427,7 @@
             </tr>
             <tr>
               <td>Window safety</td>
-              <td><code>apps/desktop/src/main.js</code></td>
+              <td><code>apps/desktop/src/main/main.js</code></td>
               <td>
                 Open outside links in the browser, so a foreign page never gets
                 the bridge.
@@ -456,8 +456,8 @@
               <td><code>getLibraryStore()</code></td>
               <td><code>features/storage/library-store.ts</code></td>
               <td>
-                Pick the desktop store when the bridge exists, else the
-                IndexedDB store.
+                Return the bridge's <code>library</code> when it exists (it
+                already follows the contract), else the IndexedDB store.
               </td>
             </tr>
             <tr>
@@ -468,9 +468,12 @@
               </td>
             </tr>
             <tr>
-              <td>Desktop store</td>
-              <td><code>features/storage/library-store-desktop.ts</code></td>
-              <td>Calls the bridge.</td>
+              <td>Write lock</td>
+              <td><code>features/storage/library-lock.ts</code></td>
+              <td>
+                Runs a read-then-write as one step. It replaces the IndexedDB
+                transaction, which can't stay open across IPC.
+              </td>
             </tr>
             <tr>
               <td>Desktop bridge</td>
