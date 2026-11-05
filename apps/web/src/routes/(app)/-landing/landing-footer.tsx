@@ -1,8 +1,11 @@
 import { useRef } from 'react';
 import { Link } from '@tanstack/react-router';
-import type { MotionValue } from 'motion/react';
 import { motion, transform, useScroll, useTransform } from 'motion/react';
 
+import type {
+  LandingFooterWindowProps,
+  LandingFooterWordmarkProps,
+} from '#/features/landing/landing.type';
 import {
   findLandingTile,
   LANDING_APP_HREF,
@@ -80,13 +83,7 @@ function useFooterMotion(
 }
 
 // *** FooterWindow ***
-function FooterWindow({
-  clipPath,
-  clusterScale,
-}: {
-  clipPath: MotionValue<string>;
-  clusterScale: MotionValue<number>;
-}) {
+function FooterWindow({ clipPath, clusterScale }: LandingFooterWindowProps) {
   return (
     <motion.div
       aria-hidden
@@ -120,15 +117,7 @@ function FooterWindow({
 }
 
 // *** FooterWordmark ***
-function FooterWordmark({
-  opacity,
-  maX,
-  doX,
-}: {
-  opacity: MotionValue<number>;
-  maX: MotionValue<string>;
-  doX: MotionValue<string>;
-}) {
+function FooterWordmark({ opacity, maX, doX }: LandingFooterWordmarkProps) {
   return (
     // Three columns around the window, so it sits in the middle even though "Ma" is wider than "do".
     <motion.div

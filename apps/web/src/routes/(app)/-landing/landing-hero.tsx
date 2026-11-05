@@ -5,17 +5,15 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import type { MotionValue } from 'motion/react';
 import {
   motion,
   transform,
   useMotionValue,
-  useMotionValueEvent,
   useScroll,
   useSpring,
   useTransform,
 } from 'motion/react';
-import type { CSSProperties, RefObject } from 'react';
+import type { RefObject } from 'react';
 
 import { cn } from '@repo/ui/cn';
 
@@ -24,20 +22,23 @@ import { CollectionNewCard } from '#/components/collection-new-card';
 import { Reveal, RevealText } from '#/components/reveal';
 import type {
   LandingFloat,
-  LandingNavItem,
+  LandingHeroBobStyle,
+  LandingHeroCopyProps,
+  LandingHeroProps,
+  LandingHeroTileProps,
+  LandingLibraryFrameProps,
+  LandingPointer,
   LandingRect,
-  LandingTile,
+  LandingSlotLayout,
 } from '#/features/landing/landing.type';
 import {
   findLandingTile,
   LANDING_COLLECTIONS,
-  LANDING_NAV,
   LANDING_TILES,
 } from '#/features/landing/landing-content';
 import {
   introClusterFloat,
   mixFloat,
-  pickActiveSection,
   splitIntoColumns,
   tilePose,
 } from '#/features/landing/landing-motion';
@@ -45,129 +46,14 @@ import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
 import { isLandingIntroPending, useLandingIntro } from './landing-intro';
 import { OpenMado } from './landing-open-mado';
-import { Accent, TileMedia, Wordmark } from './landing-ui';
+import { Accent, TileMedia } from './landing-ui';
 import { usePauseOffscreen } from './use-pause-offscreen';
-
-// Hidden until the intro brings it in; see landing-intro.ts.
-const INTRO_HIDDEN = 'in-data-[landing-intro=pending]:opacity-0';
-
-/**
- * Two floating blocks: the logo with the section links, and "Open Mado".
- * The link for the section you are reading gets a box that slides to the next one as you scroll.
- */
-export function LandingHeader({
-  heroRef,
-}: {
-  heroRef: RefObject<HTMLElement | null>;
-}) {
-  const [isSolid, setIsSolid] = useState(false);
-  const activeId = useActiveSection();
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ['start start', 'end end'],
-  });
-  // At 1 the hero stops sticking and the library starts to slide under the header.
-  useMotionValueEvent(scrollYProgress, 'change', (value) =>
-    setIsSolid(value >= 1),
-  );
-
-  return (
-    // The bar itself takes no clicks, so the page between the two blocks stays usable.
-    <header
-      data-landing-header
-      className={cn(
-        'pointer-events-none sticky top-0 z-header flex h-16 items-center justify-between gap-4 px-edge',
-        INTRO_HIDDEN,
-      )}
-    >
-      {/* 12px outside and 4px padding, so the links inside take 8px. */}
-      <div
-        className={cn(
-          'pointer-events-auto flex h-10 items-center gap-2 rounded-lg p-1 pl-4 backdrop-blur-md transition-[background-color] duration-200 ease-out',
-          isSolid ? 'bg-bg/85' : 'bg-bg/70',
-        )}
-      >
-        <Wordmark />
-        <nav aria-label="Sections" className="ml-3 hidden items-center md:flex">
-          {LANDING_NAV.map((item) => (
-            <HeaderNavLink
-              key={item.id}
-              item={item}
-              isActive={activeId === item.id}
-            />
-          ))}
-        </nav>
-      </div>
-      <OpenMado className="pointer-events-auto" />
-    </header>
-  );
-}
-
-// *** useActiveSection ***
-function useActiveSection() {
-  const [activeId, setActiveId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const update = () => {
-      const sections = LANDING_NAV.flatMap(({ id }) => {
-        const rect = document.getElementById(id)?.getBoundingClientRect();
-        return rect ? [{ id, top: rect.top, bottom: rect.bottom }] : [];
-      });
-      // 40% down the screen, so a section counts once it fills most of the view.
-      setActiveId(pickActiveSection(sections, window.innerHeight * 0.4));
-    };
-    update();
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
-    return () => {
-      window.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
-    };
-  }, []);
-
-  return activeId;
-}
-
-// *** HeaderNavLink ***
-function HeaderNavLink({
-  item,
-  isActive,
-}: {
-  item: LandingNavItem;
-  isActive: boolean;
-}) {
-  return (
-    <a
-      href={`#${item.id}`}
-      aria-current={isActive ? 'location' : undefined}
-      className={cn(
-        'relative inline-flex h-8 items-center rounded-md px-3 text-xs font-medium tracking-[0.08em] text-muted-fg uppercase transition-colors duration-150 ease-out outline-none hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg/40',
-        isActive && 'text-fg',
-      )}
-    >
-      {isActive && (
-        // One shared box that slides, so the move reads as going from one section to the next.
-        <motion.span
-          layoutId="landing-header-active"
-          aria-hidden
-          className="absolute inset-0 rounded-md border border-fg/20 bg-bg/60"
-          transition={{ type: 'spring', duration: 0.35, bounce: 0 }}
-        />
-      )}
-      <span className="relative">{item.label}</span>
-    </a>
-  );
-}
 
 /**
  * Sources float behind the title. Scrolling pulls each one into its slot in the library, so the hero becomes the gallery.
  * The stage sticks for two screens of scroll, which drive the whole move.
  */
-export function LandingHero({
-  sectionRef,
-}: {
-  sectionRef: RefObject<HTMLElement | null>;
-}) {
+export function LandingHero({ sectionRef }: LandingHeroProps) {
   const prefersReducedMotion = usePrefersReducedMotion();
   // 0 holds the tiles in the intro's cluster, 1 lets them float. The intro animates it.
   const spread = useMotionValue(isLandingIntroPending() ? 0 : 1);
@@ -231,9 +117,7 @@ export function LandingHero({
 
 // *** usePointer ***
 // The mouse as -1 to 1 from the center of the screen, on a soft spring so the floats drift after it instead of snapping.
-type Pointer = { x: MotionValue<number>; y: MotionValue<number> };
-
-function usePointer(isEnabled: boolean): Pointer {
+function usePointer(isEnabled: boolean): LandingPointer {
   const x = useSpring(0, POINTER_SPRING);
   const y = useSpring(0, POINTER_SPRING);
 
@@ -259,12 +143,7 @@ function LibraryFrame({
   spread,
   pointer,
   chromeOpacity,
-}: {
-  progress: MotionValue<number>;
-  spread: MotionValue<number>;
-  pointer: Pointer;
-  chromeOpacity: MotionValue<number>;
-}) {
+}: LandingLibraryFrameProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const columnCount = useColumnCount();
   const layout = useSlotLayout(stageRef, columnCount);
@@ -289,23 +168,20 @@ function LibraryFrame({
           </motion.div>
 
           <div className="flex items-start gap-2.5 px-4 sm:px-6">
-            {splitIntoColumns(LANDING_TILES, columnCount).map((column, i) => (
+            {splitIntoColumns(HERO_TILES, columnCount).map((column, i) => (
               <div key={i} className="min-w-0 flex-1">
-                {column.map((tile) => {
-                  const index = LANDING_TILES.indexOf(tile);
-                  return (
-                    <HeroTile
-                      key={tile.id}
-                      tile={tile}
-                      float={FLOATS[index % FLOATS.length]}
-                      index={index}
-                      layout={layout}
-                      progress={progress}
-                      spread={spread}
-                      pointer={pointer}
-                    />
-                  );
-                })}
+                {column.map(({ index, float, ...tile }) => (
+                  <HeroTile
+                    key={tile.id}
+                    tile={tile}
+                    float={float}
+                    index={index}
+                    layout={layout}
+                    progress={progress}
+                    spread={spread}
+                    pointer={pointer}
+                  />
+                ))}
               </div>
             ))}
           </div>
@@ -323,16 +199,11 @@ function LibraryFrame({
 
 // *** useSlotLayout ***
 // Slots are measured on the untransformed wrapper, so the moving tile never changes its own target.
-type SlotLayout = {
-  stage: { width: number; height: number };
-  slots: Map<string, LandingRect>;
-};
-
 function useSlotLayout(
   stageRef: RefObject<HTMLDivElement | null>,
   columnCount: number,
 ) {
-  const [layout, setLayout] = useState<SlotLayout | null>(null);
+  const [layout, setLayout] = useState<LandingSlotLayout | null>(null);
 
   useLayoutEffect(() => {
     const stage = stageRef.current;
@@ -403,15 +274,7 @@ function HeroTile({
   progress,
   spread,
   pointer,
-}: {
-  tile: LandingTile;
-  float: LandingFloat;
-  index: number;
-  layout: SlotLayout | null;
-  progress: MotionValue<number>;
-  spread: MotionValue<number>;
-  pointer: Pointer;
-}) {
+}: LandingHeroTileProps) {
   const slot = layout?.slots.get(tile.id);
   const tileTransform = useTransform(
     [progress, spread, pointer.x, pointer.y],
@@ -438,6 +301,10 @@ function HeroTile({
   );
   // On the bob element itself, so a change restyles only it, not the whole band.
   const bob = useTransform(progress, [0, 0.3], ['10px', '0px']);
+  const bobStyle: LandingHeroBobStyle = {
+    '--bob': bob,
+    animationDelay: `${index * -0.7}s`,
+  };
 
   return (
     <div
@@ -454,12 +321,7 @@ function HeroTile({
         )}
       >
         <motion.div
-          style={
-            {
-              '--bob': bob,
-              animationDelay: `${index * -0.7}s`,
-            } as unknown as CSSProperties
-          }
+          style={bobStyle}
           className="size-full animate-bob in-data-offscreen:paused motion-reduce:animate-none"
         >
           {/* Eager: every tile floats on the first screen, even if its grid slot is below it. */}
@@ -532,7 +394,7 @@ function CollectionsRow() {
 }
 
 // *** HeroCopy ***
-function HeroCopy({ isVeiled }: { isVeiled: boolean }) {
+function HeroCopy({ isVeiled }: LandingHeroCopyProps) {
   return (
     <div className="relative flex flex-col items-center text-center">
       {/* Keeps the text readable over the floating sources. */}
@@ -633,3 +495,9 @@ const INTRO_CLUSTER_RANKS = (() => {
   const order = xs.map((_, index) => index).sort((a, b) => xs[a] - xs[b]);
   return xs.map((_, index) => order.indexOf(index));
 })();
+
+const HERO_TILES = LANDING_TILES.map((tile, index) => ({
+  ...tile,
+  index,
+  float: FLOATS[index % FLOATS.length],
+}));

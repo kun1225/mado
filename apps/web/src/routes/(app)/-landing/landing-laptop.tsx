@@ -1,8 +1,11 @@
-import type { MotionValue } from 'motion/react';
 import { motion } from 'motion/react';
-import type { ReactNode } from 'react';
 
 import { cn } from '@repo/ui/cn';
+
+import type {
+  LandingLaptopLidProps,
+  LandingLaptopProps,
+} from '#/features/landing/landing-demo.type';
 
 import { Logo } from './landing-ui';
 
@@ -30,15 +33,7 @@ export const LAPTOP_FACE_CAMERA = `rotateX(-${LAPTOP.openAngle}deg) rotateY(${LA
  * A laptop with real depth: the lid leans back and the keyboard lies flat.
  * `lidAngle` opens it. `children` sit in the lid's frame, so they ride the lid and can fly out of the screen.
  */
-export function Laptop({
-  lidAngle,
-  screen,
-  children,
-}: {
-  lidAngle: MotionValue<number>;
-  screen: ReactNode;
-  children?: ReactNode;
-}) {
+export function Laptop({ lidAngle, children }: LandingLaptopProps) {
   return (
     <div className="relative [perspective:1800px]">
       <div
@@ -51,9 +46,7 @@ export function Laptop({
         }}
         className="relative transform-3d"
       >
-        <Lid angle={lidAngle} screen={screen}>
-          {children}
-        </Lid>
+        <Lid angle={lidAngle}>{children}</Lid>
         <Base />
       </div>
 
@@ -73,15 +66,7 @@ const ALUMINUM_SIDE = 'bg-linear-to-b from-[#d9d9dc] to-[#b8b8bd]';
 const HIDE_BACK = '[backface-visibility:hidden]';
 
 // *** Lid ***
-function Lid({
-  angle,
-  screen,
-  children,
-}: {
-  angle: MotionValue<number>;
-  screen: ReactNode;
-  children: ReactNode;
-}) {
+function Lid({ angle, children }: LandingLaptopLidProps) {
   return (
     <motion.div
       style={{
@@ -108,9 +93,7 @@ function Lid({
           aria-hidden
           className="absolute top-[3px] left-1/2 size-1.5 -translate-x-1/2 rounded-full bg-[#2b2b30]"
         />
-        <div className="size-full overflow-hidden rounded-md bg-bg">
-          {screen}
-        </div>
+        <div className="size-full overflow-hidden rounded-md bg-bg" />
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-linear-to-br from-white/15 via-transparent to-transparent"

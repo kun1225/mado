@@ -8,9 +8,7 @@ import {
   PencilEdit02Icon,
   Video01Icon,
 } from '@hugeicons/core-free-icons';
-import type { IconSvgElement } from '@hugeicons/react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import type { MotionValue } from 'motion/react';
 import {
   easeOut,
   motion,
@@ -22,7 +20,7 @@ import {
   useSpring,
   useTransform,
 } from 'motion/react';
-import type { PointerEvent, ReactNode } from 'react';
+import type { PointerEvent } from 'react';
 
 import {
   MorphContextMenu,
@@ -37,6 +35,20 @@ import { CollectionRenameDialog } from '#/components/collection-context-menu/col
 import type { CollectionColor } from '#/features/collections/collection-types';
 import type { LandingSortFolder } from '#/features/landing/landing.type';
 import { findLandingTile } from '#/features/landing/landing-content';
+import type {
+  LandingAllTypesCardProps,
+  LandingAllTypesItem,
+  LandingDemoPanelProps,
+  LandingDemoProps,
+  LandingDropCardProps,
+  LandingLocalFolderProps,
+  LandingLocalTile,
+  LandingLocalTileProps,
+  LandingSortCard,
+  LandingSortCardProps,
+  LandingSortFolderProps,
+  LandingTypeBadgeProps,
+} from '#/features/landing/landing-demo.type';
 import { demoSlice } from '#/features/landing/landing-motion';
 
 import { LAPTOP, Laptop, LAPTOP_FACE_CAMERA } from './landing-laptop';
@@ -46,21 +58,18 @@ const LIFT = { y: -8, scale: 1.02 };
 const LIFT_SPRING = { type: 'spring', duration: 0.35, bounce: 0.15 } as const;
 
 /** Four kinds of saves drop into one library, one after another, as the step scrolls. */
-export function DemoAllTypes({ progress }: { progress: MotionValue<number> }) {
+export function DemoAllTypes({ progress }: LandingDemoProps) {
   return (
     <DemoPanel>
       {/* Two columns like the library, so every card keeps its own aspect ratio. */}
       <div className="flex shrink-0 gap-4 max-md:scale-[0.7]">
-        {[0, 1].map((column) => (
-          <div key={column} className="flex w-56 flex-col gap-4">
-            {ALL_TYPES.map(
-              (item, index) =>
-                index % 2 === column && (
-                  <DropCard key={item.label} index={index} progress={progress}>
-                    <AllTypesCard item={item} />
-                  </DropCard>
-                ),
-            )}
+        {ALL_TYPE_COLUMNS.map((column, columnIndex) => (
+          <div key={columnIndex} className="flex w-56 flex-col gap-4">
+            {column.map(({ item, index }) => (
+              <DropCard key={item.label} index={index} progress={progress}>
+                <AllTypesCard item={item} />
+              </DropCard>
+            ))}
           </div>
         ))}
       </div>
@@ -69,15 +78,21 @@ export function DemoAllTypes({ progress }: { progress: MotionValue<number> }) {
 }
 
 // Image and website go in the first column, video and note in the second: each save joins the shorter column, as in the library.
-const ALL_TYPES: { label: string; icon: IconSvgElement; tileId?: string }[] = [
+const ALL_TYPES: LandingAllTypesItem[] = [
   { label: 'Image', icon: Image01Icon, tileId: 'neuro-pop' },
   { label: 'Video', icon: Video01Icon, tileId: 'heist-button' },
   { label: 'Website', icon: Link01Icon, tileId: 'house-of-honey' },
   { label: 'Note', icon: Note01Icon },
 ];
 
+const ALL_TYPE_COLUMNS = [0, 1].map((column) =>
+  ALL_TYPES.map((item, index) => ({ item, index })).filter(
+    ({ index }) => index % 2 === column,
+  ),
+);
+
 /** Loose saves fly into their folders as the step scrolls, and each count goes up when one lands. */
-export function DemoSort({ progress }: { progress: MotionValue<number> }) {
+export function DemoSort({ progress }: LandingDemoProps) {
   // Seeded from the current value, because a jump into the step mounts the demo mid-way.
   const [landed, setLanded] = useState(() => countLanded(progress.get()));
   useMotionValueEvent(progress, 'change', (value) =>
@@ -145,7 +160,7 @@ const SORT_FOLDERS: LandingSortFolder[] = [
   },
 ];
 
-const SORT_CARDS = [
+const SORT_CARDS: LandingSortCard[] = [
   { tileId: 'cleo-y-teo', folder: 'Brand' },
   { tileId: 'nothin', folder: 'Web Design' },
   { tileId: 'petrichor', folder: 'Brand' },
@@ -161,7 +176,7 @@ const SORT_CARDS = [
 });
 
 /** A closed laptop opens as the step scrolls. The library lifts out of its screen and lands in a folder: your files, on your computer. */
-export function DemoLocal({ progress }: { progress: MotionValue<number> }) {
+export function DemoLocal({ progress }: LandingDemoProps) {
   const prefersReducedMotion = useReducedMotion();
   const lidAngle = useTransform(progress, (value): number =>
     prefersReducedMotion ? LAPTOP.openAngle : lidCurve(value),
@@ -184,7 +199,7 @@ export function DemoLocal({ progress }: { progress: MotionValue<number> }) {
           style={{ x: panX }}
           whileHover={{ ...LIFT, transition: LIFT_SPRING }}
         >
-          <Laptop lidAngle={lidAngle} screen={null}>
+          <Laptop lidAngle={lidAngle}>
             {LOCAL_TILES.map((tile) => (
               <LocalTile
                 key={tile.id}
@@ -233,7 +248,7 @@ const LOCAL_TILE_HEIGHT = (LOCAL_TILE_WIDTH * 3) / 4;
 const LOCAL_FOLDER = { x: -160, y: 160, width: 128 };
 
 // Each tile starts on its slot in the screen's grid, and flies to the folder's front edge.
-const LOCAL_TILES = LOCAL_TILE_IDS.map((id, index) => {
+const LOCAL_TILES = LOCAL_TILE_IDS.map((id, index): LandingLocalTile => {
   const left =
     LAPTOP.bezel +
     LOCAL_SCREEN_PAD +
@@ -250,13 +265,13 @@ const LOCAL_TILES = LOCAL_TILE_IDS.map((id, index) => {
     top,
     dx: LOCAL_FOLDER.x - (left + LOCAL_TILE_WIDTH / 2),
     dy: LOCAL_FOLDER.y - 14 - (top + LOCAL_TILE_HEIGHT / 2),
-    slice: [start, start + LOCAL_FLY.length] as [number, number],
+    slice: [start, start + LOCAL_FLY.length],
   };
 });
 
 // *** DemoPanel ***
 /** The panel tilts toward the mouse and catches a soft light, so the demo feels like an object you can turn. */
-function DemoPanel({ children }: { children: ReactNode }) {
+function DemoPanel({ children }: LandingDemoPanelProps) {
   const prefersReducedMotion = useReducedMotion();
   const pointerX = useMotionValue(0.5);
   const pointerY = useMotionValue(0.5);
@@ -317,15 +332,7 @@ const MAX_TILT = 6;
 const TILT_SPRING = { stiffness: 160, damping: 22, mass: 0.6 };
 
 // *** DropCard ***
-function DropCard({
-  index,
-  progress,
-  children,
-}: {
-  index: number;
-  progress: MotionValue<number>;
-  children: ReactNode;
-}) {
+function DropCard({ index, progress, children }: LandingDropCardProps) {
   const slice = demoSlice(index);
   const opacity = useTransform(progress, transform(slice, [0, 1]));
   const y = useTransform(progress, slice, [-40, 0]);
@@ -349,7 +356,7 @@ function DropCard({
 
 // *** AllTypesCard ***
 /** A save at its own aspect ratio. A note is its text in the serif the library's note cards use. */
-function AllTypesCard({ item }: { item: (typeof ALL_TYPES)[number] }) {
+function AllTypesCard({ item }: LandingAllTypesCardProps) {
   const tile = item.tileId ? findLandingTile(item.tileId) : null;
 
   return (
@@ -374,15 +381,7 @@ function AllTypesCard({ item }: { item: (typeof ALL_TYPES)[number] }) {
 }
 
 // *** SortCard ***
-function SortCard({
-  card,
-  index,
-  progress,
-}: {
-  card: (typeof SORT_CARDS)[number];
-  index: number;
-  progress: MotionValue<number>;
-}) {
+function SortCard({ card, index, progress }: LandingSortCardProps) {
   const slice = demoSlice(index);
   const x = useTransform(progress, slice, [0, card.dx]);
   const y = useTransform(progress, slice, [0, SORT_DROP_Y]);
@@ -406,13 +405,7 @@ function SortCard({
 
 // *** SortFolder ***
 /** The library's own folder card. Right-click opens the same rename and color dialogs, kept in this demo only. */
-function SortFolder({
-  folder,
-  landedTileIds,
-}: {
-  folder: LandingSortFolder;
-  landedTileIds: string[];
-}) {
+function SortFolder({ folder, landedTileIds }: LandingSortFolderProps) {
   const [name, setName] = useState(folder.name);
   const [color, setColor] = useState<CollectionColor | null>(folder.color);
   const [openDialog, setOpenDialog] = useState<'rename' | 'color' | null>(null);
@@ -446,21 +439,7 @@ function SortFolder({
               <CollectionPocket
                 color={color}
                 previews={[...folder.previewTileIds, ...landedTileIds].map(
-                  (id) => {
-                    const tile = findLandingTile(id);
-                    return {
-                      id,
-                      width: tile.width,
-                      height: tile.height,
-                      media: (
-                        <TileMedia
-                          tile={tile}
-                          loading="eager"
-                          className="rounded-none"
-                        />
-                      ),
-                    };
-                  },
+                  folderPreview,
                 )}
               />
             </div>
@@ -518,15 +497,7 @@ function SortFolder({
 
 // *** LocalTile ***
 /** A save on the laptop's screen. It lifts off, turns to face you, and shrinks into the folder. */
-function LocalTile({
-  tile,
-  progress,
-  isStill,
-}: {
-  tile: (typeof LOCAL_TILES)[number];
-  progress: MotionValue<number>;
-  isStill: boolean | null;
-}) {
+function LocalTile({ tile, progress, isStill }: LandingLocalTileProps) {
   const { slice } = tile;
   const middle = (slice[0] + slice[1]) / 2;
   const x = useTransform(progress, slice, [0, tile.dx]);
@@ -561,13 +532,7 @@ function LocalTile({
 
 // *** LocalFolder ***
 /** The library's folder, standing beside the laptop and turned to face you. It shows the first saves that land. */
-function LocalFolder({
-  progress,
-  landed,
-}: {
-  progress: MotionValue<number>;
-  landed: number;
-}) {
+function LocalFolder({ progress, landed }: LandingLocalFolderProps) {
   const opacity = useTransform(
     progress,
     transform([LOCAL_FLY.start - 0.02, LOCAL_FLY.start + 0.04], [0, 1]),
@@ -586,17 +551,9 @@ function LocalFolder({
     >
       <CollectionPocket
         color="orange"
-        previews={LOCAL_TILES.slice(0, Math.min(landed, 3)).map(({ id }) => {
-          const tile = findLandingTile(id);
-          return {
-            id,
-            width: tile.width,
-            height: tile.height,
-            media: (
-              <TileMedia tile={tile} loading="eager" className="rounded-none" />
-            ),
-          };
-        })}
+        previews={LOCAL_TILES.slice(0, Math.min(landed, 3)).map(({ id }) =>
+          folderPreview(id),
+        )}
       />
       <p className="mt-3 t-l-2">mado-export</p>
       <p className="t-b-3 text-muted-fg tabular-nums">
@@ -604,6 +561,17 @@ function LocalFolder({
       </p>
     </motion.div>
   );
+}
+
+// *** folderPreview ***
+function folderPreview(id: string) {
+  const tile = findLandingTile(id);
+  return {
+    id,
+    width: tile.width,
+    height: tile.height,
+    media: <TileMedia tile={tile} loading="eager" className="rounded-none" />,
+  };
 }
 
 // *** lidCurve ***
@@ -626,7 +594,7 @@ function countLanded(progress: number) {
 }
 
 // *** TypeBadge ***
-function TypeBadge({ icon, label }: { icon: IconSvgElement; label: string }) {
+function TypeBadge({ icon, label }: LandingTypeBadgeProps) {
   return (
     <span className="absolute bottom-3 left-3 flex items-center gap-1 rounded-full bg-bg/90 px-2.5 py-1 t-l-3 text-fg shadow-sm">
       <HugeiconsIcon icon={icon} size={14} strokeWidth={1.5} />

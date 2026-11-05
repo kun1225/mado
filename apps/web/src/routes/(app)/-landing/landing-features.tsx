@@ -1,5 +1,4 @@
 import { Fragment, useRef, useState } from 'react';
-import type { MotionValue } from 'motion/react';
 import {
   AnimatePresence,
   motion,
@@ -11,7 +10,8 @@ import {
 import { cn } from '@repo/ui/cn';
 
 import type {
-  LandingFeatureDemo,
+  LandingFeatureDemoProps,
+  LandingFeatureStepProps,
   LandingPainWordProps,
 } from '#/features/landing/landing.type';
 import { LANDING_FEATURES } from '#/features/landing/landing-content';
@@ -27,21 +27,24 @@ import { Accent, LANDING_H2 } from './landing-ui';
 import { usePauseOffscreen } from './use-pause-offscreen';
 
 const STEP_COUNT = LANDING_FEATURES.length;
+const FEATURE_DEMOS = {
+  'all-types': DemoAllTypes,
+  sort: DemoSort,
+  local: DemoLocal,
+};
+const FADE_TRANSITION = {
+  duration: 0.4,
+  ease: [0.25, 1, 0.5, 1],
+} as const;
 
-/** The scroll story in svh, from the section's top entering the screen. The stage pins at 100. */
 const SECTION_SVH = 480;
-const PAIN_IN = [30, 120].map(toProgress);
+const PAIN_IN = [30 / SECTION_SVH, 120 / SECTION_SVH];
 const PAIN_WORDS = "Saving ideas is easy. Finding them again isn't.".split(' ');
-const FEATURES_THRESHOLD = toProgress(150);
-const STEPS_START = toProgress(230);
-/** Where in a step a click lands: late, so the scrubbed demo shows its finished state. */
+const FEATURES_THRESHOLD = 150 / SECTION_SVH;
+const STEPS_START = 230 / SECTION_SVH;
+// A click lands late so the demo shows its finished state.
 const STEP_CLICK_TARGET = 0.8;
 
-/**
- * The pain line, then the features, on one pinned stage.
- * Why one stage: the problem fades out while the answer fades in at the same spot, so they read as one scene.
- * After the crossfade, each third of the scroll makes the next step active, fills its bar, and plays its demo.
- */
 export function LandingFeatures() {
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = usePauseOffscreen(sectionRef);
@@ -91,7 +94,7 @@ export function LandingFeatures() {
               opacity: isFeaturesShown ? 0 : 1,
               y: isFeaturesShown ? -24 : 0,
             }}
-            transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
+            transition={FADE_TRANSITION}
             className="max-w-[18ch] text-center t-h-1 text-balance motion-reduce:transform-none!"
           >
             {PAIN_WORDS.map((word, index) => (
@@ -114,7 +117,7 @@ export function LandingFeatures() {
             opacity: isFeaturesShown ? 1 : 0,
             y: isFeaturesShown ? 0 : 24,
           }}
-          transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
+          transition={FADE_TRANSITION}
           inert={!isFeaturesShown}
           className="grid h-full content-center items-center gap-8 px-edge motion-reduce:transform-none! md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]"
         >
@@ -139,14 +142,13 @@ export function LandingFeatures() {
 
           <div className="relative h-[min(44svh,380px)] md:h-[min(70svh,680px)]">
             <AnimatePresence mode="popLayout" initial={false}>
-              {/* Off screen it unmounts, because the local demo loops forever. */}
               {isFeaturesShown && isInView && (
                 <motion.div
                   key={activeDemo}
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -16 }}
-                  transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
+                  transition={FADE_TRANSITION}
                   className="absolute inset-0"
                 >
                   <FeatureDemo
@@ -173,13 +175,12 @@ function PainWord({ word, index, progress }: LandingPainWordProps) {
   const reveal = useTransform(progress, (value) =>
     phaseProgress(value, start, end),
   );
-  const opacity = useTransform(reveal, (value) => value);
   const y = useTransform(reveal, (value) => (1 - value) * 12);
   const filter = useTransform(reveal, (value) => `blur(${(1 - value) * 6}px)`);
 
   return (
     <motion.span
-      style={{ opacity, y, filter }}
+      style={{ opacity: reveal, y, filter }}
       className="inline-block motion-reduce:transform-none! motion-reduce:filter-none!"
     >
       {word === 'Finding' ? <Accent>{word}</Accent> : word}
@@ -195,14 +196,7 @@ function FeatureStep({
   isActive,
   progress,
   onSelect,
-}: {
-  index: number;
-  title: string;
-  line: string;
-  isActive: boolean;
-  progress: MotionValue<number>;
-  onSelect: () => void;
-}) {
+}: LandingFeatureStepProps) {
   const fill = useTransform(progress, (value) =>
     stepProgress(value, STEP_COUNT, index),
   );
@@ -246,31 +240,17 @@ function FeatureStep({
   );
 }
 
-// *** toProgress ***
-function toProgress(svh: number) {
-  return svh / SECTION_SVH;
-}
-
 // *** FeatureDemo ***
 /**
  * Each demo follows its own step's progress, clamped to 0 to 1, so they play back when you scroll back.
  * Why not one progress for the active step: a demo takes 0.4s to fade out, and a shared value jumps to the
  * next step's edge (the finished state going back, the start going forward), so the leaving demo flashed it.
  */
-function FeatureDemo({
-  demo,
-  index,
-  stepsProgress,
-}: {
-  demo: LandingFeatureDemo;
-  index: number;
-  stepsProgress: MotionValue<number>;
-}) {
+function FeatureDemo({ demo, index, stepsProgress }: LandingFeatureDemoProps) {
   const progress = useTransform(stepsProgress, (value) =>
     stepProgress(value, STEP_COUNT, index),
   );
 
-  if (demo === 'all-types') return <DemoAllTypes progress={progress} />;
-  if (demo === 'sort') return <DemoSort progress={progress} />;
-  return <DemoLocal progress={progress} />;
+  const Demo = FEATURE_DEMOS[demo];
+  return <Demo progress={progress} />;
 }

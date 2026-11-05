@@ -1,15 +1,18 @@
 import { Link } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
 
 import { cn } from '@repo/ui/cn';
 
-import type { LandingTile } from '#/features/landing/landing.type';
+import type {
+  LandingChildrenProps,
+  LandingClassNameProps,
+  LandingTileMediaProps,
+} from '#/features/landing/landing.type';
 import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
 export const LANDING_H2 = 't-h-2 text-balance';
 
 /** The one or two serif words a title may have. */
-export function Accent({ children }: { children: ReactNode }) {
+export function Accent({ children }: LandingChildrenProps) {
   return (
     <em className="font-accent font-bold tracking-[-0.01em]">{children}</em>
   );
@@ -20,11 +23,7 @@ export function TileMedia({
   tile,
   loading = 'lazy',
   className,
-}: {
-  tile: LandingTile;
-  loading?: 'lazy' | 'eager';
-  className?: string;
-}) {
+}: LandingTileMediaProps) {
   const prefersReducedMotion = usePrefersReducedMotion();
   const classes = cn(
     'block size-full rounded-md bg-muted object-cover select-none',
@@ -60,7 +59,7 @@ export function TileMedia({
 }
 
 /** The Focus Frame mark: the only place the hairline-to-heavy frame is used. */
-export function Logo({ className }: { className?: string }) {
+export function Logo({ className }: LandingClassNameProps) {
   return (
     <svg
       viewBox="48 48 160 160"

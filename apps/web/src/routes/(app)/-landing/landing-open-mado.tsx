@@ -12,6 +12,7 @@ import type { PointerEvent } from 'react';
 
 import { cn } from '@repo/ui/cn';
 
+import type { LandingOpenMadoProps } from '#/features/landing/landing.type';
 import { LANDING_APP_HREF } from '#/features/landing/landing-content';
 
 const SQUARE_SIZE = 28;
@@ -27,10 +28,7 @@ const LIGHT =
 export function OpenMado({
   label = 'Open Mado',
   className,
-}: {
-  label?: string;
-  className?: string;
-}) {
+}: LandingOpenMadoProps) {
   const reduceMotion = useReducedMotion();
   const chipRef = useRef<HTMLSpanElement>(null);
   const snapped = useRef(false);

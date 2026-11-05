@@ -12,6 +12,7 @@ import {
 import { cn } from '@repo/ui/cn';
 
 import { Reveal, RevealText } from '#/components/reveal';
+import type { LandingQueryBarProps } from '#/features/landing/landing.type';
 import {
   findLandingTile,
   LANDING_SEARCH_QUERIES,
@@ -135,13 +136,7 @@ function useScrollTyping(progress: MotionValue<number>) {
 }
 
 // *** QueryBar ***
-function QueryBar({
-  index,
-  progress,
-}: {
-  index: number;
-  progress: MotionValue<number>;
-}) {
+function QueryBar({ index, progress }: LandingQueryBarProps) {
   const fill = useTransform(progress, (value) =>
     stepProgress(value, QUERY_COUNT, index),
   );

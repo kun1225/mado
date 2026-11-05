@@ -7,7 +7,8 @@ import { LandingFaq } from './-landing/landing-faq';
 import { LandingFeatures } from './-landing/landing-features';
 import { LandingFinal, LandingNoAccount } from './-landing/landing-final';
 import { LandingFooter } from './-landing/landing-footer';
-import { LandingHeader, LandingHero } from './-landing/landing-hero';
+import { LandingHeader } from './-landing/landing-header';
+import { LandingHero } from './-landing/landing-hero';
 import { LANDING_INTRO_SCRIPT } from './-landing/landing-intro';
 import { LandingSearch } from './-landing/landing-search';
 
