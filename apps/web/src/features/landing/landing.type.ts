@@ -1,4 +1,5 @@
 import type { MotionValue } from 'motion/react';
+import type { CSSProperties, ReactNode, RefObject } from 'react';
 
 import type { CollectionColor } from '#/features/collections/collection-types';
 
@@ -6,6 +7,19 @@ export type LandingPainWordProps = {
   word: string;
   index: number;
   progress: MotionValue<number>;
+};
+
+export type LandingFeatureDemoProps = {
+  demo: LandingFeatureDemo;
+  index: number;
+  stepsProgress: MotionValue<number>;
+};
+
+export type LandingFeatureStepProps = Pick<LandingFeature, 'title' | 'line'> & {
+  index: number;
+  isActive: boolean;
+  progress: MotionValue<number>;
+  onSelect: () => void;
 };
 
 export type LandingTile = {
@@ -79,4 +93,86 @@ export type LandingSectionBounds = {
   id: string;
   top: number;
   bottom: number;
+};
+
+export type LandingHeaderProps = {
+  heroRef: RefObject<HTMLElement | null>;
+};
+
+export type LandingHeaderNavLinkProps = {
+  item: LandingNavItem;
+  isActive: boolean;
+};
+
+export type LandingHeroProps = {
+  sectionRef: RefObject<HTMLElement | null>;
+};
+
+export type LandingPointer = {
+  x: MotionValue<number>;
+  y: MotionValue<number>;
+};
+
+export type LandingSlotLayout = {
+  stage: { width: number; height: number };
+  slots: Map<string, LandingRect>;
+};
+
+export type LandingLibraryFrameProps = {
+  progress: MotionValue<number>;
+  spread: MotionValue<number>;
+  pointer: LandingPointer;
+  chromeOpacity: MotionValue<number>;
+};
+
+export type LandingHeroTileProps = Pick<
+  LandingLibraryFrameProps,
+  'progress' | 'spread' | 'pointer'
+> & {
+  tile: LandingTile;
+  float: LandingFloat;
+  index: number;
+  layout: LandingSlotLayout | null;
+};
+
+export type LandingHeroCopyProps = {
+  isVeiled: boolean;
+};
+
+export type LandingQueryBarProps = {
+  index: number;
+  progress: MotionValue<number>;
+};
+
+export type LandingFooterWindowProps = {
+  clipPath: MotionValue<string>;
+  clusterScale: MotionValue<number>;
+};
+
+export type LandingFooterWordmarkProps = {
+  opacity: MotionValue<number>;
+  maX: MotionValue<string>;
+  doX: MotionValue<string>;
+};
+
+export type LandingHeroBobStyle = CSSProperties & {
+  '--bob': MotionValue<string>;
+};
+
+export type LandingTileMediaProps = {
+  tile: LandingTile;
+  loading?: 'lazy' | 'eager';
+  className?: string;
+};
+
+export type LandingChildrenProps = {
+  children: ReactNode;
+};
+
+export type LandingClassNameProps = {
+  className?: string;
+};
+
+export type LandingOpenMadoProps = LandingClassNameProps & {
+  label?: string;
 };

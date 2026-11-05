@@ -114,24 +114,20 @@ export function splitIntoColumns<T extends { width: number; height: number }>(
   tiles: readonly T[],
   count: number,
 ): T[][] {
-  const empty = Array.from({ length: count }, () => ({
-    tiles: [] as T[],
+  const columns = Array.from({ length: count }, () => ({
+    tiles: new Array<T>(),
     height: 0,
   }));
-  return tiles
-    .reduce((columns, tile) => {
-      const heights = columns.map((column) => column.height);
-      const shortest = heights.indexOf(Math.min(...heights));
-      return columns.map((column, index) =>
-        index === shortest
-          ? {
-              tiles: [...column.tiles, tile],
-              height: column.height + tile.height / tile.width,
-            }
-          : column,
-      );
-    }, empty)
-    .map((column) => column.tiles);
+  if (columns.length === 0) return [];
+
+  for (const tile of tiles) {
+    const heights = columns.map((column) => column.height);
+    const shortest = columns[heights.indexOf(Math.min(...heights))];
+    shortest.tiles.push(tile);
+    shortest.height += tile.height / tile.width;
+  }
+
+  return columns.map((column) => column.tiles);
 }
 
 const SEARCH_TYPE_SHARE = 0.5;
