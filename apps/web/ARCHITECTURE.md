@@ -20,6 +20,7 @@ features/storage/            LibraryStore: IndexedDB on the web, files in the li
 - Actions get records only from `getLibraryStore()`. In the desktop app that store is `window.madoDesktop.library`, which the Electron main process answers from files (see `apps/desktop/desktop.spec.md`).
 - Actions don't know about React. They are plain async functions and are tested with `fake-indexeddb`.
 - Hooks own cache invalidation. After a write, they refresh every query that the change can affect.
+- `src/hooks/` holds hooks with no domain (`useInView`, `createLocalPreference` for look choices in `localStorage`). Any feature may use them, and they import no feature.
 
 ## Domain map
 
@@ -28,12 +29,12 @@ graph LR
   auth -->|sets the account| storage
   settings -->|auth forms, sign-out| auth
   settings -->|which sign-in methods are on| flags
-  settings -->|General tab: folder sources setting| collections
+  settings -->|General tab: folder sources, folder look| collections
   settings -->|Data tab| export
   settings -->|Data tab| import
   settings -->|Feedback tab| feedback
   settings -->|Shortcuts tab, ? key| shortcuts
-  settings -->|file sizes by kind| sources
+  settings -->|file sizes by kind, General tab: source names| sources
   settings -->|storage estimate, formatBytes| storage
   export -->|records, media files| sources
   export -->|records| collections
@@ -96,6 +97,8 @@ The API lives in `apps/api`. Everything else stays on the device.
 Electron reads the saved library path before opening the window. Without a valid config, it creates and saves the default `Documents/mado` library using the system Documents path. A saved path always wins; if that folder is missing, the desktop gate asks the user to choose a folder or retry instead of creating an empty library. Settings can switch libraries without moving files.
 
 ### Landing intro
+
+The route composes the landing sections. `landing-header.tsx` owns the header and section tracking; `landing-hero.tsx` owns the animated gallery. They share the hero element ref so the header changes its background when the hero ends.
 
 The landing route owns a Lenis instance for smooth wheel scrolling and anchor links. Its automatic frame loop and listeners are destroyed when leaving the page. Lenis respects reduced motion, allows nested scroll areas, and pauses when root overflow is hidden during the intro or a dialog.
 

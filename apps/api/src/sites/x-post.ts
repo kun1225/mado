@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type {
   SitePreviewVideo,
   SitePreviewXPostDependencies,
-} from './site-preview-type.js';
+} from './site-preview.type.js';
 
 /**
  * x.com blocks framing, but its embed API shares the mp4 files.

@@ -1,6 +1,6 @@
 import { Kbd, KbdGroup } from '@repo/ui/kbd';
 
-import { SHORTCUT_LIST } from '#/features/shortcuts/shortcut-list';
+import { SHORTCUT_LIST } from '#/features/shortcuts/shortcuts';
 
 const KEY_SEPARATOR = ' + ';
 

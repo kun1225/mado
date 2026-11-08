@@ -11,6 +11,7 @@ import {
   useSourceDetail,
   useSourceSelection,
 } from '#/features/sources/hooks/source-interaction-hooks';
+import { useSourceCaption } from '#/features/sources/source-preferences';
 import type { Source } from '#/features/sources/source-types';
 
 import { ActionDockSelection } from './action-dock/action-dock-selection';
@@ -44,6 +45,7 @@ export function SourceGrid({
   const compressingIds = useCompressingSourceIds();
   const selection = useSourceSelection(sources);
   const detail = useSourceDetail();
+  const { sourceCaption } = useSourceCaption();
 
   const pendingIds = new Set([
     ...(deletingIds ?? []),
@@ -89,11 +91,16 @@ export function SourceGrid({
           selection.isSelectionMode && 'select-none',
         )}
       >
-        <Masonry items={sources} getKey={(source) => source.id}>
+        <Masonry
+          items={sources}
+          getKey={(source) => source.id}
+          layoutKey={sourceCaption}
+        >
           {(source) => (
             <SourceCard
               source={source}
               isCompressing={compressingIds.has(source.id)}
+              captionPosition={sourceCaption}
               collectionName={
                 showCollection
                   ? source.collectionIds

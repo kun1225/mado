@@ -4,14 +4,17 @@ import { cn } from '@repo/ui/cn';
 
 import { CollectionContextMenu } from '#/components/collection-context-menu/collection-context-menu';
 import { useCollectionPreviews } from '#/features/collections/collection-hooks';
+import { useCollectionIcon } from '#/features/collections/collection-preference-hooks';
 import type { Collection } from '#/features/collections/collection-types';
 import { useSourceDropzone } from '#/features/sources/hooks/source-interaction-hooks';
 
+import { CollectionCardBook } from './collection-card-book';
 import { CollectionCardPocket } from './collection-card-pocket';
 
 export function CollectionCard({ collection }: { collection: Collection }) {
   const { getRootProps, isDragActive } = useSourceDropzone(collection.id);
   const previews = useCollectionPreviews(collection.id);
+  const { collectionIcon } = useCollectionIcon();
 
   // The drop target wraps the link, so the link keeps its own role.
   return (
@@ -26,10 +29,18 @@ export function CollectionCard({ collection }: { collection: Collection }) {
           )}
         >
           <div className="pointer-events-none absolute inset-x-0 top-0 bottom-14 flex items-center justify-center">
-            <CollectionCardPocket
-              previews={previews}
-              color={collection.color}
-            />
+            {collectionIcon === 'book' ? (
+              <CollectionCardBook
+                previews={previews}
+                color={collection.color}
+                name={collection.name}
+              />
+            ) : (
+              <CollectionCardPocket
+                previews={previews}
+                color={collection.color}
+              />
+            )}
           </div>
 
           <div className="absolute inset-x-4 bottom-3 min-w-0">

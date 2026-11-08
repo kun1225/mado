@@ -13,6 +13,11 @@ export const COLLECTION_COLORS = [
 
 export type CollectionColor = (typeof COLLECTION_COLORS)[number];
 
+/** How a collection card draws its icon, chosen in Settings → General. */
+export const COLLECTION_ICON_STYLES = ['folder', 'book'] as const;
+
+export type CollectionIconStyle = (typeof COLLECTION_ICON_STYLES)[number];
+
 export const MAX_COLLECTION_NAME_LENGTH = 100;
 
 export type Collection = {

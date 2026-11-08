@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@repo/ui/button';
 
+import type { DesktopSitePreviewProps } from './desktop.type';
 import { getDesktopBridge } from './desktop-bridge';
 import type { DesktopSitePreviewBounds } from './desktop-bridge.type';
-import type { DesktopSitePreviewProps } from './desktop-site-preview.type';
 
 const HIDDEN_BOUNDS: DesktopSitePreviewBounds = {
   x: 0,
@@ -53,7 +53,9 @@ export function DesktopSitePreview({
       frame = requestAnimationFrame(update);
       if (!loaded) return;
 
-      const bounds = isVisible(popup) ? toBounds(element) : HIDDEN_BOUNDS;
+      const bounds = isVisible(popup, element)
+        ? toBounds(element)
+        : HIDDEN_BOUNDS;
       if (isSameBounds(bounds, previous)) return;
       previous = bounds;
       bridge.sitePreview.resize({ id, bounds }).catch(() => {
@@ -103,9 +105,11 @@ export function DesktopSitePreview({
 }
 
 // *** isVisible ***
-function isVisible(popup: Element | null) {
+function isVisible(popup: Element | null, element: Element) {
   return (
-    !isCovered(popup) && !isMoving(popup) && !popup?.hasAttribute('data-closed')
+    !isCovered(popup) &&
+    !isMoving(popup, element) &&
+    !popup?.hasAttribute('data-closed')
   );
 }
 
@@ -119,10 +123,13 @@ function isCovered(popup: Element | null) {
 }
 
 // *** isMoving ***
-function isMoving(popup: Element | null) {
-  return popup
-    ?.getAnimations({ subtree: true })
-    .some((animation) => animation.playState === 'running');
+// Only the popup and the media move the view. Hover and focus transitions on buttons inside the popup must not hide it, or the page flashes.
+function isMoving(popup: Element | null, element: Element) {
+  return [popup, element].some((target) =>
+    target
+      ?.getAnimations()
+      .some((animation) => animation.playState === 'running'),
+  );
 }
 
 // *** toBounds ***

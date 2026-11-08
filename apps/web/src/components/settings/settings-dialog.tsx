@@ -28,7 +28,7 @@ import type {
   SettingsSidebarTabsProps,
   SettingsTab,
 } from '#/features/settings/settings.type';
-import { useSettingsSearch } from '#/features/settings/settings-hooks';
+import { useSettingsSearch } from '#/features/settings/settings-panel-hooks';
 import { visibleSettingsTabs } from '#/features/settings/settings-tabs';
 import { useShortcuts } from '#/features/shortcuts/shortcuts-hooks';
 
@@ -115,7 +115,8 @@ export function SettingsDialog({ authUser }: SettingsDialogProps) {
               </DialogClose>
             </header>
             <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-8">
-              <div className="max-w-sm">
+              {/* General pins its controls to the right edge; the other tabs hold forms that read better narrow. */}
+              <div className={cn(activeTab !== 'general' && 'max-w-sm')}>
                 {activeTab === 'general' && <SettingsGeneralTab />}
                 {activeTab === 'account' && (
                   <SettingsAccountTab

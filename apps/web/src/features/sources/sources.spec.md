@@ -67,6 +67,10 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - A card within one screen loads its media and fades it in once it has loaded.
 - A video plays while at least half of it is on screen, and pauses otherwise. With reduced motion on, it never plays by itself.
 - A video that went far and comes back starts again from the beginning.
+- **Settings → General → Source names** puts a card's name **On hover** (the default: over the bottom of the picture, with the collection name in the library) or **Below** the picture, always visible, as `name — site`. Only websites have a site. Files show just their name, and the collection name is not shown.
+- In "Below" the name gives way first, so the site stays readable. The picture box is still the card for opening, selecting, deleting and the detail dialog's fly-in. The caption under it does nothing when clicked.
+- Switching lays the grid out again, so taller cards never overlap.
+- The choice is saved in this browser, not per account, as `mado:source-caption` in `localStorage`, like the theme. A missing or bad value, or blocked storage, means On hover. Other open tabs follow a change.
 
 ### Deleting
 
@@ -98,6 +102,8 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **2026-10 — Plain editing, not a rich editor.** A text box with the raw Markdown keeps the file the user downloads exactly as they typed it. A rich editor is a big dependency and can change the Markdown when it writes it back.
 - **2026-10 — Markdown with `react-markdown` + `remark-gfm`, without `rehype-raw`.** It never turns raw HTML into elements and drops `javascript:` links, so no sanitizer is needed.
 - **2026-10 — Thumbnails can be videos.** The card, panel and viewer pick `<video>` or `<img>` from the thumbnail's `mimeType`, not from the source's kind.
+- **2026-11 — The "Below" caption sits outside the `data-source-card` box.** The detail dialog flies from that box, so it must hold only the media. In "On hover" the `<figure>` is still that box. In "Below" it wraps the box and a `<figcaption>`, because a figcaption must be a direct child of its figure.
+- **2026-11 — The caption uses the app font, not the serif "Fig." style** from the bookshelf prototype. A name under every card is UI, not book content.
 - **2026-10 — Tags are removed from the UI.** A source can be in many collections, so tags were a second way to group the same things, and nothing read them (no search, no filter). The `tags` field stays on the record, always `[]` for new sources, so old data and old exports still load without a migration. Bring tags back only with a way to use them, such as filtering inside a collection.
 
 ## Known gaps

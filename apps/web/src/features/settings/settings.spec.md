@@ -2,7 +2,7 @@
 
 ## Purpose
 
-One place for app settings. Today it holds general preferences (whether collections show their folders' sources), the theme, the account (sign in, sign up, reset a password, see who you are, sign out) your data (export all sources, import a folder), and a list of keyboard shortcuts, and a feedback form.
+One place for app settings. Today it holds general preferences (whether collections show their folders' sources, the folder look, where source names go), the theme, the account (sign in, sign up, reset a password, see who you are, sign out) your data (export all sources, import a folder), and a list of keyboard shortcuts, and a feedback form.
 
 **Depends on:** `auth`, `collections`, `export`, `feedback`, `import`, `shortcuts`. **Used by:** every `(app)` page, opened from the settings button next to the search bar. See `apps/web/ARCHITECTURE.md`.
 
@@ -12,8 +12,10 @@ One place for app settings. Today it holds general preferences (whether collecti
 - The sidebar lists the tabs: **General**, **Account**, **Data**, **Shortcuts** and **Feedback**. The settings button opens General. Switching tabs replaces the URL, so Back closes the panel instead of stepping through tabs.
 - On phones the tabs show icons only, so five tabs and Sign in/out fit in one row. The header names the open tab, and each tab keeps its label for screen readers.
 - The bottom of the sidebar shows **Sign out** when signed in, or **Sign in** for a guest. Sign in opens the Account tab, from any tab, and moves focus to the email field.
-- **General, Theme:** a three-part switch, **Light**, **Dark** and **System**, built on `LiquidTabs` like the library tabs, above Collections. The pill slides to the choice and the chosen part shows its icon (sun, moon, screen). System is the default. A choice applies at once, with no Save button.
-- **General, Collections:** the **Show sources from folders** switch (see `collections.spec.md`). It saves at once, with no Save button. Clicking the label flips it too.
+- **General** is one plain list, with no section titles and no hints: **Theme**, **Collection look**, **Source names**, then the **Include sub-folder sources** switch. It spans the full panel width, so every control lines up at the right edge; the other tabs stay narrow because they hold forms. Every choice saves at once, with no Save button.
+- **Theme:** a three-part switch, **Light**, **Dark** and **System**, built on `LiquidTabs` like the library tabs. The pill slides to the choice and the chosen part shows its icon (sun, moon, screen). System is the default.
+- **Collection look:** **Folder** or **Book** (see `collections.spec.md`). **Source names:** **On hover** or **Below** (see `sources.spec.md`). Both use the same `LiquidTabs` as Theme (`SettingsChoiceRow`), with the label on the left and the tabs on the right.
+- **Include sub-folder sources:** a switch (see `collections.spec.md`). Clicking its label flips it too.
 - The theme is saved as `mado:theme` in `localStorage`, for this browser, not per account, so it stays the same across guest and sign-in. A missing or bad value means System. If storage is blocked, the choice still works until the page reloads. Other open tabs follow a change, and clearing storage sends them back to System.
 - A small script in `<head>` sets the theme before the page paints, so a saved Dark never flashes Light. Under System the app follows the device, also while it is open.
 - Images, videos and website embeds keep their own colors.
@@ -51,7 +53,8 @@ Unknown values fall back to closed, or to the sign-in form.
 - **2026-10 — No confirm step for sign-out.** Each account's data stays on this device, so signing out loses nothing.
 - **2026-10 — Only tabs with real content.** Empty tabs feel broken. New tabs come with their feature.
 - **2026-10 — General is the first tab and opens by default.** It holds everyday preferences, and Sign in still jumps straight to Account.
-- **2026-10 — Settings shows the folder sources switch but does not own it.** The value and its rules live in `collections`, so settings still owns no data.
+- **2026-10 — Settings shows the folder sources switch but does not own it.** The value and its rules live in `collections`, so settings still owns no data. The same goes for Collection look (`collections`) and Source names (`sources`).
+- **2026-11 — Look choices share `createLocalPreference` in `src/hooks/`.** It reads, saves and shares one string choice in `localStorage`. It lives outside every feature, so `collections` and `sources` use it without depending on `settings`. The older folder sources setting is per account, so it keeps its own code for now.
 - **2026-10 — Hover and active are two sliding clip-path layers** (200ms ease-in-out, no bounce). Each slides to its tab on its own, so moving the mouse never hides where you are. The hover layer is lighter. The active layer is a copy of the tab list, so its dark label is revealed as the clip slides, like `LiquidTabs`. Touch gets no hover layer, so a tap can't leave it stuck.
 
 - **2026-10 — Three theme choices, not a switch.** A switch can't say both "always dark" and "follow my device".
@@ -60,6 +63,7 @@ Unknown values fall back to closed, or to the sign-in form.
 - **2026-10 — The theme switch is `LiquidTabs`, not radios, tiles or a select.** Picked from a prototype of four. It is compact, moves like the library tabs, and shows every choice at once. Rejected: plain radios (tall, no look of the result), preview tiles (the most height, and their fixed colors drift from the palette), a select (two clicks, choices hidden).
 - **2026-10 — Tabs semantics for a setting.** Screen readers hear a tab list, not radios. We accept it to reuse `LiquidTabs`; arrow keys still move between choices.
 - **2026-10 — Theme lives in General, not its own tab.** One setting doesn't earn a tab, and General is where everyday preferences go.
+- **2026-11 — General is one plain list, no section titles or hints.** Picked from a prototype of four. Four settings don't need sections, and the labels explain themselves. Rejected: the old layout (Collections and Sources titles plus a hint under every row was too much noise), boxed groups "Appearance" and "Library" (borders add weight back), every setting as full-width stacked tabs, with the switch as "Its sources / + Sub-folders" (the most height, and the tab labels got awkward).
 - **2026-10 — Storage is a breakdown, not one bar against the quota.** The quota is tens of GB, so "used of quota" is a bar nobody can see. Where the bytes went is more useful, and it needs no quota.
 - **2026-10 — Backup is one compact row, with the rules folded away.** Both actions stay visible and the tab stays short. Export keeps the primary button, because it is the common one.
 

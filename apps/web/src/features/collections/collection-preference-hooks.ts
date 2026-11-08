@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
 import {
+  collectionIconPreference,
   DEFAULT_SHOW_FOLDER_SOURCES,
   readShowFolderSources,
   storeShowFolderSources,
@@ -15,6 +16,13 @@ export function useShowFolderSources() {
   );
 
   return { showFolderSources, setShowFolderSources };
+}
+
+export function useCollectionIcon() {
+  const [collectionIcon, setCollectionIcon] =
+    collectionIconPreference.usePreference();
+
+  return { collectionIcon, setCollectionIcon };
 }
 
 const listeners = new Set<() => void>();

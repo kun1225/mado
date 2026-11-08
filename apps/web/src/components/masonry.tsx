@@ -26,12 +26,15 @@ export function Masonry<TItem>({
   children,
   columnClassName = COLUMN_CLASS,
   gutter = GUTTER,
+  layoutKey,
 }: {
   items: TItem[];
   getKey: (item: TItem) => string;
   children: (item: TItem) => ReactNode;
   columnClassName?: string;
   gutter?: number;
+  /** Change it when every item's height changes, so the columns are laid out again. */
+  layoutKey?: string;
 }) {
   const containerRef = useRef<HTMLUListElement>(null);
   const sizerRef = useRef<HTMLLIElement>(null);
@@ -110,7 +113,7 @@ export function Masonry<TItem>({
   useEffect(() => {
     masonryRef.current?.reloadItems?.();
     masonryRef.current?.layout?.();
-  }, [items]);
+  }, [items, layoutKey]);
 
   return (
     <ul

@@ -1,7 +1,7 @@
 import { useCollections } from '#/features/collections/collection-hooks';
 import { useExportLibrary } from '#/features/export/export-hooks';
 import { useImportLibrary } from '#/features/import/import-hooks';
-import { useStorageBreakdown } from '#/features/settings/settings-hooks';
+import { useStorageBreakdown } from '#/features/settings/settings-panel-hooks';
 import { useAllSources } from '#/features/sources/hooks/source-hooks';
 
 import { SettingsBackupSection } from './settings-backup-section';

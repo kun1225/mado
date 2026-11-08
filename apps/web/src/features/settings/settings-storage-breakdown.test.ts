@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Source } from '#/features/sources/source-types';
 
-import { toStorageBreakdown } from './settings-storage';
+import { toStorageBreakdown } from './settings-storage-breakdown';
 
 function createSource(kind: Source['kind'], sizeBytes: number): Source {
   return {

@@ -16,7 +16,7 @@ import type {
   SitePreviewSafeFetchErrorCode,
   SitePreviewSafeFetchOptions,
   SitePreviewVideo,
-} from './site-preview-type.js';
+} from './site-preview.type.js';
 import { getXPostId, getXPostVideo } from './x-post.js';
 
 export class SafeFetchError extends Error {

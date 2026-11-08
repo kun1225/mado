@@ -9,19 +9,26 @@ import {
   LiquidTabs,
   LiquidTabsList,
   LiquidTabsTrigger,
-} from '@repo/ui/liquid-tab';
+} from '@repo/ui/liquid-tabs';
 import { Switch } from '@repo/ui/switch';
 
-import { useShowFolderSources } from '#/features/collections/collection-preference-hooks';
+import {
+  useCollectionIcon,
+  useShowFolderSources,
+} from '#/features/collections/collection-preference-hooks';
+import type { CollectionIconStyle } from '#/features/collections/collection-types';
 import type {
+  SettingsChoiceOption,
+  SettingsChoiceRowProps,
   SettingsSwitchRowProps,
   SettingsThemeOption,
 } from '#/features/settings/settings.type';
 import { SETTINGS_THEME_PREFERENCES } from '#/features/settings/settings.type';
 import { useSettingsTheme } from '#/features/settings/settings-theme-hooks';
+import { useSourceCaption } from '#/features/sources/source-preferences';
+import type { SourceCaptionPosition } from '#/features/sources/source-types';
 
 const THEME_TITLE_ID = 'settings-theme-title';
-const COLLECTIONS_TITLE_ID = 'settings-collections-title';
 
 const THEME_OPTIONS: readonly SettingsThemeOption[] = [
   { value: 'light', label: 'Light', icon: Sun03Icon },
@@ -29,28 +36,61 @@ const THEME_OPTIONS: readonly SettingsThemeOption[] = [
   { value: 'system', label: 'System', icon: ComputerIcon },
 ];
 
+const COLLECTION_ICON_OPTIONS: readonly SettingsChoiceOption<CollectionIconStyle>[] =
+  [
+    { value: 'folder', label: 'Folder' },
+    { value: 'book', label: 'Book' },
+  ];
+
+const SOURCE_CAPTION_OPTIONS: readonly SettingsChoiceOption<SourceCaptionPosition>[] =
+  [
+    { value: 'overlay', label: 'On hover' },
+    { value: 'below', label: 'Below' },
+  ];
+
+// No section titles or hints: four settings read fine as one plain list.
 export function SettingsGeneralTab() {
+  const { showFolderSources, setShowFolderSources } = useShowFolderSources();
+  const { collectionIcon, setCollectionIcon } = useCollectionIcon();
+  const { sourceCaption, setSourceCaption } = useSourceCaption();
+
   return (
-    <div className="space-y-8">
-      <SettingsThemeSection />
-      <SettingsCollectionsSection />
+    <div className="space-y-5">
+      <SettingsThemeRow />
+      <SettingsChoiceRow
+        id="settings-collection-icon"
+        label="Collection look"
+        value={collectionIcon}
+        options={COLLECTION_ICON_OPTIONS}
+        onChange={setCollectionIcon}
+      />
+      <SettingsChoiceRow
+        id="settings-source-caption"
+        label="Source names"
+        value={sourceCaption}
+        options={SOURCE_CAPTION_OPTIONS}
+        onChange={setSourceCaption}
+      />
+      <SettingsSwitchRow
+        id="settings-show-folder-sources"
+        label="Include sub-folder sources"
+        checked={showFolderSources}
+        onCheckedChange={setShowFolderSources}
+      />
     </div>
   );
 }
 
-// *** SettingsThemeSection ***
+// *** SettingsThemeRow ***
 // LiquidTabs, so the theme switch moves like the library tabs.
-function SettingsThemeSection() {
+function SettingsThemeRow() {
   const { preference, setPreference } = useSettingsTheme();
 
   return (
-    <section
-      aria-labelledby={THEME_TITLE_ID}
-      className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3"
-    >
-      <h3 id={THEME_TITLE_ID} className="t-l-2">
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <span id={THEME_TITLE_ID} className="t-b-3">
         Theme
-      </h3>
+      </span>
       <LiquidTabs
         value={preference}
         onValueChange={(value) => {
@@ -72,27 +112,42 @@ function SettingsThemeSection() {
           ))}
         </LiquidTabsList>
       </LiquidTabs>
-    </section>
+    </div>
   );
 }
 
-// *** SettingsCollectionsSection ***
-function SettingsCollectionsSection() {
-  const { showFolderSources, setShowFolderSources } = useShowFolderSources();
+// *** SettingsChoiceRow ***
+// LiquidTabs like the Theme row, so every choice in General moves the same way.
+function SettingsChoiceRow<T extends string>({
+  id,
+  label,
+  value,
+  options,
+  onChange,
+}: SettingsChoiceRowProps<T>) {
+  const labelId = `${id}-label`;
 
   return (
-    <section aria-labelledby={COLLECTIONS_TITLE_ID} className="space-y-4">
-      <h3 id={COLLECTIONS_TITLE_ID} className="t-l-2">
-        Collections
-      </h3>
-      <SettingsSwitchRow
-        id="settings-show-folder-sources"
-        label="Show sources from folders"
-        hint="When off, a collection shows only the sources saved right in it."
-        checked={showFolderSources}
-        onCheckedChange={setShowFolderSources}
-      />
-    </section>
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <span id={labelId} className="t-b-3">
+        {label}
+      </span>
+      <LiquidTabs
+        value={value}
+        onValueChange={(next) => {
+          const option = options.find((item) => item.value === next);
+          if (option) onChange(option.value);
+        }}
+      >
+        <LiquidTabsList aria-labelledby={labelId} className="bg-muted">
+          {options.map((option) => (
+            <LiquidTabsTrigger key={option.value} value={option.value}>
+              {option.label}
+            </LiquidTabsTrigger>
+          ))}
+        </LiquidTabsList>
+      </LiquidTabs>
+    </div>
   );
 }
 
@@ -101,30 +156,21 @@ function SettingsCollectionsSection() {
 function SettingsSwitchRow({
   id,
   label,
-  hint,
   checked,
   onCheckedChange,
 }: SettingsSwitchRowProps) {
   const labelId = `${id}-label`;
-  const hintId = `${id}-hint`;
 
   return (
-    <label className="flex cursor-pointer items-start justify-between gap-4">
-      <span className="space-y-0.5">
-        <span id={labelId} className="block t-b-3">
-          {label}
-        </span>
-        <span id={hintId} className="block t-b-4 text-muted-fg">
-          {hint}
-        </span>
+    <label className="flex min-h-11 cursor-pointer items-center justify-between gap-4">
+      <span id={labelId} className="t-b-3">
+        {label}
       </span>
       <Switch
         id={id}
         checked={checked}
         onCheckedChange={onCheckedChange}
         aria-labelledby={labelId}
-        aria-describedby={hintId}
-        className="mt-0.5"
       />
     </label>
   );

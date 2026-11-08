@@ -10,7 +10,7 @@ import type {
   SearchIndex,
   SearchResults,
   SearchSourceText,
-} from './search-type';
+} from './search.type';
 
 const MAX_COLLECTIONS = 5;
 const MAX_SOURCES = 6;

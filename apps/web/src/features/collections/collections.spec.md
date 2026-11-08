@@ -17,6 +17,10 @@ Collections group sources. They can nest: a collection inside another one is cal
 ### Card row
 
 - The row of cards on the library and collection pages scrolls sideways with no scrollbar. Its edges fade where more cards are hidden, and the fade goes away at the start and end.
+- **Settings → General → Collection look** draws each card as a **Folder** (the default) or a **Book**. The card keeps its size and text. Only the drawing changes.
+- The book is a cover in the collection's color (gray with no color), with the name on it, up to 3 lines. On hover or keyboard focus the cover opens 42° and shows the first preview. With reduced motion it stays shut.
+- The choice is saved in this browser, not per account, as `mado:collection-icon` in `localStorage`, like the theme. A missing or bad value, or blocked storage, means Folder. Other open tabs follow a change.
+- The landing page always draws folders.
 
 ### Card menu
 
@@ -31,7 +35,7 @@ Collections group sources. They can nest: a collection inside another one is cal
 ### What a collection shows
 
 - By default, a collection shows its own sources **and** every source in the folders below it, each source once.
-- **Settings → General → Show sources from folders** turns that off. Then a collection or folder shows only the sources saved right in it. Its folder cards still show. The library always shows every source.
+- **Settings → General → Include sub-folder sources** turns that off. Then a collection or folder shows only the sources saved right in it. Its folder cards still show. The library always shows every source.
 - The setting is kept for each account (and once for guests) in `localStorage`, under `mado:show-folder-sources[:<accountId>]`. If storage is blocked or the value is bad, it reads as on.
 - `saveCount` counts the same set as the page. It is worked out from the sources on every read and never stored.
 - A card shows up to 3 previews, newest first, picked from the same set as the page.
@@ -64,6 +68,8 @@ Collections group sources. They can nest: a collection inside another one is cal
 - **2026-10 — Colors are stored as names, not hex values.** Each name maps to theme tokens, so a color looks right in light and dark mode and can be tuned later without a migration.
 - **2026-10 — `color` is optional on the record.** Old records read as no color, so no database migration is needed (no store or index changes).
 - **2026-10 — The collection page remounts when the collection changes.** A parent and its folders share sources. A reused page made the masonry slide those shared cards from their old spots, so moving between a folder and its parent looked like a jump.
+- **2026-11 — Book is a look option, not a new way to browse.** Decided from a prototype with 8 directions. We kept the small book card. We rejected a shelf of spines, face-out covers, an always-open book, 3D page turns, notebooks with taped clippings, and paper pages behind a collection. Those change how people browse and manage collections, which is a product change, too big for a look option.
+- **2026-11 — The folder look is saved per browser, not per account.** It is about how the app looks, like the theme, not about the account's data. "Include sub-folder sources" stays per account because it changes what a page shows.
 - **2026-10 — Changing the color keeps `updatedAt`.** Lists sort by `updatedAt`, so the card would jump away right after you colored it. Renaming still moves it to the front, as before.
 
 ## Known gaps

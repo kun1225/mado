@@ -11,7 +11,7 @@ import {
   LiquidTabs,
   LiquidTabsList,
   LiquidTabsTrigger,
-} from '@repo/ui/liquid-tab';
+} from '@repo/ui/liquid-tabs';
 import { Separator } from '@repo/ui/separator';
 
 import { ActionDock } from '#/components/action-dock';

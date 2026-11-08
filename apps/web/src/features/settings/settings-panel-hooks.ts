@@ -12,7 +12,7 @@ import { readStorageUsage } from '#/features/storage/storage-usage';
 
 import type { SettingsTab } from './settings.type';
 import { parseSettingsSearch, withoutSettingsSearch } from './settings-search';
-import { toStorageBreakdown } from './settings-storage';
+import { toStorageBreakdown } from './settings-storage-breakdown';
 
 // The browser's number says nothing about a folder on disk, so the desktop app counts its own files and has no quota.
 const DESKTOP_STORAGE_USAGE: StorageUsage = { usage: 0, quota: null };

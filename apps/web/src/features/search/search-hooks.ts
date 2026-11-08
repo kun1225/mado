@@ -6,7 +6,7 @@ import {
   readStoredRecentSearches,
   removeRecentSearch,
   storeRecentSearches,
-} from '../search-action';
+} from './search-action';
 
 const SERVER_RECENT_SEARCHES: string[] = [];
 

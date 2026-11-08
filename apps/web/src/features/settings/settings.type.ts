@@ -58,9 +58,21 @@ export type SettingsDialogProps = {
 export type SettingsSwitchRowProps = {
   id: string;
   label: string;
-  hint: string;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
+};
+
+export type SettingsChoiceOption<T extends string> = {
+  value: T;
+  label: string;
+};
+
+export type SettingsChoiceRowProps<T extends string> = {
+  id: string;
+  label: string;
+  value: T;
+  options: readonly SettingsChoiceOption<T>[];
+  onChange: (value: T) => void;
 };
 
 export type SettingsAccountTabProps = {

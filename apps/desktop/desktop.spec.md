@@ -65,5 +65,5 @@ Mado Library/
 
 - Website details use an isolated Electron `WebContentsView`, including sites that block iframe embedding. The view has no Node.js, preload, library bridge, or device permissions, and uses a separate in-memory browser session. Only HTTP(S) URLs are accepted; popup windows are blocked.
 - The stored thumbnail remains visible during loading and opening/closing motion. The Open website link shows only when loading fails, so it never flashes over the thumbnail during loading or motion.
-- The view follows the viewer bounds and browser zoom. It hides during animations and when another dialog covers the viewer. Closing, changing sources, file dragging, renderer navigation, or destroying the window closes the view.
+- The view follows the viewer bounds and browser zoom. It hides while the viewer or its media animates (opening, closing) and when another dialog covers the viewer. Hover and focus transitions on buttons in the viewer do not hide it, or the page would flash. Closing, changing sources, file dragging, renderer navigation, or destroying the window closes the view.
 - Native views have rectangular bounds; CSS rounded corners do not clip them. Keyboard shortcuts while focus is inside the website belong to that website; the dialog toolbar remains available.

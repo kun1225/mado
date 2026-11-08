@@ -13,7 +13,7 @@ import {
   getSitePreview,
   readHtmlMetadata,
 } from './site-preview.js';
-import type { SitePreviewFetchedPage } from './site-preview-type.js';
+import type { SitePreviewFetchedPage } from './site-preview.type.js';
 
 const APP = 'https://mado.app';
 

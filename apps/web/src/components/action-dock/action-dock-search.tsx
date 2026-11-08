@@ -38,13 +38,13 @@ import {
 
 import { useCollections } from '#/features/collections/collection-hooks';
 import type { Collection } from '#/features/collections/collection-types';
-import { useRecentSearches } from '#/features/search/hooks/search-hooks';
+import type { SearchResults } from '#/features/search/search.type';
 import {
   createSearchIndex,
   searchLibrary,
 } from '#/features/search/search-action';
-import type { SearchResults } from '#/features/search/search-type';
-import { useSettingsSearch } from '#/features/settings/settings-hooks';
+import { useRecentSearches } from '#/features/search/search-hooks';
+import { useSettingsSearch } from '#/features/settings/settings-panel-hooks';
 import { useShortcuts } from '#/features/shortcuts/shortcuts-hooks';
 import {
   useAllSources,

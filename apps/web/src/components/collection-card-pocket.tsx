@@ -184,3 +184,5 @@ function SourcePreviewMedia({ source }: { source: Source }) {
     </span>
   );
 }
+
+export { SourcePreviewMedia };

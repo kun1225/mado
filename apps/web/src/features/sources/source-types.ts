@@ -134,6 +134,11 @@ export const updateSourceSchema = z
 
 export type UpdateSourceInput = z.input<typeof updateSourceSchema>;
 
+/** Where a source card shows its name, chosen in Settings → General. */
+export const SOURCE_CAPTION_POSITIONS = ['overlay', 'below'] as const;
+
+export type SourceCaptionPosition = (typeof SOURCE_CAPTION_POSITIONS)[number];
+
 export type Source = {
   id: string;
   name: string;

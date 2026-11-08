@@ -7,7 +7,10 @@ import { cn } from '@repo/ui/cn';
 
 import { useMediaObjectUrl } from '#/features/sources/hooks/source-hooks';
 import type { ToggleSelectOptions } from '#/features/sources/hooks/source-interaction-hooks';
-import type { Source } from '#/features/sources/source-types';
+import type {
+  Source,
+  SourceCaptionPosition,
+} from '#/features/sources/source-types';
 import { isVideoMimeType } from '#/features/sources/source-types';
 import { toTextCardTitle } from '#/features/sources/text-source';
 import type { TextSourceContent } from '#/features/sources/text-source.type';
@@ -24,6 +27,7 @@ const PLAYING_VIEWPORT = { rootMargin: '0px', threshold: 0.5 };
 export function SourceCard({
   source,
   collectionName,
+  captionPosition = 'overlay',
   isCompressing = false,
   deletion,
   selection,
@@ -31,6 +35,7 @@ export function SourceCard({
 }: {
   source: Source;
   collectionName?: string;
+  captionPosition?: SourceCaptionPosition;
   isCompressing?: boolean;
   deletion: {
     isPending?: boolean;
@@ -43,27 +48,30 @@ export function SourceCard({
   };
   onOpen?: () => void;
 }) {
-  const figureRef = useRef<HTMLElement>(null);
-  const isNear = useInView(figureRef, NEAR_VIEWPORT);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const isNear = useInView(cardRef, NEAR_VIEWPORT);
 
   const aspectRatio =
     source.width && source.height ? source.width / source.height : 1;
 
-  return (
-    <figure
-      ref={figureRef}
-      data-source-card={source.id}
-      // A text card grows with its text instead.
-      style={source.text ? undefined : { aspectRatio }}
-      aria-busy={isCompressing}
-      className={cn(
-        'group relative overflow-hidden rounded-md select-none',
-        'transition-[box-shadow,scale] duration-base ease-standard',
-        // Only the open trigger shrinks the card, not the checkbox or delete.
-        'has-[[data-slot=source-open]:active]:scale-[0.97]',
-        selection.isSelected && 'ring-2 ring-fg ring-offset-2 ring-offset-bg',
-      )}
-    >
+  // The detail dialog flies from this box, so it holds only the media, never the caption below.
+  const frameProps = {
+    ref: cardRef,
+    'data-source-card': source.id,
+    // A text card grows with its text instead.
+    style: source.text ? undefined : { aspectRatio },
+    'aria-busy': isCompressing,
+    className: cn(
+      'group relative overflow-hidden rounded-md select-none',
+      'transition-[box-shadow,scale] duration-base ease-standard',
+      // Only the open trigger shrinks the card, not the checkbox or delete.
+      'has-[[data-slot=source-open]:active]:scale-[0.97]',
+      selection.isSelected && 'ring-2 ring-fg ring-offset-2 ring-offset-bg',
+    ),
+  };
+
+  const frame = (
+    <>
       <SourceCardBody
         source={source}
         isNear={isNear}
@@ -120,6 +128,21 @@ export function SourceCard({
       >
         <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={1.5} />
       </Button>
+    </>
+  );
+
+  if (captionPosition === 'below') {
+    return (
+      <figure>
+        <div {...frameProps}>{frame}</div>
+        <SourceCardCaption source={source} />
+      </figure>
+    );
+  }
+
+  return (
+    <figure {...frameProps}>
+      {frame}
 
       <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 z-20 pt-4">
         <SourceCardProgressBlur />
@@ -133,6 +156,23 @@ export function SourceCard({
         </div>
       </figcaption>
     </figure>
+  );
+}
+
+// *** SourceCardCaption ***
+/** The name gives way first, so the site stays readable. */
+function SourceCardCaption({ source }: { source: Source }) {
+  const origin = source.site?.domain;
+
+  return (
+    <figcaption className="flex min-w-0 items-baseline gap-1 px-0.5 pt-1.5 t-l-3">
+      <span className="min-w-0 truncate">{source.name}</span>
+      {origin && (
+        <span className="max-w-1/2 shrink-0 truncate text-muted-fg">
+          — {origin}
+        </span>
+      )}
+    </figcaption>
   );
 }
 
@@ -524,3 +564,5 @@ function sampleCurve([p1x, p1y, p2x, p2y]: Curve, x: number): number {
 
   return ((ay * t + by) * t + cy) * t;
 }
+
+export { SourceCardCaption };
