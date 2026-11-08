@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mado-web",
+  "compatibility_date": "2026-11-01",
+  // Why: auth-session.ts reads process.env.API_ORIGIN on the server.
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "@tanstack/react-start/server-entry",
+  "observability": { "enabled": true }
+}

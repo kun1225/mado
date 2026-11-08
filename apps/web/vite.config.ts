@@ -1,3 +1,4 @@
+import { cloudflare } from '@cloudflare/vite-plugin';
 import babel from '@rolldown/plugin-babel';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
@@ -8,6 +9,7 @@ const config = defineConfig({
   server: { proxy: { '/api': 'http://localhost:4000' } },
   resolve: { tsconfigPaths: true },
   plugins: [
+    cloudflare({ viteEnvironment: { name: 'ssr' } }),
     tanstackStart(),
     viteReact(),
     babel({ presets: [reactCompilerPreset()] }),
