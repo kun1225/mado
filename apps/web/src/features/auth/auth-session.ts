@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-start/server';
 import { z } from 'zod';
 
+import { isFlagOn } from '#/features/flags/flags';
 import {
   getStorageAccount,
   setStorageAccount,
@@ -32,8 +33,7 @@ export async function loadPageSession(returnTo: string) {
 const getAuthSession = createServerFn({ method: 'GET' }).handler(async () => {
   setResponseHeader('Cache-Control', 'private, no-store');
 
-  // Development runs as a guest so it works without the auth API.
-  if (isDevAuthBypass()) return null;
+  if (shouldSkipSessionCheck()) return null;
 
   const origin = process.env.API_ORIGIN ?? 'http://localhost:4000';
   const response = await fetch(
@@ -49,6 +49,18 @@ const getAuthSession = createServerFn({ method: 'GET' }).handler(async () => {
   if (session === null) return null;
   return z.object({ user: authUserSchema }).parse(session).user;
 });
+
+// *** shouldSkipSessionCheck ***
+// Development runs as a guest so it works without the auth API. With every
+// sign-in method off no one can have a session, so the app works without it too.
+function shouldSkipSessionCheck() {
+  return isDevAuthBypass() || !isSignInOn();
+}
+
+// *** isSignInOn ***
+export function isSignInOn() {
+  return isFlagOn('authGoogle') || isFlagOn('authEmailPassword');
+}
 
 // *** isDevAuthBypass ***
 function isDevAuthBypass() {
@@ -80,4 +92,4 @@ export function safeReturnTo(value: unknown): string {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-export { isDevAuthBypass };
+export { isDevAuthBypass, shouldSkipSessionCheck };

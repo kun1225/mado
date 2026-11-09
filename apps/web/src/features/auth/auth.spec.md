@@ -34,11 +34,13 @@ Signing in is optional. Guests use the app fully with data on this device. An ac
 - **2026-10 — Google uses a full-page redirect, not a popup.** The return is a fresh page load, so the right account storage is picked before any library data shows.
 - **2026-10 — Google errors show fixed copy keyed by the error code.** The code arrives in the URL, so anyone can edit it.
 - **2026-10 — Google sign-in has its own flag, `authGoogle` (on by default).** With it off, the API registers no Google provider and needs no Google credentials, so a hidden button is not the only gate. If every sign-in flag is off, settings hides the Account tab from guests and the app stays in guest mode.
+- **2026-11 — With every sign-in flag off, the server skips the session check** and everyone is a guest. No one can have a session then, so asking the API would only fail when it is offline. This lets the site launch before the API is online.
 - **2026-10 — In development, the app runs as a guest by default** (`VITE_DEV_AUTH_BYPASS`), so it works without the auth API. Set it to `false` to test real login. It can never be on in production.
 
 ## Known gaps
 
 - There's no way yet to move guest data into an account after signing up.
+- A user who signed in earlier sees the guest library while sign-in is off. Their account data stays on the device and comes back when sign-in is on again.
 - An unverified email user can't get in while email is paused. Neither can an email user whose Google account uses another email. Mado has no real users yet, so no one is locked out.
 - Verify and reset links sent before the switch return 404. They expire within an hour.
 - A bad or lost OAuth state returns to `/library`, not the page the user started on.
