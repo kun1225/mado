@@ -16,7 +16,7 @@ everyone and changes only when you rebuild the web app or restart the API.
 
 | Flag                | Default | What it controls                                      |
 | ------------------- | ------- | ----------------------------------------------------- |
-| `authGoogle`        | on      | Google sign-in                                        |
+| `authGoogle`        | off     | Google sign-in                                        |
 | `authEmailPassword` | off     | Email and password sign-up, sign-in, reset, verifying |
 
 ## Adding a flag
@@ -31,6 +31,9 @@ everyone and changes only when you rebuild the web app or restart the API.
   API later (for per-user flags) without changing any caller.
 - **2026-10 — The API is the real gate.** A web flag only hides UI. Anything a
   user could call directly must also be blocked in the API.
+- **2026-11 — `authGoogle` is off by default, like in the API.** When it was on,
+  a build without the variable turned sign-in on and asked an API that was not
+  online, so every page failed. Turn it on only where the API runs.
 - **2026-10 — Remove a flag once its feature is stable.** A flag that stays
   forever becomes a hidden setting and an untested code path.
 

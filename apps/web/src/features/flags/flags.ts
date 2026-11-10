@@ -3,7 +3,7 @@ import type { FlagDefinition, FlagName } from './flags.type';
 // Each flag mirrors one in apps/api/src/flags/flags.ts. The API is the real
 // gate; the web flag only decides what to show.
 const FLAGS = {
-  authGoogle: { env: 'VITE_FLAG_AUTH_GOOGLE', default: true },
+  authGoogle: { env: 'VITE_FLAG_AUTH_GOOGLE', default: false },
   authEmailPassword: { env: 'VITE_FLAG_AUTH_EMAIL_PASSWORD', default: false },
 } as const satisfies Record<FlagName, FlagDefinition>;
 
