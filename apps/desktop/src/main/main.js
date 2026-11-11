@@ -1,13 +1,18 @@
 import { fileURLToPath } from 'node:url';
 
-import { app, BrowserWindow, protocol, shell } from 'electron';
+import { app, BrowserWindow, dialog, protocol, shell } from 'electron';
 
 import { registerSitePreviewIpc } from './site-preview.js';
+import { checkForUpdate } from './update-check.js';
 
 import { MEDIA_SCHEME, registerLibraryIpc } from './ipc.js';
 
 // The desktop app skips the landing page at "/" and opens the library directly.
-const WEB_URL = process.env.MADO_WEB_URL ?? 'http://localhost:3100/library';
+// Why: a downloaded app has no dev server, so it opens the deployed web app.
+const DEV_WEB_URL = 'http://localhost:3100/library';
+const LIVE_WEB_URL = 'https://mado-web.the-kunyang.workers.dev/library';
+const WEB_URL =
+  process.env.MADO_WEB_URL ?? (app.isPackaged ? LIVE_WEB_URL : DEV_WEB_URL);
 const WEB_ORIGIN = new URL(WEB_URL).origin;
 const PRELOAD_PATH = fileURLToPath(new URL('../preload.cjs', import.meta.url));
 
@@ -30,6 +35,8 @@ app.whenReady().then(async () => {
   await registerLibraryIpc({ send: sendToWindows, isTrustedSender });
   registerSitePreviewIpc({ isTrustedSender });
   createWindow();
+  // A dev build has no release to compare against.
+  if (app.isPackaged) void offerUpdate();
 });
 
 // macOS apps stay alive after the last window closes, so we quit only on other systems.
@@ -65,6 +72,26 @@ function createWindow() {
   }
 
   win.loadURL(WEB_URL);
+}
+
+// *** offerUpdate ***
+// The check must never stop the app, so a failure is only logged.
+async function offerUpdate() {
+  try {
+    const update = await checkForUpdate(app.getVersion());
+    if (!update) return;
+    const { response } = await dialog.showMessageBox({
+      type: 'info',
+      message: `Mado ${update.version} is available`,
+      detail: `You have ${app.getVersion()}. Download the new version, then replace Mado in your Applications folder.`,
+      buttons: ['Download', 'Later'],
+      defaultId: 0,
+      cancelId: 1,
+    });
+    if (response === 0) openExternally(update.url);
+  } catch (error) {
+    console.error('Update check failed', error);
+  }
 }
 
 // *** isTrustedSender ***

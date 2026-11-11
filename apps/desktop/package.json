@@ -6,9 +6,46 @@
   "main": "src/main/main.js",
   "scripts": {
     "start": "electron .",
-    "test": "node --test \"src/**/*.test.js\""
+    "test": "node --test \"src/**/*.test.js\"",
+    "dist": "electron-builder --mac"
   },
   "devDependencies": {
-    "electron": "^45.2.1"
+    "electron": "^45.2.1",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "app.mado.desktop",
+    "productName": "Mado",
+    "extraMetadata": {
+      "productName": "Mado"
+    },
+    "directories": {
+      "buildResources": "resources",
+      "output": "dist"
+    },
+    "files": [
+      "src/**",
+      "!src/**/*.test.js",
+      "package.json",
+      "!**/node_modules/**"
+    ],
+    "mac": {
+      "category": "public.app-category.graphics-design",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "icon": "resources/icon.png",
+      "identity": "-",
+      "notarize": false,
+      "hardenedRuntime": false
+    },
+    "dmg": {
+      "artifactName": "Mado.dmg"
+    }
   }
 }

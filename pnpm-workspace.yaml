@@ -3,6 +3,8 @@ packages:
   - 'packages/*'
 allowBuilds:
   electron: true
+  # Why: it only builds Windows installers, and we ship macOS.
+  electron-winstaller: false
   esbuild: true
   unrs-resolver: true
   workerd: true
