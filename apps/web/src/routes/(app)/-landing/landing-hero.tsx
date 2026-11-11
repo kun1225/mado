@@ -44,8 +44,8 @@ import {
 } from '#/features/landing/landing-motion';
 import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
+import { DownloadMado, TryMadoHere } from './landing-download-mado';
 import { isLandingIntroPending, useLandingIntro } from './landing-intro';
-import { OpenMado } from './landing-open-mado';
 import { Accent, TileMedia } from './landing-ui';
 import { usePauseOffscreen } from './use-pause-offscreen';
 
@@ -424,7 +424,8 @@ function HeroCopy({ isVeiled }: LandingHeroCopyProps) {
         delay={650}
         className="mt-8 flex items-center gap-5"
       >
-        <OpenMado label="Try Mado" />
+        <DownloadMado />
+        <TryMadoHere />
       </Reveal>
     </div>
   );
