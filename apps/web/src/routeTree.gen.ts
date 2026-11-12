@@ -60,10 +60,10 @@ const appLibraryDeletedRoute = appLibraryDeletedRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof appIndexRoute
   '/ui-system': typeof UiSystemRoute
   '/collection': typeof appCollectionRouteRouteWithChildren
   '/library': typeof appLibraryRouteRouteWithChildren
-  '/': typeof appIndexRoute
   '/collection/$collectionId': typeof appCollectionCollectionIdRoute
   '/library/deleted': typeof appLibraryDeletedRoute
   '/library/': typeof appLibraryIndexRoute
@@ -90,10 +90,10 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/ui-system'
     | '/collection'
     | '/library'
-    | '/'
     | '/collection/$collectionId'
     | '/library/deleted'
     | '/library/'
@@ -127,7 +127,7 @@ declare module '@tanstack/react-router' {
     '/(app)': {
       id: '/(app)'
       path: ''
-      fullPath: ''
+      fullPath: '/'
       preLoaderRoute: typeof appRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
