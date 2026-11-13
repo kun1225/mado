@@ -13,9 +13,9 @@ const EASE_IN_OUT = [0.76, 0, 0.24, 1] as const;
 
 /**
  * Runs before first paint, so the page starts in the intro's first frame instead of flashing the end state.
- * The intro plays once per visit and never with reduced motion.
+ * The intro plays once per browser and never with reduced motion.
  */
-export const LANDING_INTRO_SCRIPT = `try{if(!sessionStorage.getItem('${SEEN_KEY}')&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.dataset.landingIntro='pending'}catch(e){}`;
+export const LANDING_INTRO_SCRIPT = `try{if(!localStorage.getItem('${SEEN_KEY}')&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.dataset.landingIntro='pending'}catch(e){}`;
 
 /**
  * "Mado" splits into "Ma" and "do", and a window opens between them onto a cluster of sources.
@@ -62,7 +62,7 @@ export function isLandingIntroPending() {
 function shouldPlayIntro() {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
   try {
-    return sessionStorage.getItem(SEEN_KEY) === null;
+    return localStorage.getItem(SEEN_KEY) === null;
   } catch {
     return false;
   }
@@ -155,9 +155,9 @@ function playIntro(hero: HTMLElement, spread: MotionValue<number>) {
 
     finish();
     try {
-      sessionStorage.setItem(SEEN_KEY, '1');
+      localStorage.setItem(SEEN_KEY, '1');
     } catch {
-      // Storage is blocked; the intro just plays again next time.
+      // Storage is blocked; the intro just plays again next visit.
     }
   }
 
