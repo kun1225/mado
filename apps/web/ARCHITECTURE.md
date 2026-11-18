@@ -94,7 +94,7 @@ The API lives in `apps/api`. Everything else stays on the device.
 
 ### Desktop library startup
 
-Electron reads the saved library path before opening the window. Without a valid config, it creates and saves the default `Documents/mado` library using the system Documents path. A saved path always wins; if that folder is missing, the desktop gate asks the user to choose a folder or create an empty library again at the saved path, and never creates one without a click. Settings can switch libraries without moving files.
+Electron reads the saved library path before opening the window. Without a valid config, it creates and saves the default `Documents/mado` library using the system Documents path. A saved path always wins; if that folder is missing, the desktop gate asks the user to choose a folder or create an empty library again at the saved path, and never creates one without a click. Opening a folder takes `.mado-lock`, then brings `mado.json` up to the current schema version, then reads the records; a held lock, a too-new or a broken `mado.json` returns `status: 'blocked'`, and the gate says why. Settings can switch libraries, and offers to copy the old library into an empty new folder; the old files are never moved.
 
 ### Landing intro
 

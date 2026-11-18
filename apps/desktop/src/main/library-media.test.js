@@ -110,3 +110,19 @@ describe('keys', () => {
     assert.equal(await readFile(media.resolvePath('../x'), 'utf8'), 'ok');
   });
 });
+
+describe('close', () => {
+  it('waits for a write that is finishing, and drops the ones still open', async () => {
+    const media = await createLibraryMedia(mediaRoot);
+    const done = await media.beginWrite('done');
+    await media.appendChunk(done, Buffer.from('whole'));
+    const open = await media.beginWrite('open');
+    await media.appendChunk(open, Buffer.from('half'));
+
+    void media.finishWrite(done);
+    await media.close();
+
+    assert.deepEqual(await readdir(mediaRoot), ['done']);
+    await assert.rejects(media.appendChunk(open, Buffer.from('more')));
+  });
+});

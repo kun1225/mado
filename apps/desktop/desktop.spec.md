@@ -11,7 +11,10 @@ An Electron app for macOS that shows the web app in a window and keeps the libra
 - The window opens `/library`, not the landing page. In development it loads `http://localhost:3100/library`. The packaged app loads the deployed web app at `https://mado-web.the-kunyang.workers.dev/library`. `MADO_WEB_URL` overrides both.
 - **First run:** the app creates and opens `Documents/mado`, using the system Documents path, and remembers it in `config.json`. A missing or broken config uses this default. A saved folder always takes priority. The user can change it in Settings: picking a parent makes a `Mado Library` folder inside it; picking `Mado Library` or the default `Documents/mado` opens it directly.
 - **The folder is gone** (moved, renamed, drive unplugged): the app shows "We can't find your library" with Choose folder and Create Mado Folder. Create Mado Folder makes an empty library again at the saved path. It never makes a new empty library on its own, only when the user clicks.
-- **Settings → Data → Storage** shows the Library folder with **Change folder** and **Show in Finder**. The browser's quota is not shown, and the usage is the size of the library's files. Changing the folder opens the library in the new folder, or makes one there. It does not move or copy files, and the old files stay where they are.
+- **Settings → Data → Storage** shows the Library folder with **Change folder** and **Show in Finder**. The browser's quota is not shown, and the usage is the size of the library's files. Changing the folder opens the library in the new folder, or makes one there. When the new folder has no library (no records, no `mado.json`, no `.mado-lock`) and the old one has records, a dialog asks: **Copy library**, **Start empty** or **Cancel**. Copy leaves out the lock file and half-written temp files. It copies into a new `Mado Library.copying-…` folder beside the new folder, then renames that folder into place in one step, so the new folder is either the whole library or not there. An empty library made there before is replaced; a file of the user's in the new folder stops the copy and is kept. The old folder is never changed or removed.
+- **The folder can't be opened** (`status: 'blocked'`): the app shows why, with Choose folder and Try again. `locked`: another Mado app (for example dev and packaged) has it open. `needs-update`: a newer Mado changed its files. `invalid`: `mado.json` is broken or can't be read.
+- **One app, one window.** Opening the same app again focuses its window. Dev and packaged are two apps, so the lock file keeps them apart.
+- **Skipped files are shown.** A record file that can't be read or is not valid shows a toast with its name, one per file. Problems found while the library opened are shown when the page loads.
 - **Links to other sites** open in the browser, never in a new app window, and a redirect to another site is blocked the same way. Every bridge call also checks that it comes from the top frame of our own page, so a page we don't own never gets the library.
 
 ### The folder
@@ -19,7 +22,9 @@ An Electron app for macOS that shows the web app in a window and keeps the libra
 ```text
 Mado Library/
 ├── AGENTS.md           rules for an AI agent (written once, never overwritten)
-├── collections.json    every collection
+├── mado.json           { "schemaVersion": 1 }, the shape of the files below
+├── .mado-lock          { "pid": … } while an app has the folder open
+├── collections.json    every collection, deleted ones too (with deletedAt)
 ├── sources/<id>.json   one source: name, note, tags, collections, sizes…
 └── media/<storageKey>  the files
 ```
@@ -30,6 +35,9 @@ Mado Library/
 - A media file appears under its real name only when it is complete. It is written in 8 MB chunks, and read through `mado-media://media/<key>` so the browser can stream it.
 - A record changes in memory only after its file is saved, and all changes run through one queue, so a failed save leaves nothing behind and a reload never overwrites a newer edit.
 - The app reads the whole folder at start and keeps the records in memory. A file that can't be read is skipped and logged, and never stops the app.
+- **Opening order:** lock, then schema, then records. No other app writes while the files migrate, and nothing reads them before.
+- **Schema version.** `mado.json` says which shape the files have. A folder without it is version 1. An older version runs each migration in `library-schema.js` in order, then writes the new number. The number is written last, so a crash runs the migrations again, and every migration must be safe to run twice. To change the shape of a record file: raise `SCHEMA_VERSION` and add a step to `MIGRATIONS`.
+- **Lock.** `.mado-lock` is written to a temp file and then linked into place, so two apps can't both make it and no app ever sees it empty. A lock whose process is gone is taken over. A stale lock is removed only if its text is unchanged, then made again with `wx`, so when two apps find it stale at once only one gets it. Closing detaches the library first, so no new call can write, waits for queued record writes and running media steps, drops uploads still open, and then removes the lock; quitting closes first, because macOS reuses process ids. An app never removes a lock another app took over.
 
 ### Editing outside the app
 
@@ -56,6 +64,10 @@ Mado Library/
 - **2026-11 — Update prompt, not auto-update.** macOS only lets an app replace itself when both versions carry the same Developer ID signature; ad-hoc signatures differ each build. So the app points to the download until it is signed by Apple, then electron-updater can take over.
 - **2026-11 — New web code must check a bridge method exists before calling it.** The web app updates at once, but users replace the app by hand, so a new page can run in an old app.
 - **2026-11 — The packaged app is named Mado, but dev stays `desktop`.** `build.extraMetadata` sets the name only in the package. Renaming dev would move its settings folder (`Application Support/desktop`) and forget the library folder.
+- **2026-11 — `mado.json` for the schema version, not a field in every record, and not `library.json`.** One file is read before any record, so a migration runs before the app reads old shapes. `library.json` is the export's manifest, and import looks for it, so the same name would make import read the folder as an export.
+- **2026-11 — A too-new or broken `mado.json` blocks the folder** instead of opening it read-only or guessing version 1. A guess could migrate files that are already in a newer shape. Blocking is simpler and can't damage data.
+- **2026-11 — A lock file, not only Electron's single-instance lock.** The single-instance lock covers one app. Dev and packaged builds are two apps on the same folder.
+- **2026-11 — Changing the folder copies, never moves.** A failed copy loses nothing, and the user deletes the old folder when they are sure.
 - **2026-11 — The preload lists its method names twice** (also in `main/ipc.js`), because a sandboxed preload can't import a local file.
 
 ## Known gaps
@@ -65,14 +77,15 @@ Mado Library/
 - The website sources and feedback form call the API, which is not deployed, so they fail in the packaged app and on the live web app.
 
 - One library per folder, so the signed-in account is ignored. The web app keeps one library per account.
-- No lock file, so two copies of the app on one folder can overwrite each other.
+- The lock uses process ids, so it can't tell apps on two Macs apart. Two Macs on one shared folder can still overwrite each other.
+- Two apps that find the same stale lock in the same moment can, in a very small window, both take it. A real OS lock needs a native module.
 - A folder in iCloud Drive or Dropbox can evict files or make conflict copies.
 - No readable names in Finder: media files are named by `storageKey`.
-- Changing the folder does not move the files.
+- Copying a big library shows no progress, so the app can look stuck. The old library stays open during the copy, so an edit made then is not copied.
+- An `AGENTS.md` written before this change does not mention `mado.json`, `.mado-lock` or deleted collections, because the guide is never overwritten.
 - `readMediaFile` loads a whole file as a Blob. A direct `mado-media://` URL for the player is the next step for very large videos.
 - Changing the folder while a multi-step action runs can split that action across two libraries. Opens are queued, but the actions are not bound to one library.
-- Deleting a collection is several writes, not one, and a collection file with a cycle is not rejected.
-- A bad edit by an agent is only logged. The app shows nothing.
+- A collection file with a cycle is not rejected.
 - An edit made in the first moments after a library opens can be missed until the next start, because the native watcher takes a moment to begin.
 - The canvas file, the CLI runner and the production build (`app://`, SPA mode) are not built yet.
 - Export on desktop uses the browser save picker. It is not checked in Electron yet.

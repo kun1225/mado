@@ -7,11 +7,12 @@ export type DesktopLibraryGateProps = {
 };
 
 export type DesktopFolderPromptProps = {
-  /** Why the prompt shows: no folder yet, or the saved one is gone. */
+  /** Why the prompt shows: no folder yet, the saved one is gone, or it can't be opened. */
   folder: DesktopFolderStatus;
   choosing: boolean;
   onChoose: () => void;
   onRecreate: () => void;
+  onRetry: () => void;
 };
 
 export type DesktopSitePreviewProps = {

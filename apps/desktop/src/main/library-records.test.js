@@ -315,3 +315,14 @@ describe('failures', () => {
     );
   });
 });
+
+describe('whenIdle', () => {
+  it('waits for writes that are still queued', async () => {
+    const library = await openLibrary(root);
+    void library.putSources([makeSource('a')]);
+
+    await library.whenIdle();
+
+    assert.deepEqual(await readdir(join(root, 'sources')), ['a.json']);
+  });
+});

@@ -9,15 +9,34 @@ import { join } from 'node:path';
 export async function createLibraryMedia(mediaRoot) {
   await mkdir(mediaRoot, { recursive: true });
   const writes = new Map();
+  const running = new Set();
+  const track = (promise) => trackRunning(running, promise);
 
   return {
-    beginWrite: (key) => beginWrite({ mediaRoot, writes, key }),
-    appendChunk: (writeId, bytes) => appendChunk(writes, writeId, bytes),
-    finishWrite: (writeId) => finishWrite(writes, writeId),
-    abortWrite: (writeId) => abortWrite(writes, writeId),
-    remove: (key) => removeFile(toPath(mediaRoot, key)),
+    beginWrite: (key) => track(beginWrite({ mediaRoot, writes, key })),
+    appendChunk: (writeId, bytes) => track(appendChunk(writes, writeId, bytes)),
+    finishWrite: (writeId) => track(finishWrite(writes, writeId)),
+    abortWrite: (writeId) => track(abortWrite(writes, writeId)),
+    remove: (key) => track(removeFile(toPath(mediaRoot, key))),
     resolvePath: (key) => toPath(mediaRoot, key),
+    close: () => closeMedia(writes, running),
   };
+}
+
+// *** trackRunning ***
+function trackRunning(running, promise) {
+  running.add(promise);
+  const forget = () => running.delete(promise);
+  promise.then(forget, forget);
+  return promise;
+}
+
+// *** closeMedia ***
+// Runs before the folder's lock is let go: a started step finishes, and an
+// upload still open is dropped, so nothing writes to the folder afterwards.
+async function closeMedia(writes, running) {
+  await Promise.allSettled([...running]);
+  await Promise.all([...writes.keys()].map((id) => abortWrite(writes, id)));
 }
 
 // *** beginWrite ***

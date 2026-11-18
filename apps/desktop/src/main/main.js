@@ -31,13 +31,26 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 
-app.whenReady().then(async () => {
-  await registerLibraryIpc({ send: sendToWindows, isTrustedSender });
-  registerSitePreviewIpc({ isTrustedSender });
-  createWindow();
-  // A dev build has no release to compare against.
-  if (app.isPackaged) void offerUpdate();
-});
+// A second launch of the same app would fight the first over the library, so it shows the first window instead.
+if (!app.requestSingleInstanceLock()) app.quit();
+else startApp();
+
+// *** startApp ***
+function startApp() {
+  app.on('second-instance', focusWindow);
+
+  app.whenReady().then(async () => {
+    const library = await registerLibraryIpc({
+      send: sendToWindows,
+      isTrustedSender,
+    });
+    releaseLibraryOnQuit(library);
+    registerSitePreviewIpc({ isTrustedSender });
+    createWindow();
+    // A dev build has no release to compare against.
+    if (app.isPackaged) void offerUpdate();
+  });
+}
 
 // macOS apps stay alive after the last window closes, so we quit only on other systems.
 app.on('window-all-closed', () => {
@@ -72,6 +85,29 @@ function createWindow() {
   }
 
   win.loadURL(WEB_URL);
+}
+
+// *** focusWindow ***
+function focusWindow() {
+  const [win] = BrowserWindow.getAllWindows();
+  if (!win) return createWindow();
+  if (win.isMinimized()) win.restore();
+  win.focus();
+}
+
+// *** releaseLibraryOnQuit ***
+// A leftover lock is only taken over when its process is gone, and macOS reuses process ids, so quitting removes it first.
+function releaseLibraryOnQuit(library) {
+  let released = false;
+  app.on('before-quit', (event) => {
+    if (released) return;
+    event.preventDefault();
+    released = true;
+    library
+      .close()
+      .catch((error) => console.error('Failed to close the library', error))
+      .finally(() => app.quit());
+  });
 }
 
 // *** offerUpdate ***

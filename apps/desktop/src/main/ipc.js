@@ -4,8 +4,10 @@ import { pathToFileURL } from 'node:url';
 import { app, dialog, ipcMain, net, protocol, shell } from 'electron';
 
 import { createLibraryFolder } from './library-folder.js';
+import { acquireLock } from './library-lock.js';
 import { createLibraryMedia } from './library-media.js';
 import { openLibrary } from './library-records.js';
+import { prepareSchema } from './library-schema.js';
 import { watchLibrary } from './library-watcher.js';
 
 export const MEDIA_SCHEME = 'mado-media';
@@ -43,6 +45,7 @@ export async function registerLibraryIpc({ send, isTrustedSender }) {
     configPath: join(app.getPath('userData'), 'config.json'),
     defaultRoot: join(app.getPath('documents'), 'mado'),
     pickFolder,
+    confirmCopy,
   });
   const library = createLibrarySession({ send });
 
@@ -63,6 +66,9 @@ export async function registerLibraryIpc({ send, isTrustedSender }) {
     const { path } = await folder.getStatus();
     if (path) await shell.openPath(path);
   });
+  handle('folder:problems', () => [
+    ...(library.current()?.problems.values() ?? []),
+  ]);
 
   for (const name of LIBRARY_METHODS) {
     handle(`library:${name}`, (...args) =>
@@ -79,6 +85,8 @@ export async function registerLibraryIpc({ send, isTrustedSender }) {
 
   // Open before any window exists, or a page can ask for records before the library is ready.
   await library.open(await folder.getStatus());
+
+  return { close: () => library.close() };
 }
 
 // *** pickFolder ***
@@ -91,6 +99,19 @@ async function pickFolder() {
   return canceled ? null : filePaths[0];
 }
 
+// *** confirmCopy ***
+async function confirmCopy({ from, to }) {
+  const { response } = await dialog.showMessageBox({
+    type: 'question',
+    message: 'Copy your library to the new folder?',
+    detail: `Mado copies everything from ${from} to ${to}. The old folder stays as it is, and you can delete it later.`,
+    buttons: ['Copy library', 'Start empty', 'Cancel'],
+    defaultId: 0,
+    cancelId: 2,
+  });
+  return ['copy', 'empty', null][response];
+}
+
 // *** createLibrarySession ***
 // Holds the one open library, and swaps it when the user picks another folder.
 function createLibrarySession({ send }) {
@@ -99,14 +120,25 @@ function createLibrarySession({ send }) {
   let queue = Promise.resolve();
 
   const switchTo = async (status) => {
-    if (status?.status !== 'ready') {
-      await closeSession(session);
-      session = null;
-    } else if (session?.root !== status.path) {
-      await closeSession(session);
-      session = await openSession(status.path, send);
+    if (status?.status === 'ready' && session?.root === status.path) {
+      return status;
     }
+    // Detached before it closes, so no new call can write while the lock is let go.
+    const closing = session;
+    session = null;
+    await closeSession(closing);
+    if (status?.status !== 'ready') return status;
+
+    const opened = await openSession(status.path, send);
+    if (opened.blocked) return { status: 'blocked', ...opened.blocked };
+    session = opened;
     return status;
+  };
+
+  const enqueue = (task) => {
+    const run = queue.then(task);
+    queue = run.catch(() => {});
+    return run;
   };
 
   return {
@@ -115,20 +147,40 @@ function createLibrarySession({ send }) {
       if (!session) throw new Error('No library folder has been chosen.');
       return session;
     },
-    // Resolves to the status it was given, so a caller can return it as it is.
-    open: (status) => {
-      const run = queue.then(() => switchTo(status));
-      queue = run.catch(() => {});
-      return run;
-    },
+    // Resolves to the status the page should show: the one it was given, or `blocked`.
+    open: (status) => enqueue(() => switchTo(status)),
+    close: () => enqueue(() => switchTo(null)),
   };
 }
 
 // *** openSession ***
+// The lock comes first and the schema second, so no other app writes while files migrate, and nothing reads them before.
 async function openSession(root, send) {
+  const lock = await acquireLock(root);
+  if (!lock) return { blocked: { reason: 'locked', path: root } };
+
+  try {
+    const schema = await prepareSchema(root);
+    if (!schema.ok) {
+      await lock.release();
+      return { blocked: { reason: schema.reason, path: root } };
+    }
+    return await openRecords(root, lock, send);
+  } catch (error) {
+    await lock.release();
+    throw error;
+  }
+}
+
+// *** openRecords ***
+// Problems are kept as well as sent, because the ones found while opening come before any page listens.
+// One per file, so a file the watcher reads again and again doesn't grow the list.
+async function openRecords(root, lock, send) {
+  const problems = new Map();
   const records = await openLibrary(root, {
     onProblem: (problem) => {
       console.warn(`Skipped ${problem.file}: ${problem.reason}`);
+      problems.set(problem.file, problem);
       send('library:problem', problem);
     },
   });
@@ -137,12 +189,17 @@ async function openSession(root, send) {
     send('library:changed', { kind }),
   );
 
-  return { root, records, media, stopWatching };
+  return { root, records, media, stopWatching, lock, problems };
 }
 
 // *** closeSession ***
+// Queued writes finish first, or another app could take the lock while this one still writes.
 async function closeSession(session) {
-  session?.stopWatching();
+  if (!session) return;
+  session.stopWatching();
+  await session.records.whenIdle();
+  await session.media.close();
+  await session.lock.release();
 }
 
 // *** registerMediaProtocol ***

@@ -1,11 +1,16 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { toast } from '@repo/ui/sonner';
+
 import { collectionKeys } from '#/features/collections/collection-hooks';
 import { sourceKeys } from '#/features/sources/hooks/source-hooks';
 
 import { getDesktopBridge } from './desktop-bridge';
-import type { MadoDesktopBridge } from './desktop-bridge.type';
+import type {
+  DesktopLibraryProblem,
+  MadoDesktopBridge,
+} from './desktop-bridge.type';
 
 const folderKey = ['desktop', 'folder'] as const;
 
@@ -60,6 +65,8 @@ export function useLibraryFolder() {
     chooseFolder: () => choose.mutate(),
     choosing: choose.isPending || recreate.isPending,
     recreateFolder: () => recreate.mutate(),
+    retryFolder: () =>
+      void queryClient.invalidateQueries({ queryKey: folderKey }),
     revealFolder: () => void bridge?.folder.reveal(),
   };
 }
@@ -78,4 +85,28 @@ export function useLibraryChanges() {
       void queryClient.invalidateQueries({ queryKey: collectionKeys.all });
     });
   }, [bridge, queryClient]);
+}
+
+/** Tells the user about a record file the app skipped, for example after an AI agent broke its JSON. */
+export function useLibraryProblems() {
+  const bridge = useDesktopBridge();
+
+  useEffect(() => {
+    if (!bridge?.folder.problems || !bridge.onLibraryProblem) return;
+
+    // Problems found while the library opened came before this page listened.
+    void bridge.folder.problems().then((problems) => {
+      problems.forEach(showProblem);
+    });
+    return bridge.onLibraryProblem(showProblem);
+  }, [bridge]);
+}
+
+// *** showProblem ***
+// One toast per file, so a file the watcher reads several times doesn't stack toasts.
+function showProblem({ file, reason }: DesktopLibraryProblem) {
+  toast.error(`Mado skipped ${file}`, {
+    id: `library-problem:${file}`,
+    description: reason,
+  });
 }

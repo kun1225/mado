@@ -35,10 +35,20 @@ contextBridge.exposeInMainWorld('madoDesktop', {
   sitePreview: bridgeMethods('sitePreview', ['open', 'resize', 'close']),
   library: bridgeMethods('library', LIBRARY_METHODS),
   media: bridgeMethods('media', MEDIA_METHODS),
-  folder: bridgeMethods('folder', ['status', 'choose', 'recreate', 'reveal']),
-  onLibraryChange(callback) {
-    const listener = (_event, change) => callback(change);
-    ipcRenderer.on('library:changed', listener);
-    return () => ipcRenderer.removeListener('library:changed', listener);
-  },
+  folder: bridgeMethods('folder', [
+    'status',
+    'choose',
+    'recreate',
+    'reveal',
+    'problems',
+  ]),
+  onLibraryChange: (callback) => listen('library:changed', callback),
+  onLibraryProblem: (callback) => listen('library:problem', callback),
 });
+
+// *** listen ***
+function listen(channel, callback) {
+  const listener = (_event, payload) => callback(payload);
+  ipcRenderer.on(channel, listener);
+  return () => ipcRenderer.removeListener(channel, listener);
+}

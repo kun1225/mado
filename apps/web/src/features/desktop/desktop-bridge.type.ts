@@ -1,12 +1,28 @@
 import type { LibraryStore } from '#/features/storage/library-store.type';
 
-export type DesktopFolderStatus = {
-  /** `none`: no folder chosen yet. `missing`: the chosen folder is gone. */
-  status: 'none' | 'missing' | 'ready';
-  path: string | null;
-};
+export type DesktopFolderStatus =
+  | {
+      /** `none`: no folder chosen yet. `missing`: the chosen folder is gone. */
+      status: 'none' | 'missing' | 'ready';
+      path: string | null;
+    }
+  | {
+      /** The folder is there, but the app must not open it. */
+      status: 'blocked';
+      reason: DesktopFolderBlockedReason;
+      path: string;
+    };
+
+/**
+ * `locked`: another Mado app has the folder open. `needs-update`: a newer Mado
+ * changed its files. `invalid`: `mado.json` can't be read.
+ */
+export type DesktopFolderBlockedReason = 'locked' | 'needs-update' | 'invalid';
 
 export type DesktopLibraryChange = { kind: 'sources' | 'collections' };
+
+/** A record file the app skipped, because it can't be read or is not valid. */
+export type DesktopLibraryProblem = { file: string; reason: string };
 
 export type DesktopSitePreviewBounds = {
   x: number;
@@ -44,10 +60,16 @@ export type MadoDesktopBridge = {
     /** Makes the saved folder again at its old path. */
     recreate: () => Promise<DesktopFolderStatus>;
     reveal: () => Promise<void>;
+    /** Missing in apps built before it. */
+    problems?: () => Promise<DesktopLibraryProblem[]>;
   };
   /** Returns a function that stops listening. */
   onLibraryChange: (
     callback: (change: DesktopLibraryChange) => void,
+  ) => () => void;
+  /** Missing in apps built before it. Returns a function that stops listening. */
+  onLibraryProblem?: (
+    callback: (problem: DesktopLibraryProblem) => void,
   ) => () => void;
 };
 
