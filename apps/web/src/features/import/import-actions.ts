@@ -94,7 +94,9 @@ async function readManifest(
 }
 
 // *** readExistingIds ***
-// Trash included, so a trashed source is not brought back as a copy.
+// Trash included, so a trashed source is not brought back as a copy. A deleted
+// collection is left out, so the import brings it back instead of linking
+// sources to a collection that the next list would trash them from.
 async function readExistingIds(): Promise<ImportExistingIds> {
   const store = getLibraryStore();
   const [collections, sources] = await Promise.all([
@@ -103,7 +105,9 @@ async function readExistingIds(): Promise<ImportExistingIds> {
   ]);
 
   return {
-    collectionIds: new Set(collections.map(({ id }) => id)),
+    collectionIds: new Set(
+      collections.filter(({ deletedAt }) => !deletedAt).map(({ id }) => id),
+    ),
     sourceIds: new Set(sources.map(({ id }) => id)),
   };
 }

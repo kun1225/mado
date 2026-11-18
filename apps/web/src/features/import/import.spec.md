@@ -21,6 +21,7 @@ The folder has `library.json` at its top (see `export.spec.md`).
 - Every collection and source keeps its id, name, nesting, color, note, tags, link, site preview and dates.
 - A source copied into several folders comes back as one source in all of them. Any copy of its file will do.
 - **An id that is already here is skipped**, trash included. Importing your own export again changes nothing.
+- A collection deleted after the export comes back: its tombstone (`deletedAt`) doesn't count as already here. Otherwise its sources would link to a deleted collection, and the next list would trash them.
 - An image or video whose file is gone is skipped. A website without its thumbnail is kept as a link card.
 - A text source reads its body from its `text` file, so an edit made to that file before importing is kept. A text source whose text file is gone is skipped; one whose thumbnail is gone is kept without it. A text file that is empty or over 1 MB counts as "could not be saved".
 - A link to a collection that is nowhere (not in the file, not in the library) is dropped. A collection whose parent is gone moves to the top.

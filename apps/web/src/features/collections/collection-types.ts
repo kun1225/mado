@@ -30,6 +30,8 @@ export type Collection = {
   saveCount: number;
   createdAt: string;
   updatedAt: string;
+  /** Set instead of removing the record, so sync can tell other devices. Records saved before it read as `null`. */
+  deletedAt: string | null;
 };
 
 /** `includeFolders: false` limits a collection to the sources saved right in it. */

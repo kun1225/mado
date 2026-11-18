@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Source } from '../sources/source-types';
 
-import type { UpdateCollectionInput } from './collection-types';
+import type { Collection, UpdateCollectionInput } from './collection-types';
 
 let createCollection: typeof import('./collection-actions').createCollection;
 let deleteCollection: typeof import('./collection-actions').deleteCollection;
@@ -70,6 +70,42 @@ async function readSource(id: string) {
     .get(id);
 
   return new Promise<Source>((resolve) => {
+    request.onsuccess = () => resolve(request.result);
+  });
+}
+
+/** `deletedAt: undefined` stores a record from before the field existed. */
+async function seedCollection({
+  deletedAt,
+  ...overrides
+}: Record<string, unknown>) {
+  const database = await openDatabase();
+  const transaction = database.transaction('collections', 'readwrite');
+  transaction.objectStore('collections').put({
+    id: 'seeded',
+    name: 'Seeded',
+    parentId: null,
+    color: null,
+    saveCount: 0,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    ...overrides,
+    ...(deletedAt === undefined ? {} : { deletedAt }),
+  });
+
+  await new Promise((resolve) => {
+    transaction.oncomplete = resolve;
+  });
+}
+
+async function readCollection(id: string) {
+  const database = await openDatabase();
+  const request = database
+    .transaction('collections', 'readonly')
+    .objectStore('collections')
+    .get(id);
+
+  return new Promise<Collection>((resolve) => {
     request.onsuccess = () => resolve(request.result);
   });
 }
@@ -293,6 +329,13 @@ describe('color on old records', () => {
     expect((await fetchAllCollections())[0].color).toBeNull();
     expect((await updateCollection('old', { name: 'New' })).color).toBeNull();
   });
+
+  it('reads a record saved without deletedAt as not deleted', async () => {
+    await seedCollection({ id: 'old', deletedAt: undefined });
+
+    expect((await fetchCollection('old'))?.deletedAt).toBeNull();
+    expect((await fetchAllCollections()).map(({ id }) => id)).toEqual(['old']);
+  });
 });
 
 describe('deleteCollection', () => {
@@ -357,6 +400,47 @@ describe('deleteCollection', () => {
     expect(shared.collectionIds).toEqual([keptCollection.id]);
   });
 
+  it('keeps the collection and its folders as tombstones, so sync can tell other devices', async () => {
+    const parent = await createCollection({ name: 'Sites' });
+    const child = await createCollection({ parentId: parent.id });
+
+    await deleteCollection(parent.id);
+
+    for (const id of [parent.id, child.id]) {
+      const stored = await readCollection(id);
+      expect(stored.deletedAt).not.toBeNull();
+      expect(stored.updatedAt).toBe(stored.deletedAt);
+    }
+  });
+
+  it('treats a deleted collection as gone', async () => {
+    const created = await createCollection({ name: 'Sites' });
+    await deleteCollection(created.id);
+
+    await expect(updateCollection(created.id, { name: 'x' })).rejects.toThrow(
+      `Collection not found: ${created.id}`,
+    );
+    await expect(createCollection({ parentId: created.id })).rejects.toThrow(
+      `Collection not found: ${created.id}`,
+    );
+    await expect(deleteCollection(created.id)).rejects.toThrow(
+      `Collection not found: ${created.id}`,
+    );
+  });
+});
+
+describe('a delete that stopped half-way', () => {
+  it('trashes the sources a crash left in a deleted collection on the next list', async () => {
+    await seedCollection({ id: 'gone', deletedAt: '2026-01-02T00:00:00.000Z' });
+    await seedSource('gone', 'left-behind');
+
+    expect(await fetchAllCollections()).toEqual([]);
+
+    const source = await readSource('left-behind');
+    expect(source.deletedAt).not.toBeNull();
+    expect(source.collectionIds).toEqual([]);
+  });
+
   it('deletes nested collections with it and leaves others alone', async () => {
     const parent = await createCollection({ name: 'Parent' });
     const child = await createCollection({ parentId: parent.id });
@@ -396,6 +480,7 @@ describe('pickPreviewSources', () => {
     saveCount: 0,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
+    deletedAt: null,
   });
 
   const source = (id: string, collectionIds: string[], createdAt: string) =>

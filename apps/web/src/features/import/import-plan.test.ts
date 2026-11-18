@@ -127,6 +127,7 @@ describe('buildImportPlan with library.json', () => {
         saveCount: 0,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-03T00:00:00.000Z',
+        deletedAt: null,
       },
       expect.objectContaining({ id: 'c2', parentId: 'c1' }),
     ]);
@@ -480,6 +481,7 @@ describe('buildImportPlan with a plain folder', () => {
         saveCount: 0,
         createdAt: NOW.toISOString(),
         updatedAt: NOW.toISOString(),
+        deletedAt: null,
       },
       expect.objectContaining({ id: 'id-2', name: 'Day 1', parentId: 'id-1' }),
       expect.objectContaining({ id: 'id-3', name: 'Night', parentId: 'id-2' }),

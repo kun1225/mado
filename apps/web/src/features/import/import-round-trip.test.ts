@@ -84,6 +84,7 @@ function buildCollection(
     saveCount: 0,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
+    deletedAt: null,
     ...overrides,
   };
 }
@@ -152,6 +153,28 @@ async function readSources(): Promise<Source[]> {
   return sources.sort((first, second) => first.id.localeCompare(second.id));
 }
 
+async function readCollections(): Promise<Collection[]> {
+  const database = await openDatabase();
+  const request = database
+    .transaction('collections')
+    .objectStore('collections')
+    .getAll();
+  return new Promise<Collection[]>((resolve) => {
+    request.onsuccess = () => resolve(request.result as Collection[]);
+  });
+}
+
+async function seedDeletedCollection(id: string) {
+  const database = await openDatabase();
+  const transaction = database.transaction('collections', 'readwrite');
+  transaction
+    .objectStore('collections')
+    .put(buildCollection({ id, deletedAt: '2026-02-01T00:00:00.000Z' }));
+  await new Promise((resolve) => {
+    transaction.oncomplete = resolve;
+  });
+}
+
 function withoutStorageKey({ storageKey: _key, ...source }: Source) {
   return source;
 }
@@ -200,6 +223,17 @@ describe('export, then import into an empty library', () => {
 
     expect(second).toMatchObject({ sourceCount: 0, existingCount: 3 });
     expect(await readSources()).toHaveLength(3);
+  });
+
+  it('brings back a collection that was deleted after the export', async () => {
+    await seedDeletedCollection('c1');
+
+    await importLibrary(exportAsPickedFiles(), () => {});
+
+    const restored = (await readCollections()).find(({ id }) => id === 'c1');
+    expect(restored?.deletedAt).toBeNull();
+    const brief = (await readSources()).find(({ id }) => id === 'brief');
+    expect(brief?.collectionIds).toEqual(['c1', 'c2']);
   });
 
   it('saves a text the user edited in the folder before importing', async () => {

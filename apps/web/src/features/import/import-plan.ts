@@ -183,6 +183,7 @@ function toCollectionRecord(
     saveCount: 0,
     createdAt: collection.createdAt,
     updatedAt: collection.updatedAt,
+    deletedAt: null,
   };
 }
 
@@ -211,6 +212,7 @@ function toFolderPlan(
       saveCount: 0,
       createdAt: timestamp,
       updatedAt: timestamp,
+      deletedAt: null,
     })),
     items: media.map(({ path, file }) => ({
       kind: 'file',

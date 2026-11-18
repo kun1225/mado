@@ -50,19 +50,21 @@ Collections group sources. They can nest: a collection inside another one is cal
 
 - Deleting asks for confirmation. From the collection page, it then goes to the library. From a card, it stays on the current page.
 - A collection can't be restored. Its folders are deleted with it.
+- The record stays, with `deletedAt` set, so sync can later tell other devices. Every list, `fetchCollection`, rename and new folder treat it as gone. Records saved before the field read as `null`, so no database migration is needed.
+- The collections are marked in one write first, and their sources go to the trash after. If the app stops in between, the next collection list sends those sources to the trash (`finishPendingDeletes`).
 - A source that was only in the deleted collections goes to the trash. If it's restored, it comes back to the library.
 - A source that is also in another collection just loses the deleted one and stays visible.
 
 ## Decisions
 
-- **2026-09 — Deleting a collection is a hard delete, but its sources go to the trash.** Losing a folder is cheap. Losing saved inspiration is not.
+- **2026-09 — Deleting a collection can't be undone, but its sources go to the trash.** Losing a folder is cheap. Losing saved inspiration is not.
+- **2026-11 — A deleted collection is a tombstone (`deletedAt`), not a removed record.** Sync must tell other devices about a delete, and a removed record says nothing. Marking first also makes the delete safe on desktop, where one write can't cover many files: a crash leaves marked collections whose sources the next list trashes. Cost: tombstones stay in the store until sync can clean them up.
 - **2026-10 — Collections nest through `parentId`.** One model covers both collections and folders.
 - **2026-10 — A parent shows everything in its folders, by default.** Otherwise, saving into a folder would make the source seem to disappear from the collection the user was browsing.
 - **2026-10 — Showing folder sources is a setting, on by default.** With everything shown, it was hard to tell which folder you were in. On by default, so nothing changes until someone turns it off. Counts and card previews follow the setting, so a card never says more than its page shows.
 - **2026-10 — The setting lives in `localStorage`, one key per account**, like recent searches. One yes/no value is not worth a new store and a database migration. It is not part of an export.
 - **2026-10 — The setting is part of the React Query keys** (`[...collectionKeys.lists, flag]`, `[...collectionKeys.detail(id), flag]`, `[...sourceKeys.byCollection(id), flag]`). Flipping it shows the right data at once. Rename and color updates write to every cached variant and keep each one's own `saveCount`.
 - **2026-10 — `saveCount` is worked out, not stored**, so it can never drift from the real sources.
-- **2026-10 — Collection deletes run in one transaction** with the source updates, so collections and sources always change together.
 - **2026-10 — Card actions use a context menu, not a visible "…" button.** Cards stay clean, and right-click / long-press is what people expect from folders. The collection page keeps its "…" button, so every action can still be found without a right-click.
 - **2026-10 — Every card action opens a dialog.** A menu item that changes data at once is too easy to hit by mistake, especially after a long press.
 - **2026-10 — Colors are stored as names, not hex values.** Each name maps to theme tokens, so a color looks right in light and dark mode and can be tuned later without a migration.

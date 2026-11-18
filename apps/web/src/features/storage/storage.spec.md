@@ -24,7 +24,8 @@ The local database under every feature. On the web, records go in IndexedDB and 
 - **A `VersionError` opens the database at its current version** instead of failing. This happens when another tab or a newer build already upgraded it.
 - **2026-10 — Text sources added an optional `text` field to source records, with no migration.** No store or index changed, and old records simply have no `text`. The text body is kept in IndexedDB, not OPFS (see `sources.spec.md`).
 - **2026-11 — Records go behind `LibraryStore`, and read-then-write steps take `withLibraryLock`.** A desktop store can't hold an IndexedDB transaction open across IPC, so the transaction became a lock. The lock keeps what the transaction gave us: two edits at once don't lose one. The existing test "applies add and remove to the stored lists, not to a stale copy" caught this.
-- **Deleting a collection is no longer one transaction.** Its sources go to the trash branch by branch, then the collections are removed. A failure in the middle can leave sources trashed and the collection still there.
+- **Deleting a collection is no longer one transaction.** The collections are marked deleted in one write first, then their sources go to the trash branch by branch. A failure in the middle is finished on the next collection list (see `collections.spec.md`).
+- **2026-11 — `deletedAt` on collections added with no migration,** like `color`. No store or index changed, and old records read as `null`.
 
 ## Rules for changes
 
