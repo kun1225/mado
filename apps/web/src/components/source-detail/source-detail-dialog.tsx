@@ -10,7 +10,7 @@ import {
   SidebarRightIcon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import type { DragEvent, KeyboardEvent } from 'react';
+import type { CSSProperties, DragEvent, KeyboardEvent } from 'react';
 
 import { Button } from '@repo/ui/button';
 import { cn } from '@repo/ui/cn';
@@ -383,31 +383,34 @@ function SourceDetailToolbar({
   return (
     <header
       data-flip-chrome
-      className="pointer-events-auto flex h-12 shrink-0 items-center gap-2 px-edge text-bg"
+      // Only the button groups take clicks, so the empty row closes the dialog like the backdrop.
+      className="flex h-12 shrink-0 items-center px-edge text-bg *:pointer-events-auto"
     >
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className={TOOLBAR_BUTTON}
-        aria-label="Previous source"
-        disabled={!onPrevious}
-        onClick={onPrevious}
-      >
-        <HugeiconsIcon icon={ArrowLeft01Icon} size={18} strokeWidth={1.5} />
-      </Button>
-      <span className="t-b-4 tabular-nums">
-        {position} / {total}
-      </span>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className={TOOLBAR_BUTTON}
-        aria-label="Next source"
-        disabled={!onNext}
-        onClick={onNext}
-      >
-        <HugeiconsIcon icon={ArrowRight01Icon} size={18} strokeWidth={1.5} />
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className={TOOLBAR_BUTTON}
+          aria-label="Previous source"
+          disabled={!onPrevious}
+          onClick={onPrevious}
+        >
+          <HugeiconsIcon icon={ArrowLeft01Icon} size={18} strokeWidth={1.5} />
+        </Button>
+        <span className="t-b-4 tabular-nums">
+          {position} / {total}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className={TOOLBAR_BUTTON}
+          aria-label="Next source"
+          disabled={!onNext}
+          onClick={onNext}
+        >
+          <HugeiconsIcon icon={ArrowRight01Icon} size={18} strokeWidth={1.5} />
+        </Button>
+      </div>
 
       <div className="ml-auto flex items-center gap-2">
         {onEdit && (
@@ -615,8 +618,13 @@ function SourceDetailViewer({
     );
   }
 
+  const imageRatio =
+    source.width && source.height ? source.width / source.height : null;
+
   return (
-    <div className="pointer-events-none flex min-h-0 min-w-0 flex-1">
+    // A size container, so the image box can match the picture and leave the
+    // empty sides to the backdrop.
+    <div className="@container-size pointer-events-none flex min-h-0 min-w-0 flex-1">
       {objectUrl === null && source.storageKey && !isWaitingForVideo && (
         <div className="m-auto size-24 animate-pulse rounded-md bg-bg/10" />
       )}
@@ -642,7 +650,17 @@ function SourceDetailViewer({
           ref={mediaRef}
           src={objectUrl}
           alt={source.name}
-          className="pointer-events-auto size-full object-contain"
+          style={
+            imageRatio
+              ? ({ '--ratio': imageRatio } as CSSProperties)
+              : undefined
+          }
+          className={cn(
+            'pointer-events-auto object-contain',
+            imageRatio
+              ? 'm-auto aspect-(--ratio) w-[min(100cqw,100cqh*var(--ratio))]'
+              : 'size-full',
+          )}
         />
       )}
 
