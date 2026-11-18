@@ -24,7 +24,10 @@ import {
   useUpdateCollection,
 } from '#/features/collections/collection-hooks';
 import { MAX_COLLECTION_NAME_LENGTH } from '#/features/collections/collection-types';
-import { useSources } from '#/features/sources/hooks/source-hooks';
+import {
+  usePendingSites,
+  useSources,
+} from '#/features/sources/hooks/source-hooks';
 
 import { CollectionMenu } from './-components/collection-menu';
 
@@ -43,6 +46,7 @@ function CollectionPage() {
   const createCollectionMutation = useCreateCollection();
   const childCollectionsQuery = useChildCollections(collectionId);
   const sourcesQuery = useSources(collectionId);
+  const pendingSites = usePendingSites(collectionId);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   // The store is browser-only: show the page shape while it loads.
@@ -186,8 +190,8 @@ function CollectionPage() {
           <p className="flex grow items-center justify-center py-6 t-b-3 text-danger">
             Unable to load the saves in this collection.
           </p>
-        ) : sourcesQuery.data.length > 0 ? (
-          <SourceGrid sources={sourcesQuery.data} />
+        ) : sourcesQuery.data.length > 0 || pendingSites.length > 0 ? (
+          <SourceGrid sources={sourcesQuery.data} pendingSites={pendingSites} />
         ) : (
           <div className="flex grow items-center justify-center py-6">
             <SourcesEmptyState />

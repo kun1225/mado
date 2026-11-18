@@ -82,12 +82,18 @@ async function readMediaMetadata(
 }
 
 export async function createSource(input: NewSourceInput): Promise<Source> {
-  const { collectionId, file, name, url } = newSourceSchema.parse(input);
+  const {
+    collectionId,
+    file,
+    name,
+    url,
+    id: givenId,
+  } = newSourceSchema.parse(input);
   const kind = sourceKindSchema.parse(detectFileKind(file));
   if (kind === 'text') return createTextSource({ collectionId, file, name });
 
   const metadata = await readMediaMetadata(file, kind);
-  const id = crypto.randomUUID();
+  const id = givenId ?? crypto.randomUUID();
   const now = new Date().toISOString();
 
   const source: Source = {
@@ -173,13 +179,14 @@ async function createTextSource({
 export async function createWebsiteSource(
   input: SiteSourceInput,
 ): Promise<Source> {
-  const { collectionId, url } = newWebsiteSourceSchema.parse(input);
+  const { id, collectionId, url } = newWebsiteSourceSchema.parse(input);
   const preview = await fetchSitePreview(url);
   // A post that cannot be embedded (X) is worth more as its video than as a link card.
   if (preview.video) {
     const video = await downloadSiteVideo(preview.video.url).catch(() => null);
     if (video) {
       return createSource({
+        id,
         collectionId,
         file: video,
         name: preview.video.title,
@@ -194,7 +201,6 @@ export async function createWebsiteSource(
   const metadata = cover
     ? await readMediaMetadata(cover, 'image')
     : UNKNOWN_METADATA;
-  const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const source: Source = {
     id,

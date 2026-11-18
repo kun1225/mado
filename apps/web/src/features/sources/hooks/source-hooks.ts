@@ -15,7 +15,7 @@ import { toast } from '@repo/ui/sonner';
 import { collectionKeys } from '#/features/collections/collection-hooks';
 import { useShowFolderSources } from '#/features/collections/collection-preference-hooks';
 
-import type { SiteSourceInput } from '../site-source.type';
+import type { SitePendingSource, SiteSourceInput } from '../site-source.type';
 import {
   compressSource,
   createSources,
@@ -138,18 +138,30 @@ export function useCreateSources() {
   });
 }
 
+// Under the create key, so `useIsCreatingSources` still counts it.
+const CREATE_WEBSITE_MUTATION_KEY = [
+  ...CREATE_MUTATION_KEY,
+  'website',
+] as const;
+
 export function useCreateWebsiteSource() {
   const queryClient = useQueryClient();
   const { mutate: compress } = useCompressSource();
 
-  return useMutation({
-    mutationKey: CREATE_MUTATION_KEY,
+  const mutation = useMutation({
+    mutationKey: CREATE_WEBSITE_MUTATION_KEY,
     mutationFn: (input: SiteSourceInput) => createWebsiteSource(input),
     // A post can come back as a video, so shrink it too.
     onSuccess: (source) => compress(source),
     onError: (error) => toast.error(toCreateErrorMessage(error)),
     onSettled: () => invalidateAfterSourceChange(queryClient),
   });
+
+  return {
+    ...mutation,
+    mutate: (input: Omit<SiteSourceInput, 'id'>) =>
+      mutation.mutate({ ...input, id: crypto.randomUUID() }),
+  };
 }
 
 // *** toCreateErrorMessage ***
@@ -159,6 +171,44 @@ function toCreateErrorMessage(error: unknown) {
   }
   if (error instanceof Error) return error.message;
   return 'Something went wrong while adding the file.';
+}
+
+/** `collectionId` undefined means the library, which shows every source. */
+export function usePendingSites(collectionId?: string): SitePendingSource[] {
+  const inputs = useMutationState({
+    filters: { mutationKey: CREATE_WEBSITE_MUTATION_KEY, status: 'pending' },
+    select: (mutation) => mutation.state.variables as SiteSourceInput,
+  });
+
+  return toPendingSites(inputs, collectionId);
+}
+
+// *** toPendingSites ***
+function toPendingSites(
+  inputs: SiteSourceInput[],
+  collectionId: string | undefined,
+): SitePendingSource[] {
+  return inputs
+    .filter(
+      (input) =>
+        collectionId === undefined || input.collectionId === collectionId,
+    )
+    .map((input) => ({
+      id: input.id,
+      kind: 'pending-site' as const,
+      domain: toSiteDomain(input.url),
+    }))
+    .reverse();
+}
+
+// *** toSiteDomain ***
+function toSiteDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    // The schema rejects it soon after, so the card only needs some label.
+    return url;
+  }
 }
 
 export function useIsCreatingSources(): boolean {
@@ -340,4 +390,4 @@ export function useMediaObjectUrl(
   return objectUrl;
 }
 
-export { toTrashMessage };
+export { toPendingSites, toTrashMessage };

@@ -11,16 +11,18 @@ import {
   useSourceDetail,
   useSourceSelection,
 } from '#/features/sources/hooks/source-interaction-hooks';
+import type { SitePendingSource } from '#/features/sources/site-source.type';
 import { useSourceCaption } from '#/features/sources/source-preferences';
 import type { Source } from '#/features/sources/source-types';
 
 import { ActionDockSelection } from './action-dock/action-dock-selection';
 import { SourceDetailDialog } from './source-detail/source-detail-dialog';
 import { Masonry } from './masonry';
-import { SourceCard } from './source-card';
+import { SourceCard, SourceCardLoading } from './source-card';
 
 export function SourceGrid({
   sources,
+  pendingSites = [],
   showCollection,
   canOpenDetail = true,
   onDelete,
@@ -30,6 +32,8 @@ export function SourceGrid({
   isBulkPending,
 }: {
   sources: Source[];
+  /** First, because new sources land at the top. */
+  pendingSites?: SitePendingSource[];
   showCollection?: boolean;
   /** Off in the trash, because a deleted source cannot be edited. */
   canOpenDetail?: boolean;
@@ -92,38 +96,44 @@ export function SourceGrid({
         )}
       >
         <Masonry
-          items={sources}
-          getKey={(source) => source.id}
+          items={[...hideSavedSites(pendingSites, sources), ...sources]}
+          getKey={(item) => item.id}
           layoutKey={sourceCaption}
         >
-          {(source) => (
-            <SourceCard
-              source={source}
-              isCompressing={compressingIds.has(source.id)}
-              captionPosition={sourceCaption}
-              collectionName={
-                showCollection
-                  ? source.collectionIds
-                      .map((id) => collectionNames.get(id))
-                      .filter(Boolean)
-                      .join(', ') || undefined
-                  : undefined
-              }
-              onOpen={
-                canOpenDetail ? () => detail.setActiveId(source.id) : undefined
-              }
-              deletion={{
-                isPending: pendingIds.has(source.id),
-                onDelete: () =>
-                  (onDelete ?? deleteSourceMutation.mutate)(source.id),
-              }}
-              selection={{
-                isSelected: selection.isSelected(source.id),
-                isActive: selection.isSelectionMode,
-                onToggle: (options) => selection.toggle(source.id, options),
-              }}
-            />
-          )}
+          {(source) =>
+            source.kind === 'pending-site' ? (
+              <SourcePendingCard site={source} />
+            ) : (
+              <SourceCard
+                source={source}
+                isCompressing={compressingIds.has(source.id)}
+                captionPosition={sourceCaption}
+                collectionName={
+                  showCollection
+                    ? source.collectionIds
+                        .map((id) => collectionNames.get(id))
+                        .filter(Boolean)
+                        .join(', ') || undefined
+                    : undefined
+                }
+                onOpen={
+                  canOpenDetail
+                    ? () => detail.setActiveId(source.id)
+                    : undefined
+                }
+                deletion={{
+                  isPending: pendingIds.has(source.id),
+                  onDelete: () =>
+                    (onDelete ?? deleteSourceMutation.mutate)(source.id),
+                }}
+                selection={{
+                  isSelected: selection.isSelected(source.id),
+                  isActive: selection.isSelectionMode,
+                  onToggle: (options) => selection.toggle(source.id, options),
+                }}
+              />
+            )
+          }
         </Masonry>
       </div>
 
@@ -145,6 +155,30 @@ export function SourceGrid({
         />
       )}
     </>
+  );
+}
+
+// *** hideSavedSites ***
+// The list refetches before the add settles, so for a moment both share an id.
+function hideSavedSites(pendingSites: SitePendingSource[], sources: Source[]) {
+  const savedIds = new Set(sources.map((source) => source.id));
+
+  return pendingSites.filter((site) => !savedIds.has(site.id));
+}
+
+// *** SourcePendingCard ***
+// The OG image ratio, because most website thumbnails are OG images and the real card lands without a jump.
+const PENDING_SITE_RATIO = 1200 / 630;
+
+function SourcePendingCard({ site }: { site: SitePendingSource }) {
+  return (
+    <div
+      style={{ aspectRatio: PENDING_SITE_RATIO }}
+      className="relative flex flex-col justify-end overflow-hidden rounded-md bg-muted p-4"
+    >
+      <p className="truncate t-b-4 text-muted-fg">{site.domain}</p>
+      <SourceCardLoading label={`Adding ${site.domain}`} />
+    </div>
   );
 }
 

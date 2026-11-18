@@ -15,13 +15,17 @@ import {
   useChildCollections,
   useCreateCollection,
 } from '#/features/collections/collection-hooks';
-import { useAllSources } from '#/features/sources/hooks/source-hooks';
+import {
+  useAllSources,
+  usePendingSites,
+} from '#/features/sources/hooks/source-hooks';
 
 export function LibraryView() {
   const navigate = useNavigate();
   const collectionsQuery = useChildCollections(null);
   const createCollectionMutation = useCreateCollection();
   const sourcesQuery = useAllSources();
+  const pendingSites = usePendingSites();
 
   function handleCreateCollection() {
     createCollectionMutation.mutate(undefined, {
@@ -66,8 +70,12 @@ export function LibraryView() {
           <p className="flex flex-1 items-center justify-center py-6 t-b-3 text-danger">
             Unable to load your library.
           </p>
-        ) : sourcesQuery.data.length > 0 ? (
-          <SourceGrid sources={sourcesQuery.data} showCollection />
+        ) : sourcesQuery.data.length > 0 || pendingSites.length > 0 ? (
+          <SourceGrid
+            sources={sourcesQuery.data}
+            pendingSites={pendingSites}
+            showCollection
+          />
         ) : (
           <div className="flex flex-1 items-center justify-center py-6">
             <SourcesEmptyState />

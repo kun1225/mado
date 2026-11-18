@@ -19,6 +19,15 @@ export type SiteSourceVideo = {
 };
 
 export type SiteSourceInput = {
+  /** Made before the preview loads, so the pending card and the real card share one grid slot. */
+  id: string;
   collectionId: string | null;
   url: string;
+};
+
+/** A website still loading its preview, shown as a card until the real source lands. */
+export type SitePendingSource = {
+  id: string;
+  kind: 'pending-site';
+  domain: string;
 };

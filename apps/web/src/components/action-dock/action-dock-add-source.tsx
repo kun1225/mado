@@ -116,8 +116,7 @@ export function ActionDockAddSource({
   const rootRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const { mutate: createSources, isPending: isSavingNote } = useCreateSources();
-  const { mutate: createWebsiteEmbedSource, isPending } =
-    useCreateWebsiteSource();
+  const { mutate: createWebsiteEmbedSource } = useCreateWebsiteSource();
   const isCreating = useIsCreatingSources();
   const reduceMotion = useReducedMotion();
   const collections = useCollections().data;
@@ -175,11 +174,10 @@ export function ActionDockAddSource({
     else setMarkdownDialogOpen(true);
   }
 
+  // Closes at once, because the pending card in the grid now shows the wait.
   function handleWebsiteSubmit(url: string) {
-    createWebsiteEmbedSource(
-      { collectionId, url },
-      { onSuccess: () => setWebsiteDialogOpen(false) },
-    );
+    createWebsiteEmbedSource({ collectionId, url });
+    setWebsiteDialogOpen(false);
   }
 
   function handleMarkdownSubmit(title: string, body: string) {
@@ -255,7 +253,6 @@ export function ActionDockAddSource({
           open={websiteDialogOpen}
           onOpenChange={setWebsiteDialogOpen}
           onSubmit={handleWebsiteSubmit}
-          isSaving={isPending}
         />
       )}
       {markdownDialogOpen && (
@@ -364,12 +361,10 @@ function WebsiteUrlDialog({
   open,
   onOpenChange,
   onSubmit,
-  isSaving,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (url: string) => void;
-  isSaving: boolean;
 }) {
   const [url, setUrl] = useState('');
 
@@ -413,13 +408,10 @@ function WebsiteUrlDialog({
               type="button"
               variant="ghost"
               onClick={() => handleOpenChange(false)}
-              disabled={isSaving}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSaving}>
-              {isSaving ? 'Adding…' : 'Add website'}
-            </Button>
+            <Button type="submit">Add website</Button>
           </div>
         </form>
       </DialogContent>

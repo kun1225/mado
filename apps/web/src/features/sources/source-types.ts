@@ -45,6 +45,7 @@ const sourceFileSchema = z
   );
 
 export const newSourceSchema = z.object({
+  id: z.uuid().optional(),
   collectionId: z.uuid().nullable(),
   file: sourceFileSchema,
   name: z.string().trim().min(1).optional(),
@@ -60,6 +61,7 @@ export const MAX_NOTE_LENGTH = 2000;
 export const MAX_URL_LENGTH = 2048;
 
 export const newWebsiteSourceSchema = z.object({
+  id: z.uuid(),
   collectionId: z.uuid().nullable(),
   url: z
     .string()

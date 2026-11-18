@@ -30,6 +30,7 @@ let sourceKindSchema: typeof import('./source-types').sourceKindSchema;
 let createSources: typeof import('./source-actions').createSources;
 let updateSourceText: typeof import('./source-actions').updateSourceText;
 
+const SITE_ID = '7d3f2a10-5b8c-4e2d-9a61-0c4b8e2f1a37';
 const COLLECTION_ID = '11111111-1111-4111-8111-111111111111';
 
 // OPFS does not exist in the test environment, so the media side is stubbed and
@@ -356,9 +357,12 @@ describe('createWebsiteSource', () => {
     );
 
     const source = await createWebsiteSource({
+      id: SITE_ID,
       collectionId: COLLECTION_ID,
       url: 'https://example.com',
     });
+
+    expect(source.id).toBe(SITE_ID);
 
     expect(fetchSiteImage).toHaveBeenCalledWith('https://example.com/og.png');
     expect(source).toMatchObject({
@@ -382,6 +386,7 @@ describe('createWebsiteSource', () => {
     vi.mocked(fetchSiteImage).mockRejectedValue(new Error('Download failed'));
 
     const source = await createWebsiteSource({
+      id: SITE_ID,
       collectionId: null,
       url: 'https://example.com',
     });
@@ -401,6 +406,7 @@ describe('createWebsiteSource', () => {
     });
 
     const source = await createWebsiteSource({
+      id: SITE_ID,
       collectionId: null,
       url: 'https://example.com',
     });
@@ -444,6 +450,7 @@ describe('createWebsiteSource', () => {
       );
 
       const source = await createWebsiteSource({
+        id: SITE_ID,
         collectionId: COLLECTION_ID,
         url: 'https://x.com/someone/status/1',
       });
@@ -464,6 +471,7 @@ describe('createWebsiteSource', () => {
         storageKey: source.id,
       });
       expect(writeMediaFile).toHaveBeenCalledWith(source.id, expect.any(File));
+      expect(source.id).toBe(SITE_ID);
     });
 
     it('keeps the website when the video download fails', async () => {
@@ -471,6 +479,7 @@ describe('createWebsiteSource', () => {
       vi.mocked(fetchSiteImage).mockRejectedValue(new Error('No image'));
 
       const source = await createWebsiteSource({
+        id: SITE_ID,
         collectionId: null,
         url: 'https://x.com/someone/status/1',
       });
@@ -482,6 +491,7 @@ describe('createWebsiteSource', () => {
   it('rejects a URL with embedded credentials', async () => {
     await expect(
       createWebsiteSource({
+        id: SITE_ID,
         collectionId: null,
         url: 'https://user:pass@example.com',
       }),

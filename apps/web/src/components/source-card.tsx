@@ -79,16 +79,7 @@ export function SourceCard({
       />
 
       {isCompressing && (
-        <div
-          role="status"
-          aria-label={`Optimizing ${source.name}`}
-          className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-fg/30 backdrop-blur-xs"
-        >
-          <span
-            aria-hidden
-            className="size-6 animate-spin rounded-full border-2 border-bg border-t-transparent motion-reduce:animate-none"
-          />
-        </div>
+        <SourceCardLoading label={`Optimizing ${source.name}`} />
       )}
 
       {selection.isActive && (
@@ -156,6 +147,23 @@ export function SourceCard({
         </div>
       </figcaption>
     </figure>
+  );
+}
+
+// *** SourceCardLoading ***
+/** Shared with the pending website card, so every card waits the same way. */
+function SourceCardLoading({ label }: { label: string }) {
+  return (
+    <div
+      role="status"
+      aria-label={label}
+      className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-fg/30 backdrop-blur-xs"
+    >
+      <span
+        aria-hidden
+        className="size-6 animate-spin rounded-full border-2 border-bg border-t-transparent motion-reduce:animate-none"
+      />
+    </div>
   );
 }
 
@@ -565,4 +573,4 @@ function sampleCurve([p1x, p1y, p2x, p2y]: Curve, x: number): number {
   return ((ay * t + by) * t + cy) * t;
 }
 
-export { SourceCardCaption };
+export { SourceCardCaption, SourceCardLoading };
