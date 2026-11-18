@@ -44,8 +44,8 @@ import {
 } from '#/features/landing/landing-motion';
 import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
-import { DownloadMado, TryMadoHere } from './landing-download-mado';
 import { isLandingIntroPending, useLandingIntro } from './landing-intro';
+import { TryMado } from './landing-try-mado';
 import { Accent, TileMedia } from './landing-ui';
 import { usePauseOffscreen } from './use-pause-offscreen';
 
@@ -419,13 +419,8 @@ function HeroCopy({ isVeiled }: LandingHeroCopyProps) {
         Mado is a quiet place for what inspires you. Collect images, videos,
         sites and notes, and keep them on your device.
       </RevealText>
-      <Reveal
-        trigger="manual"
-        delay={650}
-        className="mt-8 flex items-center gap-5"
-      >
-        <DownloadMado />
-        <TryMadoHere />
+      <Reveal trigger="manual" delay={650} className="mt-8 flex">
+        <TryMado />
       </Reveal>
     </div>
   );

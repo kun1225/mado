@@ -5,26 +5,17 @@ import type { PointerEvent } from 'react';
 
 import { cn } from '@repo/ui/cn';
 
-import type {
-  LandingClassNameProps,
-  LandingDownloadMadoProps,
-} from '#/features/landing/landing.type';
-import {
-  LANDING_APP_HREF,
-  LANDING_DOWNLOAD_HREF,
-} from '#/features/landing/landing-content';
+import type { LandingClassNameProps } from '#/features/landing/landing.type';
+import { LANDING_APP_HREF } from '#/features/landing/landing-content';
 
 const LIGHT =
   'linear-gradient(90deg, transparent, color-mix(in oklch, var(--color-accent-fg) 15%, transparent) 25%, color-mix(in oklch, var(--color-accent-fg) 15%, transparent) 75%, transparent)';
 
-/** Every main call to action downloads the desktop app, the main product, with the same button. */
-export function DownloadMado({
-  label = 'Download for Mac',
-  className,
-}: LandingDownloadMadoProps) {
+/** Every main call to action opens the web app with the same button. The Mac app waits for an Apple developer account to be signed. */
+export function TryMado({ className }: LandingClassNameProps) {
   return (
-    <a
-      href={LANDING_DOWNLOAD_HREF}
+    <Link
+      to={LANDING_APP_HREF}
       onPointerEnter={followMouse}
       onPointerMove={followMouse}
       className={cn(
@@ -33,25 +24,10 @@ export function DownloadMado({
       )}
     >
       <WindowLight />
-      {label}
+      Try Mado
       <span className="grid size-7 place-items-center">
         <HugeiconsIcon icon={ArrowRight01Icon} size={16} strokeWidth={1.5} />
       </span>
-    </a>
-  );
-}
-
-/** The quiet second choice beside a download: use Mado in the browser without installing. */
-export function TryMadoHere({ className }: LandingClassNameProps) {
-  return (
-    <Link
-      to={LANDING_APP_HREF}
-      className={cn(
-        'flex h-10 touch-manipulation items-center rounded-lg border border-border bg-bg/70 px-4 t-l-2 text-fg backdrop-blur-sm transition-[background-color,scale] duration-150 ease-out outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg/40 active:scale-[0.97]',
-        className,
-      )}
-    >
-      Try it here
     </Link>
   );
 }

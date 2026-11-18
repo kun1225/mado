@@ -10,7 +10,7 @@ import type {
 import { LANDING_NAV } from '#/features/landing/landing-content';
 import { pickActiveSection } from '#/features/landing/landing-motion';
 
-import { DownloadMado } from './landing-download-mado';
+import { TryMado } from './landing-try-mado';
 import { Wordmark } from './landing-ui';
 
 // Hidden until the intro brings it in; see landing-intro.ts.
@@ -54,7 +54,7 @@ export function LandingHeader({ heroRef }: LandingHeaderProps) {
           ))}
         </nav>
       </div>
-      <DownloadMado label="Download" className="pointer-events-auto" />
+      <TryMado className="pointer-events-auto" />
     </header>
   );
 }

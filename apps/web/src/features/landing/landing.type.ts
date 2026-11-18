@@ -172,7 +172,3 @@ export type LandingChildrenProps = {
 export type LandingClassNameProps = {
   className?: string;
 };
-
-export type LandingDownloadMadoProps = LandingClassNameProps & {
-  label?: string;
-};

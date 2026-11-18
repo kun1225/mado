@@ -1,6 +1,6 @@
 import { Reveal, RevealText } from '#/components/reveal';
 
-import { DownloadMado } from './landing-download-mado';
+import { TryMado } from './landing-try-mado';
 import { Accent, LANDING_H2, Logo } from './landing-ui';
 
 export function LandingNoAccount() {
@@ -12,10 +12,10 @@ export function LandingNoAccount() {
         <Accent>Just start.</Accent>
       </RevealText>
       <RevealText delay={200} className="mt-4 t-b-1 text-muted-fg">
-        Download Mado and drop in your first save.
+        Open Mado and drop in your first save.
       </RevealText>
       <Reveal delay={400} className="mt-8">
-        <DownloadMado />
+        <TryMado />
       </Reveal>
     </section>
   );
@@ -35,7 +35,7 @@ export function LandingFinal() {
         Free. No account. Your files stay with you.
       </RevealText>
       <Reveal delay={500} className="mt-8">
-        <DownloadMado />
+        <TryMado />
       </Reveal>
     </section>
   );

@@ -7,9 +7,6 @@ import type {
 } from './landing.type';
 
 export const LANDING_APP_HREF = '/library';
-// GitHub serves this file name from the newest release, so the link survives new versions.
-export const LANDING_DOWNLOAD_HREF =
-  'https://github.com/kun1225/mado/releases/latest/download/Mado.dmg';
 
 /** The header links. Each id is the id of a section on the page. */
 export const LANDING_NAV: LandingNavItem[] = [
