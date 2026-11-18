@@ -11,7 +11,7 @@ export type DesktopFolderPromptProps = {
   folder: DesktopFolderStatus;
   choosing: boolean;
   onChoose: () => void;
-  onRetry: () => void;
+  onRecreate: () => void;
 };
 
 export type DesktopSitePreviewProps = {

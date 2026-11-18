@@ -35,7 +35,7 @@ contextBridge.exposeInMainWorld('madoDesktop', {
   sitePreview: bridgeMethods('sitePreview', ['open', 'resize', 'close']),
   library: bridgeMethods('library', LIBRARY_METHODS),
   media: bridgeMethods('media', MEDIA_METHODS),
-  folder: bridgeMethods('folder', ['status', 'choose', 'reveal']),
+  folder: bridgeMethods('folder', ['status', 'choose', 'recreate', 'reveal']),
   onLibraryChange(callback) {
     const listener = (_event, change) => callback(change);
     ipcRenderer.on('library:changed', listener);

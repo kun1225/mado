@@ -10,7 +10,7 @@ An Electron app for macOS that shows the web app in a window and keeps the libra
 
 - The window opens `/library`, not the landing page. In development it loads `http://localhost:3100/library`. The packaged app loads the deployed web app at `https://mado-web.the-kunyang.workers.dev/library`. `MADO_WEB_URL` overrides both.
 - **First run:** the app creates and opens `Documents/mado`, using the system Documents path, and remembers it in `config.json`. A missing or broken config uses this default. A saved folder always takes priority. The user can change it in Settings: picking a parent makes a `Mado Library` folder inside it; picking `Mado Library` or the default `Documents/mado` opens it directly.
-- **The folder is gone** (moved, renamed, drive unplugged): the app shows "We can't find your library" with Choose folder and Try again. It never makes a new empty library on its own.
+- **The folder is gone** (moved, renamed, drive unplugged): the app shows "We can't find your library" with Choose folder and Create Mado Folder. Create Mado Folder makes an empty library again at the saved path. It never makes a new empty library on its own, only when the user clicks.
 - **Settings → Data → Storage** shows the Library folder with **Change folder** and **Show in Finder**. The browser's quota is not shown, and the usage is the size of the library's files. Changing the folder opens the library in the new folder, or makes one there. It does not move or copy files, and the old files stay where they are.
 - **Links to other sites** open in the browser, never in a new app window, and a redirect to another site is blocked the same way. Every bridge call also checks that it comes from the top frame of our own page, so a page we don't own never gets the library.
 

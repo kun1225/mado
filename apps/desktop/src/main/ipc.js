@@ -58,6 +58,7 @@ export async function registerLibraryIpc({ send, isTrustedSender }) {
     // A closed picker changes nothing, so the open library stays open.
     return status === null ? null : library.open(status);
   });
+  handle('folder:recreate', async () => library.open(await folder.recreate()));
   handle('folder:reveal', async () => {
     const { path } = await folder.getStatus();
     if (path) await shell.openPath(path);

@@ -9,13 +9,24 @@ const LIBRARY_FOLDER_NAME = 'Mado Library';
  * `pickFolder` opens the folder picker and resolves to a path, or null when the
  * user closes it. It is a parameter so the real dialog stays out of the tests.
  *
- * `getStatus` and `choose` resolve to `{ status: 'none' | 'missing' | 'ready', path }`.
+ * `getStatus`, `choose` and `recreate` resolve to `{ status: 'none' | 'missing' | 'ready', path }`.
  */
 export function createLibraryFolder({ configPath, pickFolder, defaultRoot }) {
   return {
     getStatus: () => getStatus(configPath, defaultRoot),
     choose: () => choose({ configPath, pickFolder, defaultRoot }),
+    recreate: () => recreate(configPath, defaultRoot),
   };
+}
+
+// *** recreate ***
+// Only runs when the user asks, so the app never makes an empty library on its own.
+async function recreate(configPath, defaultRoot) {
+  const config = await readConfig(configPath);
+  if (!config) return getStatus(configPath, defaultRoot);
+
+  await makeLibrary(config.libraryRoot);
+  return { status: 'ready', path: config.libraryRoot };
 }
 
 // *** choose ***
@@ -29,9 +40,7 @@ async function choose({ configPath, pickFolder, defaultRoot }) {
       ? picked
       : join(picked, LIBRARY_FOLDER_NAME);
 
-  await mkdir(join(root, 'sources'), { recursive: true });
-  await mkdir(join(root, 'media'), { recursive: true });
-  await writeAgentGuide(root);
+  await makeLibrary(root);
   await writeConfig(configPath, { libraryRoot: root });
 
   return { status: 'ready', path: root };
@@ -43,15 +52,20 @@ async function getStatus(configPath, defaultRoot) {
   if (!config) {
     if (!defaultRoot) return { status: 'none', path: null };
 
-    await mkdir(join(defaultRoot, 'sources'), { recursive: true });
-    await mkdir(join(defaultRoot, 'media'), { recursive: true });
-    await writeAgentGuide(defaultRoot);
+    await makeLibrary(defaultRoot);
     await writeConfig(configPath, { libraryRoot: defaultRoot });
     return { status: 'ready', path: defaultRoot };
   }
 
   const exists = await isDirectory(config.libraryRoot);
   return { status: exists ? 'ready' : 'missing', path: config.libraryRoot };
+}
+
+// *** makeLibrary ***
+async function makeLibrary(root) {
+  await mkdir(join(root, 'sources'), { recursive: true });
+  await mkdir(join(root, 'media'), { recursive: true });
+  await writeAgentGuide(root);
 }
 
 // *** readConfig ***

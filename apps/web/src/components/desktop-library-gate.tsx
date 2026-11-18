@@ -19,7 +19,7 @@ export function DesktopLibraryGate({ children }: DesktopLibraryGateProps) {
 
 // *** DesktopFolderGate ***
 function DesktopFolderGate({ children }: DesktopLibraryGateProps) {
-  const { folder, chooseFolder, choosing, retryFolder } = useLibraryFolder();
+  const { folder, chooseFolder, choosing, recreateFolder } = useLibraryFolder();
   useLibraryChanges();
 
   // Nothing while the status loads, so the prompt does not flash for a library that is fine.
@@ -31,7 +31,7 @@ function DesktopFolderGate({ children }: DesktopLibraryGateProps) {
       folder={folder}
       choosing={choosing}
       onChoose={chooseFolder}
-      onRetry={retryFolder}
+      onRecreate={recreateFolder}
     />
   );
 }
@@ -41,7 +41,7 @@ function DesktopFolderPrompt({
   folder,
   choosing,
   onChoose,
-  onRetry,
+  onRecreate,
 }: DesktopFolderPromptProps) {
   const missing = folder.status === 'missing';
 
@@ -62,8 +62,8 @@ function DesktopFolderPrompt({
           Choose folder
         </Button>
         {missing && (
-          <Button variant="outline" onClick={onRetry}>
-            Try again
+          <Button variant="outline" onClick={onRecreate} disabled={choosing}>
+            Create Mado Folder
           </Button>
         )}
       </div>

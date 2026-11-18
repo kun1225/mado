@@ -41,6 +41,8 @@ export type MadoDesktopBridge = {
     status: () => Promise<DesktopFolderStatus>;
     /** Resolves to null when the user closes the picker. */
     choose: () => Promise<DesktopFolderStatus | null>;
+    /** Makes the saved folder again at its old path. */
+    recreate: () => Promise<DesktopFolderStatus>;
     reveal: () => Promise<void>;
   };
   /** Returns a function that stops listening. */

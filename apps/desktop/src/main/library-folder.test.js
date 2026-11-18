@@ -165,3 +165,32 @@ describe('choose', () => {
     assert.equal(await readFile(join(root, 'AGENTS.md'), 'utf8'), 'my rules');
   });
 });
+
+describe('recreate', () => {
+  it('makes the saved folder again at the same path', async () => {
+    const root = join(base, 'Mado Library');
+    await makeFolder(base).choose();
+    await rm(root, { recursive: true });
+
+    assert.deepEqual(await makeFolder(null).recreate(), {
+      status: 'ready',
+      path: root,
+    });
+    assert.deepEqual((await readdir(root)).sort(), [
+      'AGENTS.md',
+      'media',
+      'sources',
+    ]);
+    assert.deepEqual(await makeFolder(null).getStatus(), {
+      status: 'ready',
+      path: root,
+    });
+  });
+
+  it('asks the user again when no folder was saved', async () => {
+    assert.deepEqual(await makeFolder(null).recreate(), {
+      status: 'none',
+      path: null,
+    });
+  });
+});

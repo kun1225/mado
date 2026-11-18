@@ -50,12 +50,16 @@ export function useLibraryFolder() {
     },
   });
 
+  const recreate = useMutation({
+    mutationFn: () => bridge?.folder.recreate() ?? Promise.resolve(null),
+    onSuccess: () => void queryClient.invalidateQueries(),
+  });
+
   return {
     folder,
     chooseFolder: () => choose.mutate(),
-    choosing: choose.isPending,
-    retryFolder: () =>
-      void queryClient.invalidateQueries({ queryKey: folderKey }),
+    choosing: choose.isPending || recreate.isPending,
+    recreateFolder: () => recreate.mutate(),
     revealFolder: () => void bridge?.folder.reveal(),
   };
 }
