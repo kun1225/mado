@@ -1,39 +1,44 @@
-import cors from 'cors';
-import express, { type Express } from 'express';
+import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
+import { cors } from 'hono/cors';
 
+import type { AppGetClientIp } from './app.type.js';
 import { createAuthRouter } from './auth/auth.route.js';
 import type { AuthInstance } from './auth/auth.type.js';
 import { createFeedbackRouter } from './feedback/feedback-route.js';
 import type { SaveFeedback } from './feedback/feedback.type.js';
 import { createSitesRouter } from './sites/site-preview-route.js';
-import { invalidJsonHandler } from './invalid-json-handler.js';
+
+// Matches the limit Express's JSON parser had, so big bodies stay rejected.
+const MAX_BODY_BYTES = 100 * 1024;
 
 // CORS and auth must trust the same origin, so both use the checked config.
+// The runtime decides the client IP: the Node socket locally, a header on Workers.
 export function createApp({
   auth,
   saveFeedback,
   webOrigin = 'http://localhost:3100',
+  getClientIp = () => undefined,
 }: {
   auth?: AuthInstance;
   saveFeedback?: SaveFeedback;
   webOrigin?: string;
-} = {}): Express {
-  const app = express();
-  app.set('trust proxy', process.env.TRUST_PROXY ?? false);
+  getClientIp?: AppGetClientIp;
+} = {}) {
+  const app = new Hono().basePath('/api');
 
   app.use(cors({ origin: webOrigin, credentials: true }));
-  if (auth) app.use('/api', createAuthRouter(auth));
-  app.use(express.json());
+  if (auth) app.route('/', createAuthRouter(auth, getClientIp));
 
-  app.get('/api/health', (_request, response) => {
-    response.json({ status: 'ok' });
-  });
+  app.get('/health', (c) => c.json({ status: 'ok' }));
 
-  app.use('/api/v1/sites', createSitesRouter({ appOrigin: webOrigin }));
+  app.use('/v1/*', bodyLimit({ maxSize: MAX_BODY_BYTES }));
+  app.route('/v1/sites', createSitesRouter({ appOrigin: webOrigin }));
   if (saveFeedback)
-    app.use('/api/v1/feedback', createFeedbackRouter({ saveFeedback }));
-
-  app.use(invalidJsonHandler);
+    app.route(
+      '/v1/feedback',
+      createFeedbackRouter({ saveFeedback, getClientIp }),
+    );
 
   return app;
 }

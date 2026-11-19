@@ -1,3 +1,6 @@
+import { serve } from '@hono/node-server';
+import { getConnInfo } from '@hono/node-server/conninfo';
+
 import { createAuth, readAuthConfig } from './auth/auth.js';
 import { createDatabase } from './database/database.js';
 import { feedback } from './feedback/feedback.model.js';
@@ -14,8 +17,10 @@ const app = createApp({
     await db.insert(feedback).values(entry);
   },
   webOrigin: config.webOrigin,
+  // No proxy trust: in production the Cloudflare Worker reads the client IP instead.
+  getClientIp: (c) => getConnInfo(c).remote.address,
 });
-const server = app.listen(port, () => {
+const server = serve({ fetch: app.fetch, port }, () => {
   console.log(`API listening on http://localhost:${port}`);
 });
 

@@ -1,10 +1,5 @@
 import * as cheerio from 'cheerio';
-import dns from 'node:dns';
-import http, { type IncomingMessage } from 'node:http';
-import https from 'node:https';
 import { BlockList, isIP } from 'node:net';
-import type { Readable } from 'node:stream';
-import zlib from 'node:zlib';
 import type {
   SitePreview,
   SitePreviewDependencies,
@@ -83,16 +78,12 @@ export async function safeFetch(
   startUrl: URL,
   options: SitePreviewSafeFetchOptions = {},
 ): Promise<SitePreviewFetchedPage> {
-  const { res, finalUrl, status, headers } = await followRedirects(
-    startUrl,
-    options,
-  );
-
-  const html = isHtml(headers.get('content-type'))
-    ? await readText(res, headers)
+  const { res, finalUrl } = await followRedirects(startUrl, options);
+  const html = isHtml(res.headers.get('content-type'))
+    ? await readText(res)
     : null;
-  if (html === null) res.destroy();
-  return { finalUrl, status, headers, html };
+  if (html === null) discard(res);
+  return { finalUrl, status: res.status, headers: res.headers, html };
 }
 
 // *** fetchSiteImage ***
@@ -101,23 +92,18 @@ export async function fetchSiteImage(
   startUrl: URL,
   options: SitePreviewSafeFetchOptions = {},
 ): Promise<SitePreviewImage> {
-  const { res, status, headers } = await followRedirects(startUrl, options, {
-    accept: 'image/*',
-    acceptEncoding: 'identity',
-  });
+  const { res } = await followRedirects(startUrl, options, 'image/*');
 
-  const type = (headers.get('content-type') ?? '').split(';')[0]!.trim();
-  const isUsable =
-    status >= 200 &&
-    status < 300 &&
-    IMAGE_TYPES.has(type.toLowerCase()) &&
-    !headers.has('content-encoding');
-  if (!isUsable) {
-    res.destroy();
+  const type = (res.headers.get('content-type') ?? '')
+    .split(';')[0]!
+    .trim()
+    .toLowerCase();
+  if (!res.ok || !IMAGE_TYPES.has(type)) {
+    discard(res);
     throw new Error('Not a usable image');
   }
 
-  return { type: type.toLowerCase(), body: await readBytes(res) };
+  return { type, body: await readBytes(res) };
 }
 
 // *** fetchSiteJson ***
@@ -125,15 +111,15 @@ export async function fetchSiteJson(
   startUrl: URL,
   options: SitePreviewSafeFetchOptions = {},
 ): Promise<unknown> {
-  const { res, status, headers } = await followRedirects(startUrl, options, {
-    accept: 'application/json',
-  });
-  if (status < 200 || status >= 300) {
-    res.destroy();
-    throw new Error(`Request failed with status ${status}`);
+  const { res } = await followRedirects(startUrl, options, 'application/json');
+  if (!res.ok) {
+    discard(res);
+    throw new Error(`Request failed with status ${res.status}`);
   }
-  return JSON.parse(await readText(res, headers));
+  return JSON.parse(await readText(res));
 }
+
+const PAGE_ACCEPT = 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.5';
 
 // *** followRedirects ***
 /** Check the address on every redirect, so a redirect cannot lead into our private network. */
@@ -143,37 +129,27 @@ async function followRedirects(
     timeoutMs = TIMEOUT_MS,
     allowPrivateAddresses = false,
   }: SitePreviewSafeFetchOptions,
-  requestHeaders: RequestHeaders = {},
-): Promise<{
-  res: IncomingMessage;
-  finalUrl: URL;
-  status: number;
-  headers: Headers;
-}> {
+  accept = PAGE_ACCEPT,
+): Promise<{ res: Response; finalUrl: URL }> {
   const signal = AbortSignal.timeout(timeoutMs);
   let url = startUrl;
 
   try {
     for (let redirects = 0; ; redirects++) {
-      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-        throw new SafeFetchError(
-          'unsupported-protocol',
-          `Cannot fetch ${url.protocol}`,
-        );
-      }
-
-      const res = await request(
-        url,
+      assertAllowedUrl(url, allowPrivateAddresses);
+      const res = await fetch(url, {
         signal,
-        allowPrivateAddresses,
-        requestHeaders,
-      );
-      const status = res.statusCode ?? 0;
-      const headers = toHeaders(res.headers);
+        redirect: 'manual',
+        headers: {
+          'user-agent': 'Mozilla/5.0 (compatible; MadoBot/1.0)',
+          accept,
+          'accept-language': 'en',
+        },
+      });
 
-      const location = headers.get('location');
-      if (REDIRECT_STATUSES.has(status) && location) {
-        res.destroy();
+      const location = res.headers.get('location');
+      if (REDIRECT_STATUSES.has(res.status) && location) {
+        discard(res);
         if (redirects >= MAX_REDIRECTS) {
           throw new SafeFetchError('too-many-redirects', 'Too many redirects');
         }
@@ -181,7 +157,7 @@ async function followRedirects(
         continue;
       }
 
-      return { res, finalUrl: url, status, headers };
+      return { res, finalUrl: url };
     }
   } catch (error) {
     if (error instanceof SafeFetchError) throw error;
@@ -195,77 +171,31 @@ async function followRedirects(
   }
 }
 
-type RequestHeaders = { accept?: string; acceptEncoding?: string };
-
-// *** request ***
-function request(
-  url: URL,
-  signal: AbortSignal,
-  allowPrivate: boolean,
-  {
-    accept = 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.5',
-    acceptEncoding = 'gzip, deflate, br',
-  }: RequestHeaders,
-): Promise<IncomingMessage> {
-  const host = url.hostname.replace(/^\[|\]$/g, '');
-  if (!allowPrivate && isIP(host) && isPrivateAddress(host)) {
-    return Promise.reject(
-      new SafeFetchError('blocked-address', `${host} is not a public address`),
+// *** assertAllowedUrl ***
+/**
+ * fetch() cannot check the address a host name resolves to, so only IP hosts
+ * and localhost are checked here. Workers cannot reach private networks anyway.
+ */
+function assertAllowedUrl(url: URL, allowPrivate: boolean): void {
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new SafeFetchError(
+      'unsupported-protocol',
+      `Cannot fetch ${url.protocol}`,
     );
   }
-
-  const transport = url.protocol === 'https:' ? https : http;
-  return new Promise((resolve, reject) => {
-    const req = transport.request(
-      url,
-      {
-        method: 'GET',
-        signal,
-        // Always a new connection, because a reused one skips the address check.
-        agent: false,
-        // Node's lookup type is wider than ours, so we cast it.
-        lookup: createGuardedLookup(allowPrivate) as never,
-        headers: {
-          'user-agent': 'Mozilla/5.0 (compatible; MadoBot/1.0)',
-          accept,
-          'accept-language': 'en',
-          'accept-encoding': acceptEncoding,
-        },
-      },
-      resolve,
+  const host = url.hostname.replace(/^\[|\]$/g, '');
+  if (!allowPrivate && isPrivateHost(host)) {
+    throw new SafeFetchError(
+      'blocked-address',
+      `${host} is not a public address`,
     );
-    req.on('error', reject);
-    req.end();
-  });
+  }
 }
 
-// *** createGuardedLookup ***
-function createGuardedLookup(allowPrivate: boolean) {
-  return (
-    hostname: string,
-    options: { all?: boolean },
-    callback: (error: Error | null, address: unknown, family?: number) => void,
-  ) => {
-    dns.lookup(hostname, { all: true, verbatim: true }, (error, addresses) => {
-      if (error) return callback(error, '', 0);
-      if (!allowPrivate && addresses.some((a) => isPrivateAddress(a.address))) {
-        return callback(
-          new SafeFetchError(
-            'blocked-address',
-            `${hostname} is not a public address`,
-          ),
-          '',
-          0,
-        );
-      }
-      const [first] = addresses;
-      if (!first)
-        return callback(new Error(`No address for ${hostname}`), '', 0);
-      return options.all
-        ? callback(null, addresses)
-        : callback(null, first.address, first.family);
-    });
-  };
+// *** isPrivateHost ***
+function isPrivateHost(host: string): boolean {
+  if (isIP(host)) return isPrivateAddress(host);
+  return host === 'localhost' || host.endsWith('.localhost');
 }
 
 const privateRanges = new BlockList();
@@ -312,61 +242,34 @@ function isPrivateIpv6(address: string): boolean {
   return privateRanges.check(address, 'ipv6');
 }
 
-// *** toHeaders ***
-function toHeaders(raw: IncomingMessage['headers']): Headers {
-  const headers = new Headers();
-  for (const [name, value] of Object.entries(raw)) {
-    for (const item of Array.isArray(value) ? value : [value]) {
-      if (item !== undefined) headers.append(name, item);
-    }
-  }
-  return headers;
-}
-
 // *** isHtml ***
 function isHtml(contentType: string | null): boolean {
   return /^(text\/html|application\/xhtml\+xml)\b/i.test(contentType ?? '');
 }
 
-const DECODERS: Record<
-  string,
-  () => zlib.Gunzip | zlib.Inflate | zlib.BrotliDecompress
-> = {
-  gzip: zlib.createGunzip,
-  deflate: zlib.createInflate,
-  br: zlib.createBrotliDecompress,
-};
+// *** discard ***
+/** Free the connection when we do not need the body. */
+function discard(res: Response): void {
+  void res.body?.cancel().catch(() => {});
+}
 
 // *** readText ***
 /** A page cut off half way still has useful tags, so keep what arrived. */
-async function readText(
-  res: IncomingMessage,
-  headers: Headers,
-): Promise<string> {
-  const decoder =
-    DECODERS[headers.get('content-encoding')?.trim().toLowerCase() ?? '']?.();
-  let source: Readable = res;
-  if (decoder) {
-    res.on('error', (error) => decoder.destroy(error));
-    source = res.pipe(decoder);
-  }
-
-  const chunks: Buffer[] = [];
+async function readText(res: Response): Promise<string> {
+  const chunks: Uint8Array<ArrayBuffer>[] = [];
   let size = 0;
   try {
-    for await (const chunk of source) {
-      chunks.push(chunk as Buffer);
-      size += (chunk as Buffer).length;
+    for await (const chunk of res.body ?? []) {
+      chunks.push(chunk);
+      size += chunk.length;
       if (size >= MAX_BODY_BYTES) break;
     }
   } catch {
     // A broken body still leaves us the headers and the part we read.
-  } finally {
-    res.destroy();
   }
 
   const charset = /charset=["']?([\w-]+)/i.exec(
-    headers.get('content-type') ?? '',
+    res.headers.get('content-type') ?? '',
   )?.[1];
   let decoderLabel = 'utf-8';
   try {
@@ -374,24 +277,21 @@ async function readText(
   } catch {
     // Unknown charset label: use utf-8.
   }
-  return new TextDecoder(decoderLabel).decode(Buffer.concat(chunks));
+  return new TextDecoder(decoderLabel).decode(
+    await new Blob(chunks).arrayBuffer(),
+  );
 }
 
 // *** readBytes ***
-async function readBytes(res: IncomingMessage): Promise<Buffer> {
-  const chunks: Buffer[] = [];
+async function readBytes(res: Response): Promise<Uint8Array<ArrayBuffer>> {
+  const chunks: Uint8Array<ArrayBuffer>[] = [];
   let size = 0;
-
-  try {
-    for await (const chunk of res) {
-      size += (chunk as Buffer).length;
-      if (size > MAX_IMAGE_BYTES) throw new Error('Image is too large');
-      chunks.push(chunk as Buffer);
-    }
-    return Buffer.concat(chunks);
-  } finally {
-    res.destroy();
+  for await (const chunk of res.body ?? []) {
+    size += chunk.length;
+    if (size > MAX_IMAGE_BYTES) throw new Error('Image is too large');
+    chunks.push(chunk);
   }
+  return new Uint8Array(await new Blob(chunks).arrayBuffer());
 }
 
 const EMPTY_METADATA: SitePreviewHtmlMetadata = {

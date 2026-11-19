@@ -5,7 +5,7 @@ Mado is a design inspiration curation app.
 ## Workspace
 
 - `apps/web` — TanStack Start web application
-- `apps/api` — Express API
+- `apps/api` — Hono API
 - `packages/ui` — shared React components
 
 ## Development

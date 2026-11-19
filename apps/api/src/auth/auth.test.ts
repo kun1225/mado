@@ -1,5 +1,3 @@
-import type { Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
 import { fileURLToPath } from 'node:url';
 
 import { PGlite } from '@electric-sql/pglite';
@@ -57,8 +55,8 @@ const sendMail = vi.fn(async (message: { to: string; text: string }) => {
 });
 
 let postgres: PGlite;
-let server: Server;
-let origin: string;
+let app: ReturnType<typeof createApp>;
+const origin = 'http://127.0.0.1';
 let auth: ReturnType<typeof createAuth>;
 
 beforeAll(async () => {
@@ -68,12 +66,11 @@ beforeAll(async () => {
     migrationsFolder: fileURLToPath(new URL('../../drizzle', import.meta.url)),
   });
   auth = createAuth({ database, config, mailer: { sendMail } });
-  server = createApp({ auth, webOrigin: config.webOrigin }).listen(0);
-  await new Promise<void>((resolve, reject) => {
-    server.once('listening', resolve);
-    server.once('error', reject);
+  app = createApp({
+    auth,
+    webOrigin: config.webOrigin,
+    getClientIp: () => '192.0.2.1',
   });
-  origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 }, 30_000);
 
 beforeEach(async () => {
@@ -83,10 +80,6 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  if (server?.listening)
-    await new Promise<void>((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve())),
-    );
   await postgres?.close();
 });
 
@@ -96,7 +89,7 @@ async function post(
   cookie?: string,
   requestOrigin = config.webOrigin,
 ) {
-  return fetch(`${origin}/api/auth/${path}`, {
+  return app.request(`${origin}/api/auth/${path}`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -123,9 +116,12 @@ async function verifiedAccount(email: string) {
   });
   expect(result.status).toBe(200);
   const link = emailLink(email);
-  const verification = await fetch(`${origin}${link.pathname}${link.search}`, {
-    redirect: 'manual',
-  });
+  const verification = await app.request(
+    `${origin}${link.pathname}${link.search}`,
+    {
+      redirect: 'manual',
+    },
+  );
   expect(verification.status).toBe(302);
   const login = await post('sign-in/email', { email, password });
   expect(login.status).toBe(200);
@@ -153,9 +149,9 @@ describe('authentication integration', () => {
     );
     expect(stored.rows[0]?.password).not.toBe(password);
     expect((await post('sign-in/email', { email, password })).status).toBe(403);
-    expect((await fetch(`${origin}/api/me`)).status).toBe(401);
+    expect((await app.request(`${origin}/api/me`)).status).toBe(401);
     const link = emailLink(email);
-    const verification = await fetch(
+    const verification = await app.request(
       `${origin}${link.pathname}${link.search}`,
       { redirect: 'manual' },
     );
@@ -175,7 +171,7 @@ describe('authentication integration', () => {
     expect(sessionCookie).toContain('HttpOnly');
     expect(sessionCookie).toContain('SameSite=Lax');
     const cookie = sessionCookie!.split(';')[0]!;
-    const me = await fetch(`${origin}/api/me`, { headers: { cookie } });
+    const me = await app.request(`${origin}/api/me`, { headers: { cookie } });
     expect(me.status).toBe(200);
     expect(await me.json()).toEqual({
       user: {
@@ -188,7 +184,7 @@ describe('authentication integration', () => {
     });
     expect((await post('sign-out', {}, cookie)).status).toBe(200);
     expect(
-      (await fetch(`${origin}/api/me`, { headers: { cookie } })).status,
+      (await app.request(`${origin}/api/me`, { headers: { cookie } })).status,
     ).toBe(401);
   });
 
@@ -201,9 +197,12 @@ describe('authentication integration', () => {
     });
     expect(reset.status).toBe(200);
     const link = emailLink(email);
-    const callback = await fetch(`${origin}${link.pathname}${link.search}`, {
-      redirect: 'manual',
-    });
+    const callback = await app.request(
+      `${origin}${link.pathname}${link.search}`,
+      {
+        redirect: 'manual',
+      },
+    );
     const destination = new URL(callback.headers.get('location')!);
     expect(destination.pathname).toBe('/library');
     expect(destination.searchParams.get('settings')).toBe('account');
@@ -217,7 +216,7 @@ describe('authentication integration', () => {
       400,
     );
     expect(
-      (await fetch(`${origin}/api/me`, { headers: { cookie } })).status,
+      (await app.request(`${origin}/api/me`, { headers: { cookie } })).status,
     ).toBe(401);
     expect((await post('sign-in/email', { email, password })).status).toBe(401);
     expect(
@@ -230,7 +229,7 @@ describe('authentication integration', () => {
     const cookie = await verifiedAccount(email);
     await postgres.exec(`UPDATE session SET expires_at = '2000-01-01'`);
     expect(
-      (await fetch(`${origin}/api/me`, { headers: { cookie } })).status,
+      (await app.request(`${origin}/api/me`, { headers: { cookie } })).status,
     ).toBe(401);
     await post('request-password-reset', {
       email,
@@ -307,7 +306,7 @@ describe('authentication integration', () => {
   it('limits repeated sign-in attempts even when the client spoofs the internal IP header', async () => {
     let result: Response | undefined;
     for (let attempt = 0; attempt < 6; attempt++) {
-      result = await fetch(`${origin}/api/auth/sign-in/email`, {
+      result = await app.request(`${origin}/api/auth/sign-in/email`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',

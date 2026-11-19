@@ -687,12 +687,12 @@ describe('fetchSiteImage', () => {
   it('returns the image type and bytes', async () => {
     const image = await fetchSiteImage(new URL(`${base}/image`), local);
     expect(image.type).toBe('image/png');
-    expect(image.body.toString()).toBe('png-bytes');
+    expect(new TextDecoder().decode(image.body)).toBe('png-bytes');
   });
 
   it('follows redirects', async () => {
     const image = await fetchSiteImage(new URL(`${base}/redirect`), local);
-    expect(image.body.toString()).toBe('png-bytes');
+    expect(new TextDecoder().decode(image.body)).toBe('png-bytes');
   });
 
   it.each(['/svg', '/html', '/missing'])('rejects %s', async (path) => {

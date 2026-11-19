@@ -41,6 +41,6 @@ export type AuthDependencies = {
   };
 };
 
-export type AuthLocals = {
+export type AuthVariables = {
   auth: NonNullable<Awaited<ReturnType<AuthInstance['api']['getSession']>>>;
 };

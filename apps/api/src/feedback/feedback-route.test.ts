@@ -1,35 +1,31 @@
-import type { Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { createApp } from '../app.js';
 import type { FeedbackEntry } from './feedback.type.js';
 
 describe('POST /api/v1/feedback', () => {
-  let server: Server;
-  let endpoint: string;
+  let app: ReturnType<typeof createApp>;
   let saved: FeedbackEntry[];
   let failSave: boolean;
+  // The rate limit is shared, so each test gets its own address.
+  let testCount = 0;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     saved = [];
     failSave = false;
-    server = createApp({
+    testCount += 1;
+    const ip = `192.0.2.${testCount}`;
+    app = createApp({
       saveFeedback: async (entry) => {
         if (failSave) throw new Error('database down');
         saved = [...saved, entry];
       },
-    }).listen(0);
-    await new Promise((resolve) => server.once('listening', resolve));
-    endpoint = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api/v1/feedback`;
-  });
-
-  afterEach(() => {
-    server.close();
+      getClientIp: () => ip,
+    });
   });
 
   const post = (body: unknown) =>
-    fetch(endpoint, {
+    app.request('/api/v1/feedback', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
@@ -63,6 +59,28 @@ describe('POST /api/v1/feedback', () => {
     expect(await response.json()).toMatchObject({ error: 'invalid-feedback' });
     expect(saved).toEqual([]);
   });
+
+  it('accepts a JSON type in any letter case', async () => {
+    const response = await app.request('/api/v1/feedback', {
+      method: 'POST',
+      headers: { 'content-type': 'Application/JSON; charset=utf-8' },
+      body: JSON.stringify({ message: 'Hi' }),
+    });
+    expect(response.status).toBe(201);
+  });
+
+  it.each(['text/plain', 'application/x-www-form-urlencoded'])(
+    'rejects a %s body, which a cross-site form could send',
+    async (type) => {
+      const response = await app.request('/api/v1/feedback', {
+        method: 'POST',
+        headers: { 'content-type': type },
+        body: JSON.stringify({ message: 'Hi' }),
+      });
+      expect(response.status).toBe(400);
+      expect(saved).toEqual([]);
+    },
+  );
 
   it('limits how often one address can send', async () => {
     const statuses = [];

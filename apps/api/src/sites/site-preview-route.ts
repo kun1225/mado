@@ -1,6 +1,7 @@
-import { Router, type Router as ExpressRouter } from 'express';
+import { Hono } from 'hono';
 import { z } from 'zod';
 
+import { readJsonBody } from '../json-body.js';
 import {
   fetchSiteImage,
   getSitePreview,
@@ -25,67 +26,65 @@ const urlBodySchema = z.object({
     ),
 });
 
-export function createSitesRouter({
-  appOrigin,
-}: {
-  appOrigin: string;
-}): ExpressRouter {
-  const router = Router();
+export function createSitesRouter({ appOrigin }: { appOrigin: string }) {
+  const router = new Hono();
 
-  router.post('/preview', async (request, response) => {
-    const body = urlBodySchema.safeParse(request.body);
+  router.post('/preview', async (c) => {
+    const body = urlBodySchema.safeParse(await readJsonBody(c));
     if (!body.success) {
-      response
-        .status(400)
-        .json({ error: 'invalid-url', message: 'Enter a valid http(s) URL' });
-      return;
+      return c.json(
+        { error: 'invalid-url', message: 'Enter a valid http(s) URL' },
+        400,
+      );
     }
 
     try {
-      response.json(
+      return c.json(
         await getSitePreview(new URL(body.data.url), { appOrigin }),
       );
     } catch (error) {
       if (isRejectedUrlError(error)) {
-        response.status(400).json({
-          error: 'url-not-allowed',
-          message: 'This URL cannot be previewed',
-        });
-        return;
+        return c.json(
+          { error: 'url-not-allowed', message: 'This URL cannot be previewed' },
+          400,
+        );
       }
 
       console.error('Site preview failed:', error);
-      response
-        .status(500)
-        .json({ error: 'internal', message: 'Preview failed' });
+      return c.json({ error: 'internal', message: 'Preview failed' }, 500);
     }
   });
 
-  router.post('/image', async (request, response) => {
-    const body = urlBodySchema.safeParse(request.body);
+  router.post('/image', async (c) => {
+    const body = urlBodySchema.safeParse(await readJsonBody(c));
     if (!body.success) {
-      response
-        .status(400)
-        .json({ error: 'invalid-url', message: 'Enter a valid http(s) URL' });
-      return;
+      return c.json(
+        { error: 'invalid-url', message: 'Enter a valid http(s) URL' },
+        400,
+      );
     }
 
     try {
       const image = await fetchSiteImage(new URL(body.data.url));
-      response.type(image.type).send(image.body);
+      return c.body(image.body, 200, {
+        'content-type': image.type,
+      });
     } catch (error) {
       if (isRejectedUrlError(error)) {
-        response.status(400).json({
-          error: 'url-not-allowed',
-          message: 'This URL cannot be downloaded',
-        });
-        return;
+        return c.json(
+          {
+            error: 'url-not-allowed',
+            message: 'This URL cannot be downloaded',
+          },
+          400,
+        );
       }
 
       console.error('Site image failed:', error);
-      response
-        .status(502)
-        .json({ error: 'image-failed', message: 'Image download failed' });
+      return c.json(
+        { error: 'image-failed', message: 'Image download failed' },
+        502,
+      );
     }
   });
 

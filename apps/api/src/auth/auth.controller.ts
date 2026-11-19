@@ -1,31 +1,19 @@
-import { fromNodeHeaders } from 'better-auth/node';
-import type { NextFunction, Request, Response } from 'express';
+import type { Context } from 'hono';
+import { createMiddleware } from 'hono/factory';
 
-import type { AuthInstance, AuthLocals } from './auth.type.js';
+import type { AuthInstance, AuthVariables } from './auth.type.js';
 
-export function getCurrentUser(
-  _request: Request,
-  response: Response<unknown, AuthLocals>,
-) {
-  const { id, name, email, emailVerified, image } = response.locals.auth.user;
-  response.json({ user: { id, name, email, emailVerified, image } });
+export function getCurrentUser(c: Context<{ Variables: AuthVariables }>) {
+  const { id, name, email, emailVerified, image } = c.get('auth').user;
+  return c.json({ user: { id, name, email, emailVerified, image } });
 }
 
 // *** requireAuth ***
 export function requireAuth(auth: AuthInstance) {
-  return async (
-    request: Request,
-    response: Response<unknown, AuthLocals>,
-    next: NextFunction,
-  ) => {
-    const session = await auth.api.getSession({
-      headers: fromNodeHeaders(request.headers),
-    });
-    if (!session) {
-      response.status(401).json({ error: 'unauthorized' });
-      return;
-    }
-    response.locals.auth = session;
-    next();
-  };
+  return createMiddleware<{ Variables: AuthVariables }>(async (c, next) => {
+    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    if (!session) return c.json({ error: 'unauthorized' }, 401);
+    c.set('auth', session);
+    await next();
+  });
 }

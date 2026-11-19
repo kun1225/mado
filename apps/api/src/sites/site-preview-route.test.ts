@@ -1,25 +1,14 @@
-import type { Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../app.js';
 
+const app = createApp();
+
 describe('POST /api/v1/sites/preview', () => {
-  let server: Server;
-  let endpoint: string;
-
-  beforeAll(async () => {
-    server = createApp().listen(0);
-    await new Promise((resolve) => server.once('listening', resolve));
-    endpoint = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api/v1/sites/preview`;
-  });
-
-  afterAll(() => {
-    server.close();
-  });
+  const endpoint = '/api/v1/sites/preview';
 
   const post = (body: unknown) =>
-    fetch(endpoint, {
+    app.request(endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
@@ -44,7 +33,7 @@ describe('POST /api/v1/sites/preview', () => {
   });
 
   it('rejects broken JSON without a stack trace', async () => {
-    const response = await fetch(endpoint, {
+    const response = await app.request(endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: '{"url":',
@@ -70,21 +59,10 @@ describe('POST /api/v1/sites/preview', () => {
 });
 
 describe('POST /api/v1/sites/image', () => {
-  let server: Server;
-  let endpoint: string;
-
-  beforeAll(async () => {
-    server = createApp().listen(0);
-    await new Promise((resolve) => server.once('listening', resolve));
-    endpoint = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api/v1/sites/image`;
-  });
-
-  afterAll(() => {
-    server.close();
-  });
+  const endpoint = '/api/v1/sites/image';
 
   it('rejects invalid URLs', async () => {
-    const response = await fetch(endpoint, {
+    const response = await app.request(endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ url: 'file:///etc/passwd' }),
@@ -95,7 +73,7 @@ describe('POST /api/v1/sites/image', () => {
   });
 
   it('rejects private addresses', async () => {
-    const response = await fetch(endpoint, {
+    const response = await app.request(endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ url: 'http://127.0.0.1:9/' }),

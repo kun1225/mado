@@ -33,7 +33,7 @@ export type SitePreviewHtmlMetadata = {
 
 export type SitePreviewImage = {
   type: string;
-  body: Buffer;
+  body: Uint8Array<ArrayBuffer>;
 };
 
 export type SitePreviewFramePolicy =

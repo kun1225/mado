@@ -1,6 +1,8 @@
-import { Router, type Router as ExpressRouter } from 'express';
+import { Hono } from 'hono';
 import { z } from 'zod';
 
+import type { AppGetClientIp } from '../app.type.js';
+import { readJsonBody } from '../json-body.js';
 import type { SaveFeedback } from './feedback.type.js';
 
 const MAX_MESSAGE_LENGTH = 2000;
@@ -17,38 +19,43 @@ const feedbackBodySchema = z.object({
     .transform((value) => value || null),
 });
 
+// Shared by every app in this process, because the Worker builds a new app per request.
+const isOverLimit = createRateLimiter();
+
 export function createFeedbackRouter({
   saveFeedback,
+  getClientIp,
 }: {
   saveFeedback: SaveFeedback;
-}): ExpressRouter {
-  const router = Router();
-  const isOverLimit = createRateLimiter();
+  getClientIp: AppGetClientIp;
+}) {
+  const router = new Hono();
 
-  router.post('/', async (request, response) => {
-    if (isOverLimit(request.ip ?? 'unknown')) {
-      response
-        .status(429)
-        .json({ error: 'rate-limited', message: 'Too many messages' });
-      return;
+  router.post('/', async (c) => {
+    if (isOverLimit(getClientIp(c) ?? 'unknown')) {
+      return c.json(
+        { error: 'rate-limited', message: 'Too many messages' },
+        429,
+      );
     }
 
-    const body = feedbackBodySchema.safeParse(request.body);
+    const body = feedbackBodySchema.safeParse(await readJsonBody(c));
     if (!body.success) {
-      response
-        .status(400)
-        .json({ error: 'invalid-feedback', message: 'Write a message' });
-      return;
+      return c.json(
+        { error: 'invalid-feedback', message: 'Write a message' },
+        400,
+      );
     }
 
     try {
       await saveFeedback(body.data);
-      response.status(201).json({ ok: true });
+      return c.json({ ok: true }, 201);
     } catch (error) {
       console.error('Saving feedback failed:', error);
-      response
-        .status(500)
-        .json({ error: 'internal', message: 'Could not save feedback' });
+      return c.json(
+        { error: 'internal', message: 'Could not save feedback' },
+        500,
+      );
     }
   });
 
