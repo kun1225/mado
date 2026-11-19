@@ -2,9 +2,9 @@
 
 Run the web app and the API on Cloudflare Workers before the launch. The landing page needs the web app, and sign-in and site previews need the API.
 
-**Decision (2026-10, proposed):** host everything on Cloudflare: Workers for the web and the API, Hyperdrive to reach a hosted Postgres, and R2 for media later (phase 3). One platform is cheap and simple for a side project. Confirm it after the spike in step 1.
+**Decision (2026-10, confirmed 2026-11):** host everything on Cloudflare: Workers for the web and the API, Hyperdrive to reach a hosted Postgres, and R2 for media later (phase 3). One platform is cheap and simple for a side project.
 
-This is a plan only. App changes come after review.
+**Status (2026-11):** the API runs on Hono and is live at `mado-design.com/api/*` (`apps/api/src/worker.ts`, `apps/api/wrangler.jsonc`, deploy with `pnpm --filter api deploy`). It uses the same Neon database as local dev. Not done yet: the web Worker's service binding (only needed once sign-in is on) and the Google OAuth redirect URI.
 
 ## 1. What changes for the user
 
@@ -13,8 +13,8 @@ Nothing. Mado runs at its real domain instead of localhost. Sign-in, site previe
 ## 2. Shape
 
 ```text
-mado.app/*        → web Worker  (TanStack Start)
-mado.app/api/*    → API Worker  (Express via httpServerHandler)
+mado-design.com/*        → web Worker  (TanStack Start)
+mado-design.com/api/*    → API Worker  (Hono)
                         │
                         └─ Hyperdrive → hosted Postgres (Neon)
 ```
@@ -35,7 +35,7 @@ mado.app/api/*    → API Worker  (Express via httpServerHandler)
 | `apps/api/src/server.ts`                                                            | No change. It stays the local dev entry with `app.listen()`.                                                                                                                                                                                                                                                          |
 | `apps/web/vite.config.ts` + `apps/web/wrangler.jsonc` (new)                         | Add `@cloudflare/vite-plugin` as the TanStack Start docs describe. Add the `API` service binding and the `/*` route.                                                                                                                                                                                                  |
 | `loadPageSession` in `apps/web/src/features/auth/auth-session.ts`                   | Call `env.API.fetch(...)` when the binding exists, else `fetch(API_ORIGIN)` for local dev.                                                                                                                                                                                                                            |
-| Google OAuth settings (Google Cloud console)                                        | Add `https://mado.app/api/auth/callback/google` as a redirect URI.                                                                                                                                                                                                                                                    |
+| Google OAuth settings (Google Cloud console)                                        | Add `https://mado-design.com/api/auth/callback/google` as a redirect URI.                                                                                                                                                                                                                                             |
 
 ### Reuse as-is
 
@@ -43,15 +43,15 @@ mado.app/api/*    → API Worker  (Express via httpServerHandler)
 
 ## 4. Data flow
 
-1. Browser → `mado.app/api/v1/sites/preview` → API Worker → `fetch(site)` → metadata back to the browser.
-2. Browser → `mado.app/api/auth/*` → API Worker → better-auth → Hyperdrive → Neon → session cookie.
+1. Browser → `mado-design.com/api/v1/sites/preview` → API Worker → `fetch(site)` → metadata back to the browser.
+2. Browser → `mado-design.com/api/auth/*` → API Worker → better-auth → Hyperdrive → Neon → session cookie.
 3. Web Worker server function → `env.API.fetch('/api/auth/get-session')` → API Worker → session → picks the account's local storage in the browser, as today.
 
 Media never touches the server until phase 3.
 
 ## 5. Control flow
 
-1. **Spike first:** deploy the API Worker with only `/api/health` and one query through Hyperdrive. If a module-level Express app with a `pg` pool fails across requests ("I/O on behalf of a different request"), create the pool per request. If Express itself fights us, move the three routers to Hono; they are small.
+1. **Done:** the routers moved from Express to Hono. A Worker cannot reuse a `pg` connection across requests, so `worker.ts` builds the database, auth and app per request.
 2. Port `safeFetch` to `fetch`. Run the site preview tests.
 3. Make nodemailer lazy. Check that the Worker bundle builds without it.
 4. Deploy the API Worker on a preview domain. Point Google OAuth at it.
@@ -109,3 +109,5 @@ Start on the free plans: Workers, Hyperdrive and Neon. Move to Workers Paid (abo
 
 - Email sign-in stays off on Cloudflare until it moves to an email API.
 - Site previews fetch from Cloudflare's network, so a few sites that block data-center traffic may fail more often than from a home server.
+- `fetch()` cannot check the IP a host name resolves to, so `safeFetch` only blocks IP hosts and `localhost`. Workers cannot reach a private network, so this is safe in production; the local Node server can still reach a name that points to a private address.
+- The feedback rate limit lives in memory, per Worker instance. Cloudflare runs many instances, so it slows a spammer down but does not stop one.

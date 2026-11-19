@@ -1,6 +1,6 @@
 # Authentication
 
-Mado uses Express + Better Auth + PostgreSQL + Drizzle. Auth routes live in
+Mado uses Hono + Better Auth + PostgreSQL + Drizzle. Auth routes live in
 `apps/api/src/auth/auth.route.ts`; custom handlers live in `auth.controller.ts`;
 Drizzle tables live in `auth.model.ts`. Better Auth handles its own built-in
 Google sign-in, session, and (when turned on) email and password endpoints.
@@ -20,7 +20,7 @@ Google is the only sign-in for now. Each sign-in method has a feature flag (see
 API (`apps/api/src`):
 
 - `auth/auth.ts` — Better Auth setup and env config (`createAuth`, `readAuthConfig`)
-- `auth/auth.route.ts` + `auth.controller.ts` — Express routes and handlers
+- `auth/auth.route.ts` + `auth.controller.ts` — Hono routes and handlers
 - `auth/auth.model.ts` — Drizzle tables; `database/schema.ts` collects all tables
 
 Web (`apps/web/src`):
@@ -74,7 +74,7 @@ when signed in.
 
 - `/library` and `/collection`: open to guests (local data); signed-in users
   get their own account storage.
-- `/api/auth/*`: Better Auth endpoints, mounted before the Express JSON parser.
+- `/api/auth/*`: Better Auth endpoints. They get the raw request, with the client IP header set by the API.
   Google returns to `/api/auth/callback/google`. Errors with no page to return
   to go to `/library?settings=account&error=…`.
 - `/api/me`: a protected example endpoint that returns public user fields.
@@ -99,19 +99,20 @@ the device; it clears in-memory query data and reloads to the guest library.
 ## Production
 
 Serve the web app and `/api` under one HTTPS origin. The Vite dev proxy handles
-this locally; your production reverse proxy must forward `/api` to Express.
+this locally; in production, `/api` must reach the API on the same origin.
 Set `BETTER_AUTH_URL` and `WEB_ORIGIN` to that public origin without a trailing
 slash. Set server-only `API_ORIGIN` on the web server to the internal API origin.
 Register `https://<origin>/api/auth/callback/google` in the Google client.
 Keep auth secrets, Google credentials, database credentials, and SMTP
 credentials server-only.
 
-Set `NODE_ENV=production` to require HTTPS and secure cookies. Configure
-`TRUST_PROXY` only for the addresses of your reverse proxies. Those proxies must
-replace incoming forwarding headers with the real client address. Express
-replaces the internal auth IP header before Better Auth sees it; database-backed
-rate limits use that address and work across API processes. Without proxy trust,
-all requests behind a proxy share its rate-limit bucket.
+Set `NODE_ENV=production` to require HTTPS and secure cookies. Each runtime
+entry passes `getClientIp` to `createApp`. The Worker entry (`worker.ts`) reads
+`cf-connecting-ip`. The Node entry (`server.ts`) uses the socket address and
+trusts no forwarding headers, so behind a proxy all requests share one
+rate-limit bucket. The API replaces the internal auth IP header before
+Better Auth sees it; database-backed rate limits use that address and work across
+API processes.
 
 The SMTP server must support your selected TLS mode. Set `SMTP_SECURE=true` for
 implicit TLS (usually port 465). For port 587, use `SMTP_SECURE=false`; Nodemailer

@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mado-api",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-11-01",
+  // Why: pg, better-auth and node:net need Node APIs, and this also fills process.env.
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "workers_dev": false,
+  // Same origin as the web app, so the auth cookie stays first-party.
+  "routes": [
+    { "pattern": "mado-design.com/api/*", "zone_name": "mado-design.com" },
+  ],
+  "hyperdrive": [
+    { "binding": "HYPERDRIVE", "id": "85b88495f3b94caab227ec30901148b7" },
+  ],
+  // Secrets (set with `wrangler secret put`): BETTER_AUTH_SECRET.
+  "vars": {
+    "NODE_ENV": "production",
+    "BETTER_AUTH_URL": "https://mado-design.com",
+    "WEB_ORIGIN": "https://mado-design.com",
+    "FLAG_AUTH_GOOGLE": "false",
+    "FLAG_AUTH_EMAIL_PASSWORD": "false",
+    // readAuthConfig requires these, but nothing sends email while the email flag is off.
+    "SMTP_HOST": "localhost",
+    "SMTP_FROM": "hello@mado-design.com",
+  },
+}
