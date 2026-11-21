@@ -155,15 +155,32 @@ describe('choose', () => {
     assert.deepEqual(await readdir(join(base)), ['Mado Library', 'config']);
   });
 
-  it('keeps an AGENTS.md the user already edited', async () => {
+  it('brings an old AGENTS.md up to date on a normal start', async () => {
+    const parent = join(base, 'Documents');
+    const root = join(parent, 'Mado Library');
+    await makeFolder(parent).choose();
+    await writeFile(join(root, 'AGENTS.md'), 'old rules');
+
+    await makeFolder(null).getStatus();
+
+    assert.match(
+      await readFile(join(root, 'AGENTS.md'), 'utf8'),
+      /suggestedTags/,
+    );
+  });
+
+  it('brings an old AGENTS.md up to date', async () => {
     const parent = join(base, 'Documents');
     const root = join(parent, 'Mado Library');
     await mkdir(root, { recursive: true });
-    await writeFile(join(root, 'AGENTS.md'), 'my rules');
+    await writeFile(join(root, 'AGENTS.md'), 'old rules');
 
     await makeFolder(parent).choose();
 
-    assert.equal(await readFile(join(root, 'AGENTS.md'), 'utf8'), 'my rules');
+    assert.match(
+      await readFile(join(root, 'AGENTS.md'), 'utf8'),
+      /suggestedTags/,
+    );
   });
 });
 
@@ -245,6 +262,16 @@ describe('choose with an old library', () => {
     const newRoot = join(newParent, 'Mado Library');
     await mkdir(join(newRoot, 'sources'), { recursive: true });
     await mkdir(join(newRoot, 'media'), { recursive: true });
+
+    await makeMover('copy').choose();
+
+    assert.deepEqual(await readdir(join(newRoot, 'sources')), ['s1.json']);
+  });
+
+  it('copies over an empty library that has an older guide', async () => {
+    const newRoot = join(newParent, 'Mado Library');
+    await mkdir(join(newRoot, 'sources'), { recursive: true });
+    await writeFile(join(newRoot, 'AGENTS.md'), 'old rules');
 
     await makeMover('copy').choose();
 

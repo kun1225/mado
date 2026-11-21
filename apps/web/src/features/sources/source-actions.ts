@@ -421,8 +421,15 @@ export async function updateSource(
   id: string,
   input: UpdateSourceInput,
 ): Promise<Source> {
-  const { addCollectionIds, removeCollectionIds, ...fields } =
-    updateSourceSchema.parse(input);
+  const {
+    addCollectionIds,
+    removeCollectionIds,
+    addTags,
+    removeTags,
+    addSuggestedTags,
+    removeSuggestedTags,
+    ...fields
+  } = updateSourceSchema.parse(input);
 
   return withLibraryLock(async () => {
     const store = getLibraryStore();
@@ -431,6 +438,7 @@ export async function updateSource(
     if (!existing) throw new Error(`Source not found: ${id}`);
 
     const merged = { ...existing, ...fields };
+    const tags = applyListChange(merged.tags, addTags, removeTags);
     const source: Source = {
       ...merged,
       collectionIds: applyListChange(
@@ -438,6 +446,12 @@ export async function updateSource(
         addCollectionIds,
         removeCollectionIds,
       ),
+      tags,
+      suggestedTags: applyListChange(
+        merged.suggestedTags ?? [],
+        addSuggestedTags,
+        removeSuggestedTags,
+      ).filter((tag) => !tags.includes(tag)),
       updatedAt: new Date().toISOString(),
     };
 

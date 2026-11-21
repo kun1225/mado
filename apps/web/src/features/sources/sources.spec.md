@@ -37,6 +37,21 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **Editing:** the Edit button or <kbd>E</kbd> turns the sheet into a text box with the raw text. Save with the button or <kbd>⌘/Ctrl+S</kbd>. Empty text or text over 1 MB can't be saved. With unsaved changes, Cancel, closing and moving to another source ask "Discard your changes?". Saving changes only the body, never the name, note, link or collections.
 - **Download** gives the text file, not the thumbnail.
 
+### Tags
+
+- The detail panel has a **Tags** section under the note. Type a tag and press Enter. The input offers tags already used in the library first, then the starter values of each facet.
+- A tag is lowercase, 1–40 characters, made of letters (any language), digits, spaces and `-`. Extra spaces are squeezed. A wrong tag shows "Use short words, like "handmade" or "style:minimal"." and is not saved.
+- **Facet tags** are written `facet:value`, like `style:minimal`. The facets are `emotion`, `style`, `color`, `type` and `industry`, each with a starter list in `source-tags.ts`. Any value can be added. **Free tags** have no colon, like `handmade`. A colon after any other word is refused.
+- Chips show facet tags first, in facet order, as `style · minimal`. Each chip has a remove button.
+- **Suggested tags** (`suggestedTags`) are ideas from AI. They show as dashed chips with Accept and Reject, plus **Accept all**. Accepting moves a tag into `tags`. A tag in `tags` is never also in `suggestedTags`. Adding a suggested tag by hand accepts it.
+- **Filter.** The library and every collection page show a **Filter** button above the grid when their sources have tags. Its menu lists the tags on that page's sources, grouped by facet (free tags under Other), with a count. Picked tags show as chips next to it, with **Clear** when there are two or more.
+- A source must have **every** picked tag to show. The picks live in the URL (`?tags=style:minimal,handmade`), so back, reload and a shared link keep them. A bad tag in the URL is dropped.
+- The source open in the detail dialog stays in the grid while the dialog is open, even if a tag change means it no longer matches. Otherwise removing a filtered tag would close the dialog mid-edit.
+- The menu counts the tags of the sources now shown, so each count says what a pick would leave.
+- A tag stored outside the rules (an agent or an import can write one) still shows and can be removed or rejected. It can't be picked in the filter.
+- When the picks match nothing on the page, the grid shows "No sources with these tags." and **Clear filter**.
+- The trash has no filter.
+
 ### Compression
 
 - After a file is added or replaced, it is shrunk in the background, one file at a time.
@@ -106,6 +121,9 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **2026-10 — Thumbnails can be videos.** The card, panel and viewer pick `<video>` or `<img>` from the thumbnail's `mimeType`, not from the source's kind.
 - **2026-11 — The "Below" caption sits outside the `data-source-card` box.** The detail dialog flies from that box, so it must hold only the media. In "On hover" the `<figure>` is still that box. In "Below" it wraps the box and a `<figcaption>`, because a figcaption must be a direct child of its figure.
 - **2026-11 — The caption uses the app font, not the serif "Fig." style** from the bookshelf prototype. A name under every card is UI, not book content.
+- **2026-11 — Tags are back, with a filter and brand facets.** This answers the decision below: tags now have a use (filtering), and AI fills them later. A tag is a string on the source (`facet:value` or a free word), not a record in a tags table. Strings need no new store, no migration and no new `LibraryStore` method, and an agent can edit them in a desktop source file. Cost: renaming a tag means rewriting every source that has it.
+- **2026-11 — The filter uses AND.** Designers narrow a board down; OR makes the list grow.
+- **2026-11 — AI writes to `suggestedTags`, never to `tags`.** The roadmap rule is that AI only suggests. AI never changes collections either: folders are the user's own way of sorting.
 - **2026-10 — Tags are removed from the UI.** A source can be in many collections, so tags were a second way to group the same things, and nothing read them (no search, no filter). The `tags` field stays on the record, always `[]` for new sources, so old data and old exports still load without a migration. Bring tags back only with a way to use them, such as filtering inside a collection.
 
 ## Known gaps
@@ -116,6 +134,10 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - SVG card shapes were measured in Chromium and WebKit only. Firefox is not measured.
 - A black SVG on a transparent background can be hard to see on a dark card. Not checked in the dark theme yet.
 - If a compression is reading a file at the moment a replace deletes it, the compression fails silently. There's no toast, and the new file still gets its own compression.
+- A tag can't be renamed or merged across the library. Remove it and add the new one on each source.
+- Search reads names only, not tags.
+- Export keeps `tags` but not `suggestedTags`, so suggestions not yet accepted are lost in an export and import.
+- A rejected suggestion is not remembered, so AI can suggest it again.
 
 ## Planned
 
@@ -129,7 +151,4 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
   - Video: copies the frame on screen. Website: copies its preview image. An animated GIF: copies the first frame (the clipboard can't hold animation).
   - Safari needs the `ClipboardItem` made right inside the click or key press, so pass it a promise of the PNG instead of waiting for the PNG first.
   - A toast says "Copied". If the browser blocks the clipboard, the toast says so.
-- **Facets and tags** (roadmap phase 1). Each source can have values for fixed brand facets: Emotion, Style, Color, Type and Industry. Each facet has a starting list of values, and the user can add their own. Free tags sit next to facets for anything else. The library and a collection can be filtered by facet values and tags.
-  - Why fixed facets: AI (phase 4) fills the same facets, so it can compare and group sources. Free tags alone are too loose for that.
-  - Color: a palette of 3–5 colors is taken from each image on the device, with no AI. It feeds the Color facet and palette cards on the canvas.
-  - Adding facet fields to the source record is a schema change, so it follows the rules in `storage.spec.md`.
+- **Facets, what's left** (roadmap phase 1). Color: a palette of 3–5 colors taken from each image on the device, with no AI. It feeds the `color` facet and palette cards on the canvas. AI suggestions for tags start on desktop (see `docs/roadmap.md`).

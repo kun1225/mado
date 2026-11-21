@@ -932,6 +932,76 @@ describe('updateSource list changes', () => {
   });
 });
 
+describe('updateSource tags', () => {
+  it('adds and removes tags, cleaned and without repeats', async () => {
+    await seedSources([buildSource({ id: 'a', tags: ['old'] })]);
+
+    const updated = await updateSource('a', {
+      addTags: ['Style: Minimal', 'style:minimal'],
+      removeTags: ['old'],
+    });
+
+    expect(updated.tags).toEqual(['style:minimal']);
+  });
+
+  it('rejects a tag that breaks the rules', async () => {
+    await seedSources([buildSource({ id: 'a' })]);
+
+    await expect(updateSource('a', { addTags: ['mood:x'] })).rejects.toThrow();
+  });
+
+  it('accepting a suggestion moves it from suggestedTags to tags', async () => {
+    await seedSources([
+      buildSource({ id: 'a', suggestedTags: ['warm', 'bold'] }),
+    ]);
+
+    const updated = await updateSource('a', {
+      addTags: ['warm'],
+      removeSuggestedTags: ['warm'],
+    });
+
+    expect(updated.tags).toEqual(['warm']);
+    expect(updated.suggestedTags).toEqual(['bold']);
+  });
+
+  it('removes a tag written outside the rules, exactly as stored', async () => {
+    await seedSources([
+      buildSource({ id: 'a', tags: ['Calm'], suggestedTags: ['mood:bold'] }),
+    ]);
+
+    const updated = await updateSource('a', {
+      removeTags: ['Calm'],
+      removeSuggestedTags: ['mood:bold'],
+    });
+
+    expect(updated.tags).toEqual([]);
+    expect(updated.suggestedTags).toEqual([]);
+  });
+
+  it('never suggests a tag the source already has', async () => {
+    await seedSources([buildSource({ id: 'a', tags: ['warm'] })]);
+
+    const updated = await updateSource('a', {
+      addSuggestedTags: ['warm', 'calm'],
+    });
+
+    expect(updated.suggestedTags).toEqual(['calm']);
+  });
+
+  it('keeps both of two tag edits made at once', async () => {
+    await seedSources([buildSource({ id: 'a' })]);
+
+    await Promise.all([
+      updateSource('a', { addTags: ['warm'] }),
+      updateSource('a', { addTags: ['calm'] }),
+    ]);
+
+    const [source] = await fetchAllSources();
+
+    expect(source.tags.sort()).toEqual(['calm', 'warm']);
+  });
+});
+
 describe('compressSource', () => {
   const smaller = new File(['x'], 'shot.webp', { type: 'image/webp' });
 

@@ -1,6 +1,5 @@
 import { useId, useRef, useState } from 'react';
 import {
-  Cancel01Icon,
   Folder01Icon,
   ImageUpload01Icon,
   PencilEdit02Icon,
@@ -32,6 +31,9 @@ import type {
   UpdateSourceInput,
 } from '#/features/sources/source-types';
 import { canEmbedSite, isVideoMimeType } from '#/features/sources/source-types';
+
+import { SourceDetailChip } from './source-detail-chip';
+import { SourceDetailTags } from './source-detail-tags';
 
 export function SourceDetailPanel({
   source,
@@ -66,6 +68,7 @@ export function SourceDetailPanel({
           <SourceDetailThumbnail source={source} objectUrl={thumbnailUrl} />
         )}
         <SourceDetailFields source={source} />
+        <SourceDetailTags source={source} />
         <SourceDetailCollections source={source} />
       </aside>
     </div>
@@ -431,27 +434,4 @@ function buildAvailableTree(
       children: buildAvailableTree(collections, joinedIds, collection.id),
     }))
     .filter((node) => node.isAvailable || node.children.length > 0);
-}
-
-// *** SourceDetailChip ***
-function SourceDetailChip({
-  label,
-  onRemove,
-}: {
-  label: string;
-  onRemove: () => void;
-}) {
-  return (
-    <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-muted py-0.5 pr-1 pl-2.5 t-b-4 text-fg">
-      <span className="truncate">{label}</span>
-      <button
-        type="button"
-        aria-label={`Remove ${label}`}
-        onClick={onRemove}
-        className="flex size-4 items-center justify-center rounded-full text-muted-fg hover:text-fg"
-      >
-        <HugeiconsIcon icon={Cancel01Icon} size={12} strokeWidth={1.5} />
-      </button>
-    </span>
-  );
 }

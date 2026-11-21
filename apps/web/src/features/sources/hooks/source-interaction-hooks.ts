@@ -6,6 +6,7 @@ import { useDropzone } from 'react-dropzone';
 import { toast } from '@repo/ui/sonner';
 
 import { detectPastedContent, isEditablePasteTarget } from '../source-media';
+import { parseTagList } from '../source-tags';
 import type { Source } from '../source-types';
 import {
   MAX_FILE_BYTES,
@@ -67,6 +68,28 @@ export function useSourceDetail() {
     } as never);
 
   return { activeId, setActiveId };
+}
+
+const TAGS_SEARCH_KEY = 'tags';
+
+/** The picked tags live in the URL, so back, reload and a shared link keep the filter. */
+export function useSourceTagFilter() {
+  const search: Record<string, unknown> = useSearch({ strict: false });
+  const navigate = useNavigate();
+  const selected = parseTagList(search[TAGS_SEARCH_KEY]);
+
+  const setSelected = (tags: string[]) =>
+    navigate({
+      to: '.',
+      search: (previous: Record<string, unknown>) => ({
+        ...previous,
+        [TAGS_SEARCH_KEY]: tags.length > 0 ? tags.join(',') : undefined,
+      }),
+      replace: true,
+      resetScroll: false,
+    } as never);
+
+  return { selected, setSelected };
 }
 
 export type ToggleSelectOptions = {

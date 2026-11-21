@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import type { SiteSourcePreview } from './site-source.type';
+import { MAX_TAG_LENGTH, normalizeTag } from './source-tags';
 import { detectTextFormat, MAX_TEXT_BYTES, MAX_TEXT_MB } from './text-source';
 import type { TextSourceContent } from './text-source.type';
 
@@ -97,6 +98,23 @@ const collectionIdListSchema = z
   .array(z.uuid())
   .transform((ids) => [...new Set(ids)]);
 
+const tagListSchema = z.array(z.string()).transform((tags, context) => {
+  const clean = tags.map(normalizeTag);
+  if (clean.some((tag) => tag === null)) {
+    context.addIssue({
+      code: 'custom',
+      message: `Use short words, like "handmade" or "style:minimal", up to ${MAX_TAG_LENGTH} characters`,
+    });
+    return z.NEVER;
+  }
+  return [...new Set(clean as string[])];
+});
+
+// Not cleaned: an agent or an import can store a tag outside the rules, and it must still be removable.
+const storedTagListSchema = z
+  .array(z.string())
+  .transform((tags) => [...new Set(tags)]);
+
 export const updateSourceSchema = z
   .object({
     name: z
@@ -131,6 +149,10 @@ export const updateSourceSchema = z
      */
     addCollectionIds: collectionIdListSchema,
     removeCollectionIds: collectionIdListSchema,
+    addTags: tagListSchema,
+    removeTags: storedTagListSchema,
+    addSuggestedTags: tagListSchema,
+    removeSuggestedTags: storedTagListSchema,
   })
   .partial();
 
@@ -146,7 +168,10 @@ export type Source = {
   name: string;
   url: string | null;
   note: string | null;
+  /** Accepted tags: `facet:value` or a free word. See `source-tags.ts`. */
   tags: string[];
+  /** AI ideas the user has not accepted yet. Missing on records saved before it existed. */
+  suggestedTags?: string[];
   collectionIds: string[];
   kind: SourceKind;
   site?: SiteSourcePreview;

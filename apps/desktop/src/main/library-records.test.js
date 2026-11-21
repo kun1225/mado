@@ -216,6 +216,27 @@ describe('syncFromDisk', () => {
     assert.deepEqual(library.getSource('a').tags, ['calm', 'warm']);
   });
 
+  it('picks up an agent adding suggested tags', async () => {
+    const library = await openLibrary(root);
+    await library.addSource(makeSource('a'));
+
+    const edited = { ...makeSource('a'), suggestedTags: ['style:minimal'] };
+    await writeFile(sourceFile('a'), JSON.stringify(edited, null, 2));
+
+    assert.equal(await library.syncFromDisk('sources/a.json'), 'updated');
+    assert.deepEqual(library.getSource('a').suggestedTags, ['style:minimal']);
+  });
+
+  it('refuses suggested tags that are not a list of strings', async () => {
+    const library = await openLibrary(root);
+    await library.addSource(makeSource('a'));
+
+    const edited = { ...makeSource('a'), suggestedTags: 'warm' };
+    await writeFile(sourceFile('a'), JSON.stringify(edited, null, 2));
+
+    assert.equal(await library.syncFromDisk('sources/a.json'), 'invalid');
+  });
+
   it('keeps the last good record when an edit is not valid', async () => {
     const problems = [];
     const library = await openLibrary(root, {

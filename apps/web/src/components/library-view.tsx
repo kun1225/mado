@@ -11,6 +11,7 @@ import { ScrollFade } from '#/components/scroll-fade';
 import { SourceDropZone } from '#/components/source-drop-zone';
 import { SourceGrid, SourceGridSkeleton } from '#/components/source-grid';
 import { SourcesEmptyState } from '#/components/sources-empty-state';
+import { TagFilter, TagFilterEmpty } from '#/components/tag-filter';
 import {
   useChildCollections,
   useCreateCollection,
@@ -19,6 +20,11 @@ import {
   useAllSources,
   usePendingSites,
 } from '#/features/sources/hooks/source-hooks';
+import {
+  useSourceDetail,
+  useSourceTagFilter,
+} from '#/features/sources/hooks/source-interaction-hooks';
+import { filterSourcesByTags } from '#/features/sources/source-tags';
 
 export function LibraryView() {
   const navigate = useNavigate();
@@ -26,6 +32,10 @@ export function LibraryView() {
   const createCollectionMutation = useCreateCollection();
   const sourcesQuery = useAllSources();
   const pendingSites = usePendingSites();
+  const tagFilter = useSourceTagFilter();
+  const { activeId } = useSourceDetail();
+  const allSources = sourcesQuery.data ?? [];
+  const sources = filterSourcesByTags(allSources, tagFilter.selected, activeId);
 
   function handleCreateCollection() {
     createCollectionMutation.mutate(undefined, {
@@ -58,6 +68,12 @@ export function LibraryView() {
         )}
       </ScrollFade>
 
+      <TagFilter
+        sources={sources}
+        selected={tagFilter.selected}
+        onChange={tagFilter.setSelected}
+      />
+
       <SourceDropZone
         collectionId={null}
         label="Library"
@@ -70,12 +86,14 @@ export function LibraryView() {
           <p className="flex flex-1 items-center justify-center py-6 t-b-3 text-danger">
             Unable to load your library.
           </p>
-        ) : sourcesQuery.data.length > 0 || pendingSites.length > 0 ? (
+        ) : sources.length > 0 || pendingSites.length > 0 ? (
           <SourceGrid
-            sources={sourcesQuery.data}
+            sources={sources}
             pendingSites={pendingSites}
             showCollection
           />
+        ) : allSources.length > 0 ? (
+          <TagFilterEmpty onClear={() => tagFilter.setSelected([])} />
         ) : (
           <div className="flex flex-1 items-center justify-center py-6">
             <SourcesEmptyState />

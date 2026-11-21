@@ -16,6 +16,7 @@ import { ScrollFade } from '#/components/scroll-fade';
 import { SourceDropZone } from '#/components/source-drop-zone';
 import { SourceGrid, SourceGridSkeleton } from '#/components/source-grid';
 import { SourcesEmptyState } from '#/components/sources-empty-state';
+import { TagFilter, TagFilterEmpty } from '#/components/tag-filter';
 import {
   useChildCollections,
   useCollection,
@@ -28,6 +29,11 @@ import {
   usePendingSites,
   useSources,
 } from '#/features/sources/hooks/source-hooks';
+import {
+  useSourceDetail,
+  useSourceTagFilter,
+} from '#/features/sources/hooks/source-interaction-hooks';
+import { filterSourcesByTags } from '#/features/sources/source-tags';
 
 import { CollectionMenu } from './-components/collection-menu';
 
@@ -47,6 +53,8 @@ function CollectionPage() {
   const childCollectionsQuery = useChildCollections(collectionId);
   const sourcesQuery = useSources(collectionId);
   const pendingSites = usePendingSites(collectionId);
+  const tagFilter = useSourceTagFilter();
+  const { activeId } = useSourceDetail();
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   // The store is browser-only: show the page shape while it loads.
@@ -59,6 +67,8 @@ function CollectionPage() {
   }
 
   const collection = collectionQuery.data;
+  const allSources = sourcesQuery.data ?? [];
+  const sources = filterSourcesByTags(allSources, tagFilter.selected, activeId);
   const collectionName = collection.name;
 
   function handleDelete() {
@@ -179,6 +189,12 @@ function CollectionPage() {
         )}
       </ScrollFade>
 
+      <TagFilter
+        sources={sources}
+        selected={tagFilter.selected}
+        onChange={tagFilter.setSelected}
+      />
+
       <SourceDropZone
         collectionId={collectionId}
         label={collectionName}
@@ -190,8 +206,10 @@ function CollectionPage() {
           <p className="flex grow items-center justify-center py-6 t-b-3 text-danger">
             Unable to load the saves in this collection.
           </p>
-        ) : sourcesQuery.data.length > 0 || pendingSites.length > 0 ? (
-          <SourceGrid sources={sourcesQuery.data} pendingSites={pendingSites} />
+        ) : sources.length > 0 || pendingSites.length > 0 ? (
+          <SourceGrid sources={sources} pendingSites={pendingSites} />
+        ) : allSources.length > 0 ? (
+          <TagFilterEmpty onClear={() => tagFilter.setSelected([])} />
         ) : (
           <div className="flex grow items-center justify-center py-6">
             <SourcesEmptyState />

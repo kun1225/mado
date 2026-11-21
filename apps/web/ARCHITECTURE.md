@@ -124,6 +124,17 @@ drop / paste / action dock
 
 A pasted URL goes `createWebsiteSource` → `fetchSitePreview` (API) → save the OG image or the X video.
 
+### Tags and the tag filter
+
+```text
+detail panel Tags input → normalizeTag (source-tags.ts)    bad → inline error
+  → useUpdateSource({ addTags, removeSuggestedTags }) → updateSource
+      → withLibraryLock: read the record, apply add/remove lists, drop suggestions that are now tags, save
+Filter menu → useSourceTagFilter → ?tags=a,b in the URL
+  → library or collection page: filterSourcesByTags(sources, picked, openSourceId)   AND, in memory; the open source stays
+  → SourceGrid gets the filtered list, so the detail dialog's prev/next follow it
+```
+
 ### Replace a source's file
 
 ```text

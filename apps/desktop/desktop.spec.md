@@ -21,7 +21,7 @@ An Electron app for macOS that shows the web app in a window and keeps the libra
 
 ```text
 Mado Library/
-├── AGENTS.md           rules for an AI agent (written once, never overwritten)
+├── AGENTS.md           rules for an AI agent (Mado's own, rewritten when it differs)
 ├── mado.json           { "schemaVersion": 1 }, the shape of the files below
 ├── .mado-lock          { "pid": … } while an app has the folder open
 ├── collections.json    every collection, deleted ones too (with deletedAt)
@@ -41,6 +41,7 @@ Mado Library/
 
 ### Editing outside the app
 
+- `AGENTS.md` tells an agent which fields it may change, the tag format (`facet:value` or a free word), and to put new tags in `suggestedTags`, not `tags`. Mado writes it when it opens the folder whenever its text differs from the current guide, so an agent never reads old rules. It says so at the top, so people keep their own notes elsewhere.
 - A watcher reloads a record when its file changes outside the app, for example when Claude Code or Codex edits `tags`. The page refreshes the sources and collections lists.
 - The app ignores its own writes by comparing the file's text with what it last wrote.
 - A file that is not valid keeps the last good record in memory and is logged.
@@ -68,6 +69,7 @@ Mado Library/
 - **2026-11 — A too-new or broken `mado.json` blocks the folder** instead of opening it read-only or guessing version 1. A guess could migrate files that are already in a newer shape. Blocking is simpler and can't damage data.
 - **2026-11 — A lock file, not only Electron's single-instance lock.** The single-instance lock covers one app. Dev and packaged builds are two apps on the same folder.
 - **2026-11 — Changing the folder copies, never moves.** A failed copy loses nothing, and the user deletes the old folder when they are sure.
+- **2026-11 — `AGENTS.md` belongs to Mado and is rewritten when it is out of date.** Before, a guide was written once and never changed, so old libraries kept old rules. Mado had no users yet, so we chose the simpler rule over keeping user edits.
 - **2026-11 — The preload lists its method names twice** (also in `main/ipc.js`), because a sandboxed preload can't import a local file.
 
 ## Known gaps
@@ -82,7 +84,6 @@ Mado Library/
 - A folder in iCloud Drive or Dropbox can evict files or make conflict copies.
 - No readable names in Finder: media files are named by `storageKey`.
 - Copying a big library shows no progress, so the app can look stuck. The old library stays open during the copy, so an edit made then is not copied.
-- An `AGENTS.md` written before this change does not mention `mado.json`, `.mado-lock` or deleted collections, because the guide is never overwritten.
 - `readMediaFile` loads a whole file as a Blob. A direct `mado-media://` URL for the player is the next step for very large videos.
 - Changing the folder while a multi-step action runs can split that action across two libraries. Opens are queued, but the actions are not bound to one library.
 - A collection file with a cycle is not rejected.

@@ -262,6 +262,8 @@ function isValidSource(record) {
     typeof record.name === 'string' &&
     typeof record.kind === 'string' &&
     isStringList(record.tags) &&
+    (record.suggestedTags === undefined ||
+      isStringList(record.suggestedTags)) &&
     isStringList(record.collectionIds) &&
     typeof record.createdAt === 'string' &&
     typeof record.updatedAt === 'string' &&

@@ -26,6 +26,7 @@ The local database under every feature. On the web, records go in IndexedDB and 
 - **2026-11 — Records go behind `LibraryStore`, and read-then-write steps take `withLibraryLock`.** A desktop store can't hold an IndexedDB transaction open across IPC, so the transaction became a lock. The lock keeps what the transaction gave us: two edits at once don't lose one. The existing test "applies add and remove to the stored lists, not to a stale copy" caught this.
 - **Deleting a collection is no longer one transaction.** The collections are marked deleted in one write first, then their sources go to the trash branch by branch. A failure in the middle is finished on the next collection list (see `collections.spec.md`).
 - **2026-11 — `deletedAt` on collections added with no migration,** like `color`. No store or index changed, and old records read as `null`.
+- **2026-11 — `suggestedTags` on sources added with no migration.** It is optional, no store or index changed, and a missing value reads as `[]`. The desktop `SCHEMA_VERSION` stays 1 for the same reason.
 
 ## Rules for changes
 

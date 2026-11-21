@@ -12,7 +12,7 @@ import {
 } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 
-import { readTextOrNull } from './library-files.js';
+import { readTextOrNull, writeAtomic } from './library-files.js';
 
 const LIBRARY_FOLDER_NAME = 'Mado Library';
 const COLLECTIONS_FILE = 'collections.json';
@@ -105,14 +105,13 @@ async function copyLibrary(from, to) {
 
 // *** removeEmptyLibrary ***
 // The new folder may hold an empty library made before. Only empty folders and
-// our own guide go, so a file of the user's stops the copy instead of being lost.
+// our own guide go (any version of it), so a file of the user's stops the copy instead of being lost.
 async function removeEmptyLibrary(root) {
   if (!(await isDirectory(root))) return;
 
   await removeEmptyDirectory(join(root, 'sources'));
   await removeEmptyDirectory(join(root, 'media'));
-  const guide = join(root, 'AGENTS.md');
-  if ((await readTextOrNull(guide)) === AGENT_GUIDE) await rm(guide);
+  await rm(join(root, 'AGENTS.md'), { force: true });
   await rmdir(root);
 }
 
@@ -157,6 +156,7 @@ async function getStatus(configPath, defaultRoot) {
   }
 
   const exists = await isDirectory(config.libraryRoot);
+  if (exists) await writeAgentGuide(config.libraryRoot);
   return { status: exists ? 'ready' : 'missing', path: config.libraryRoot };
 }
 
@@ -203,18 +203,18 @@ async function isDirectory(path) {
 }
 
 // *** writeAgentGuide ***
-// `wx` fails when the file exists, so a guide the user edited is never overwritten.
+// Mado owns this file and keeps it current, so agents always read today's rules.
 async function writeAgentGuide(root) {
-  try {
-    await writeFile(join(root, 'AGENTS.md'), AGENT_GUIDE, { flag: 'wx' });
-  } catch (error) {
-    if (error.code !== 'EEXIST') throw error;
+  const path = join(root, 'AGENTS.md');
+  if ((await readTextOrNull(path)) !== AGENT_GUIDE) {
+    await writeAtomic(path, AGENT_GUIDE);
   }
 }
 
 const AGENT_GUIDE = `# Mado library
 
 This folder is a Mado library. Mado reloads a record when you edit its file.
+Mado rewrites this guide when it opens the folder, so keep your own notes in another file.
 
 ## Files
 
@@ -226,7 +226,11 @@ This folder is a Mado library. Mado reloads a record when you edit its file.
 ## Rules
 
 - Keep every record valid JSON, with the fields it already has.
-- You may change \`name\`, \`note\`, \`tags\` (a list of short lowercase words) and \`collectionIds\`.
+- You may change \`name\`, \`note\`, \`tags\`, \`suggestedTags\` and \`collectionIds\`.
+- A tag is lowercase, up to 40 characters, made of letters, digits, spaces and \`-\`.
+  A facet tag is \`facet:value\`, where facet is \`emotion\`, \`style\`, \`color\`, \`type\` or \`industry\`
+  (for example \`style:minimal\`). Any other tag has no colon (for example \`handmade\`).
+- Put tags you add in \`suggestedTags\`. The user accepts them into \`tags\`. Never remove the user's \`tags\`.
 - When you change a record, set \`updatedAt\` to the current time in ISO 8601.
 - Never change \`id\`, \`storageKey\`, \`kind\`, \`createdAt\`, or the file and size fields.
 - A collection with \`deletedAt\` set is deleted. Leave it in the list, and never add a source to it.

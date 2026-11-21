@@ -120,6 +120,8 @@ Each type gets its own card and detail view, the same facets and tags as other s
 - **2026-11 — The macOS app runs the user's own Claude Code or Codex CLI** as a subprocess (`claude -p --output-format stream-json`, `codex exec`), signed in with the user's own login. Mado never reads or stores their OAuth token, because Anthropic does not allow third-party apps to offer claude.ai login. Re-read the current terms before shipping. The app ships as a notarized DMG, not on the Mac App Store, because the sandbox blocks running other CLIs.
 - **2026-10 — Work happens on `main` directly.** Mado has one developer, so branches add steps without adding review.
 - **2026-10 — More file types, text first.** `.txt` and `.md` come first, then font, PDF and voice. See "More file types" above.
+- **2026-11 — Tags are strings on the source (`facet:value` or a free word), and AI only fills `suggestedTags`.** No tags table: it needs no new store, and an agent can edit tags in a desktop file. AI tagging starts in the macOS app with the user's own Claude Code, before sync. See `sources.spec.md`.
+- **2026-11 — No "spaces" (separate libraries inside one account) for now.** Projects will hold client work, accounts already keep libraries apart, and a space with collections and folders inside would be three levels to learn. Look again with teams, where a shared library is a real need.
 - **2026-10 — Text sources live in IndexedDB, not OPFS.** The record keeps the text, so search can read it, and the one OPFS file is the optional thumbnail. In the cloud, the text goes into Postgres and the thumbnail into R2. See `sources.spec.md`.
 
 ## Open questions
