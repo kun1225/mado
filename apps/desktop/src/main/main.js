@@ -10,7 +10,7 @@ import { MEDIA_SCHEME, registerLibraryIpc } from './ipc.js';
 // The desktop app skips the landing page at "/" and opens the library directly.
 // Why: a downloaded app has no dev server, so it opens the deployed web app.
 const DEV_WEB_URL = 'http://localhost:3100/library';
-const LIVE_WEB_URL = 'https://mado-web.the-kunyang.workers.dev/library';
+const LIVE_WEB_URL = 'https://mado-design.com/library';
 const WEB_URL =
   process.env.MADO_WEB_URL ?? (app.isPackaged ? LIVE_WEB_URL : DEV_WEB_URL);
 const WEB_ORIGIN = new URL(WEB_URL).origin;
