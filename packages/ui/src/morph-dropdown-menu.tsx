@@ -136,8 +136,8 @@ function MorphDropdownMenuSubContent({
   return (
     <MorphPopup
       contentSlot="morph-dropdown-menu-sub-content"
-      // Submenus open while the pointer moves down the list, so they settle fast
-      // instead of bouncing like the main menu.
+      // Submenus open while the pointer moves down the list, so they settle
+      // without bounce instead of wobbling like the main menu.
       openTransition={springs.snappy}
       side={side}
       sideOffset={sideOffset}

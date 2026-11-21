@@ -133,6 +133,10 @@ function MorphPopup({
                 style={{ ...style, ...naturalSize }}
               >
                 <motion.div
+                  // Motion reads `initial` only on mount, and the first render
+                  // has the requested side, not the flipped one. Remounting on a
+                  // flip makes the card grow out toward the side it really opens on.
+                  key={physicalSide}
                   className={cn(
                     'pointer-events-auto absolute overflow-hidden rounded-md border border-border bg-bg text-fg shadow-lg',
                     anchoredEdge(physicalSide, state.align),
