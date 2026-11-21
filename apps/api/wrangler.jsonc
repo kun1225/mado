@@ -1,3 +1,4 @@
+// Deploys on every push to main that changes apps/api (Workers Builds, Path: apps/api).
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "mado-api",
