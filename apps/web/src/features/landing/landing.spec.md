@@ -22,7 +22,7 @@ One column of sections with `px-edge` side padding. All copy and card data live 
    - **Depth.** The demo panel tilts up to 6° toward the mouse and a soft light follows it. Cards, folders and the laptop lift on hover. Mouse only, and off with reduced motion. Phones put the demo on top and scale the sort and laptop demos down.
 3. **Find anything.** The stage pins for two screens of scroll. The scroll types three queries into a search box, by name, by collection, and by description (marked "Soon"): each query owns a third, typed in its first half and held in the second. Three bars under the box fill with the scroll. Cards that don't match dim. On wide screens the demo's width follows the screen height, so the stage fits.
 4. **No account.** "No sign-up. No login. _Just start._" and "Try Mado".
-5. **FAQ.** A `MorphAccordion` from `@repo/ui`: one card that splits around the open question, one open at a time. The closed questions shrink a little, dim and blur, so the open one comes forward. Questions: free, where files live, more than one device, what you can save, clearing browser data, a Mac that won't open the app, accounts.
+5. **FAQ.** A `MorphAccordion` from `@repo/ui`: one card that splits around the open question, one open at a time. The closed questions shrink a little, dim and blur, so the open one comes forward. Questions: free, where files live, more than one device, what you can save, clearing browser data, accounts.
 6. **Call to action.** The logo with "Mado" beside it, like the header, then "Start your library _today_.", and "Try Mado".
 7. **Footer** (two screens tall, the stage sticks). It closes the intro's window. A full-screen cluster of sources shrinks into a rounded window (up to 280px wide, 144px tall, 16px corners) while "Ma" and "do" slide in from the sides and meet around it. Then the links (Library and the three header links) and the copyright line fade in. The links show at once when they get keyboard focus. Reduced motion shows the finished footer on one screen.
 
@@ -89,7 +89,6 @@ One column of sections with `px-edge` side padding. All copy and card data live 
 ## Known gaps
 
 - The page does not offer the Mac app yet. Bring the download back once the app is signed.
-- The app is not signed by Apple, so macOS blocks the first open. An FAQ answer explains Open Anyway.
 
 - The gallery shows screenshots of other studios' websites and work from a real library. Check that this is fine before launch, or swap in sources we can show.
 - No Open Graph image yet (see `docs/plans/landing-page-v1.md`).

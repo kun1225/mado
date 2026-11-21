@@ -141,11 +141,6 @@ export const LANDING_FAQ: LandingFaqItem[] = [
       'Your library is deleted with it. Export a backup from time to time, so you can import it again.',
   },
   {
-    question: "My Mac says Mado can't be opened.",
-    answer:
-      'The app is not signed by Apple yet. Open System Settings, go to Privacy & Security, and click Open Anyway next to Mado. You only do this once.',
-  },
-  {
     question: 'Do I need an account?',
     answer:
       'No. An account is optional, and only needed for cloud features later.',
