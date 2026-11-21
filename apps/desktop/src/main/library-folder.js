@@ -228,8 +228,8 @@ Mado rewrites this guide when it opens the folder, so keep your own notes in ano
 - Keep every record valid JSON, with the fields it already has.
 - You may change \`name\`, \`note\`, \`tags\`, \`suggestedTags\` and \`collectionIds\`.
 - A tag is lowercase, up to 40 characters, made of letters, digits, spaces and \`-\`.
-  A facet tag is \`facet:value\`, where facet is \`emotion\`, \`style\`, \`color\`, \`type\` or \`industry\`
-  (for example \`style:minimal\`). Any other tag has no colon (for example \`handmade\`).
+  A tag in one of the user's groups is \`group:name\` (for example \`style:minimal\`). Groups are the user's own.
+  Any other tag has no colon (for example \`handmade\`). Reuse tags and groups the library already has.
 - Put tags you add in \`suggestedTags\`. The user accepts them into \`tags\`. Never remove the user's \`tags\`.
 - When you change a record, set \`updatedAt\` to the current time in ISO 8601.
 - Never change \`id\`, \`storageKey\`, \`kind\`, \`createdAt\`, or the file and size fields.

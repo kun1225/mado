@@ -41,7 +41,7 @@ Mado Library/
 
 ### Editing outside the app
 
-- `AGENTS.md` tells an agent which fields it may change, the tag format (`facet:value` or a free word), and to put new tags in `suggestedTags`, not `tags`. Mado writes it when it opens the folder whenever its text differs from the current guide, so an agent never reads old rules. It says so at the top, so people keep their own notes elsewhere.
+- `AGENTS.md` tells an agent which fields it may change, the tag format (`group:name` with the user's own groups, or a plain name),, and to put new tags in `suggestedTags`, not `tags`. Mado writes it when it opens the folder whenever its text differs from the current guide, so an agent never reads old rules. It says so at the top, so people keep their own notes elsewhere.
 - A watcher reloads a record when its file changes outside the app, for example when Claude Code or Codex edits `tags`. The page refreshes the sources and collections lists.
 - The app ignores its own writes by comparing the file's text with what it last wrote.
 - A file that is not valid keeps the last good record in memory and is logged.

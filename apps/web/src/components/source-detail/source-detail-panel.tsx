@@ -1,6 +1,5 @@
 import { useId, useRef, useState } from 'react';
 import {
-  Folder01Icon,
   ImageUpload01Icon,
   PencilEdit02Icon,
 } from '@hugeicons/core-free-icons';
@@ -33,6 +32,7 @@ import type {
 import { canEmbedSite, isVideoMimeType } from '#/features/sources/source-types';
 
 import { SourceDetailChip } from './source-detail-chip';
+import { SourceDetailPalette } from './source-detail-palette';
 import { SourceDetailTags } from './source-detail-tags';
 
 export function SourceDetailPanel({
@@ -68,8 +68,10 @@ export function SourceDetailPanel({
           <SourceDetailThumbnail source={source} objectUrl={thumbnailUrl} />
         )}
         <SourceDetailFields source={source} />
-        <SourceDetailTags source={source} />
+        <SourceDetailPalette source={source} />
         <SourceDetailCollections source={source} />
+        <SourceDetailTags source={source} />
+        <SourceDetailNote source={source} />
       </aside>
     </div>
   );
@@ -173,8 +175,6 @@ function SourceDetailThumbnail({
 // *** SourceDetailFields ***
 function SourceDetailFields({ source }: { source: Source }) {
   const name = useSourceField(source, 'name');
-  const note = useSourceField(source, 'note');
-  const [isNoteOpen, setIsNoteOpen] = useState(false);
 
   return (
     <div className="flex flex-col gap-4">
@@ -192,30 +192,6 @@ function SourceDetailFields({ source }: { source: Source }) {
       </label>
 
       <SourceDetailUrlField source={source} onKeyDown={blurOnEnter} />
-
-      {isNoteOpen || note.draft !== '' ? (
-        <label className="flex flex-col gap-1.5 t-b-4 text-muted-fg">
-          Note
-          <textarea
-            autoFocus={isNoteOpen}
-            rows={4}
-            value={note.draft}
-            onChange={(event) => note.setDraft(event.target.value)}
-            onBlur={note.commit}
-            aria-invalid={note.error !== null}
-            className="resize-none rounded-md border border-border bg-transparent px-2.5 py-2 t-b-2 text-fg outline-none focus-visible:border-ring aria-invalid:border-danger md:t-b-3"
-          />
-          <FieldError message={note.error} />
-        </label>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setIsNoteOpen(true)}
-          className="self-start t-b-3 text-muted-fg hover:text-fg"
-        >
-          + Add a note
-        </button>
-      )}
     </div>
   );
 }
@@ -332,10 +308,7 @@ function SourceDetailCollections({ source }: { source: Source }) {
 
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="flex items-center gap-1.5 t-b-4 text-muted-fg">
-        <HugeiconsIcon icon={Folder01Icon} size={14} strokeWidth={1.5} />
-        Collections
-      </h3>
+      <h3 className="t-b-4 text-muted-fg">Collections</h3>
 
       <div className="flex flex-wrap items-center gap-1.5">
         {joined.map((collection) => (
@@ -434,4 +407,35 @@ function buildAvailableTree(
       children: buildAvailableTree(collections, joinedIds, collection.id),
     }))
     .filter((node) => node.isAvailable || node.children.length > 0);
+}
+
+// *** SourceDetailNote ***
+// Last in the panel: a note is read less often than the tags and collections above it.
+function SourceDetailNote({ source }: { source: Source }) {
+  const note = useSourceField(source, 'note');
+  const [isNoteOpen, setIsNoteOpen] = useState(false);
+
+  return isNoteOpen || note.draft !== '' ? (
+    <label className="flex flex-col gap-1.5 t-b-4 text-muted-fg">
+      Note
+      <textarea
+        autoFocus={isNoteOpen}
+        rows={4}
+        value={note.draft}
+        onChange={(event) => note.setDraft(event.target.value)}
+        onBlur={note.commit}
+        aria-invalid={note.error !== null}
+        className="resize-none rounded-md border border-border bg-transparent px-2.5 py-2 t-b-2 text-fg outline-none focus-visible:border-ring aria-invalid:border-danger md:t-b-3"
+      />
+      <FieldError message={note.error} />
+    </label>
+  ) : (
+    <button
+      type="button"
+      onClick={() => setIsNoteOpen(true)}
+      className="self-start t-b-3 text-muted-fg hover:text-fg"
+    >
+      + Add a note
+    </button>
+  );
 }

@@ -3,9 +3,14 @@ import { describe, expect, it } from 'vitest';
 import {
   countTags,
   filterSourcesByTags,
+  formatTag,
+  groupTagCounts,
   normalizeTag,
+  normalizeTagGroup,
   parseTag,
   parseTagList,
+  planTagRenames,
+  searchTags,
 } from './source-tags';
 import type { Source } from './source-types';
 
@@ -18,13 +23,15 @@ describe('normalizeTag', () => {
     expect(normalizeTag('  Hand   Made ')).toBe('hand made');
   });
 
-  it('keeps a known facet and cleans its value', () => {
+  it('keeps any group and cleans both sides', () => {
     expect(normalizeTag('Style: Minimal')).toBe('style:minimal');
+    expect(normalizeTag('my mood:calm')).toBe('my mood:calm');
   });
 
-  it('rejects an unknown facet, an empty value and a bad character', () => {
-    expect(normalizeTag('mood:calm')).toBeNull();
+  it('rejects two colons, an empty side and a bad character', () => {
+    expect(normalizeTag('a:b:c')).toBeNull();
     expect(normalizeTag('style:')).toBeNull();
+    expect(normalizeTag(':calm')).toBeNull();
     expect(normalizeTag('a,b')).toBeNull();
     expect(normalizeTag('   ')).toBeNull();
   });
@@ -40,19 +47,113 @@ describe('normalizeTag', () => {
   });
 });
 
+describe('normalizeTagGroup', () => {
+  it('cleans a group name and refuses a colon', () => {
+    expect(normalizeTagGroup(' Style ')).toBe('style');
+    expect(normalizeTagGroup('a:b')).toBeNull();
+    expect(normalizeTagGroup('')).toBeNull();
+  });
+});
+
 describe('parseTag', () => {
-  it('splits a facet tag and leaves a free tag whole', () => {
-    expect(parseTag('emotion:calm')).toEqual({
-      facet: 'emotion',
-      value: 'calm',
-    });
-    expect(parseTag('handmade')).toEqual({ facet: null, value: 'handmade' });
+  it('splits a grouped tag and leaves a plain tag whole', () => {
+    expect(parseTag('mood:calm')).toEqual({ group: 'mood', name: 'calm' });
+    expect(parseTag('handmade')).toEqual({ group: null, name: 'handmade' });
+  });
+});
+
+describe('formatTag', () => {
+  it('shows the group with a dash, or hides it', () => {
+    expect(formatTag('style:minimal', true)).toBe('style-minimal');
+    expect(formatTag('style:minimal', false)).toBe('minimal');
+    expect(formatTag('handmade', true)).toBe('handmade');
+  });
+});
+
+describe('searchTags', () => {
+  const counts = [
+    { tag: 'style:minimal', count: 5 },
+    { tag: 'maximal', count: 4 },
+    { tag: 'minimalism', count: 1 },
+    { tag: 'calm', count: 3 },
+  ];
+
+  it('finds nothing until the user types', () => {
+    expect(searchTags(counts, '  ')).toEqual([]);
+  });
+
+  it('puts names that start with the text first, then the rest', () => {
+    expect(searchTags(counts, 'mal').map(({ tag }) => tag)).toEqual([
+      'style:minimal',
+      'maximal',
+      'minimalism',
+    ]);
+    expect(searchTags(counts, 'min').map(({ tag }) => tag)).toEqual([
+      'style:minimal',
+      'minimalism',
+    ]);
+  });
+
+  it('shows at most six', () => {
+    const many = Array.from({ length: 9 }, (_, i) => ({
+      tag: `tag${i}`,
+      count: 1,
+    }));
+
+    expect(searchTags(many, 'tag')).toHaveLength(6);
+  });
+});
+
+describe('groupTagCounts', () => {
+  it('lists groups A to Z, then tags with no group', () => {
+    const groups = groupTagCounts([
+      { tag: 'plain', count: 3 },
+      { tag: 'style:a', count: 2 },
+      { tag: 'mood:b', count: 1 },
+    ]);
+
+    expect(groups.map(({ group }) => group)).toEqual(['mood', 'style', null]);
+  });
+});
+
+describe('planTagRenames', () => {
+  const tags = ['minimal', 'style:bold', 'style:retro', 'calm'];
+
+  it('moves a tag into a group, out of it, and does nothing when it stays', () => {
+    expect(
+      planTagRenames(tags, { kind: 'move', tag: 'minimal', group: 'style' }),
+    ).toEqual([{ from: 'minimal', to: 'style:minimal' }]);
+    expect(
+      planTagRenames(tags, { kind: 'move', tag: 'style:bold', group: null }),
+    ).toEqual([{ from: 'style:bold', to: 'bold' }]);
+    expect(
+      planTagRenames(tags, { kind: 'move', tag: 'style:bold', group: 'style' }),
+    ).toEqual([]);
+  });
+
+  it('renames every tag of a group', () => {
+    expect(
+      planTagRenames(tags, { kind: 'rename-group', from: 'style', to: 'look' }),
+    ).toEqual([
+      { from: 'style:bold', to: 'look:bold' },
+      { from: 'style:retro', to: 'look:retro' },
+    ]);
+  });
+
+  it('throws when the new tag would be too long', () => {
+    expect(() =>
+      planTagRenames(tags, {
+        kind: 'move',
+        tag: 'minimal',
+        group: 'g'.repeat(35),
+      }),
+    ).toThrow();
   });
 });
 
 describe('parseTagList', () => {
   it('reads a comma list, drops bad tags and repeats', () => {
-    expect(parseTagList('style:minimal, ,Style:Minimal,mood:x,warm')).toEqual([
+    expect(parseTagList('style:minimal, ,Style:Minimal,a:b:c,warm')).toEqual([
       'style:minimal',
       'warm',
     ]);

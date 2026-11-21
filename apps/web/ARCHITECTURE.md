@@ -127,12 +127,18 @@ A pasted URL goes `createWebsiteSource` → `fetchSitePreview` (API) → save th
 ### Tags and the tag filter
 
 ```text
-detail panel Tags input → normalizeTag (source-tags.ts)    bad → inline error
-  → useUpdateSource({ addTags, removeSuggestedTags }) → updateSource
+detail panel tag field (shadcn Combobox) → searchTags(countTags(all sources), typed) → list
+  pick / Enter → normalizeTag (source-tags.ts)    bad → inline error
+  → useUpdateSource({ addTags, removeTags, removeSuggestedTags }) → updateSource
       → withLibraryLock: read the record, apply add/remove lists, drop suggestions that are now tags, save
+Settings → Tags: drag (dnd-kit) or the group menu → useChangeTagGroup → changeTagGroup
+  → withLibraryLock: planTagRenames from every stored tag, rewrite it on every source (trash too), merge repeats, one putSources
+  → a ?tags= filter holding a renamed tag follows the new name
 Filter menu → useSourceTagFilter → ?tags=a,b in the URL
   → library or collection page: filterSourcesByTags(sources, picked, openSourceId)   AND, in memory; the open source stays
   → SourceGrid gets the filtered list, so the detail dialog's prev/next follow it
+detail panel shows a source with no palette → readMediaFile → computePalette (source-palette.ts, mediabunny for a video frame)
+  → saveSourcePalette (skipped if storageKey changed meanwhile)      replacing the file clears palette
 ```
 
 ### Replace a source's file

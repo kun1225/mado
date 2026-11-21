@@ -12,6 +12,7 @@ import type { ImportProgress } from '#/features/import/import.type';
 export const SETTINGS_TABS = [
   'general',
   'account',
+  'tags',
   'data',
   'shortcuts',
   'feedback',
@@ -171,3 +172,7 @@ export type SettingsBackupSectionProps = {
   onExport: () => void;
   onImport: (files: File[]) => void;
 };
+
+/** Where a dragged tag lands in Settings → Tags: a group (null is No group), or the new-group box. */
+export type SettingsTagDropTarget =
+  { group: string | null } | { isNewGroup: true };

@@ -1,45 +1,47 @@
 import type {
-  SourceFacet,
+  SourceTagChange,
   SourceTagCount,
+  SourceTagGroup,
   SourceTagParts,
+  SourceTagRename,
 } from './source-tags.type';
 import type { Source } from './source-types';
 
-/** Fixed brand facets. AI fills the same ones, so it can compare sources. */
-export const SOURCE_FACETS = [
-  'emotion',
-  'style',
-  'color',
-  'type',
-  'industry',
-] as const;
-
 export const MAX_TAG_LENGTH = 40;
 
-const TAG_VALUE_PATTERN = /^[\p{L}\p{N}][\p{L}\p{N} -]*$/u;
+const MAX_SEARCH_RESULTS = 6;
+
+const TAG_NAME_PATTERN = /^[\p{L}\p{N}][\p{L}\p{N} -]*$/u;
 
 /** A clean tag (`style:minimal` or `handmade`), or null when it breaks the rules. */
 export function normalizeTag(raw: string): string | null {
   const text = raw.trim().toLowerCase().replace(/\s+/g, ' ');
   if (text.length === 0 || text.length > MAX_TAG_LENGTH) return null;
 
-  const colon = text.indexOf(':');
-  if (colon === -1) return TAG_VALUE_PATTERN.test(text) ? text : null;
-
-  const facet = text.slice(0, colon).trim();
-  const value = text.slice(colon + 1).trim();
-  return isFacet(facet) && TAG_VALUE_PATTERN.test(value)
-    ? `${facet}:${value}`
-    : null;
+  const parts = text.split(':').map((part) => part.trim());
+  if (parts.length > 2 || !parts.every(isTagName)) return null;
+  return parts.join(':');
 }
 
+/** A group name follows the tag rules but holds no colon. */
+export function normalizeTagGroup(raw: string): string | null {
+  const group = normalizeTag(raw);
+  return group && !group.includes(':') ? group : null;
+}
+
+/** `style:minimal` is the name `minimal` in the user's group `style`. */
 export function parseTag(tag: string): SourceTagParts {
   const colon = tag.indexOf(':');
-  const facet = tag.slice(0, colon);
 
-  return colon !== -1 && isFacet(facet)
-    ? { facet, value: tag.slice(colon + 1) }
-    : { facet: null, value: tag };
+  return colon === -1
+    ? { group: null, name: tag }
+    : { group: tag.slice(0, colon), name: tag.slice(colon + 1) };
+}
+
+/** A dash, not the stored colon, because people read `style-minimal` as one word. */
+export function formatTag(tag: string, showGroup: boolean): string {
+  const { group, name } = parseTag(tag);
+  return group && showGroup ? `${group}-${name}` : name;
 }
 
 /** Reads the `tags` URL value. Bad tags are dropped, because a URL can be typed by hand. */
@@ -84,52 +86,67 @@ export function countTags(sources: Source[]): SourceTagCount[] {
     .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
 }
 
-/** Offered while typing. Users can add any other value. */
-export const SOURCE_FACET_STARTERS: Record<SourceFacet, string[]> = {
-  emotion: [
-    'calm',
-    'playful',
-    'bold',
-    'warm',
-    'serious',
-    'nostalgic',
-    'luxurious',
-    'friendly',
-  ],
-  style: [
-    'minimal',
-    'editorial',
-    'retro',
-    'brutalist',
-    'organic',
-    'geometric',
-    'handmade',
-    'futuristic',
-  ],
-  color: [
-    'warm',
-    'cool',
-    'muted',
-    'vibrant',
-    'pastel',
-    'monochrome',
-    'dark',
-    'earthy',
-  ],
-  type: ['serif', 'sans', 'script', 'display', 'mono', 'handwritten'],
-  industry: [
-    'food',
-    'fashion',
-    'tech',
-    'beauty',
-    'finance',
-    'health',
-    'culture',
-    'hospitality',
-  ],
-};
+/** Tags the user already has, so the library keeps one word for one idea. Empty until they type. */
+export function searchTags(
+  counts: SourceTagCount[],
+  query: string,
+): SourceTagCount[] {
+  const text = query.trim().toLowerCase();
+  if (text === '') return [];
 
-// *** isFacet ***
-function isFacet(value: string): value is SourceFacet {
-  return (SOURCE_FACETS as readonly string[]).includes(value);
+  const startsWith = ({ tag }: SourceTagCount) =>
+    parseTag(tag).name.startsWith(text) || tag.startsWith(text);
+  const matches = counts.filter(({ tag }) => tag.includes(text));
+
+  return [
+    ...matches.filter(startsWith),
+    ...matches.filter((count) => !startsWith(count)),
+  ].slice(0, MAX_SEARCH_RESULTS);
+}
+
+/** The user's groups A to Z, then the tags with no group. Counts keep their order inside a group. */
+export function groupTagCounts(counts: SourceTagCount[]): SourceTagGroup[] {
+  const groups = [...new Set(counts.map(({ tag }) => parseTag(tag).group))];
+  const named = groups
+    .filter((group) => group !== null)
+    .sort((a, b) => a.localeCompare(b));
+  const order = groups.includes(null) ? [...named, null] : named;
+
+  return order.map((group) => ({
+    group,
+    counts: counts.filter(({ tag }) => parseTag(tag).group === group),
+  }));
+}
+
+/** Turns a move or a group rename into tag renames. Empty when nothing would change. */
+export function planTagRenames(
+  tags: string[],
+  change: SourceTagChange,
+): SourceTagRename[] {
+  const renames =
+    change.kind === 'move'
+      ? [{ from: change.tag, to: joinTag(change.group, change.tag) }]
+      : tags
+          .filter((tag) => parseTag(tag).group === change.from)
+          .map((tag) => ({ from: tag, to: joinTag(change.to, tag) }));
+
+  return renames.filter(({ from, to }) => from !== to);
+}
+
+// *** isTagName ***
+function isTagName(text: string): boolean {
+  return TAG_NAME_PATTERN.test(text);
+}
+
+// *** joinTag ***
+function joinTag(group: string | null, tag: string): string {
+  const { name } = parseTag(tag);
+  const joined = group ? normalizeTag(`${group}:${name}`) : name;
+  // The group name is checked before this, so only the length can fail.
+  if (joined === null) {
+    throw new Error(
+      `"${group}:${name}" is longer than ${MAX_TAG_LENGTH} characters.`,
+    );
+  }
+  return joined;
 }

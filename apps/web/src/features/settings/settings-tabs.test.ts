@@ -11,6 +11,7 @@ describe('visibleSettingsTabs', () => {
     expect(visibleSettingsTabs(false)).toEqual([
       'general',
       'account',
+      'tags',
       'data',
       'shortcuts',
       'feedback',
@@ -22,6 +23,7 @@ describe('visibleSettingsTabs', () => {
     vi.stubEnv('VITE_FLAG_AUTH_EMAIL_PASSWORD', 'false');
     expect(visibleSettingsTabs(false)).toEqual([
       'general',
+      'tags',
       'data',
       'shortcuts',
       'feedback',
@@ -34,6 +36,7 @@ describe('visibleSettingsTabs', () => {
     expect(visibleSettingsTabs(true)).toEqual([
       'general',
       'account',
+      'tags',
       'data',
       'shortcuts',
       'feedback',

@@ -16,6 +16,8 @@ import {
   readMediaFile,
   writeMediaFile,
 } from './source-media';
+import { planTagRenames } from './source-tags';
+import type { SourceTagChange, SourceTagRename } from './source-tags.type';
 import type {
   MediaKind,
   NewSourceInput,
@@ -30,6 +32,7 @@ import {
   MAX_NAME_LENGTH,
   newSourceSchema,
   newWebsiteSourceSchema,
+  paletteSchema,
   replaceSourceFileSchema,
   sourceKindSchema,
   updateSourceSchema,
@@ -601,10 +604,12 @@ async function saveReplacedFile(
 
     // Decide here, not from the first read, so the kind matches the record we overwrite.
     const kind = toReplacementKind(previous, mediaKind);
-    // A leftover site preview would make the viewer show media as a website.
-    const { site: _site, ...media } = previous;
+    // A leftover site preview would make the viewer show media as a website,
+    // and the old palette describes the old file.
+    const { palette: _palette, ...kept } = previous;
+    const { site: _site, ...media } = kept;
     const source: Source = {
-      ...(kind === 'website' || kind === 'text' ? previous : media),
+      ...(kind === 'website' || kind === 'text' ? kept : media),
       ...fields,
       kind,
       updatedAt: new Date().toISOString(),
@@ -613,6 +618,70 @@ async function saveReplacedFile(
     await store.putSources([source]);
 
     return { previous, source };
+  });
+}
+
+/**
+ * Saves colors worked out from `storageKey`. Skipped when the file was replaced
+ * meanwhile, so the old file's colors never land on the new one.
+ */
+export async function saveSourcePalette(
+  id: string,
+  storageKey: string,
+  palette: string[],
+): Promise<void> {
+  const parsed = paletteSchema.parse(palette);
+
+  await withLibraryLock(async () => {
+    const store = getLibraryStore();
+    const existing = await store.getSource(id);
+    if (existing?.storageKey !== storageKey) return;
+
+    await store.putSources([{ ...existing, palette: parsed }]);
+  });
+}
+
+/**
+ * Moves a tag to another group, or renames a group, on every source, trash and
+ * suggestions included, in one save, so a group change can't leave the library half renamed.
+ * Planned inside the lock from the stored tags, so a tag only in the trash moves too.
+ */
+export async function changeTagGroup(
+  change: SourceTagChange,
+): Promise<{ count: number; renames: SourceTagRename[] }> {
+  return withLibraryLock(async () => {
+    const store = getLibraryStore();
+    const sources = await store.listSources();
+    const allTags = sources.flatMap((source) => [
+      ...source.tags,
+      ...(source.suggestedTags ?? []),
+    ]);
+    const renames = planTagRenames([...new Set(allTags)], change);
+    const map = new Map(renames.map(({ from, to }) => [from, to]));
+    const rename = (tags: string[]) => [
+      ...new Set(tags.map((tag) => map.get(tag) ?? tag)),
+    ];
+    const now = new Date().toISOString();
+    const changed = sources
+      .filter((source) =>
+        [...source.tags, ...(source.suggestedTags ?? [])].some((tag) =>
+          map.has(tag),
+        ),
+      )
+      .map((source) => {
+        const tags = rename(source.tags);
+        return {
+          ...source,
+          tags,
+          suggestedTags: rename(source.suggestedTags ?? []).filter(
+            (tag) => !tags.includes(tag),
+          ),
+          updatedAt: now,
+        };
+      });
+
+    if (changed.length > 0) await store.putSources(changed);
+    return { count: changed.length, renames };
   });
 }
 

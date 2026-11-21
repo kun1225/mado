@@ -153,7 +153,7 @@ function SettingsChoiceRow<T extends string>({
 
 // *** SettingsSwitchRow ***
 // The whole row is a label, so a click on the text flips the switch too.
-function SettingsSwitchRow({
+export function SettingsSwitchRow({
   id,
   label,
   checked,

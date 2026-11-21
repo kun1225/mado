@@ -110,10 +110,16 @@ const tagListSchema = z.array(z.string()).transform((tags, context) => {
   return [...new Set(clean as string[])];
 });
 
-// Not cleaned: an agent or an import can store a tag outside the rules, and it must still be removable.
+// Not cleaned: an agent can write a tag outside the rules in a desktop file, and it must still be removable.
 const storedTagListSchema = z
   .array(z.string())
   .transform((tags) => [...new Set(tags)]);
+
+const MAX_PALETTE_COLORS = 5;
+
+export const paletteSchema = z
+  .array(z.string().regex(/^#[0-9a-f]{6}$/))
+  .max(MAX_PALETTE_COLORS);
 
 export const updateSourceSchema = z
   .object({
@@ -168,10 +174,12 @@ export type Source = {
   name: string;
   url: string | null;
   note: string | null;
-  /** Accepted tags: `facet:value` or a free word. See `source-tags.ts`. */
+  /** Accepted tags: `group:name` or a plain name. See `source-tags.ts`. */
   tags: string[];
   /** AI ideas the user has not accepted yet. Missing on records saved before it existed. */
   suggestedTags?: string[];
+  /** Main colors of the media, most used first. Missing until the detail panel first works them out. */
+  palette?: string[];
   collectionIds: string[];
   kind: SourceKind;
   site?: SiteSourcePreview;

@@ -5,6 +5,7 @@ import {
   KeyboardIcon,
   MessageEdit01Icon,
   PreferenceHorizontalIcon,
+  Tag01Icon,
   UserCircleIcon,
 } from '@hugeicons/core-free-icons';
 import type { IconSvgElement } from '@hugeicons/react';
@@ -37,6 +38,7 @@ import { SettingsDataTab } from './settings-data-tab';
 import { SettingsFeedbackTab } from './settings-feedback-tab';
 import { SettingsGeneralTab } from './settings-general-tab';
 import { SettingsShortcutsTab } from './settings-shortcuts-tab';
+import { SettingsTagsTab } from './settings-tags-tab';
 
 const EMAIL_FIELD_ID = 'settings-auth-email';
 const GOOGLE_BUTTON_ID = 'settings-auth-google';
@@ -45,8 +47,9 @@ const GOOGLE_BUTTON_ID = 'settings-auth-google';
 const TAB_LIST_CLASS = 'flex items-center gap-0.5 sm:flex-col sm:items-stretch';
 const TAB_CLASS =
   'flex h-9.5 items-center gap-2 rounded-md px-2.5 t-l-2 sm:px-4';
-// Phones show icons only, so five tabs and the sign-in action fit in one row. The header names the tab.
+// Phones show icons only, so six tabs and the sign-in action fit in one row. The header names the tab.
 const TAB_LABEL_CLASS = 'max-sm:sr-only';
+const FULL_WIDTH_TABS: readonly SettingsTab[] = ['general', 'tags'];
 
 const SETTINGS_TAB_ITEMS: readonly {
   tab: SettingsTab;
@@ -55,6 +58,7 @@ const SETTINGS_TAB_ITEMS: readonly {
 }[] = [
   { tab: 'general', label: 'General', icon: PreferenceHorizontalIcon },
   { tab: 'account', label: 'Account', icon: UserCircleIcon },
+  { tab: 'tags', label: 'Tags', icon: Tag01Icon },
   { tab: 'data', label: 'Data', icon: Database01Icon },
   { tab: 'shortcuts', label: 'Shortcuts', icon: KeyboardIcon },
   { tab: 'feedback', label: 'Feedback', icon: MessageEdit01Icon },
@@ -115,8 +119,12 @@ export function SettingsDialog({ authUser }: SettingsDialogProps) {
               </DialogClose>
             </header>
             <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-8">
-              {/* General pins its controls to the right edge; the other tabs hold forms that read better narrow. */}
-              <div className={cn(activeTab !== 'general' && 'max-w-sm')}>
+              {/* General and Tags pin their switches to the right edge; the other tabs hold forms that read better narrow. */}
+              <div
+                className={cn(
+                  !FULL_WIDTH_TABS.includes(activeTab) && 'max-w-sm',
+                )}
+              >
                 {activeTab === 'general' && <SettingsGeneralTab />}
                 {activeTab === 'account' && (
                   <SettingsAccountTab
@@ -125,6 +133,7 @@ export function SettingsDialog({ authUser }: SettingsDialogProps) {
                     onAuthModeChange={setAuthMode}
                   />
                 )}
+                {activeTab === 'tags' && <SettingsTagsTab />}
                 {activeTab === 'data' && <SettingsDataTab />}
                 {activeTab === 'shortcuts' && <SettingsShortcutsTab />}
                 {activeTab === 'feedback' && (

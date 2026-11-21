@@ -22,6 +22,8 @@ let hardDeleteSources: typeof import('./source-actions').hardDeleteSources;
 let restoreSources: typeof import('./source-actions').restoreSources;
 let replaceSourceFile: typeof import('./source-actions').replaceSourceFile;
 let updateSource: typeof import('./source-actions').updateSource;
+let changeTagGroup: typeof import('./source-actions').changeTagGroup;
+let saveSourcePalette: typeof import('./source-actions').saveSourcePalette;
 let updateSourceSchema: typeof import('./source-types').updateSourceSchema;
 let deleteMediaFile: typeof import('./source-media').deleteMediaFile;
 let openDatabase: typeof import('../storage/database').openDatabase;
@@ -117,6 +119,8 @@ beforeEach(async () => {
     fetchSourcesByCollection,
     hardDeleteSource,
     hardDeleteSources,
+    changeTagGroup,
+    saveSourcePalette,
     replaceSourceFile,
     restoreSources,
     updateSource,
@@ -947,7 +951,7 @@ describe('updateSource tags', () => {
   it('rejects a tag that breaks the rules', async () => {
     await seedSources([buildSource({ id: 'a' })]);
 
-    await expect(updateSource('a', { addTags: ['mood:x'] })).rejects.toThrow();
+    await expect(updateSource('a', { addTags: ['a:b:c'] })).rejects.toThrow();
   });
 
   it('accepting a suggestion moves it from suggestedTags to tags', async () => {
@@ -966,12 +970,12 @@ describe('updateSource tags', () => {
 
   it('removes a tag written outside the rules, exactly as stored', async () => {
     await seedSources([
-      buildSource({ id: 'a', tags: ['Calm'], suggestedTags: ['mood:bold'] }),
+      buildSource({ id: 'a', tags: ['Calm'], suggestedTags: ['a:b:c'] }),
     ]);
 
     const updated = await updateSource('a', {
       removeTags: ['Calm'],
-      removeSuggestedTags: ['mood:bold'],
+      removeSuggestedTags: ['a:b:c'],
     });
 
     expect(updated.tags).toEqual([]);
@@ -999,6 +1003,90 @@ describe('updateSource tags', () => {
     const [source] = await fetchAllSources();
 
     expect(source.tags.sort()).toEqual(['calm', 'warm']);
+  });
+});
+
+describe('saveSourcePalette', () => {
+  it('saves hex colors and refuses anything else', async () => {
+    await seedSources([buildSource({ id: 'a' })]);
+
+    await saveSourcePalette('a', 'a', ['#112233']);
+    const [source] = await fetchAllSources();
+
+    expect(source.palette).toEqual(['#112233']);
+    await expect(saveSourcePalette('a', 'a', ['red'])).rejects.toThrow();
+  });
+
+  it('skips the save when the file was replaced meanwhile', async () => {
+    await seedSources([buildSource({ id: 'a' })]);
+
+    await saveSourcePalette('a', 'old-file', ['#112233']);
+    const [source] = await fetchAllSources();
+
+    expect(source.palette).toBeUndefined();
+  });
+});
+
+describe('changeTagGroup', () => {
+  it('moves a tag on every source, in suggestions and the trash too, and merges repeats', async () => {
+    await seedSources([
+      buildSource({
+        id: 'a',
+        tags: ['minimal', 'style:minimal'],
+        suggestedTags: ['minimal', 'calm'],
+      }),
+      buildSource({ id: 'b', tags: ['other'] }),
+      buildSource({
+        id: 'c',
+        tags: ['minimal'],
+        deletedAt: '2026-11-01T00:00:00.000Z',
+      }),
+    ]);
+
+    const { count } = await changeTagGroup({
+      kind: 'move',
+      tag: 'minimal',
+      group: 'style',
+    });
+    const sources = await fetchAllSources();
+    const [trashed] = await fetchDeletedSources();
+    const a = sources.find(({ id }) => id === 'a');
+    const b = sources.find(({ id }) => id === 'b');
+
+    expect(count).toBe(2);
+    expect(a?.tags).toEqual(['style:minimal']);
+    expect(a?.suggestedTags).toEqual(['calm']);
+    expect(b?.tags).toEqual(['other']);
+    expect(trashed.tags).toEqual(['style:minimal']);
+  });
+
+  it('renames a group member that is only a suggestion', async () => {
+    await seedSources([
+      buildSource({
+        id: 'a',
+        tags: ['style:bold'],
+        suggestedTags: ['style:retro'],
+      }),
+    ]);
+
+    await changeTagGroup({ kind: 'rename-group', from: 'style', to: 'look' });
+    const [source] = await fetchAllSources();
+
+    expect(source.tags).toEqual(['look:bold']);
+    expect(source.suggestedTags).toEqual(['look:retro']);
+  });
+
+  it('keeps a tag added at the same time', async () => {
+    await seedSources([buildSource({ id: 'a', tags: ['minimal'] })]);
+
+    await Promise.all([
+      changeTagGroup({ kind: 'move', tag: 'minimal', group: 'style' }),
+      updateSource('a', { addTags: ['calm'] }),
+    ]);
+
+    const [source] = await fetchAllSources();
+
+    expect(source.tags.sort()).toEqual(['calm', 'style:minimal']);
   });
 });
 
@@ -1170,10 +1258,19 @@ describe('replaceSourceFile', () => {
 
   it('swaps the file under a new key and keeps the user fields', async () => {
     await seedSources([
-      buildSource({ id: 'a', name: 'kept', tags: ['blue'], note: 'hi' }),
+      buildSource({
+        id: 'a',
+        name: 'kept',
+        tags: ['blue'],
+        note: 'hi',
+        palette: ['#000000'],
+      }),
     ]);
 
     const result = await replaceSourceFile('a', photo);
+
+    // The old colors describe the old file.
+    expect(result.palette).toBeUndefined();
 
     expect(writeMediaFile).toHaveBeenCalledWith(NEW_KEY, photo);
     expect(deleteMediaFile).toHaveBeenCalledWith('a');

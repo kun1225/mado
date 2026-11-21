@@ -9,10 +9,10 @@ One place for app settings. Today it holds general preferences (whether collecti
 ## Behavior
 
 - The settings button opens a dialog. It fills the screen on phones and is a centered card on larger screens.
-- The sidebar lists the tabs: **General**, **Account**, **Data**, **Shortcuts** and **Feedback**. The settings button opens General. Switching tabs replaces the URL, so Back closes the panel instead of stepping through tabs.
-- On phones the tabs show icons only, so five tabs and Sign in/out fit in one row. The header names the open tab, and each tab keeps its label for screen readers.
+- The sidebar lists the tabs: **General**, **Account**, **Tags**, **Data**, **Shortcuts** and **Feedback**. The settings button opens General. Switching tabs replaces the URL, so Back closes the panel instead of stepping through tabs.
+- On phones the tabs show icons only, so six tabs and Sign in/out fit in one row. The header names the open tab, and each tab keeps its label for screen readers.
 - The bottom of the sidebar shows **Sign out** when signed in, or **Sign in** for a guest. Sign in opens the Account tab, from any tab, and moves focus to the email field.
-- **General** is one plain list, with no section titles and no hints: **Theme**, **Collection look**, **Source names**, then the **Include sub-folder sources** switch. It spans the full panel width, so every control lines up at the right edge; the other tabs stay narrow because they hold forms. Every choice saves at once, with no Save button.
+- **General** is one plain list, with no section titles and no hints: **Theme**, **Collection look**, **Source names**, then the **Include sub-folder sources** switch. It spans the full panel width, so every control lines up at the right edge. **Tags** spans the full width too, for the same reason; the other tabs stay narrow because they hold forms. Every choice saves at once, with no Save button.
 - **Theme:** a three-part switch, **Light**, **Dark** and **System**, built on `LiquidTabs` like the library tabs. The pill slides to the choice and the chosen part shows its icon (sun, moon, screen). System is the default.
 - **Collection look:** **Folder** or **Book** (see `collections.spec.md`). **Source names:** **On hover** or **Below** (see `sources.spec.md`). Both use the same `LiquidTabs` as Theme (`SettingsChoiceRow`), with the label on the left and the tabs on the right.
 - **Include sub-folder sources:** a switch (see `collections.spec.md`). Clicking its label flips it too.
@@ -27,6 +27,7 @@ One place for app settings. Today it holds general preferences (whether collecti
 - **Data, Storage:** the total the browser says this site uses, with the most it allows ("of 12.0 GB available", left out when the browser gives no limit), a bar split into Videos, Images and Other, and a row for each with its size. The bar grows in once. With reduced motion it shows at once. Videos and Images add up the files of every source, trash included, because trashed files still use space. Other is the rest: thumbnails, previews and the database. A short note under the rows says everything is saved on this device and what Other means. The section is hidden while loading, or when the browser has no `navigator.storage.estimate()`. The numbers are read again when the number of sources changes (an import, a delete, emptying the trash).
 - **Data, Storage, in the desktop app:** a **Library folder** row with the folder's path, **Change folder** and **Show in Finder** (see `apps/desktop/desktop.spec.md`). There is no "of … available" quota, because the browser's number says nothing about a folder on disk. The total is the sum of the source files, there is no Other row, and the note says everything is saved in the library folder. Choosing another folder reads every list again.
 - **Data, Backup:** how many sources and collections there are, then **Export .zip** (see `export.spec.md`) and **Import folder** (see `import.spec.md`) side by side. The progress bar of the one that runs shows below the buttons. Only one of the two runs at a time. "How it works" folds the long explanation of both.
+- **Tags:** the **Show group names on tags** switch, then every tag in a box per group, where the user moves tags between groups and renames groups (see `sources.spec.md`).
 - **Shortcuts:** the keyboard shortcuts as a list of keys (see `shortcuts.spec.md`). Pressing `?` anywhere in the app opens this tab, unless a dialog is open or the focus is in a text field.
 - **Feedback:** the feedback form (see `feedback.spec.md`).
 - Esc, the close button and a click outside close the panel. Closing removes every settings param from the URL and keeps the rest (for example `?source=`).
@@ -34,14 +35,14 @@ One place for app settings. Today it holds general preferences (whether collecti
 
 ## URL
 
-| Param               | Values                                                    | Set by                                              |
-| ------------------- | --------------------------------------------------------- | --------------------------------------------------- |
-| `settings`          | `general`, `account`, `data`, `shortcuts`, `feedback`     | the settings button, tabs                           |
-| `auth`              | `sign-up`, `forgot-password`, `reset-password` (or empty) | the form, the reset email                           |
-| `token`             | reset token                                               | better-auth, on reset links                         |
-| `verified`          | `true`                                                    | the verification email                              |
-| `error`             | better-auth error code                                    | better-auth, on bad links and failed Google sign-in |
-| `error_description` | raw provider text (never shown, dropped on close)         | better-auth, with `error`                           |
+| Param               | Values                                                        | Set by                                              |
+| ------------------- | ------------------------------------------------------------- | --------------------------------------------------- |
+| `settings`          | `general`, `account`, `tags`, `data`, `shortcuts`, `feedback` | the settings button, tabs                           |
+| `auth`              | `sign-up`, `forgot-password`, `reset-password` (or empty)     | the form, the reset email                           |
+| `token`             | reset token                                                   | better-auth, on reset links                         |
+| `verified`          | `true`                                                        | the verification email                              |
+| `error`             | better-auth error code                                        | better-auth, on bad links and failed Google sign-in |
+| `error_description` | raw provider text (never shown, dropped on close)             | better-auth, with `error`                           |
 
 Unknown values fall back to closed, or to the sign-in form.
 

@@ -13,13 +13,13 @@ import {
 
 import {
   countTags,
+  groupTagCounts,
   parseTag,
-  SOURCE_FACETS,
 } from '#/features/sources/source-tags';
-import type { SourceTagGroup } from '#/features/sources/source-tags.type';
 import type { Source } from '#/features/sources/source-types';
 
 import { SourceDetailChip } from './source-detail/source-detail-chip';
+import { TagName, useTagText } from './tag-name';
 
 /** Lists the tags of the sources now shown, so a pick always narrows to something. */
 export function TagFilter({
@@ -31,7 +31,8 @@ export function TagFilter({
   selected: string[];
   onChange: (tags: string[]) => void;
 }) {
-  const groups = groupCounts(countTags(sources));
+  const tagText = useTagText();
+  const groups = groupTagCounts(countTags(sources));
   if (groups.length === 0 && selected.length === 0) return null;
 
   function toggle(tag: string, isOn: boolean) {
@@ -58,17 +59,20 @@ export function TagFilter({
           Filter
         </MorphDropdownMenuTrigger>
         <MorphDropdownMenuContent align="start" className="max-h-96">
-          {groups.map(({ label, counts }) => (
-            <MorphDropdownMenuGroup key={label}>
-              <MorphDropdownMenuGroupLabel>{label}</MorphDropdownMenuGroupLabel>
+          {groups.map(({ group, counts }) => (
+            <MorphDropdownMenuGroup key={group ?? ''}>
+              <MorphDropdownMenuGroupLabel>
+                {group ?? 'No group'}
+              </MorphDropdownMenuGroupLabel>
               {counts.map(({ tag, count }) => (
                 <MorphDropdownMenuCheckboxItem
                   key={tag}
                   checked={selected.includes(tag)}
                   onCheckedChange={(isOn) => toggle(tag, isOn)}
-                  aria-label={`${parseTag(tag).value}, ${count} ${count === 1 ? 'source' : 'sources'}`}
+                  aria-label={`${tagText(tag)}, ${count} ${count === 1 ? 'source' : 'sources'}`}
                 >
-                  {parseTag(tag).value}
+                  {/* The group heading already names the group. */}
+                  {parseTag(tag).name}
                   <span
                     aria-hidden
                     className="ml-1.5 text-muted-fg tabular-nums"
@@ -82,17 +86,15 @@ export function TagFilter({
         </MorphDropdownMenuContent>
       </MorphDropdownMenu>
 
-      {selected.map((tag) => {
-        const { facet, value } = parseTag(tag);
-        return (
-          <SourceDetailChip
-            key={tag}
-            label={value}
-            prefix={facet ?? undefined}
-            onRemove={() => toggle(tag, false)}
-          />
-        );
-      })}
+      {selected.map((tag) => (
+        <SourceDetailChip
+          key={tag}
+          label={tagText(tag)}
+          onRemove={() => toggle(tag, false)}
+        >
+          <TagName tag={tag} />
+        </SourceDetailChip>
+      ))}
       {selected.length > 1 && (
         <button
           type="button"
@@ -120,24 +122,4 @@ export function TagFilterEmpty({ onClear }: { onClear: () => void }) {
       </button>
     </div>
   );
-}
-
-// *** groupCounts ***
-function groupCounts(counts: SourceTagGroup['counts']): SourceTagGroup[] {
-  const labels = [...SOURCE_FACETS, null].map((facet) => ({
-    facet,
-    label: facet ? capitalize(facet) : 'Other',
-  }));
-
-  return labels
-    .map(({ facet, label }) => ({
-      label,
-      counts: counts.filter(({ tag }) => parseTag(tag).facet === facet),
-    }))
-    .filter((group) => group.counts.length > 0);
-}
-
-// *** capitalize ***
-function capitalize(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
 }

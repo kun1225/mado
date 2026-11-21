@@ -1,32 +1,20 @@
-import { useId, useState } from 'react';
 import {
   Cancel01Icon,
   SparklesIcon,
-  Tag01Icon,
   Tick02Icon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 
-import { Input } from '@repo/ui/input';
 import { toast } from '@repo/ui/sonner';
 
-import {
-  useAllSources,
-  useUpdateSource,
-} from '#/features/sources/hooks/source-hooks';
-import {
-  countTags,
-  normalizeTag,
-  parseTag,
-  SOURCE_FACET_STARTERS,
-  SOURCE_FACETS,
-} from '#/features/sources/source-tags';
+import { TagName, useTagText } from '#/components/tag-name';
+import { useUpdateSource } from '#/features/sources/hooks/source-hooks';
 import type {
   Source,
   UpdateSourceInput,
 } from '#/features/sources/source-types';
 
-import { SourceDetailChip } from './source-detail-chip';
+import { SourceDetailTagField } from './source-detail-tag-field';
 
 export function SourceDetailTags({ source }: { source: Source }) {
   const updateSourceMutation = useUpdateSource();
@@ -41,26 +29,9 @@ export function SourceDetailTags({ source }: { source: Source }) {
 
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="flex items-center gap-1.5 t-b-4 text-muted-fg">
-        <HugeiconsIcon icon={Tag01Icon} size={14} strokeWidth={1.5} />
-        Tags
-      </h3>
+      <h3 className="t-b-4 text-muted-fg">Tags</h3>
 
-      {source.tags.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          {sortByFacet(source.tags).map((tag) => {
-            const { facet, value } = parseTag(tag);
-            return (
-              <SourceDetailChip
-                key={tag}
-                label={value}
-                prefix={facet ?? undefined}
-                onRemove={() => save({ removeTags: [tag] })}
-              />
-            );
-          })}
-        </div>
-      )}
+      <SourceDetailTagField tags={source.tags} onSave={save} />
 
       {suggested.length > 0 && (
         <SuggestedTags
@@ -71,24 +42,8 @@ export function SourceDetailTags({ source }: { source: Source }) {
           onReject={(tags) => save({ removeSuggestedTags: tags })}
         />
       )}
-
-      <TagInput
-        currentTags={source.tags}
-        onAdd={(tag) => save({ addTags: [tag], removeSuggestedTags: [tag] })}
-      />
     </section>
   );
-}
-
-// *** sortByFacet ***
-// Facet tags first, in facet order, so the same kind of tag sits together on every source.
-function sortByFacet(tags: string[]): string[] {
-  const rank = (tag: string) => {
-    const { facet } = parseTag(tag);
-    return facet ? SOURCE_FACETS.indexOf(facet) : SOURCE_FACETS.length;
-  };
-
-  return [...tags].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
 }
 
 // *** SuggestedTags ***
@@ -118,7 +73,7 @@ function SuggestedTags({
         </button>
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
-        {sortByFacet(tags).map((tag) => (
+        {tags.map((tag) => (
           <SuggestedChip
             key={tag}
             tag={tag}
@@ -142,14 +97,12 @@ function SuggestedChip({
   onAccept: () => void;
   onReject: () => void;
 }) {
-  const { facet, value } = parseTag(tag);
-  const name = facet ? `${facet} ${value}` : value;
+  const name = useTagText()(tag);
 
   return (
     <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-dashed border-border py-0.5 pr-1 pl-2.5 t-b-4 text-fg">
       <span className="truncate">
-        {facet && <span className="text-muted-fg">{facet} · </span>}
-        {value}
+        <TagName tag={tag} />
       </span>
       <button
         type="button"
@@ -168,79 +121,5 @@ function SuggestedChip({
         <HugeiconsIcon icon={Cancel01Icon} size={12} strokeWidth={1.5} />
       </button>
     </span>
-  );
-}
-
-// *** TagInput ***
-function TagInput({
-  currentTags,
-  onAdd,
-}: {
-  currentTags: string[];
-  onAdd: (tag: string) => void;
-}) {
-  const listId = useId();
-  const errorId = useId();
-  const [draft, setDraft] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const options = useTagOptions(currentTags);
-
-  function submit() {
-    if (draft.trim() === '') return;
-    const tag = normalizeTag(draft);
-    if (!tag) {
-      setError('Use short words, like "handmade" or "style:minimal".');
-      return;
-    }
-    if (!currentTags.includes(tag)) onAdd(tag);
-    setDraft('');
-    setError(null);
-  }
-
-  return (
-    <div className="flex flex-col gap-1">
-      <Input
-        list={listId}
-        value={draft}
-        placeholder="Add a tag, like style:minimal"
-        aria-label="Add a tag"
-        aria-invalid={error !== null}
-        aria-describedby={error ? errorId : undefined}
-        onChange={(event) => {
-          setDraft(event.target.value);
-          setError(null);
-        }}
-        onKeyDown={(event) => {
-          if (event.key !== 'Enter') return;
-          event.preventDefault();
-          submit();
-        }}
-        className="h-8 t-b-3 text-fg"
-      />
-      <datalist id={listId}>
-        {options.map((tag) => (
-          <option key={tag} value={tag} />
-        ))}
-      </datalist>
-      {error && (
-        <p id={errorId} role="alert" className="t-b-4 text-danger">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// *** useTagOptions ***
-// The user's own tags come first, so the library keeps one word for one idea.
-function useTagOptions(currentTags: string[]): string[] {
-  const sourcesQuery = useAllSources();
-  const used = countTags(sourcesQuery.data ?? []).map(({ tag }) => tag);
-  const starters = SOURCE_FACETS.flatMap((facet) =>
-    SOURCE_FACET_STARTERS[facet].map((value) => `${facet}:${value}`),
-  );
-
-  return [...new Set([...used, ...starters])].filter(
-    (tag) => !currentTags.includes(tag),
   );
 }

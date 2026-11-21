@@ -17,6 +17,7 @@ import { useShowFolderSources } from '#/features/collections/collection-preferen
 
 import type { SitePendingSource, SiteSourceInput } from '../site-source.type';
 import {
+  changeTagGroup,
   compressSource,
   createSources,
   createWebsiteSource,
@@ -29,6 +30,7 @@ import {
   hardDeleteSources,
   replaceSourceFile,
   restoreSources,
+  saveSourcePalette,
   updateSource,
   updateSourceText,
 } from '../source-actions';
@@ -221,6 +223,32 @@ export function useUpdateSource() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateSourceInput }) =>
       updateSource(id, input),
+    onSuccess: () => invalidateAfterSourceChange(queryClient),
+  });
+}
+
+export function useSaveSourcePalette() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      storageKey,
+      palette,
+    }: {
+      id: string;
+      storageKey: string;
+      palette: string[];
+    }) => saveSourcePalette(id, storageKey, palette),
+    onSuccess: () => invalidateAfterSourceChange(queryClient),
+  });
+}
+
+export function useChangeTagGroup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: changeTagGroup,
     onSuccess: () => invalidateAfterSourceChange(queryClient),
   });
 }

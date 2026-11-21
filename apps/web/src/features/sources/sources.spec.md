@@ -37,18 +37,32 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **Editing:** the Edit button or <kbd>E</kbd> turns the sheet into a text box with the raw text. Save with the button or <kbd>⌘/Ctrl+S</kbd>. Empty text or text over 1 MB can't be saved. With unsaved changes, Cancel, closing and moving to another source ask "Discard your changes?". Saving changes only the body, never the name, note, link or collections.
 - **Download** gives the text file, not the thumbnail.
 
+### Detail panel order
+
+- Name, URL, **Color palette**, Collections, Tags, then Note. Color palette, Collections and Tags are sections with a plain text label, like Name and URL, spaced the same as every other block. The note comes last because it is read less often than the tags and collections.
+
+### Colors
+
+- In the **Color palette** section after the URL, up to 5 swatches show the main colors of the source's media (an image, a video's frame at 0.5 s, or a website's or text's thumbnail). Most used first. Clicking one copies its hex, like `#1f2a44`, with a "Copied" toast.
+- Worked out on the device the first time the panel shows a source with no `palette`, then saved on the record. One code path covers new and old sources. Replacing the file clears `palette`, so the next view works it out again.
+- How: draw the media at 64×64, skip see-through pixels, count colors in buckets of 16 levels per channel, fold each bucket into a bigger one that looks the same, drop colors under 2% of the image, keep 5 (`source-palette.ts`). Counting, not splitting, so an exact color keeps all its pixels and no in-between color is made up.
+- The save checks that the file is still the same one, so a slow read can't put the old file's colors on a replaced file.
+- If it fails (a broken file, no `OffscreenCanvas`), there is no row and the next view tries again.
+
 ### Tags
 
-- The detail panel has a **Tags** section under the note. Type a tag and press Enter. The input offers tags already used in the library first, then the starter values of each facet.
-- A tag is lowercase, 1–40 characters, made of letters (any language), digits, spaces and `-`. Extra spaces are squeezed. A wrong tag shows "Use short words, like "handmade" or "style:minimal"." and is not saved.
-- **Facet tags** are written `facet:value`, like `style:minimal`. The facets are `emotion`, `style`, `color`, `type` and `industry`, each with a starter list in `source-tags.ts`. Any value can be added. **Free tags** have no colon, like `handmade`. A colon after any other word is refused.
-- Chips show facet tags first, in facet order, as `style · minimal`. Each chip has a remove button.
+- In the panel, a source's tags are chips in one row with a **+ Add** field after them, styled like the Collections **+ Add** pill. It widens while focused. Typing opens a list of the user's own tags that contain the text (names that start with it first, then the rest, 6 at most, with how many sources use each), plus **Create "…"** for a new one. Nothing shows before typing. Enter or a click adds the tag. Backspace in the empty field removes the last chip. Escape closes the list, and with the list closed it closes the dialog; it never removes tags. Half-typed text with no matches (like `style:`) closes the list but stays in the field while it has focus; leaving the field clears it. Built with the shadcn Combobox (Base UI) in `packages/ui/src/combobox.tsx`, trimmed to its chips parts, with no select-style box.
+- A tag is lowercase, 1–40 characters, made of letters (any language), digits, spaces and `-`. Extra spaces are squeezed. A wrong tag shows "Use short words, like "handmade" or "style:minimal"." on Enter and is not saved.
+- **Groups are the user's own.** A tag in a group is stored as `group:name`, like `style:minimal`. A tag with no group is just `minimal`. There is no fixed list of groups or starter tags.
+- **Settings → Tags** lists every tag in a box per group (A–Z), then **No group**, with counts. Change a tag's group by dragging it onto another box, or with the group menu on its row (the keyboard way). Dropping on **+ New group** or picking **New group…** asks for a name. **Rename** on a group renames it. Each change is planned and saved inside one lock from every stored tag (trash and suggestions included), so nothing is left in the old group, and it merges a tag that already exists there. **No group** is always shown, so a tag can be dragged out of the last group. A `?tags=` filter that holds a renamed tag follows the new name.
+- Dragging is for the pointer only. Escape during a drag cancels it and keeps Settings open.
+- On screen a grouped tag reads `style-minimal`, with the group dimmed. The switch **Show group names on tags** (on by default, saved per browser) hides the group part. It changes only how tags read.
 - **Suggested tags** (`suggestedTags`) are ideas from AI. They show as dashed chips with Accept and Reject, plus **Accept all**. Accepting moves a tag into `tags`. A tag in `tags` is never also in `suggestedTags`. Adding a suggested tag by hand accepts it.
-- **Filter.** The library and every collection page show a **Filter** button above the grid when their sources have tags. Its menu lists the tags on that page's sources, grouped by facet (free tags under Other), with a count. Picked tags show as chips next to it, with **Clear** when there are two or more.
+- **Filter.** The library and every collection page show a **Filter** button above the grid when their sources have tags. Its menu lists the tags on that page's sources, under one heading per group and **No group**, with a count. Picked tags show as chips next to it, with **Clear** when there are two or more.
 - A source must have **every** picked tag to show. The picks live in the URL (`?tags=style:minimal,handmade`), so back, reload and a shared link keep them. A bad tag in the URL is dropped.
 - The source open in the detail dialog stays in the grid while the dialog is open, even if a tag change means it no longer matches. Otherwise removing a filtered tag would close the dialog mid-edit.
 - The menu counts the tags of the sources now shown, so each count says what a pick would leave.
-- A tag stored outside the rules (an agent or an import can write one) still shows and can be removed or rejected. It can't be picked in the filter.
+- A tag an agent wrote outside the rules (like `Calm`) still shows and can be removed or rejected, because removal matches the stored text exactly.
 - When the picks match nothing on the page, the grid shows "No sources with these tags." and **Clear filter**.
 - The trash has no filter.
 
@@ -121,7 +135,11 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **2026-10 — Thumbnails can be videos.** The card, panel and viewer pick `<video>` or `<img>` from the thumbnail's `mimeType`, not from the source's kind.
 - **2026-11 — The "Below" caption sits outside the `data-source-card` box.** The detail dialog flies from that box, so it must hold only the media. In "On hover" the `<figure>` is still that box. In "Below" it wraps the box and a `<figcaption>`, because a figcaption must be a direct child of its figure.
 - **2026-11 — The caption uses the app font, not the serif "Fig." style** from the bookshelf prototype. A name under every card is UI, not book content.
-- **2026-11 — Tags are back, with a filter and brand facets.** This answers the decision below: tags now have a use (filtering), and AI fills them later. A tag is a string on the source (`facet:value` or a free word), not a record in a tags table. Strings need no new store, no migration and no new `LibraryStore` method, and an agent can edit them in a desktop source file. Cost: renaming a tag means rewriting every source that has it.
+- **2026-11 — The user's own tag groups replace the five fixed facets.** Users found a fixed list and a long starter menu in the way. Groups live in the tag string (`group:name`), so there is still no new store, and moving a tag rewrites it on every source in one locked save. A group exists while a tag uses it, so there are no empty groups to store. Old tags made with facets were not converted: there were no users yet. Rejected: a groups table with ids (a new store, a migration, and an agent would have to look up ids).
+- **2026-11 — The browser's `datalist` is replaced by the shadcn Combobox, chips parts only.** The `datalist` can't be styled and showed every starter tag at once. The shadcn `base-vega` Combobox is Base UI underneath, which the app already uses, so no new package. Rejected: `cmdk`, a command list that doesn't hold values, so the chips and Backspace would be ours to build.
+- **2026-11 — Drag with `@dnd-kit/core`, pointer only.** It gives a drag copy that follows the pointer and drop boxes that light up. The keyboard sensor was dropped: its arrow keys move by pixels, not by group, and the group menu already does the job. Rejected: the browser's own `draggable` (can't style the drag image, poor on touch).
+- **2026-11 — Colors are worked out, not tagged.** The image already holds them, so they're exact, free and need no AI. They are worked out when the panel first shows a source, not on upload, so old sources get them with the same code.
+- **2026-11 — Tags are back, with a filter.** This answers the decision below: tags now have a use (filtering), and AI fills them later. A tag is a string on the source, not a record in a tags table. Strings need no new store, no migration and no new `LibraryStore` method, and an agent can edit them in a desktop source file. Cost: renaming a tag means rewriting every source that has it.
 - **2026-11 — The filter uses AND.** Designers narrow a board down; OR makes the list grow.
 - **2026-11 — AI writes to `suggestedTags`, never to `tags`.** The roadmap rule is that AI only suggests. AI never changes collections either: folders are the user's own way of sorting.
 - **2026-10 — Tags are removed from the UI.** A source can be in many collections, so tags were a second way to group the same things, and nothing read them (no search, no filter). The `tags` field stays on the record, always `[]` for new sources, so old data and old exports still load without a migration. Bring tags back only with a way to use them, such as filtering inside a collection.
@@ -134,7 +152,10 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - SVG card shapes were measured in Chromium and WebKit only. Firefox is not measured.
 - A black SVG on a transparent background can be hard to see on a dark card. Not checked in the dark theme yet.
 - If a compression is reading a file at the moment a replace deletes it, the compression fails silently. There's no toast, and the new file still gets its own compression.
-- A tag can't be renamed or merged across the library. Remove it and add the new one on each source.
+- A single tag can't be renamed or deleted across the library. Only its group can change (Settings → Tags).
+- Settings → Tags has no search box, so a long tag list means scrolling.
+- Phones can drag tags, but a swipe that starts on a tag name drags instead of scrolling the list.
+- Colors are not used anywhere else yet: no filter by color, no palette cards.
 - Search reads names only, not tags.
 - Export keeps `tags` but not `suggestedTags`, so suggestions not yet accepted are lost in an export and import.
 - A rejected suggestion is not remembered, so AI can suggest it again.
@@ -151,4 +172,4 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
   - Video: copies the frame on screen. Website: copies its preview image. An animated GIF: copies the first frame (the clipboard can't hold animation).
   - Safari needs the `ClipboardItem` made right inside the click or key press, so pass it a promise of the PNG instead of waiting for the PNG first.
   - A toast says "Copied". If the browser blocks the clipboard, the toast says so.
-- **Facets, what's left** (roadmap phase 1). Color: a palette of 3–5 colors taken from each image on the device, with no AI. It feeds the `color` facet and palette cards on the canvas. AI suggestions for tags start on desktop (see `docs/roadmap.md`).
+- **Colors, what's left** (roadmap phase 1). Filter by color, and palette cards on the canvas. AI suggestions for tags start on desktop (see `docs/roadmap.md`).
