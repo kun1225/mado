@@ -271,7 +271,7 @@ function ActionDockSearchPanel({
         exit="hidden"
         className={cn(
           FLOATING_SURFACE,
-          'absolute inset-x-0 bottom-full mb-2 rounded-2xl bg-bg/95',
+          'absolute inset-x-0 bottom-full mb-2 rounded-2xl bg-bg',
         )}
       >
         {list}
@@ -291,10 +291,7 @@ function ActionDockSearchPanel({
       {/* Only the rows are clipped. On a clipped element's child, Chrome blurs a square box. */}
       <motion.div
         variants={PANEL_BOX_VARIANTS}
-        className={cn(
-          FLOATING_SURFACE,
-          'absolute bottom-0 rounded-2xl bg-bg/95',
-        )}
+        className={cn(FLOATING_SURFACE, 'absolute bottom-0 rounded-2xl bg-bg')}
       />
       <motion.div variants={PANEL_ROWS_VARIANTS} className="relative">
         {list}
