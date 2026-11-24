@@ -5,6 +5,8 @@ import { StorageUnsupportedNotice } from '#/components/storage-unsupported-notic
 import { useIsSourceStorageSupported } from '#/features/sources/hooks/source-hooks';
 
 export const Route = createFileRoute('/(app)/collection')({
+  // Each library lives on its own device, so Google would only ever see an empty one.
+  head: () => ({ meta: [{ name: 'robots', content: 'noindex' }] }),
   component: RouteComponent,
 });
 

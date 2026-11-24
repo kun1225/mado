@@ -8,6 +8,9 @@ import type {
 
 export const LANDING_APP_HREF = '/library';
 
+// Link previews and Google need full URLs, not paths. Keep in step with public/robots.txt and public/sitemap.xml.
+export const LANDING_SITE_ORIGIN = 'https://mado-design.com';
+
 /** The header links. Each id is the id of a section on the page. */
 export const LANDING_NAV: LandingNavItem[] = [
   { id: 'features', label: 'Features' },

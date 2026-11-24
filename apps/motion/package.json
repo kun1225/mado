@@ -8,10 +8,12 @@
     "render:4x5": "remotion render src/index.ts MotionPost-4x5 out/mado-4x5.mp4",
     "render:9x16": "remotion render src/index.ts MotionPost-9x16 out/mado-9x16.mp4",
     "still": "remotion still src/index.ts MotionPost-4x5 out/still.png --frame=0",
+    "render:og": "remotion still src/index.ts OgCard ../web/public/og.png --frame=0 --public-dir=../web/public && remotion render src/index.ts OgCard ../web/public/og.mp4 --public-dir=../web/public --crf=28",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@remotion/cli": "4.0.535",
+    "@remotion/google-fonts": "4.0.535",
     "@remotion/tailwind-v4": "4.0.535",
     "@repo/ui": "workspace:*",
     "react": "19.2.8",

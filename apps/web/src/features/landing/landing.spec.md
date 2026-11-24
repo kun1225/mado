@@ -86,10 +86,13 @@ One column of sections with `px-edge` side padding. All copy and card data live 
 - **2026-11 — Main button hover chosen from `/proto/button-hover`: window light that follows the mouse.** Mado means window and the brand mood is gallery glass, so the hover is window light and a frame, not a generic fade. A square that followed the mouse and snapped onto the arrow was tried, then removed: its outline crossed the letters.
   - Rejected: an ink flood from the cursor (the button matches the page color in dark mode, and it is loud), a per-letter text roll, a radial spotlight and a magnet that pulls the button (they fit any app, not this one), a frame drawn inside the button (formal, and tight against the arrow), a pane that opens from the arrow, a label that splits with a small window (fun, but needs a space in the label), one sweep of light, a window-shaped patch of light (reads as stripes on a 40px button), and corner light (too weak).
 
+- **2026-11 — Google indexes only `/`.** `robots.txt` allows everything and points to `sitemap.xml`, which lists only `/`. Library and collection pages send `noindex`, because each library lives on its own device and Google would only see an empty one. `noindex`, not a `robots.txt` block, because a blocked page can still be listed from a link, and Google can't read its `noindex`. The landing page sets a canonical URL on `https://mado-design.com` (`LANDING_SITE_ORIGIN`), so preview hosts don't count as copies.
+- **2026-11 — The link preview is made in Remotion (`OgCard` in `apps/motion`, `pnpm render:og`).** It writes a 1200×630 `og.png` and a 6-second looping `og.mp4` to `public/`, using the landing tiles, so the preview matches the page. Each tile bobs through one full sine cycle, so the video loops with no jump and frame 0 works as the still. Most apps show only `og:image`; `og:video` is for the few that play it.
+
 ## Known gaps
 
 - The page does not offer the Mac app yet. Bring the download back once the app is signed.
 
 - The gallery shows screenshots of other studios' websites and work from a real library. Check that this is fine before launch, or swap in sources we can show.
-- No Open Graph image yet (see `docs/plans/landing-page-v1.md`).
+- The link preview (`og.png`, `og.mp4`) shows other studios' work too. It travels further than the page, so clear it with the same check.
 - The route still sits under `(app)` and runs the session check, which it no longer needs.
