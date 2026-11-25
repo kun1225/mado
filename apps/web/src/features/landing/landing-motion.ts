@@ -1,8 +1,10 @@
 import type {
   LandingFloat,
+  LandingPoint3d,
   LandingRect,
   LandingSectionBounds,
   LandingTilePose,
+  LandingTurn,
 } from './landing.type';
 
 /** How far a scroll progress is through the phase from `start` to `end`, 0 to 1. */
@@ -30,7 +32,7 @@ export function demoSlice(index: number): [number, number] {
 }
 
 const DEMO_SLICE_START = 0.05;
-const DEMO_SLICE_GAP = 0.15;
+const DEMO_SLICE_GAP = 0.12;
 const DEMO_SLICE_LENGTH = 0.25;
 
 /** The id of the section that crosses the line `y`, or null when none does. */
@@ -131,6 +133,32 @@ export function splitIntoColumns<T extends { width: number; height: number }>(
 }
 
 const SEARCH_TYPE_SHARE = 0.5;
+
+/**
+ * Turns a point the way a CSS list of `rotateX`/`rotateY` turns an element: the last turn applies first.
+ * Why: the laptop demo must know where a point inside a turned folder ends up, to fly a tile onto it.
+ */
+export function rotatePoint(
+  point: LandingPoint3d,
+  turns: readonly LandingTurn[],
+): LandingPoint3d {
+  return turns.reduceRight((current, turn) => {
+    const angle = (turn.deg * Math.PI) / 180;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    return turn.axis === 'x'
+      ? {
+          x: current.x,
+          y: cos * current.y - sin * current.z,
+          z: sin * current.y + cos * current.z,
+        }
+      : {
+          x: cos * current.x + sin * current.z,
+          y: current.y,
+          z: -sin * current.x + cos * current.z,
+        };
+  }, point);
+}
 
 // *** clamp ***
 function clamp(value: number, min: number, max: number) {

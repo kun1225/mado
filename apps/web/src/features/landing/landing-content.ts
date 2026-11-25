@@ -46,6 +46,7 @@ export const LANDING_TILES: LandingTile[] = [
   tile('era', 'Era illustrator', 'Web Design', 720, 406),
   tile('sour-turn', 'Sour turn 404', '404', 720, 648),
   tile('catalog', 'Catalog studio', 'Web Design', 720, 378),
+  tile('patch', 'Patch home', 'Web Design', 640, 480, 'video'),
 ];
 
 export const LANDING_COLLECTIONS = [
@@ -102,18 +103,21 @@ export const LANDING_SEARCH_QUERIES: LandingSearchQuery[] = [
     text: 'type',
     mode: 'Name',
     isSoon: false,
+    collectionNames: [],
     tileIds: ['typography', 'doodle-type'],
   },
   {
     text: 'Brand',
     mode: 'Collection',
     isSoon: false,
+    collectionNames: ['Brand'],
     tileIds: ['cleo-y-teo', 'neuro-pop', 'petrichor'],
   },
   {
     text: 'bold, playful color',
     mode: 'Describe',
     isSoon: true,
+    collectionNames: [],
     tileIds: ['neuro-pop', 'melike', 'thiings', 'sotd'],
   },
 ];

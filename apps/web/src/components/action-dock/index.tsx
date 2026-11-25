@@ -36,12 +36,3 @@ export function ActionDock({
     </div>
   );
 }
-
-export const FLOATING_SURFACE = cn(
-  'border border-border bg-bg/80 shadow-md backdrop-blur-xl',
-);
-
-export const FLOATING_BAR = cn(
-  FLOATING_SURFACE,
-  'flex h-12 items-center gap-1 rounded-full pr-1.5 pl-4',
-);

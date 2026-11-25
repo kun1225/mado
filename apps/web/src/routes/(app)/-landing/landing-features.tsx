@@ -11,6 +11,7 @@ import { cn } from '@repo/ui/cn';
 
 import type {
   LandingFeatureDemoProps,
+  LandingFeatureStepMobileProps,
   LandingFeatureStepProps,
   LandingPainWordProps,
 } from '#/features/landing/landing.type';
@@ -23,7 +24,7 @@ import {
 import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
 import { DemoAllTypes, DemoLocal, DemoSort } from './landing-feature-demos';
-import { Accent, LANDING_H2 } from './landing-ui';
+import { Accent, LANDING_H2, StepBar } from './landing-ui';
 import { usePauseOffscreen } from './use-pause-offscreen';
 
 const STEP_COUNT = LANDING_FEATURES.length;
@@ -119,13 +120,25 @@ export function LandingFeatures() {
           }}
           transition={FADE_TRANSITION}
           inert={!isFeaturesShown}
-          className="grid h-full content-center items-center gap-8 px-edge motion-reduce:transform-none! md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]"
+          className="grid h-full content-center items-center gap-8 px-edge motion-reduce:transform-none! max-md:gap-5 max-md:pt-14 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]"
         >
-          <div className="gap flex flex-col">
-            <h2 className={LANDING_H2}>
+          <div className="flex flex-col gap-4">
+            {/* Smaller on phones, so the title, the step and the demo fit one screen under the header. */}
+            <h2
+              className={cn(
+                LANDING_H2,
+                'max-md:text-[2rem] max-md:leading-[1.1]',
+              )}
+            >
               One <Accent>calm</Accent> place for everything you save.
             </h2>
-            <ol className="mt-4">
+            {/* Phones show only the active step, so the stage fits one screen. */}
+            <FeatureStepMobile
+              index={activeIndex}
+              progress={stepsProgress}
+              prefersReducedMotion={prefersReducedMotion}
+            />
+            <ol className="mt-4 max-md:hidden">
               {LANDING_FEATURES.map((feature, index) => (
                 <FeatureStep
                   key={feature.title}
@@ -239,6 +252,61 @@ function FeatureStep({
     </li>
   );
 }
+
+// *** FeatureStepMobile ***
+function FeatureStepMobile({
+  index,
+  progress,
+  prefersReducedMotion,
+}: LandingFeatureStepMobileProps) {
+  const feature = LANDING_FEATURES[index];
+  const blur = prefersReducedMotion ? 'blur(0px)' : 'blur(6px)';
+
+  return (
+    <div className="mt-3 md:hidden">
+      <div aria-live="polite">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, filter: blur }}
+            animate={{ opacity: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, filter: blur }}
+            transition={MOBILE_STEP_TRANSITION}
+          >
+            <p className="flex items-baseline gap-3">
+              <span className="w-6 shrink-0 t-l-3 tabular-nums">
+                0{index + 1}
+              </span>
+              <span className="t-h-5 text-xl leading-snug">
+                {feature.title}
+              </span>
+            </p>
+            <p className="mt-1 pl-9 t-b-3 text-pretty text-muted-fg">
+              {feature.line}
+            </p>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      <div aria-hidden className="mt-3 flex gap-1.5">
+        {LANDING_FEATURES.map((item, barIndex) => (
+          <StepBar
+            key={item.title}
+            index={barIndex}
+            count={STEP_COUNT}
+            progress={progress}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Waits for the old step to leave, so two lines never overlap. Short, because it plays twice.
+const MOBILE_STEP_TRANSITION = {
+  duration: 0.25,
+  ease: [0.25, 1, 0.5, 1],
+} as const;
 
 // *** FeatureDemo ***
 /**

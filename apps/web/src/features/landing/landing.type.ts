@@ -22,6 +22,12 @@ export type LandingFeatureStepProps = Pick<LandingFeature, 'title' | 'line'> & {
   onSelect: () => void;
 };
 
+export type LandingFeatureStepMobileProps = {
+  index: number;
+  progress: MotionValue<number>;
+  prefersReducedMotion: boolean;
+};
+
 export type LandingTile = {
   id: string;
   name: string;
@@ -45,6 +51,18 @@ export type LandingRect = {
   top: number;
   width: number;
   height: number;
+};
+
+export type LandingPoint3d = {
+  x: number;
+  y: number;
+  z: number;
+};
+
+/** One CSS `rotateX` or `rotateY`, in degrees. */
+export type LandingTurn = {
+  axis: 'x' | 'y';
+  deg: number;
 };
 
 export type LandingTilePose = {
@@ -71,11 +89,22 @@ export type LandingSortFolder = {
   previewTileIds: string[];
 };
 
+/** A query in the search demo. `collectionNames` and `tileIds` are what the results panel lists. */
 export type LandingSearchQuery = {
   text: string;
   mode: 'Name' | 'Collection' | 'Describe';
   isSoon: boolean;
+  collectionNames: string[];
   tileIds: string[];
+};
+
+export type LandingSearchDockProps = {
+  query: LandingSearchQuery;
+  typed: string;
+};
+
+export type LandingSearchResultsProps = {
+  query: LandingSearchQuery;
 };
 
 export type LandingFaqItem = {
@@ -132,6 +161,8 @@ export type LandingHeroTileProps = Pick<
   tile: LandingTile;
   float: LandingFloat;
   index: number;
+  /** How many tiles float, which sets the intro's cluster. */
+  count: number;
   layout: LandingSlotLayout | null;
 };
 
@@ -139,8 +170,9 @@ export type LandingHeroCopyProps = {
   isVeiled: boolean;
 };
 
-export type LandingQueryBarProps = {
+export type LandingStepBarProps = {
   index: number;
+  count: number;
   progress: MotionValue<number>;
 };
 

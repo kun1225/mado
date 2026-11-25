@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 
 import { cn } from '@repo/ui/cn';
 
+import type { LandingTurn } from '#/features/landing/landing.type';
 import type {
   LandingLaptopLidProps,
   LandingLaptopProps,
@@ -27,7 +28,15 @@ export const LAPTOP = {
  * Cancels the view and the open lid, so something inside the lid's frame faces the screen straight on.
  * Why: a flat folder next to a tilted laptop would look pasted on.
  */
-export const LAPTOP_FACE_CAMERA = `rotateX(-${LAPTOP.openAngle}deg) rotateY(${LAPTOP.viewTurn}deg) rotateX(${LAPTOP.viewTilt}deg)`;
+export const LAPTOP_FACE_CAMERA_TURNS: LandingTurn[] = [
+  { axis: 'x', deg: -LAPTOP.openAngle },
+  { axis: 'y', deg: LAPTOP.viewTurn },
+  { axis: 'x', deg: LAPTOP.viewTilt },
+];
+
+export const LAPTOP_FACE_CAMERA = LAPTOP_FACE_CAMERA_TURNS.map(
+  (turn) => `rotate${turn.axis.toUpperCase()}(${turn.deg}deg)`,
+).join(' ');
 
 /**
  * A laptop with real depth: the lid leans back and the keyboard lies flat.

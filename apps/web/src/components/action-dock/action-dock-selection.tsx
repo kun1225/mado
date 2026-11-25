@@ -12,7 +12,7 @@ import {
   TooltipTrigger,
 } from '@repo/ui/tooltip';
 
-import { FLOATING_BAR } from '.';
+import { FLOATING_BAR } from './action-dock-surface';
 
 const selectionTooltip = createTooltipHandle<string>();
 

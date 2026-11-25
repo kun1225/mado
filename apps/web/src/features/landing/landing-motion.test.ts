@@ -7,6 +7,7 @@ import {
   phaseProgress,
   pickActiveSection,
   pickActiveStep,
+  rotatePoint,
   searchFrame,
   splitIntoColumns,
   stepProgress,
@@ -191,11 +192,43 @@ describe('demoSlice', () => {
   it('gives each item its own overlapping part of a step', () => {
     expect(demoSlice(0)).toEqual([0.05, 0.3]);
     const [start, end] = demoSlice(1);
-    expect(start).toBeCloseTo(0.2);
-    expect(end).toBeCloseTo(0.45);
+    expect(start).toBeCloseTo(0.17);
+    expect(end).toBeCloseTo(0.42);
   });
 
-  it('ends the fourth item before the step ends, so the finished demo holds', () => {
-    expect(demoSlice(3)[1]).toBeLessThan(1);
+  it('ends the fifth item before a step click lands, so the click shows the finished demo', () => {
+    expect(demoSlice(4)[1]).toBeLessThan(0.8);
   });
 });
+
+describe('rotatePoint', () => {
+  it('turns a point like CSS rotateX and rotateY', () => {
+    expectPoint(rotatePoint({ x: 0, y: 1, z: 0 }, [{ axis: 'x', deg: 90 }]), {
+      x: 0,
+      y: 0,
+      z: 1,
+    });
+    expectPoint(rotatePoint({ x: 1, y: 0, z: 0 }, [{ axis: 'y', deg: 90 }]), {
+      x: 0,
+      y: 0,
+      z: -1,
+    });
+  });
+
+  it('applies the last turn first, like a CSS transform list', () => {
+    const turns = [
+      { axis: 'x', deg: 90 },
+      { axis: 'y', deg: 90 },
+    ] as const;
+    expectPoint(rotatePoint({ x: 1, y: 0, z: 0 }, turns), { x: 0, y: 1, z: 0 });
+  });
+});
+
+function expectPoint(
+  actual: { x: number; y: number; z: number },
+  expected: { x: number; y: number; z: number },
+) {
+  expect(actual.x).toBeCloseTo(expected.x);
+  expect(actual.y).toBeCloseTo(expected.y);
+  expect(actual.z).toBeCloseTo(expected.z);
+}

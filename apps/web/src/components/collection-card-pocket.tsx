@@ -135,6 +135,31 @@ function CollectionPocketPreview({
 // Only the top of each card rises above the front, so the back of the folder still shows.
 const PREVIEW_PEEK = 22;
 
+/** The pocket's box and its front, in px. Keep in step with `h-24 w-28` and the front's `h-16`. */
+export const POCKET_SIZE = { width: 112, height: 96, frontHeight: 64 };
+
+/**
+ * Where preview `index` of `count` (one to three) sits in the pocket, in px: `x` from the pocket's center, `top` from its top,
+ * and `rotate` around its bottom center. Why: the landing page flies a card into this exact spot.
+ */
+export function pocketPreviewSlot(
+  preview: { width?: number | null; height?: number | null },
+  index: number,
+  count: number,
+) {
+  const offset = PREVIEW_OFFSETS[count][index];
+  return {
+    ...fitPreview(preview),
+    x: offset * PREVIEW_SHIFT_PX,
+    top: POCKET_SIZE.height - POCKET_SIZE.frontHeight - PREVIEW_PEEK,
+    rotate: offset * PREVIEW_TILT_DEG,
+  };
+}
+
+// Keep in step with the resting `translate` and `rotate` classes on CollectionPocketPreview.
+const PREVIEW_SHIFT_PX = 14;
+const PREVIEW_TILT_DEG = 3;
+
 // *** fitPreview ***
 const PREVIEW_BOX = { width: 64, height: 56 };
 const PREVIEW_RATIO = { min: 0.6, max: 1.8, fallback: 0.75 };

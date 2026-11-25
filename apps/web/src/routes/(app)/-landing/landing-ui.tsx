@@ -1,12 +1,15 @@
 import { Link } from '@tanstack/react-router';
+import { motion, useTransform } from 'motion/react';
 
 import { cn } from '@repo/ui/cn';
 
 import type {
   LandingChildrenProps,
   LandingClassNameProps,
+  LandingStepBarProps,
   LandingTileMediaProps,
 } from '#/features/landing/landing.type';
+import { stepProgress } from '#/features/landing/landing-motion';
 import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
 
 export const LANDING_H2 = 't-h-2 text-balance';
@@ -55,6 +58,22 @@ export function TileMedia({
       decoding="async"
       className={classes}
     />
+  );
+}
+
+/** A thin bar that fills with one of `count` equal parts of the scroll, so readers see where they are. */
+export function StepBar({ index, count, progress }: LandingStepBarProps) {
+  const fill = useTransform(progress, (value) =>
+    stepProgress(value, count, index),
+  );
+
+  return (
+    <span className="h-0.5 flex-1 overflow-hidden rounded-full bg-border">
+      <motion.span
+        style={{ scaleX: fill }}
+        className="block size-full origin-left bg-fg"
+      />
+    </span>
   );
 }
 

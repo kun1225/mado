@@ -22,6 +22,7 @@ import {
 } from 'motion/react';
 import type { PointerEvent } from 'react';
 
+import { cn } from '@repo/ui/cn';
 import {
   MorphContextMenu,
   MorphContextMenuContent,
@@ -29,7 +30,11 @@ import {
   MorphContextMenuTrigger,
 } from '@repo/ui/morph-context-menu';
 
-import { CollectionPocket } from '#/components/collection-card-pocket';
+import {
+  CollectionPocket,
+  POCKET_SIZE,
+  pocketPreviewSlot,
+} from '#/components/collection-card-pocket';
 import { CollectionColorDialog } from '#/components/collection-context-menu/collection-color-dialog';
 import { CollectionRenameDialog } from '#/components/collection-context-menu/collection-rename-dialog';
 import type { CollectionColor } from '#/features/collections/collection-types';
@@ -49,12 +54,23 @@ import type {
   LandingSortFolderProps,
   LandingTypeBadgeProps,
 } from '#/features/landing/landing-demo.type';
-import { demoSlice } from '#/features/landing/landing-motion';
+import {
+  demoSlice,
+  phaseProgress,
+  rotatePoint,
+} from '#/features/landing/landing-motion';
 
-import { LAPTOP, Laptop, LAPTOP_FACE_CAMERA } from './landing-laptop';
+import {
+  LAPTOP,
+  Laptop,
+  LAPTOP_FACE_CAMERA,
+  LAPTOP_FACE_CAMERA_TURNS,
+} from './landing-laptop';
 import { TileMedia } from './landing-ui';
 
 const LIFT = { y: -8, scale: 1.02 };
+// Room past the box on the uncut sides, so a turned card's corners aren't cut.
+const CLIP_ROOM = '-8px';
 const LIFT_SPRING = { type: 'spring', duration: 0.35, bounce: 0.15 } as const;
 
 /** Four kinds of saves drop into one library, one after another, as the step scrolls. */
@@ -66,7 +82,7 @@ export function DemoAllTypes({ progress }: LandingDemoProps) {
         {ALL_TYPE_COLUMNS.map((column, columnIndex) => (
           <div key={columnIndex} className="flex w-56 flex-col gap-4">
             {column.map(({ item, index }) => (
-              <DropCard key={item.label} index={index} progress={progress}>
+              <DropCard key={index} index={index} progress={progress}>
                 <AllTypesCard item={item} />
               </DropCard>
             ))}
@@ -77,12 +93,14 @@ export function DemoAllTypes({ progress }: LandingDemoProps) {
   );
 }
 
-// Image and website go in the first column, video and note in the second: each save joins the shorter column, as in the library.
+// Image, website and the second video go in the first column, video and note in the second: each save joins the shorter column, as in the library.
+// The second video is 4:3, so both columns end near the same line and the group reads as a square.
 const ALL_TYPES: LandingAllTypesItem[] = [
   { label: 'Image', icon: Image01Icon, tileId: 'neuro-pop' },
   { label: 'Video', icon: Video01Icon, tileId: 'heist-button' },
   { label: 'Website', icon: Link01Icon, tileId: 'house-of-honey' },
   { label: 'Note', icon: Note01Icon },
+  { label: 'Video', icon: Video01Icon, tileId: 'patch' },
 ];
 
 const ALL_TYPE_COLUMNS = [0, 1].map((column) =>
@@ -113,6 +131,7 @@ export function DemoSort({ progress }: LandingDemoProps) {
               card={card}
               index={index}
               progress={progress}
+              isLanded={index < landed}
             />
           ))}
 
@@ -140,8 +159,14 @@ const SORT_HEIGHT = 368;
 const SORT_CARD = { width: 96, height: 128, gap: 16 };
 const SORT_FOLDER_SIZE = 192;
 const SORT_FOLDER_TOP = SORT_HEIGHT - SORT_FOLDER_SIZE;
-/** The folder card's pocket is centered in its top part, and a save lands at the pocket's front edge. */
-const SORT_DROP_Y = SORT_FOLDER_TOP + 52 - SORT_CARD.height / 2;
+/** The pocket sits centered in the folder card's top part (the card minus its 56px label row), inside a 1px border. */
+const SORT_POCKET_TOP =
+  SORT_FOLDER_TOP + 1 + (SORT_FOLDER_SIZE - 2 - 56 - POCKET_SIZE.height) / 2;
+const SORT_FRONT_TOP =
+  SORT_POCKET_TOP + POCKET_SIZE.height - POCKET_SIZE.frontHeight;
+// A card flies over the pocket in this share of its slice, then drops in for the rest.
+const SORT_OVER_SHARE = 0.65;
+const SORT_OVER_GAP = 6;
 
 const SORT_FOLDERS: LandingSortFolder[] = [
   {
@@ -160,19 +185,38 @@ const SORT_FOLDERS: LandingSortFolder[] = [
   },
 ];
 
+// Each card ends on the exact spot the folder gives its new preview, so the hand-off doesn't show.
 const SORT_CARDS: LandingSortCard[] = [
   { tileId: 'cleo-y-teo', folder: 'Brand' },
   { tileId: 'nothin', folder: 'Web Design' },
   { tileId: 'petrichor', folder: 'Brand' },
   { tileId: 'era', folder: 'Web Design' },
-].map((card, index) => {
+].map((card, index, cards) => {
   const left =
     (SORT_WIDTH - 4 * SORT_CARD.width - 3 * SORT_CARD.gap) / 2 +
     index * (SORT_CARD.width + SORT_CARD.gap);
   const folder = SORT_FOLDERS.find((item) => item.name === card.folder)!;
-  const folderCenter = folder.left + SORT_FOLDER_SIZE / 2;
+  const count =
+    folder.previewTileIds.length +
+    cards.slice(0, index + 1).filter((item) => item.folder === card.folder)
+      .length;
+  const slot = pocketPreviewSlot(
+    findLandingTile(card.tileId),
+    count - 1,
+    count,
+  );
 
-  return { ...card, left, dx: folderCenter - (left + SORT_CARD.width / 2) };
+  return {
+    ...card,
+    left,
+    target: {
+      left: folder.left + SORT_FOLDER_SIZE / 2 + slot.x - slot.width / 2,
+      top: SORT_POCKET_TOP + slot.top,
+      width: slot.width,
+      height: slot.height,
+      rotate: slot.rotate,
+    },
+  };
 });
 
 /** A closed laptop opens as the step scrolls. The library lifts out of its screen and lands in a folder: your files, on your computer. */
@@ -194,18 +238,19 @@ export function DemoLocal({ progress }: LandingDemoProps) {
 
   return (
     <DemoPanel>
-      <div className="flex shrink-0 scale-[0.88] flex-col items-center max-md:scale-[0.6]">
+      <div className="flex shrink-0 scale-[0.88] flex-col items-center max-md:scale-[0.5]">
         <motion.div
           style={{ x: panX }}
           whileHover={{ ...LIFT, transition: LIFT_SPRING }}
         >
           <Laptop lidAngle={lidAngle}>
-            {LOCAL_TILES.map((tile) => (
+            {LOCAL_TILES.map((tile, index) => (
               <LocalTile
                 key={tile.id}
                 tile={tile}
                 progress={progress}
                 isStill={prefersReducedMotion}
+                isLanded={index < landed}
               />
             ))}
             <LocalFolder progress={progress} landed={landed} />
@@ -244,10 +289,18 @@ const LOCAL_TILE_WIDTH =
     2 * LOCAL_TILE_GAP) /
   3;
 const LOCAL_TILE_HEIGHT = (LOCAL_TILE_WIDTH * 3) / 4;
-/** The folder's pocket, in the lid's frame: left of the screen, halfway down. */
+/** The folder's pocket center, in the lid's frame: left of the screen, halfway down. */
 const LOCAL_FOLDER = { x: -160, y: 160, width: 128 };
+// The folder shows this many saves; later ones drop all the way into the pocket.
+const LOCAL_FOLDER_PREVIEWS = 3;
+const LOCAL_FRONT_TOP = POCKET_SIZE.height / 2 - POCKET_SIZE.frontHeight;
+// A tile flies over the pocket in this share of its slice, then drops in for the rest.
+const LOCAL_OVER_SHARE = 0.65;
+const LOCAL_OVER_GAP = 6;
+const LOCAL_LIFT = 80;
 
-// Each tile starts on its slot in the screen's grid, and flies to the folder's front edge.
+// Each tile starts on its slot in the screen's grid and ends on the spot the folder gives its preview,
+// in the pocket's frame (from its center, before the folder turns to face you).
 const LOCAL_TILES = LOCAL_TILE_IDS.map((id, index): LandingLocalTile => {
   const left =
     LAPTOP.bezel +
@@ -258,14 +311,29 @@ const LOCAL_TILES = LOCAL_TILE_IDS.map((id, index): LandingLocalTile => {
     LOCAL_SCREEN_PAD +
     Math.floor(index / 3) * (LOCAL_TILE_HEIGHT + LOCAL_TILE_GAP);
   const start = LOCAL_FLY.start + index * LOCAL_FLY.gap;
+  const isShown = index < LOCAL_FOLDER_PREVIEWS;
+  // A folder shows up to three previews, so later tiles aim at the last spot and then sink past it.
+  const shown = Math.min(index + 1, LOCAL_FOLDER_PREVIEWS);
+  const slot = pocketPreviewSlot(findLandingTile(id), shown - 1, shown);
+  const rotate = isShown ? slot.rotate : 0;
+  const rad = (rotate * Math.PI) / 180;
+  // The preview turns around its bottom center, so its center moves a little with the turn.
+  const bottom = -POCKET_SIZE.height / 2 + slot.top + slot.height;
+  const restY = isShown
+    ? bottom - (Math.cos(rad) * slot.height) / 2
+    : LOCAL_FRONT_TOP + 2 + slot.height / 2;
 
   return {
     id,
     left,
     top,
-    dx: LOCAL_FOLDER.x - (left + LOCAL_TILE_WIDTH / 2),
-    dy: LOCAL_FOLDER.y - 14 - (top + LOCAL_TILE_HEIGHT / 2),
     slice: [start, start + LOCAL_FLY.length],
+    width: slot.width,
+    height: slot.height,
+    rotate,
+    x: isShown ? slot.x + (Math.sin(rad) * slot.height) / 2 : 0,
+    overY: LOCAL_FRONT_TOP - LOCAL_OVER_GAP - slot.height / 2,
+    restY,
   };
 });
 
@@ -381,24 +449,59 @@ function AllTypesCard({ item }: LandingAllTypesCardProps) {
 }
 
 // *** SortCard ***
-function SortCard({ card, index, progress }: LandingSortCardProps) {
-  const slice = demoSlice(index);
-  const x = useTransform(progress, slice, [0, card.dx]);
-  const y = useTransform(progress, slice, [0, SORT_DROP_Y]);
-  const scale = useTransform(progress, slice, [1, 0.5]);
-  // Fades only at the end of the flight, so it reads as going into the folder.
-  const opacity = useTransform(
+/** Flies over its folder, shrinks to the preview's size, then drops into the pocket behind the front. */
+function SortCard({ card, index, progress, isLanded }: LandingSortCardProps) {
+  const prefersReducedMotion = useReducedMotion();
+  const [start, end] = demoSlice(index);
+  const over = start + (end - start) * SORT_OVER_SHARE;
+  const { target } = card;
+  const overTop = SORT_FRONT_TOP - SORT_OVER_GAP - target.height;
+  const left = useTransform(progress, [start, over], [card.left, target.left]);
+  const top = useTransform(
     progress,
-    transform([slice[0] + (slice[1] - slice[0]) * 0.7, slice[1]], [1, 0]),
+    [start, over, end],
+    [0, overTop, target.top],
+  );
+  const width = useTransform(
+    progress,
+    [start, over],
+    [SORT_CARD.width, target.width],
+  );
+  const height = useTransform(
+    progress,
+    [start, over],
+    [SORT_CARD.height, target.height],
+  );
+  const rotate = useTransform(progress, [start, over], [0, target.rotate]);
+  // The part below the pocket's front edge is cut off, so the card goes in behind it.
+  const clipPath = useTransform(
+    () =>
+      `inset(${CLIP_ROOM} ${CLIP_ROOM} ${Math.max(0, top.get() + height.get() - SORT_FRONT_TOP)}px ${CLIP_ROOM})`,
   );
 
   return (
+    // The outer box cuts and the inner card turns, so the cut stays level with the folder's front.
     <motion.div
-      style={{ left: card.left, x, y, scale, opacity }}
-      // A landed card is invisible but stays over its folder, so it must not catch the right-click or the hover.
-      className="pointer-events-none absolute top-0 z-10 h-32 w-24 overflow-hidden rounded-lg shadow-md motion-reduce:transform-none!"
+      style={
+        prefersReducedMotion
+          ? { left: card.left, top: 0 }
+          : { left, top, width, height, clipPath }
+      }
+      // The folder's own preview takes over once the card lands. The card never catches the right-click or the hover.
+      className={cn(
+        'pointer-events-none absolute z-10 h-32 w-24',
+        isLanded && 'invisible',
+      )}
     >
-      <TileMedia tile={findLandingTile(card.tileId)} />
+      <motion.div
+        style={prefersReducedMotion ? {} : { rotate, originY: 1 }}
+        className="size-full overflow-hidden rounded-sm border bg-muted outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
+      >
+        <TileMedia
+          tile={findLandingTile(card.tileId)}
+          className="rounded-none"
+        />
+      </motion.div>
     </motion.div>
   );
 }
@@ -496,21 +599,24 @@ function SortFolder({ folder, landedTileIds }: LandingSortFolderProps) {
 }
 
 // *** LocalTile ***
-/** A save on the laptop's screen. It lifts off, turns to face you, and shrinks into the folder. */
-function LocalTile({ tile, progress, isStill }: LandingLocalTileProps) {
-  const { slice } = tile;
-  const middle = (slice[0] + slice[1]) / 2;
-  const x = useTransform(progress, slice, [0, tile.dx]);
-  const y = useTransform(progress, slice, [0, tile.dy]);
-  // Up and over, so it clears the screen's edge instead of sliding along it.
-  const z = useTransform(progress, [slice[0], middle, slice[1]], [1, 80, 1]);
-  const scale = useTransform(progress, slice, [1, 0.45]);
-  const rotateX = useTransform(progress, slice, [0, 8]);
-  const rotateY = useTransform(progress, slice, [0, LAPTOP.viewTurn]);
-  // Fades only at the end of the flight, so it reads as going into the folder.
+/** A save on the laptop's screen. It lifts off, turns to face you, and drops into the folder's pocket. */
+function LocalTile({
+  tile,
+  progress,
+  isStill,
+  isLanded,
+}: LandingLocalTileProps) {
+  const pose = useTransform(progress, (value) => localTilePose(tile, value));
+  const poseTransform = useTransform(pose, (value) => value.transform);
+  const width = useTransform(pose, (value) => value.width);
+  const height = useTransform(pose, (value) => value.height);
+  const clipPath = useTransform(pose, (value) => value.clipPath);
+  const rotate = useTransform(pose, (value) => value.rotate);
+  // Reduced motion keeps the tile still, so it fades instead of flying.
+  const [start, end] = tile.slice;
   const opacity = useTransform(
     progress,
-    transform([slice[0] + (slice[1] - slice[0]) * 0.8, slice[1]], [1, 0]),
+    transform([start + (end - start) * 0.8, end], [1, 0]),
   );
 
   return (
@@ -518,16 +624,68 @@ function LocalTile({ tile, progress, isStill }: LandingLocalTileProps) {
       style={{
         left: tile.left,
         top: tile.top,
-        width: LOCAL_TILE_WIDTH,
-        height: LOCAL_TILE_HEIGHT,
-        opacity,
-        ...(isStill ? {} : { x, y, z, scale, rotateX, rotateY }),
+        ...(isStill
+          ? { width: LOCAL_TILE_WIDTH, height: LOCAL_TILE_HEIGHT, opacity }
+          : { width, height, transform: poseTransform, clipPath }),
       }}
-      className="absolute overflow-hidden rounded-sm [backface-visibility:hidden]"
+      // The folder's own preview takes over once the tile lands.
+      className={cn(
+        'absolute [backface-visibility:hidden]',
+        isLanded && 'invisible',
+      )}
     >
-      <TileMedia tile={findLandingTile(tile.id)} className="rounded-sm" />
+      {/* The outer box cuts and the inner tile turns, so the cut stays level with the folder's front. */}
+      <motion.div
+        style={isStill ? {} : { rotate }}
+        className="size-full overflow-hidden rounded-sm"
+      >
+        <TileMedia tile={findLandingTile(tile.id)} className="rounded-sm" />
+      </motion.div>
     </motion.div>
   );
+}
+
+// *** localTilePose ***
+/**
+ * Over the pocket first, turning to face you and shrinking to the preview's size, then straight down into it.
+ * The pocket's spot is turned like the folder (`LAPTOP_FACE_CAMERA_TURNS`), so the tile lands exactly on the preview.
+ */
+function localTilePose(tile: LandingLocalTile, progress: number) {
+  const [start, end] = tile.slice;
+  const over = start + (end - start) * LOCAL_OVER_SHARE;
+  const fly = phaseProgress(progress, start, over);
+  const drop = phaseProgress(progress, over, end);
+  const width = mix(LOCAL_TILE_WIDTH, tile.width, fly);
+  const height = mix(LOCAL_TILE_HEIGHT, tile.height, fly);
+  const localY = mix(tile.overY, tile.restY, drop);
+  // One pixel in front of the folder, so the two flat faces don't flicker.
+  const turned = rotatePoint(
+    { x: tile.x, y: localY, z: 1 },
+    LAPTOP_FACE_CAMERA_TURNS,
+  );
+  // Starts one pixel in front of the screen for the same reason, and arcs up so it clears the screen's edge.
+  const center = {
+    x: mix(tile.left + LOCAL_TILE_WIDTH / 2, LOCAL_FOLDER.x + turned.x, fly),
+    y: mix(tile.top + LOCAL_TILE_HEIGHT / 2, LOCAL_FOLDER.y + turned.y, fly),
+    z: mix(1, turned.z, fly) + Math.sin(Math.PI * fly) * LOCAL_LIFT,
+  };
+  const turns = LAPTOP_FACE_CAMERA_TURNS.map(
+    (turn) => `rotate${turn.axis.toUpperCase()}(${turn.deg * fly}deg)`,
+  ).join(' ');
+  const cut = drop > 0 ? Math.max(0, localY + height / 2 - LOCAL_FRONT_TOP) : 0;
+
+  return {
+    width,
+    height,
+    transform: `translate3d(${center.x - tile.left - width / 2}px, ${center.y - tile.top - height / 2}px, ${center.z}px) ${turns}`,
+    rotate: tile.rotate * fly,
+    clipPath: `inset(${CLIP_ROOM} ${CLIP_ROOM} ${cut}px ${CLIP_ROOM})`,
+  };
+}
+
+// *** mix ***
+function mix(from: number, to: number, amount: number) {
+  return from + (to - from) * amount;
 }
 
 // *** LocalFolder ***
@@ -542,18 +700,21 @@ function LocalFolder({ progress, landed }: LandingLocalFolderProps) {
     <motion.div
       style={{
         left: LOCAL_FOLDER.x - LOCAL_FOLDER.width / 2,
-        top: LOCAL_FOLDER.y - 48,
+        top: LOCAL_FOLDER.y - POCKET_SIZE.height / 2,
         width: LOCAL_FOLDER.width,
         opacity,
         transform: LAPTOP_FACE_CAMERA,
+        // Turns around the pocket's center, the point the tiles aim at.
+        transformOrigin: `50% ${POCKET_SIZE.height / 2}px`,
       }}
       className="group absolute flex flex-col items-center"
     >
       <CollectionPocket
         color="orange"
-        previews={LOCAL_TILES.slice(0, Math.min(landed, 3)).map(({ id }) =>
-          folderPreview(id),
-        )}
+        previews={LOCAL_TILES.slice(
+          0,
+          Math.min(landed, LOCAL_FOLDER_PREVIEWS),
+        ).map(({ id }) => folderPreview(id))}
       />
       <p className="mt-3 t-l-2">mado-export</p>
       <p className="t-b-3 text-muted-fg tabular-nums">

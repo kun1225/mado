@@ -41,7 +41,7 @@ export function LandingFooter() {
         <motion.div
           style={{ opacity: motionValues.linksOpacity }}
           // Links fade in late, so a keyboard user who tabs to one still has to see it.
-          className="relative mt-auto flex flex-wrap items-center justify-between gap-4 px-edge pb-10 t-b-3 focus-within:opacity-100!"
+          className="relative mt-auto flex flex-wrap items-center justify-between gap-2 px-edge pb-4 t-b-3 focus-within:opacity-100! md:gap-4 md:pb-10"
         >
           <FooterLinks />
           <span className="text-muted-fg">

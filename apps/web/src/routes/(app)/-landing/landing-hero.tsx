@@ -147,6 +147,8 @@ function LibraryFrame({
   const stageRef = useRef<HTMLDivElement>(null);
   const columnCount = useColumnCount();
   const layout = useSlotLayout(stageRef, columnCount);
+  // Phones get fewer floats, so the title isn't crowded on a narrow screen.
+  const tiles = columnCount === MIN_COLUMNS ? PHONE_HERO_TILES : HERO_TILES;
 
   return (
     <div ref={stageRef} className="absolute inset-0 px-edge pt-22">
@@ -168,7 +170,7 @@ function LibraryFrame({
           </motion.div>
 
           <div className="flex items-start gap-2.5 px-4 sm:px-6">
-            {splitIntoColumns(HERO_TILES, columnCount).map((column, i) => (
+            {splitIntoColumns(tiles, columnCount).map((column, i) => (
               <div key={i} className="min-w-0 flex-1">
                 {column.map(({ index, float, ...tile }) => (
                   <HeroTile
@@ -176,6 +178,7 @@ function LibraryFrame({
                     tile={tile}
                     float={float}
                     index={index}
+                    count={tiles.length}
                     layout={layout}
                     progress={progress}
                     spread={spread}
@@ -270,12 +273,14 @@ function HeroTile({
   tile,
   float,
   index,
+  count,
   layout,
   progress,
   spread,
   pointer,
 }: LandingHeroTileProps) {
   const slot = layout?.slots.get(tile.id);
+  const clusterRank = introClusterRank(index, count);
   const tileTransform = useTransform(
     [progress, spread, pointer.x, pointer.y],
     ([value, spreadValue, pointerX, pointerY]: number[]) => {
@@ -284,8 +289,8 @@ function HeroTile({
       const scale =
         layout.stage.width < PHONE_WIDTH ? float.scale * 0.85 : float.scale;
       const cluster = introClusterFloat(
-        INTRO_CLUSTER_RANKS[index],
-        LANDING_TILES.length,
+        clusterRank,
+        count,
         layout.stage,
         slot.width,
       );
@@ -330,6 +335,15 @@ function HeroTile({
       </motion.div>
     </div>
   );
+}
+
+// *** introClusterRank ***
+// Ranked by float x, so the chosen collage stays the same when the grid changes columns.
+function introClusterRank(index: number, count: number) {
+  const x = FLOATS[index].x;
+  return FLOATS.slice(0, count).filter(
+    (float, other) => float.x < x || (float.x === x && other < index),
+  ).length;
 }
 
 // *** WindowBar ***
@@ -485,15 +499,11 @@ const FLOATS: LandingFloat[] = [
   { x: 0.56, y: 0.76, scale: 0.4, rotate: -3 },
 ];
 
-// Stable ranks keep the chosen collage unchanged when the grid changes columns.
-const INTRO_CLUSTER_RANKS = (() => {
-  const xs = LANDING_TILES.map((_, index) => FLOATS[index % FLOATS.length].x);
-  const order = xs.map((_, index) => index).sort((a, b) => xs[a] - xs[b]);
-  return xs.map((_, index) => order.indexOf(index));
-})();
-
-const HERO_TILES = LANDING_TILES.map((tile, index) => ({
+// One tile per float point. Why: a tile past the last point would float right on top of the first one.
+const HERO_TILES = LANDING_TILES.slice(0, FLOATS.length).map((tile, index) => ({
   ...tile,
   index,
-  float: FLOATS[index % FLOATS.length],
+  float: FLOATS[index],
 }));
+// The first twelve points ring the title. The rest crowd it on a phone.
+const PHONE_HERO_TILES = HERO_TILES.slice(0, 12);
