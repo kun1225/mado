@@ -15,6 +15,12 @@ import { toast } from '@repo/ui/sonner';
 import { collectionKeys } from '#/features/collections/collection-hooks';
 import { useShowFolderSources } from '#/features/collections/collection-preference-hooks';
 
+import {
+  addFontFaces,
+  removeFontFace,
+  updateFontCover,
+  updateFontSample,
+} from '../font-actions';
 import type { SitePendingSource, SiteSourceInput } from '../site-source.type';
 import {
   changeTagGroup,
@@ -36,6 +42,8 @@ import {
 } from '../source-actions';
 import { isMediaStorageSupported, readMediaFile } from '../source-media';
 import type { Source, UpdateSourceInput } from '../source-types';
+
+import { unloadFontFace } from './font-hooks';
 
 export const sourceKeys = {
   all: ['sources'] as const,
@@ -275,6 +283,56 @@ export function useReplaceSourceFile() {
     mutationFn: ({ id, file }: { id: string; file: File }) =>
       replaceSourceFile(id, file),
     onSuccess: (source) => compress(source),
+    onError: (error) => toast.error(toCreateErrorMessage(error)),
+    onSettled: () => invalidateAfterSourceChange(queryClient),
+  });
+}
+
+/** Under the replace key: for a font, adding styles takes the place of replacing its file. */
+export function useAddFontFaces() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: REPLACE_MUTATION_KEY,
+    mutationFn: ({ id, files }: { id: string; files: File[] }) =>
+      addFontFaces(id, files),
+    onSuccess: ({ error }) => {
+      if (error) toast.error(toCreateErrorMessage(error));
+    },
+    onError: (error) => toast.error(toCreateErrorMessage(error)),
+    onSettled: () => invalidateAfterSourceChange(queryClient),
+  });
+}
+
+export function useRemoveFontFace() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, storageKey }: { id: string; storageKey: string }) =>
+      removeFontFace(id, storageKey),
+    onSuccess: (_source, { storageKey }) => unloadFontFace(storageKey),
+    onError: (error) => toast.error(toCreateErrorMessage(error)),
+    onSettled: () => invalidateAfterSourceChange(queryClient),
+  });
+}
+
+export function useUpdateFontSample() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, text }: { id: string; text: string }) =>
+      updateFontSample(id, text),
+    onError: (error) => toast.error(toCreateErrorMessage(error)),
+    onSettled: () => invalidateAfterSourceChange(queryClient),
+  });
+}
+
+export function useUpdateFontCover() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, storageKey }: { id: string; storageKey: string }) =>
+      updateFontCover(id, storageKey),
     onError: (error) => toast.error(toCreateErrorMessage(error)),
     onSettled: () => invalidateAfterSourceChange(queryClient),
   });

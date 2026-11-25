@@ -6,6 +6,8 @@ import type {
   ExportManifestSource,
 } from '#/features/export/export.type';
 import { EXPORT_MANIFEST_NAME } from '#/features/export/export-manifest';
+import { groupFontFiles, MAX_FONT_BYTES } from '#/features/sources/font-source';
+import type { FontSourceContent } from '#/features/sources/font-source.type';
 import type { Source } from '#/features/sources/source-types';
 import {
   detectFileKind,
@@ -72,18 +74,26 @@ function toManifestPlan(
   const items = newSources.flatMap((source): ImportItem[] => {
     const file = findFile(source, filesByPath, 'media');
     const text = source.kind === 'text' ? findText(source, filesByPath) : null;
+    // A style whose file is gone is left out; the rest of the family still imports.
+    const fonts = findFontFaces(source, filesByPath, newId);
     // A website is still a working link, and a text still has its words, without a thumbnail.
     const isMissing =
       source.kind === 'text'
         ? text === null
-        : !file && source.kind !== 'website';
+        : source.kind === 'font'
+          ? fonts === null
+          : !file && source.kind !== 'website';
     if (isMissing) return [];
+    const record = toSourceRecord(source, file, knownCollectionIds, newId);
     return [
       {
         kind: 'record',
         file,
         text,
-        source: toSourceRecord(source, file, knownCollectionIds, newId),
+        fontFiles: fonts?.files ?? [],
+        source: fonts
+          ? { ...record, font: fonts.font, sizeBytes: sumSize(fonts.files) }
+          : record,
       },
     ];
   });
@@ -115,6 +125,49 @@ function findFile(
     .filter((entry) => entry.role === role)
     .flatMap((entry) => filesByPath.get(toPathKey(entry.path)) ?? []);
   return copies[0] ?? null;
+}
+
+// *** findFontFaces ***
+// `null` when the source is not a font, or none of its files came along.
+function findFontFaces(
+  source: ExportManifestSource,
+  filesByPath: Map<string, File>,
+  newId: () => string,
+): { font: FontSourceContent; files: File[] } | null {
+  if (source.kind !== 'font' || !source.font) return null;
+
+  const found = source.font.faces.flatMap((face, index) => {
+    const file = source.files
+      .filter((entry) => entry.role === 'font' && entry.face === index)
+      .flatMap((entry) => filesByPath.get(toPathKey(entry.path)) ?? [])
+      .at(0);
+    return file
+      ? [
+          {
+            index,
+            file,
+            face: { ...face, storageKey: newId(), sizeBytes: file.size },
+          },
+        ]
+      : [];
+  });
+  if (found.length === 0) return null;
+
+  const cover = found.find(({ index }) => index === source.font?.coverFace);
+  return {
+    font: {
+      family: source.font.family,
+      sample: source.font.sample,
+      coverFace: cover?.face.storageKey ?? null,
+      faces: found.map(({ face }) => face),
+    },
+    files: found.map(({ file }) => file),
+  };
+}
+
+// *** sumSize ***
+function sumSize(files: File[]): number {
+  return files.reduce((sum, file) => sum + file.size, 0);
 }
 
 // *** findText ***
@@ -196,6 +249,7 @@ function toFolderPlan(
 ): ImportPlan {
   const visible = files.filter(({ path }) => !isHidden(path));
   const media = visible.filter(({ file }) => isImportableFile(file));
+  const isFont = ({ file }: ImportFile) => detectFileKind(file) === 'font';
   // Shortest first, so each parent gets its id before its children.
   const folders = [...new Set(media.flatMap(({ path }) => toFolderChain(path)))]
     .sort((first, second) => toDepth(first) - toDepth(second))
@@ -214,14 +268,40 @@ function toFolderPlan(
       updatedAt: timestamp,
       deletedAt: null,
     })),
-    items: media.map(({ path, file }) => ({
-      kind: 'file',
-      file,
-      collectionId: folderIds.get(toParentPath(path)) ?? null,
-    })),
+    items: [
+      ...media
+        .filter((item) => !isFont(item))
+        .map(({ path, file }): ImportItem => ({
+          kind: 'file',
+          file,
+          collectionId: folderIds.get(toParentPath(path)) ?? null,
+        })),
+      ...toFontItems(media.filter(isFont), folderIds),
+    ],
     existingCount: 0,
     skippedCount: visible.length - media.length,
   };
+}
+
+// *** toFontItems ***
+// Font files in one folder that share a family become one source, like a drop.
+function toFontItems(
+  fonts: ImportFile[],
+  folderIds: Map<string, string>,
+): ImportItem[] {
+  const folders = [...new Set(fonts.map(({ path }) => toParentPath(path)))];
+
+  return folders.flatMap((folder) =>
+    groupFontFiles(
+      fonts
+        .filter(({ path }) => toParentPath(path) === folder)
+        .map(({ file }) => file),
+    ).map((group): ImportItem => ({
+      kind: 'font',
+      group,
+      collectionId: folderIds.get(folder) ?? null,
+    })),
+  );
 }
 
 // *** isHidden ***
@@ -234,7 +314,12 @@ function isHidden(path: string): boolean {
 // The same rules `createSource` checks, so a file that would fail is counted as skipped instead.
 function isImportableFile(file: File): boolean {
   const kind = detectFileKind(file);
-  const maxBytes = kind === 'text' ? MAX_TEXT_BYTES : MAX_FILE_BYTES;
+  const maxBytes =
+    kind === 'text'
+      ? MAX_TEXT_BYTES
+      : kind === 'font'
+        ? MAX_FONT_BYTES
+        : MAX_FILE_BYTES;
 
   return kind !== null && file.size > 0 && file.size <= maxBytes;
 }

@@ -4,6 +4,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 
 import { cn } from '@repo/ui/cn';
 
+import { MAX_FONT_MB } from '#/features/sources/font-source';
 import { useSourceDropzone } from '#/features/sources/hooks/source-interaction-hooks';
 import { MAX_FILE_MB } from '#/features/sources/source-types';
 
@@ -62,7 +63,8 @@ export function SourceDropZone({
             {toDropTitle(label, count)}
           </p>
           <p className="mt-1 t-b-3 text-muted-fg">
-            Images, videos and .txt or .md files, up to {MAX_FILE_MB} MB
+            Images, videos, text and fonts, up to {MAX_FILE_MB} MB (fonts{' '}
+            {MAX_FONT_MB} MB)
           </p>
         </div>
       </div>

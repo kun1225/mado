@@ -136,6 +136,7 @@ describe('buildImportPlan with library.json', () => {
         kind: 'record',
         file: hero.file,
         text: null,
+        fontFiles: [],
         source: {
           id: 's1',
           name: 'hero',
@@ -372,6 +373,7 @@ describe('buildImportPlan with text sources', () => {
         kind: 'record',
         file: null,
         text: { file: brief.file, format: 'markdown', fileName: 'brief.md' },
+        fontFiles: [],
         source: expect.objectContaining({
           id: 't1',
           name: 'Brief',
@@ -568,5 +570,49 @@ describe('buildImportPlan with text files in a plain folder', () => {
 
     expect(plan.items).toEqual([]);
     expect(plan.skippedCount).toBe(1);
+  });
+});
+
+describe('buildImportPlan with font files in a plain folder', () => {
+  it('groups a family in one folder into one item', () => {
+    const plan = buildImportPlan({
+      files: [
+        file('Type/Inter-Regular.woff2', 'font/woff2'),
+        file('Type/Inter-Bold.woff2', ''),
+        file('Type/Sub/Inter-Black.woff2', ''),
+        file('Type/logo.png', 'image/png'),
+      ],
+      manifest: null,
+      existing: NO_IDS,
+      newId: counter(),
+      now: NOW,
+    });
+
+    expect(
+      plan.items.map((item) => {
+        if (item.kind === 'font') {
+          return [item.kind, item.collectionId, item.group.files.length];
+        }
+        return item.kind === 'file' ? [item.kind, item.collectionId] : [];
+      }),
+    ).toEqual([
+      ['file', 'id-1'],
+      ['font', 'id-1', 2],
+      ['font', 'id-2', 1],
+    ]);
+  });
+
+  it('skips a font over the font limit', () => {
+    const big = new File([new Uint8Array(30 * 1024 * 1024 + 1)], 'Big.ttf');
+
+    const plan = buildImportPlan({
+      files: [{ path: 'Type/Big.ttf', file: big }],
+      manifest: null,
+      existing: NO_IDS,
+      newId: counter(),
+      now: NOW,
+    });
+
+    expect(plan).toMatchObject({ items: [], skippedCount: 1 });
   });
 });

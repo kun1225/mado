@@ -4,6 +4,7 @@ import {
   Image01FreeIcons,
   Link01Icon,
   NoteAddIcon,
+  TextFontIcon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
@@ -26,11 +27,14 @@ import {
   useIsCreatingSources,
 } from '#/features/sources/hooks/source-hooks';
 import { usePasteSource } from '#/features/sources/hooks/source-interaction-hooks';
-import { ACCEPTED_FILE_TYPES } from '#/features/sources/source-media';
+import {
+  ACCEPTED_FILE_TYPES,
+  FONT_INPUT_ACCEPT,
+} from '#/features/sources/source-media';
 import { toNoteFile } from '#/features/sources/text-source';
 
 import { MarkdownNoteDialog } from './action-dock-markdown-dialog';
-import { FLOATING_SURFACE } from '.';
+import { FLOATING_SURFACE } from './action-dock-surface';
 
 const ACTIONS = [
   {
@@ -50,6 +54,12 @@ const ACTIONS = [
     label: 'Add markdown',
     hint: 'Write a note',
     icon: NoteAddIcon,
+  },
+  {
+    key: 'font',
+    label: 'Add font',
+    hint: 'TTF, OTF, WOFF',
+    icon: TextFontIcon,
   },
 ] as const;
 
@@ -113,6 +123,7 @@ export function ActionDockAddSource({
   collectionId: string | null;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fontInputRef = useRef<HTMLInputElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const { mutate: createSources, isPending: isSavingNote } = useCreateSources();
@@ -170,6 +181,7 @@ export function ActionDockAddSource({
   function handleAction(key: ActionKey) {
     setOpen(false);
     if (key === 'image') fileInputRef.current?.click();
+    else if (key === 'font') fontInputRef.current?.click();
     else if (key === 'website') setWebsiteDialogOpen(true);
     else setMarkdownDialogOpen(true);
   }
@@ -196,6 +208,15 @@ export function ActionDockAddSource({
         type="file"
         multiple
         accept={ACCEPTED_FILE_TYPES}
+        onChange={handleFilesSelected}
+        className="hidden"
+      />
+      {/* Its own input, so the picker shows only fonts and a whole family can be picked at once. */}
+      <input
+        ref={fontInputRef}
+        type="file"
+        multiple
+        accept={FONT_INPUT_ACCEPT}
         onChange={handleFilesSelected}
         className="hidden"
       />

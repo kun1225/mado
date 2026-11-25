@@ -8,7 +8,8 @@ export const EXPORT_MANIFEST_FORMAT = 'mado-export';
 
 // Raise this when the shape changes, so a future import can still read old exports.
 // 2: text sources (the `text` kind and file role).
-export const EXPORT_MANIFEST_VERSION = 2;
+// 3: font sources (the `font` kind and file role, and `face` on a font file).
+export const EXPORT_MANIFEST_VERSION = 3;
 
 /**
  * Export builds `library.json` with this schema and import checks it.
@@ -35,7 +36,7 @@ export const exportManifestSchema = z.object({
     z.object({
       id: z.string(),
       name: z.string(),
-      kind: z.enum(['image', 'video', 'website', 'text']),
+      kind: z.enum(['image', 'video', 'website', 'text', 'font']),
       url: z.string().nullable(),
       note: z.string().nullable(),
       tags: z.array(z.string()),
@@ -66,6 +67,22 @@ export const exportManifestSchema = z.object({
           fileName: z.string(),
         })
         .optional(),
+      /** `coverFace` and each file's `face` are indexes into `faces`, since storage keys stay on the device. */
+      font: z
+        .object({
+          family: z.string(),
+          sample: z.string().nullable(),
+          coverFace: z.number().int().min(0).nullable(),
+          faces: z.array(
+            z.object({
+              fileName: z.string(),
+              mimeType: z.string(),
+              weight: z.union([z.number(), z.tuple([z.number(), z.number()])]),
+              style: z.enum(['normal', 'italic']),
+            }),
+          ),
+        })
+        .optional(),
       fileName: z.string(),
       mimeType: z.string(),
       sizeBytes: z.number(),
@@ -78,7 +95,8 @@ export const exportManifestSchema = z.object({
       files: z.array(
         z.object({
           path: z.string(),
-          role: z.enum(['media', 'shortcut', 'text']),
+          role: z.enum(['media', 'shortcut', 'text', 'font']),
+          face: z.number().int().min(0).optional(),
         }),
       ),
     }),

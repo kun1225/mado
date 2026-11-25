@@ -72,7 +72,40 @@ const SOURCES: Source[] = [
 const FILE_BYTES: Record<string, string> = {
   'key-brief': 'cover bytes',
   'key-hero': 'hero bytes',
+  'key-regular': 'regular bytes',
+  'key-bold': 'bold bytes',
 };
+
+const FONT_SOURCE = buildSource({
+  id: 'type',
+  name: 'Brand type',
+  collectionIds: ['c1'],
+  kind: 'font',
+  sizeBytes: 'regular bytes'.length + 'bold bytes'.length,
+  font: {
+    family: 'Inter',
+    sample: 'Warm and slow',
+    coverFace: 'key-bold',
+    faces: [
+      {
+        storageKey: 'key-regular',
+        fileName: 'Inter-Regular.woff2',
+        mimeType: 'font/woff2',
+        sizeBytes: 'regular bytes'.length,
+        weight: 400,
+        style: 'normal',
+      },
+      {
+        storageKey: 'key-bold',
+        fileName: 'Inter-Bold.woff2',
+        mimeType: 'font/woff2',
+        sizeBytes: 'bold bytes'.length,
+        weight: 700,
+        style: 'normal',
+      },
+    ],
+  },
+});
 
 function buildCollection(
   overrides: Partial<Collection> & { id: string },
@@ -114,14 +147,13 @@ function buildSource(overrides: Partial<Source> & { id: string }): Source {
 /** What the user gets after unzipping the export and picking the folder. */
 function exportAsPickedFiles(
   edit: (path: string, text: string) => string = (_path, text) => text,
+  sources: Source[] = SOURCES,
 ): File[] {
-  const layout = buildExportLayout(COLLECTIONS, SOURCES, new Date(2026, 9, 27));
+  const layout = buildExportLayout(COLLECTIONS, sources, new Date(2026, 9, 27));
   const files = layout.files.map((file) => {
     const path = `${layout.rootName}/${file.path}`;
     const content =
-      file.kind === 'media'
-        ? FILE_BYTES[file.storageKey]
-        : edit(file.path, file.text);
+      'text' in file ? edit(file.path, file.text) : FILE_BYTES[file.storageKey];
     return pickedFile(path, content);
   });
 
@@ -260,5 +292,81 @@ describe('export, then import into an empty library', () => {
     const result = await importLibrary(files, () => {});
 
     expect(result).toMatchObject({ sourceCount: 2, failedCount: 1 });
+  });
+});
+
+describe('export, then import a font', () => {
+  it('brings back every style, the sentence and the cover style', async () => {
+    const result = await importLibrary(
+      exportAsPickedFiles(undefined, [FONT_SOURCE]),
+      () => {},
+    );
+
+    expect(result).toMatchObject({ sourceCount: 1, skippedCount: 0 });
+    const [imported] = await readSources();
+    const faces = imported.font?.faces ?? [];
+    expect(imported).toMatchObject({
+      name: 'Brand type',
+      kind: 'font',
+      storageKey: null,
+      sizeBytes: FONT_SOURCE.sizeBytes,
+      font: { family: 'Inter', sample: 'Warm and slow' },
+    });
+    expect(faces.map(({ fileName, weight }) => [fileName, weight])).toEqual([
+      ['Inter-Regular.woff2', 400],
+      ['Inter-Bold.woff2', 700],
+    ]);
+    // New keys, so the import can't touch another source's file.
+    expect(faces[0].storageKey).not.toBe('key-regular');
+    expect(imported.font?.coverFace).toBe(faces[1].storageKey);
+    expect(await storedFiles.get(faces[1].storageKey)?.text()).toBe(
+      'bold bytes',
+    );
+  });
+
+  it('leaves out a style whose file is gone', async () => {
+    const files = exportAsPickedFiles(undefined, [FONT_SOURCE]).filter(
+      (file) => file.name !== 'Inter-Bold.woff2',
+    );
+
+    await importLibrary(files, () => {});
+
+    const [imported] = await readSources();
+    expect(imported.font?.faces).toHaveLength(1);
+    expect(imported.font?.coverFace).toBeNull();
+    expect(imported.sizeBytes).toBe('regular bytes'.length);
+  });
+});
+
+describe('import a plain folder with fonts', () => {
+  it('keeps the good styles and counts a broken one as failed', async () => {
+    // jsdom has no FontFace. A file whose text is "broken" fails like a bad font.
+    vi.stubGlobal(
+      'FontFace',
+      class {
+        constructor(
+          readonly family: string,
+          private readonly data: ArrayBuffer,
+        ) {}
+        load() {
+          return new TextDecoder().decode(this.data) === 'broken'
+            ? Promise.reject(new Error('bad font'))
+            : Promise.resolve(this);
+        }
+      },
+    );
+
+    const result = await importLibrary(
+      [
+        pickedFile('Fonts/Inter-Regular.woff2', 'font'),
+        pickedFile('Fonts/Inter-Bold.woff2', 'broken'),
+      ],
+      () => {},
+    );
+
+    const [imported] = await readSources();
+    expect(result).toMatchObject({ sourceCount: 1, failedCount: 1 });
+    expect(imported.font?.faces).toHaveLength(1);
+    vi.unstubAllGlobals();
   });
 });

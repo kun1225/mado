@@ -1,6 +1,8 @@
 import type { Collection } from '#/features/collections/collection-types';
 import type { ExportManifest } from '#/features/export/export.type';
 import { exportManifestSchema } from '#/features/export/export-manifest';
+import { createFontSource } from '#/features/sources/font-actions';
+import type { FontSourceResult } from '#/features/sources/font-source.type';
 import { createSource } from '#/features/sources/source-actions';
 import {
   deleteMediaFile,
@@ -45,7 +47,10 @@ export async function importLibrary(
   let failedCount = 0;
   for (const [index, item] of plan.items.entries()) {
     try {
-      saved.push(await saveItem(item));
+      const { source, error } = await saveItem(item);
+      saved.push(source);
+      // A font family saves with some styles skipped; count it like a failed file.
+      if (error !== undefined) throw error;
     } catch (error) {
       // Every later file would fail the same way.
       if (isQuotaError(error)) throw error;
@@ -120,27 +125,45 @@ async function saveCollections(collections: Collection[]): Promise<void> {
 }
 
 // *** saveItem ***
-async function saveItem(item: ImportItem): Promise<Source> {
+async function saveItem(item: ImportItem): Promise<FontSourceResult> {
   if (item.kind === 'file') {
-    return createSource({ file: item.file, collectionId: item.collectionId });
+    const source = await createSource({
+      file: item.file,
+      collectionId: item.collectionId,
+    });
+    return { source, error: undefined };
+  }
+  if (item.kind === 'font') {
+    return createFontSource(item.group, item.collectionId);
   }
 
-  const { file } = item;
+  const { file, fontFiles } = item;
   // Read before writing the thumbnail, so a broken text leaves no file behind.
   const source: Source = item.text
     ? { ...item.source, text: await readImportText(item.text) }
     : item.source;
-  if (file && source.storageKey) await writeMediaFile(source.storageKey, file);
+  const faces = source.font?.faces ?? [];
+  const written: string[] = [];
 
   try {
+    // Tracked before each write, since a failed write can leave a partial file.
+    if (file && source.storageKey) {
+      written.push(source.storageKey);
+      await writeMediaFile(source.storageKey, file);
+    }
+    for (const [index, face] of faces.entries()) {
+      written.push(face.storageKey);
+      await writeMediaFile(face.storageKey, fontFiles[index]);
+    }
     // `addSource`, not a put: another tab may have saved this id since we checked.
     await getLibraryStore().addSource(source);
   } catch (error) {
-    if (source.storageKey) await deleteMediaFile(source.storageKey);
+    // Settled, so a failed cleanup never hides why the save failed.
+    await Promise.allSettled(written.map((key) => deleteMediaFile(key)));
     throw new Error(`Failed to save "${source.name}".`, { cause: error });
   }
 
-  return source;
+  return { source, error: undefined };
 }
 
 // *** readImportText ***

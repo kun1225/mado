@@ -5,6 +5,14 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { Button } from '@repo/ui/button';
 import { cn } from '@repo/ui/cn';
 
+import {
+  DEFAULT_FONT_SAMPLE,
+  FONT_CARD_RATIO,
+  toCoverFace,
+  toFontFaceStyle,
+} from '#/features/sources/font-source';
+import type { FontSourceContent } from '#/features/sources/font-source.type';
+import { useFontFaces } from '#/features/sources/hooks/font-hooks';
 import { useMediaObjectUrl } from '#/features/sources/hooks/source-hooks';
 import type { ToggleSelectOptions } from '#/features/sources/hooks/source-interaction-hooks';
 import type {
@@ -16,6 +24,8 @@ import { toTextCardTitle } from '#/features/sources/text-source';
 import type { TextSourceContent } from '#/features/sources/text-source.type';
 import { useInView } from '#/hooks/use-in-view';
 import { usePrefersReducedMotion } from '#/hooks/use-prefers-reduced-motion';
+
+import { SourceFontFooter } from './source-font-footer';
 
 // One screen above and below, so media is ready before it scrolls in.
 // Outside this box a card is "far" and its media unmounts.
@@ -51,8 +61,11 @@ export function SourceCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const isNear = useInView(cardRef, NEAR_VIEWPORT);
 
-  const aspectRatio =
-    source.width && source.height ? source.width / source.height : 1;
+  const aspectRatio = source.font
+    ? FONT_CARD_RATIO
+    : source.width && source.height
+      ? source.width / source.height
+      : 1;
 
   // The detail dialog flies from this box, so it holds only the media, never the caption below.
   const frameProps = {
@@ -131,6 +144,9 @@ export function SourceCard({
     );
   }
 
+  // A font card's footer already shows its name, so the hover caption would cover it twice.
+  if (source.font) return <figure {...frameProps}>{frame}</figure>;
+
   return (
     <figure {...frameProps}>
       {frame}
@@ -194,6 +210,12 @@ function SourceCardBody({
   isNear: boolean;
   isCompressing: boolean;
 }) {
+  if (source.font) {
+    return (
+      <SourceCardFontTile source={source} font={source.font} isNear={isNear} />
+    );
+  }
+
   if (source.text) {
     return (
       <SourceCardTextTile
@@ -211,6 +233,44 @@ function SourceCardBody({
       isNear={isNear}
       isCompressing={isCompressing}
     />
+  );
+}
+
+// *** SourceCardFontTile ***
+/**
+ * White with a hairline, a fixed shape, the sentence centered and a footer: a
+ * text card is muted paper that grows with its text, so the two never look alike.
+ * Only the cover style loads, and only near the screen.
+ */
+function SourceCardFontTile({
+  source,
+  font,
+  isNear,
+}: {
+  source: Source;
+  font: FontSourceContent;
+  isNear: boolean;
+}) {
+  const cover = toCoverFace(font);
+  const { family, failed } = useFontFaces(source.id, [cover], isNear);
+  const sentence = font.sample ?? DEFAULT_FONT_SAMPLE;
+
+  return (
+    <div className="absolute inset-0 flex flex-col rounded-md border border-border bg-white text-fg dark:bg-bg">
+      {/* The app font stands in while loading, so the card never changes shape. */}
+      <div className="flex min-h-0 flex-1 items-center px-5">
+        <p
+          style={family ? toFontFaceStyle(family, cover) : undefined}
+          className={cn(
+            'line-clamp-3 py-[0.15em] text-pretty wrap-break-word',
+            sentence.length > 40 ? 't-h-7' : 't-h-5',
+          )}
+        >
+          {sentence}
+        </p>
+      </div>
+      <SourceFontFooter name={source.name} font={font} failed={failed} />
+    </div>
   );
 }
 

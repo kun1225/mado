@@ -1,5 +1,6 @@
 import type { Collection } from '#/features/collections/collection-types';
 import type { ExportManifest } from '#/features/export/export.type';
+import type { FontSourceGroup } from '#/features/sources/font-source.type';
 import type { Source } from '#/features/sources/source-types';
 import type { TextSourceFormat } from '#/features/sources/text-source.type';
 
@@ -32,8 +33,10 @@ export type ImportTextFile = {
 
 /**
  * `record` comes from `library.json` and keeps its id. `file` is its media or
- * thumbnail, `text` is the body of a text source.
- * `file` comes from a plain folder and goes through `createSource`.
+ * thumbnail, `text` is the body of a text source, and `fontFiles[i]` is the
+ * file of `source.font.faces[i]`.
+ * `file` comes from a plain folder and goes through `createSource`, and
+ * `font` is a family of loose font files from one folder.
  */
 export type ImportItem =
   | {
@@ -41,8 +44,10 @@ export type ImportItem =
       source: Source;
       file: File | null;
       text: ImportTextFile | null;
+      fontFiles: File[];
     }
-  | { kind: 'file'; file: File; collectionId: string | null };
+  | { kind: 'file'; file: File; collectionId: string | null }
+  | { kind: 'font'; group: FontSourceGroup; collectionId: string | null };
 
 export type ImportPlan = {
   collections: Collection[];

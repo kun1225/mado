@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A source is one saved piece of inspiration: an image, a video, a website, or a text (`.txt`, `.md`).
+A source is one saved piece of inspiration: an image, a video, a website, a text (`.txt`, `.md`), or a font family (`.ttf`, `.otf`, `.woff`, `.woff2`).
 Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 
 **Depends on:** `storage`, `collections`. **Used by:** `collections`, `search`, `export`, `import`. See `apps/web/ARCHITECTURE.md`.
@@ -14,14 +14,14 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - Drop files on the library or on a collection card to add them there. Many files at once is fine; each one saves on its own, so one bad file does not lose the others.
 - While files are dragged over the library or a collection's grid, the grid shrinks a little behind a frosted veil that spans the full page width (the grid bleeds to the page edge), and a card in the middle of the visible part says "Add 3 files to Library" (or "Drop to add to …" for one file) with the size limit. With reduced motion on, nothing scales; the veil and card only fade.
 - Pasting a file or a URL adds it, unless the focus is in a text field.
-- Only images, videos and text files (`.txt`, `.md`, `.markdown`), up to `MAX_FILE_MB`. Text files are limited to `MAX_TEXT_MB` (1 MB).
+- Only images, videos, text files (`.txt`, `.md`, `.markdown`) and fonts (`.ttf`, `.otf`, `.woff`, `.woff2`), up to `MAX_FILE_MB`. Text files are limited to `MAX_TEXT_MB` (1 MB), font files to `MAX_FONT_MB` (30 MB).
 - SVG is an image. The card takes its shape from the size the browser reports, which comes from `width`/`height`, or from `viewBox` when they are missing. An SVG with none of them gets the browser default of 300×150.
 - The kind comes from the MIME type, then the extension: many systems give `.md` no type. Other `text/*` files (HTML, CSV, code) are rejected.
 - A pasted URL becomes a website source with a preview. An X/Twitter post that has a video becomes a video source instead. If that download fails, it stays a website.
 - While the preview loads, a card with the site's domain and the same spinner overlay as "Optimizing" sits first in the grid, at the OG image ratio (1200×630), because most website thumbnails are OG images and the real card lands in the same box. The pending card gets the id the source will be saved with, so the real card takes its grid slot and the grid does not move twice. It shows only where the site is going: the Library, or that collection. The URL dialog closes at once, since the card shows the wait.
 - If the preview fails, the toast says why: the server cannot be reached, the link is not valid, the link points to a private or local address, or the website could not be loaded.
 - A whole folder can be imported from Settings → Data (see `import.spec.md`).
-- The plus button in the dock opens a panel as wide as the dock, with **Add file**, **Add website** and **Add markdown**. Its top line says where new sources go ("Add to Library" or the collection name). It springs open like the search panel; with reduced motion it only fades. Escape or a click outside closes it.
+- The plus button in the dock opens a panel as wide as the dock, with **Add file**, **Add website**, **Add markdown** and **Add font**. **Add font**'s picker shows only font files and takes many at once. **Add file** takes fonts too. Its top line says where new sources go ("Add to Library" or the collection name). It springs open like the search panel; with reduced motion it only fades. Escape or a click outside closes it.
 - The plus menu has **Add markdown**: a dialog with an optional title and a text box. It saves a text source in the current collection. **Add markdown** is disabled while the text is empty, and over 1 MB it shows the limit. Cmd/Ctrl+Enter saves. If saving fails, the dialog keeps the text.
 
 ### Selecting and deleting
@@ -36,6 +36,21 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **Detail dialog:** a paper sheet that scrolls. Markdown is drawn with GFM (tables, task lists); plain text keeps its line breaks. Raw HTML shows as text and never runs. Links open in a new tab with `rel="noreferrer"`. Remote images are never loaded; they show as a link with their alt text.
 - **Editing:** the Edit button or <kbd>E</kbd> turns the sheet into a text box with the raw text. Save with the button or <kbd>⌘/Ctrl+S</kbd>. Empty text or text over 1 MB can't be saved. With unsaved changes, Cancel, closing and moving to another source ask "Discard your changes?". Saving changes only the body, never the name, note, link or collections.
 - **Download** gives the text file, not the thumbnail.
+
+### Font sources
+
+- **One source per family.** Font files added together (one drop, one pick, one paste, or one folder in an import) are grouped by the family in their file name, ignoring case. Each group becomes one source with one file per style.
+- **The name is all we read.** `Inter-SemiBoldItalic.woff2` → family "Inter", weight 600, italic. Weight words: Thin/Hairline 100, ExtraLight/UltraLight 200, Light 300, Regular/Book/Normal 400, Medium 500, SemiBold/DemiBold 600, Bold 700, ExtraBold/UltraBold/Heavy 800, Black 900, at the end of the name, with or without `-`, `_` or a space. A word only counts when it starts a word, so "Kobold" stays "Kobold". `[wght]`, `Variable` or `VF` makes a variable font covering 100–900. No weight word means 400.
+- **Checks:** each file must load with the browser's `FontFace`. A file that doesn't, a file over 30 MB, or a second file for the same weight and style is skipped with a toast; the others still save. If no file in a group saves, no source is made. `.ttc` collections are not accepted.
+- The record keeps `font: { family, sample, coverFace, faces }`. Each face is `{ storageKey, fileName, mimeType, sizeBytes, weight, style }` with its own file in OPFS. The top-level `storageKey` is `null`, so compression, colors and replace skip fonts on their own. `sizeBytes` is the sum of the faces.
+- Each source's faces are loaded into `document.fonts` under one family name, `mado-font-<sourceId>`, with weight and style descriptors, so the browser picks the file from `font-weight` and `font-style`.
+- **Card:** white with a hairline border (the page color in dark mode), a fixed 4:3 shape, the cover sentence centered in the cover style, at most 3 lines, and a footer in the app font: the name, "N styles" and one bar per weight, thin to thick. No hover caption: the footer already shows the name. Only the cover style's file loads, and only near the screen. Until it loads, the sentence is in the app font, so the card never changes shape. If it can't load, the footer says "Can't show this font".
+- **Cover:** `sample` is the sentence (empty means "The quick brown fox jumps over the lazy dog", up to 200 characters). `coverFace` is the style that draws it; `null`, or a style that was removed, means the style closest to Regular, upright first.
+- **Detail dialog ("Poster"):** the card itself grows into the viewer, the biggest 4:3 that fits, and the FLIP flies it from its card (anchor center). Under it a switch shows **Cover**, **Waterfall** (12–72 px) or **Glyphs** (A–Z, a–z, 0–9 and signs), all in the cover style. The switch starts on Cover each time.
+- **Sidebar, under Details:** **Cover sentence**, a text box. The poster follows each key; it saves on blur. Escape undoes the edit; with nothing to undo, Escape closes the dialog. Then **Cover style**: one row per style, drawn in its own style. Picking a row saves it as the cover at once. Each row's `⋯` menu downloads that style or removes it, after a question, since its file is deleted for good. The last style can't be removed. **+ Add styles** opens the font picker.
+- **Adding styles:** the toolbar's **Add styles** button, the **+ Add styles** row, or a drop on the viewer. The new files join this family whatever their family name says. A style the font already has is skipped.
+- **Download:** one style gives its file; more give `<family>.zip`.
+- A font can't be replaced, and a font file can't replace another source's file.
 
 ### Detail panel order
 
@@ -133,6 +148,12 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **2026-10 — Plain editing, not a rich editor.** A text box with the raw Markdown keeps the file the user downloads exactly as they typed it. A rich editor is a big dependency and can change the Markdown when it writes it back.
 - **2026-10 — Markdown with `react-markdown` + `remark-gfm`, without `rehype-raw`.** It never turns raw HTML into elements and drops `javascript:` links, so no sanitizer is needed.
 - **2026-10 — Thumbnails can be videos.** The card, panel and viewer pick `<video>` or `<img>` from the thumbnail's `mimeType`, not from the source's kind.
+- **2026-11 — Fonts are one source per family, grouped by file name.** Designers think in families, and a card per weight would flood the grid. No font parser: the file name is enough for most fonts, and the user can fix a name. Rejected: joining a later drop to an existing family by name, because two different fonts can share a name like "Display".
+- **2026-11 — A font's cover is a sentence the user can change, drawn in a style the user can pick.** No thumbnail and no image replacement: the letters are the point.
+- **2026-11 — The font card is white, fixed 4:3, centered, with a footer; a text card is muted paper that grows.** Both show a sentence in a serif, so the font card needs a look that tells it apart without hovering. Rejected: an "Aa" badge, which covers the sentence.
+- **2026-11 — The font viewer is "Poster", picked from a prototype round.** The card grows into the viewer like an image, so the FLIP is clean, and editing lives in the sidebar. Rejected: "Sheet" (a paper sheet with the sentence edited in place: too close to a text source) and "Tester" (one row per style: long sentences were cut, and a 1-style font looked empty).
+- **2026-11 — Font files are checked by loading them with `FontFace`.** It is the only check that the browser can draw the file, and it needs no parser.
+- **2026-11 — Adding styles to a font uses the replace drop zone and mutation key.** A font has no file to replace, so the same toolbar button, drop overlay and busy state do the job.
 - **2026-11 — The "Below" caption sits outside the `data-source-card` box.** The detail dialog flies from that box, so it must hold only the media. In "On hover" the `<figure>` is still that box. In "Below" it wraps the box and a `<figcaption>`, because a figcaption must be a direct child of its figure.
 - **2026-11 — The caption uses the app font, not the serif "Fig." style** from the bookshelf prototype. A name under every card is UI, not book content.
 - **2026-11 — The user's own tag groups replace the five fixed facets.** Users found a fixed list and a long starter menu in the way. Groups live in the tag string (`group:name`), so there is still no new store, and moving a tag rewrites it on every source in one locked save. A group exists while a tag uses it, so there are no empty groups to store. Old tags made with facets were not converted: there were no users yet. Rejected: a groups table with ids (a new store, a migration, and an agent would have to look up ids).
@@ -145,6 +166,13 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 - **2026-10 — Tags are removed from the UI.** A source can be in many collections, so tags were a second way to group the same things, and nothing read them (no search, no filter). The `tags` field stays on the record, always `[]` for new sources, so old data and old exports still load without a migration. Bring tags back only with a way to use them, such as filtering inside a collection.
 
 ## Known gaps
+
+- Fonts: the family, weight and style are guessed from the file name. `font-final-v2.otf` becomes the family "font-final-v2", and a wrong weight can't be changed in the app; remove the style and rename the file.
+- Fonts: a later drop never joins an existing family. Use **+ Add styles** on that font.
+- Fonts: variable fonts get 100–900; their real axes are not read, and there is no weight slider.
+- Fonts: loaded faces stay in `document.fonts` until reload, except a removed style. A huge CJK library could use a lot of memory.
+- Fonts: search results show a font with the website icon (the search list has no font icon yet).
+- Fonts: when sharing comes, sharing a paid font with a client may break its license.
 
 - Every card stays in the DOM. With many thousands of sources, the DOM itself gets slow. The fix is our own column math from the aspect ratios, rendering only visible cards.
 - While a file drag scales the grid, fixed elements inside it (like the selection bar) move with the grid until the drag ends.
@@ -162,7 +190,7 @@ Everything stays in the browser: the record in IndexedDB, the file in OPFS.
 
 ## Planned
 
-- **More file types** (see "More file types" in `docs/roadmap.md`). Text (`.txt`, `.md`) is done; font, PDF and voice come next.
+- **More file types** (see "More file types" in `docs/roadmap.md`). Text (`.txt`, `.md`) and fonts are done; PDF and voice come next.
 - **Text sources, later:** search inside the text, a way to remove a thumbnail, and files that are not UTF-8 (today they show broken letters).
 - **Drop a folder.** Dropping a folder on the library runs the same import as Settings → Data (see `import.spec.md`). It needs `webkitGetAsEntry` to read the folder from the drop.
 - **A more fun embed loading state.** While an embedded site loads in the detail dialog, show something friendly and human instead of a plain wait. Idea: two drawn eyes that look around, as if searching for the page.

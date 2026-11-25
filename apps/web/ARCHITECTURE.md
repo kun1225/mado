@@ -124,6 +124,19 @@ drop / paste / action dock
 
 A pasted URL goes `createWebsiteSource` → `fetchSitePreview` (API) → save the OG image or the X video.
 
+Font files take a side road inside `createSources`:
+
+```text
+createSources → split font files out → groupFontFiles (font-source.ts, family from the file name)
+  → createFontSource per family (font-actions.ts)
+      → per file: check size, load with FontFace, skip a repeated style → writeMediaFile under its own key
+      → put one record: kind 'font', storageKey null, font.faces[] with each key
+card / viewer → useFontFaces (font-hooks.ts) → readMediaFile → FontFace → document.fonts
+  family `mado-font-<sourceId>`, one face per style, loaded once per session
+sidebar → updateFontSample / updateFontCover / removeFontFace (inside withLibraryLock)
+dialog drop or "Add styles" → useReplaceSourceDropzone → addFontFaces (same busy key as replace)
+```
+
 ### Tags and the tag filter
 
 ```text

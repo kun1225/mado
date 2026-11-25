@@ -360,7 +360,7 @@ describe('buildExportLayout', () => {
     });
     // The file is the truth, so the body is not saved twice.
     expect(manifest.sources[0].text).not.toHaveProperty('body');
-    expect(manifest.version).toBe(2);
+    expect(manifest.version).toBe(3);
   });
 
   it('builds a manifest that import can read', () => {

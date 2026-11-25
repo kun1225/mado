@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { isFontFile, MAX_FONT_BYTES, MAX_FONT_MB } from './font-source';
+import type { FontSourceContent } from './font-source.type';
 import type { SiteSourcePreview } from './site-source.type';
 import { MAX_TAG_LENGTH, normalizeTag } from './source-tags';
 import { detectTextFormat, MAX_TEXT_BYTES, MAX_TEXT_MB } from './text-source';
@@ -9,8 +11,8 @@ export const MAX_FILE_MB = 512;
 
 export const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
 
-export const sourceKindSchema = z.enum(['image', 'video', 'text'], {
-  error: 'Only images, videos and text files are supported',
+export const sourceKindSchema = z.enum(['image', 'video', 'text', 'font'], {
+  error: 'Only images, videos, text and font files are supported',
 });
 
 /** The kinds a dropped file can become. */
@@ -24,6 +26,8 @@ export type MediaKind = 'image' | 'video';
 export function detectFileKind(
   file: Pick<File, 'name' | 'type'>,
 ): FileSourceKind | null {
+  // By name first: some systems label fonts `application/*`.
+  if (isFontFile(file)) return 'font';
   const [group] = file.type.split('/');
   if (group === 'image' || group === 'video') return group;
   return detectTextFormat(file) ? 'text' : null;
@@ -33,7 +37,7 @@ export function isVideoMimeType(mimeType: string): boolean {
   return mimeType.startsWith('video/');
 }
 
-const sourceFileSchema = z
+export const sourceFileSchema = z
   .instanceof(File)
   .refine((file) => file.size > 0, 'File is empty')
   .refine(
@@ -43,6 +47,10 @@ const sourceFileSchema = z
   .refine(
     (file) => detectFileKind(file) !== 'text' || file.size <= MAX_TEXT_BYTES,
     `Text files must be smaller than ${MAX_TEXT_MB}MB`,
+  )
+  .refine(
+    (file) => detectFileKind(file) !== 'font' || file.size <= MAX_FONT_BYTES,
+    `Font files must be smaller than ${MAX_FONT_MB}MB`,
   );
 
 export const newSourceSchema = z.object({
@@ -185,6 +193,8 @@ export type Source = {
   site?: SiteSourcePreview;
   /** The text lives in the record, and the media fields below describe its thumbnail. */
   text?: TextSourceContent;
+  /** Like text, the font lives in the record: `storageKey` is null and each style has its own file. */
+  font?: FontSourceContent;
   fileName: string;
   mimeType: string;
   sizeBytes: number;

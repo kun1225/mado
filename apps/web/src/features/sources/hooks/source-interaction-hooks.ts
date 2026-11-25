@@ -5,6 +5,7 @@ import { useDropzone } from 'react-dropzone';
 
 import { toast } from '@repo/ui/sonner';
 
+import { FONT_FILE_ACCEPT, MAX_FONT_MB } from '../font-source';
 import { detectPastedContent, isEditablePasteTarget } from '../source-media';
 import { parseTagList } from '../source-tags';
 import type { Source } from '../source-types';
@@ -16,6 +17,7 @@ import {
 import { TEXT_FILE_ACCEPT } from '../text-source';
 
 import {
+  useAddFontFaces,
   useCreateSources,
   useIsReplacingSource,
   useReplaceSourceFile,
@@ -323,7 +325,11 @@ export function usePasteSource(
 const MEDIA_ACCEPT: Record<string, string[]> = { 'image/*': [], 'video/*': [] };
 
 // react-dropzone also checks these extensions, so a `.md` with no type is let in.
-const DROP_ACCEPT = { ...MEDIA_ACCEPT, ...TEXT_FILE_ACCEPT };
+const DROP_ACCEPT = {
+  ...MEDIA_ACCEPT,
+  ...TEXT_FILE_ACCEPT,
+  ...FONT_FILE_ACCEPT,
+};
 
 export function useSourceDropzone(collectionId: string | null) {
   const { mutate: createSources } = useCreateSources();
@@ -385,11 +391,14 @@ function useIsDragOver() {
   };
 }
 
+/** A font has no file to replace, so a drop adds styles to it instead. */
 export function useReplaceSourceDropzone(source: Source | undefined) {
   const { mutate: replaceFile } = useReplaceSourceFile();
+  const { mutate: addFontFaces } = useAddFontFaces();
   const isBusy = useIsReplacingSource(source?.id) || source === undefined;
   // Only a text can take a new text; everything else takes an image or a video.
   const takesText = source?.kind === 'text';
+  const takesFonts = source?.kind === 'font';
 
   function handleDrop(files: File[], rejections: FileRejection[]) {
     if (isBusy) {
@@ -397,17 +406,25 @@ export function useReplaceSourceDropzone(source: Source | undefined) {
       return;
     }
     if (rejections.length > 0) {
-      toast.error(toReplaceRejectionMessage(takesText));
+      toast.error(
+        takesFonts
+          ? `Only font files up to ${MAX_FONT_MB}MB can be added here.`
+          : toReplaceRejectionMessage(takesText),
+      );
     }
-    if (files.length > 0) {
-      replaceFile({ id: source.id, file: files[0] });
-    }
+    if (files.length === 0) return;
+    if (takesFonts) addFontFaces({ id: source.id, files });
+    else replaceFile({ id: source.id, file: files[0] });
   }
 
   const { getRootProps, getInputProps, open, isDragActive } = useDropzone({
-    accept: takesText ? DROP_ACCEPT : MEDIA_ACCEPT,
+    accept: takesFonts
+      ? FONT_FILE_ACCEPT
+      : takesText
+        ? DROP_ACCEPT
+        : MEDIA_ACCEPT,
     maxSize: MAX_FILE_BYTES,
-    multiple: false,
+    multiple: takesFonts,
     // Not `disabled`: that removes the drag handlers, so the drop would reach the library zone.
     onDrop: handleDrop,
     noClick: true,
@@ -469,7 +486,7 @@ function toReplaceRejectionMessage(takesText: boolean): string {
 function toRejectionMessage(count: number): string {
   const files = count === 1 ? 'file' : 'files';
 
-  return `Skipped ${count} ${files}. Only images, videos and .txt or .md files up to ${MAX_FILE_MB}MB are supported.`;
+  return `Skipped ${count} ${files}. Only images, videos, .txt or .md files and fonts up to ${MAX_FILE_MB}MB are supported.`;
 }
 
 export { toRejectionMessage };

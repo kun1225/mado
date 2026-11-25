@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Bring a folder of images, videos and text files into the library, or rebuild a library from an unzipped export.
+Bring a folder of images, videos, text and font files into the library, or rebuild a library from an unzipped export.
 
 **Depends on:** `collections` (types), `export` (the `library.json` schema), `sources`, `storage`. **Used by:** `settings` (the Data tab). See `apps/web/ARCHITECTURE.md`.
 
@@ -24,9 +24,10 @@ The folder has `library.json` at its top (see `export.spec.md`).
 - A collection deleted after the export comes back: its tombstone (`deletedAt`) doesn't count as already here. Otherwise its sources would link to a deleted collection, and the next list would trash them.
 - An image or video whose file is gone is skipped. A website without its thumbnail is kept as a link card.
 - A text source reads its body from its `text` file, so an edit made to that file before importing is kept. A text source whose text file is gone is skipped; one whose thumbnail is gone is kept without it. A text file that is empty or over 1 MB counts as "could not be saved".
+- A font gets new storage keys for its styles. A style whose file is gone is left out (and the cover goes back to the default when it was that style); a font with no style file left is skipped.
 - A link to a collection that is nowhere (not in the file, not in the library) is dropped. A collection whose parent is gone moves to the top.
 - Files are not compressed again. They were compressed before the export.
-- A `library.json` that is broken or from a newer version falls back to the plain-folder rule, and the toast says so. Versions 1 and 2 both import.
+- A `library.json` that is broken or from a newer version falls back to the plain-folder rule, and the toast says so. Versions 1, 2 and 3 all import.
 
 ### A plain folder
 
@@ -34,6 +35,7 @@ The folder has `library.json` at its top (see `export.spec.md`).
 - Every image, video and `.txt`/`.md`/`.markdown` file becomes a source, saved the same way as a dropped file. A `.md` with no type still counts, by its extension.
 - Other files (HTML, CSV, PDF, …), empty files, files over 512 MB and text files over 1 MB are skipped and counted. Hidden files (`.DS_Store`, anything inside a `.folder`) are skipped quietly.
 - A folder with no images, videos or text files anywhere inside it does not become a collection.
+- Font files in one folder that share a family name become one font source, like a drop. Fonts over 30 MB are skipped and counted. A style the browser can't read is left out, and its family is counted once as failed, so the result says something went wrong while the good styles still import.
 - Folder names are cut to 100 characters (never inside an emoji).
 
 ## Decisions

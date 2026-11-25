@@ -23,6 +23,7 @@ import {
 
 import { useDesktopBridge } from '#/features/desktop/desktop-hooks';
 import { DesktopSitePreview } from '#/features/desktop/desktop-site-preview';
+import { FONT_CARD_RATIO } from '#/features/sources/font-source';
 import {
   useCompressingSourceIds,
   useDeleteSource,
@@ -41,6 +42,11 @@ import type { Source } from '#/features/sources/source-types';
 import { canEmbedSite, isVideoMimeType } from '#/features/sources/source-types';
 
 import { flipSourceDetail } from './source-detail-flip';
+import { SourceDetailFont } from './source-detail-font';
+import {
+  SourceDetailFontPanel,
+  useFontSampleDraft,
+} from './source-detail-font-panel';
 import { SourceDetailPanel } from './source-detail-panel';
 import {
   SourceDetailDiscardDialog,
@@ -71,6 +77,7 @@ export function SourceDetailDialog({
   const source = view.source ?? lastSource.current;
   const replace = useReplaceSourceDropzone(source);
   const editor = useSourceTextEditor(source);
+  const fontSample = useFontSampleDraft(source);
   // A close or a move that waits for "Discard your changes?".
   const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
   const isDraggingFile = useIsDraggingFile();
@@ -101,8 +108,9 @@ export function SourceDetailDialog({
   const fillsViewer =
     source !== undefined &&
     (source.kind === 'text' || isEmbeddedSite(source, hasDesktopBridge));
-  const aspectRatio =
-    !fillsViewer && source?.width && source.height
+  const aspectRatio = source?.font
+    ? FONT_CARD_RATIO
+    : !fillsViewer && source?.width && source.height
       ? source.width / source.height
       : null;
   const flipAnchor = source?.kind === 'text' ? 'top' : 'center';
@@ -139,11 +147,14 @@ export function SourceDetailDialog({
   if (source === undefined) return null;
   const isEmbedded = isEmbeddedSite(source, hasDesktopBridge);
   const isText = source.kind === 'text';
-  const replaceLabel = !(isEmbedded || isText)
-    ? 'Replace file'
-    : source.storageKey
-      ? 'Replace thumbnail'
-      : 'Add thumbnail';
+  // A font has no file to replace, so the same button and drop add styles.
+  const replaceLabel = source.font
+    ? 'Add styles'
+    : !(isEmbedded || isText)
+      ? 'Replace file'
+      : source.storageKey
+        ? 'Replace thumbnail'
+        : 'Add thumbnail';
   const dropLabel = isText
     ? 'Drop a thumbnail or a new text'
     : `Drop to ${replaceLabel.toLowerCase()}`;
@@ -274,7 +285,15 @@ export function SourceDetailDialog({
               })}
             >
               <input {...replace.getInputProps()} />
-              {source.text ? (
+              {source.font ? (
+                <SourceDetailFont
+                  key={`font-${source.id}`}
+                  source={source}
+                  font={source.font}
+                  sentence={fontSample.sentence}
+                  mediaRef={setMedia}
+                />
+              ) : source.text ? (
                 <SourceDetailTextViewer
                   key={`text-${source.id}`}
                   text={source.text}
@@ -306,7 +325,17 @@ export function SourceDetailDialog({
               source={source}
               thumbnailUrl={objectUrl}
               isOpen={isPanelOpen}
-            />
+            >
+              {source.font && (
+                <SourceDetailFontPanel
+                  source={source}
+                  font={source.font}
+                  sample={fontSample}
+                  onAddStyles={replace.open}
+                  isAddingStyles={replace.isBusy}
+                />
+              )}
+            </SourceDetailPanel>
           </div>
         </DialogContent>
       </Dialog>

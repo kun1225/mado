@@ -18,6 +18,15 @@ export type ExportFile =
       lastModified: Date;
     }
   | {
+      /** One style of a font. `face` is its index in `font.faces`. */
+      kind: 'font';
+      sourceId: string;
+      path: string;
+      storageKey: string;
+      face: number;
+      lastModified: Date;
+    }
+  | {
       /** `shortcut` is a website's `.url` file, `text` is a text source's body. */
       kind: 'shortcut' | 'text';
       sourceId: string;

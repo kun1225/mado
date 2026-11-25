@@ -1,4 +1,5 @@
 import type { Collection } from '#/features/collections/collection-types';
+import type { FontSourceContent } from '#/features/sources/font-source.type';
 import type { Source } from '#/features/sources/source-types';
 import type { TextSourceContent } from '#/features/sources/text-source.type';
 
@@ -199,7 +200,34 @@ function toSourceFiles(
       ]
     : [];
 
-  return [...shortcut, ...text, ...media];
+  const fonts: ExportFile[] = (source.font?.faces ?? []).map((face, index) => {
+    const { stem: faceStem, extension } = splitFileName(face.fileName);
+    return {
+      kind: 'font',
+      sourceId: source.id,
+      // The file's own name, so a folder of loose files still groups into one family on import.
+      path: joinPath(
+        folder,
+        names.claim(folder, toSafeName(faceStem, stem), extension),
+      ),
+      storageKey: face.storageKey,
+      face: index,
+      lastModified,
+    };
+  });
+
+  return [...shortcut, ...text, ...media, ...fonts];
+}
+
+// *** splitFileName ***
+function splitFileName(fileName: string): { stem: string; extension: string } {
+  const match = /\.[a-z0-9]{1,8}$/i.exec(fileName);
+  return match
+    ? {
+        stem: fileName.slice(0, match.index),
+        extension: match[0].toLowerCase(),
+      }
+    : { stem: fileName, extension: '' };
 }
 
 // *** toShortcutText ***
@@ -238,7 +266,11 @@ function toManifest(
     (groups, file) =>
       groups.set(file.sourceId, [
         ...(groups.get(file.sourceId) ?? []),
-        { path: file.path, role: file.kind },
+        {
+          path: file.path,
+          role: file.kind,
+          ...(file.kind === 'font' && { face: file.face }),
+        },
       ]),
     new Map<string, ExportManifestSource['files']>(),
   );
@@ -269,6 +301,7 @@ function toManifest(
       ...(source.text && {
         text: { format: source.text.format, fileName: source.text.fileName },
       }),
+      ...(source.font && { font: toManifestFont(source.font) }),
       fileName: source.fileName,
       mimeType: source.mimeType,
       sizeBytes: source.sizeBytes,
@@ -280,5 +313,25 @@ function toManifest(
       files: filesBySource.get(source.id) ?? [],
     })),
     missingFiles: [],
+  };
+}
+
+// *** toManifestFont ***
+function toManifestFont(
+  font: FontSourceContent,
+): NonNullable<ExportManifestSource['font']> {
+  const cover = font.faces.findIndex(
+    (face) => face.storageKey === font.coverFace,
+  );
+  return {
+    family: font.family,
+    sample: font.sample,
+    coverFace: cover === -1 ? null : cover,
+    faces: font.faces.map(({ fileName, mimeType, weight, style }) => ({
+      fileName,
+      mimeType,
+      weight,
+      style,
+    })),
   };
 }

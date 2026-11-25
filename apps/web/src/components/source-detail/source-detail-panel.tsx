@@ -4,6 +4,7 @@ import {
   PencilEdit02Icon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
+import type { ReactNode } from 'react';
 
 import { Button } from '@repo/ui/button';
 import { cn } from '@repo/ui/cn';
@@ -35,14 +36,17 @@ import { SourceDetailChip } from './source-detail-chip';
 import { SourceDetailPalette } from './source-detail-palette';
 import { SourceDetailTags } from './source-detail-tags';
 
+/** `children` is what only one kind needs, like a font's cover controls, shown under Details. */
 export function SourceDetailPanel({
   source,
   thumbnailUrl,
   isOpen,
+  children,
 }: {
   source: Source;
   thumbnailUrl: string | null;
   isOpen: boolean;
+  children?: ReactNode;
 }) {
   return (
     <div
@@ -63,6 +67,8 @@ export function SourceDetailPanel({
           <h2 className="t-l-2">Details</h2>
           <p className="t-b-4 text-muted-fg">{describe(source)}</p>
         </header>
+
+        {children}
 
         {(canEmbedSite(source) || source.kind === 'text') && (
           <SourceDetailThumbnail source={source} objectUrl={thumbnailUrl} />
@@ -85,6 +91,21 @@ function describe(source: Source): string {
     const format = source.text.format === 'markdown' ? 'Markdown' : 'Text';
     const bytes = new TextEncoder().encode(source.text.body).length;
     return `${format} · ${formatBytes(bytes)}`;
+  }
+  if (source.font) {
+    const formats = new Set(
+      source.font.faces.map((face) =>
+        (/\.([^.]+)$/.exec(face.fileName)?.[1] ?? '').toUpperCase(),
+      ),
+    );
+    const count = source.font.faces.length;
+    return [
+      [...formats].filter(Boolean).join(', '),
+      `${count} ${count === 1 ? 'style' : 'styles'}`,
+      formatBytes(source.sizeBytes),
+    ]
+      .filter(Boolean)
+      .join(' · ');
   }
   const format = source.mimeType.split('/')[1]?.split('+')[0]?.toUpperCase();
   const size =

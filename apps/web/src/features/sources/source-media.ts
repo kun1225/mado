@@ -1,3 +1,4 @@
+import { downloadZip } from 'client-zip';
 import {
   ALL_FORMATS,
   BlobSource,
@@ -14,6 +15,8 @@ import { getDesktopBridge } from '#/features/desktop/desktop-bridge';
 import type { MadoDesktopBridge } from '#/features/desktop/desktop-bridge.type';
 import { getAccountDirectory } from '#/features/storage/storage-directory';
 
+import { FONT_FILE_ACCEPT } from './font-source';
+import type { FontSourceContent, FontSourceFace } from './font-source.type';
 import type { SiteSourcePreview } from './site-source.type';
 import type { Source } from './source-types';
 import { detectFileKind } from './source-types';
@@ -208,9 +211,31 @@ export async function downloadSource(source: Source): Promise<void> {
     );
     return;
   }
+  if (source.font) return downloadFont(source.font);
   if (!source.storageKey) throw new Error('This source has no file.');
   const file = await readMediaFile(source.storageKey);
   saveBlobToDevice(file.slice(0, file.size, source.mimeType), source.fileName);
+}
+
+// *** downloadFont ***
+// One style is just its file. A family comes as one zip, so the browser asks once.
+async function downloadFont({
+  family,
+  faces,
+}: FontSourceContent): Promise<void> {
+  if (faces.length === 1) return downloadFontFace(faces[0]);
+  const files = await Promise.all(
+    faces.map(async (face) => ({
+      name: face.fileName,
+      input: await readMediaFile(face.storageKey),
+    })),
+  );
+  saveBlobToDevice(await downloadZip(files).blob(), `${family}.zip`);
+}
+
+export async function downloadFontFace(face: FontSourceFace): Promise<void> {
+  const file = await readMediaFile(face.storageKey);
+  saveBlobToDevice(file.slice(0, file.size, face.mimeType), face.fileName);
 }
 
 export function saveBlobToDevice(blob: Blob, fileName: string): void {
@@ -227,12 +252,18 @@ export type PastedContent =
   | { kind: 'url'; url: string }
   | { kind: 'ignored' };
 
-// Extensions too, because many systems give `.md` no type.
+// Extensions too, because many systems give `.md` or fonts no type.
 export const ACCEPTED_FILE_TYPES = [
   'image/*',
   'video/*',
   ...Object.entries(TEXT_FILE_ACCEPT).flat(2),
+  ...Object.values(FONT_FILE_ACCEPT).flat(),
 ].join(',');
+
+/** For "Add font": only extensions, because a `font/*` filter hides fonts that have no type. */
+export const FONT_INPUT_ACCEPT = Object.values(FONT_FILE_ACCEPT)
+  .flat()
+  .join(',');
 
 function withFallbackFileName(file: File, mimeType: string): File {
   if (file.name) return file;

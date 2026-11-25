@@ -218,7 +218,7 @@ Mado rewrites this guide when it opens the folder, so keep your own notes in ano
 
 ## Files
 
-- \`sources/<id>.json\`: one source (an image, video, website or text).
+- \`sources/<id>.json\`: one source (an image, video, website, text or font family).
 - \`collections.json\`: every collection.
 - \`media/<storageKey>\`: the files themselves. Read them, but never edit, rename or delete them.
 - \`mado.json\` and \`.mado-lock\`: Mado's own. Never edit or delete them.
@@ -233,6 +233,7 @@ Mado rewrites this guide when it opens the folder, so keep your own notes in ano
 - Put tags you add in \`suggestedTags\`. The user accepts them into \`tags\`. Never remove the user's \`tags\`.
 - When you change a record, set \`updatedAt\` to the current time in ISO 8601.
 - Never change \`id\`, \`storageKey\`, \`kind\`, \`createdAt\`, or the file and size fields.
+  In a font, never change \`font.faces\` (each style's \`storageKey\` and file fields).
 - A collection with \`deletedAt\` set is deleted. Leave it in the list, and never add a source to it.
 - Edit one record at a time, and leave the other files alone.
 `;

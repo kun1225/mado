@@ -176,7 +176,7 @@ describe('sourceKindSchema', () => {
 
   it('rejects other file types', () => {
     expect(() => sourceKindSchema.parse('application')).toThrow(
-      'Only images, videos and text files are supported',
+      'Only images, videos, text and font files are supported',
     );
   });
 });
@@ -277,7 +277,9 @@ describe('createSources with text files', () => {
     const { error } = await createSources([{ collectionId: null, file }]);
 
     expect(error).toMatchObject({
-      issues: [{ message: 'Only images, videos and text files are supported' }],
+      issues: [
+        { message: 'Only images, videos, text and font files are supported' },
+      ],
     });
   });
 

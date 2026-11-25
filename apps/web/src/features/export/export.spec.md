@@ -31,6 +31,8 @@ mado-export-2026-10-19.zip
     │   ├── Dribbble.png        …and its thumbnail
     │   ├── Brief.md            a text source: its text…
     │   ├── Brief.webp          …and its thumbnail, if it has one
+    │   ├── Inter-Regular.woff2 a font: one file per style,
+    │   ├── Inter-Bold.woff2    …each with its own file name
     │   └── Typography/         a folder inside it
     ├── Unsorted/               sources in no collection
     └── library.json            every record, for import
@@ -41,15 +43,17 @@ mado-export-2026-10-19.zip
 - Names drop the characters Windows and macOS refuse (`/ \ : * ? " < > |`), lose trailing dots and spaces and leading dots, and are cut to 60 characters (never inside an emoji). Windows device names (`CON`, `nul.txt`, …) get a `-`. Repeats get `(2)`, `(3)`, checked without case and with Unicode normalized (NFC). `Unsorted` and `library.json` at the top are kept for the export, so a collection with that name gets `(2)`.
 - The extension comes from the stored file's mime type, then from `fileName`.
 - A text source's file is written from its `text.body`. It keeps `.md`, `.markdown` or `.txt` from `text.fileName`, and otherwise gets `.md` or `.txt` from its format.
+- A font's styles are written next to each other with their own file names, not in a family folder. A family folder would become a collection if the folder is imported without `library.json`, and the file names already group the family again.
 - Each file's date is the source's `updatedAt`.
 
 ### `library.json`
 
 - Built and checked by one zod schema, `exportManifestSchema`, with `format: 'mado-export'` and a `version`.
 - Has every collection (with its folder `path`) and every source (name, note, tags, link, site preview, sizes, dates).
-- Each source lists its `files` with a role: `media`, `shortcut` or `text`.
+- Each source lists its `files` with a role: `media`, `shortcut`, `text` or `font`. A `font` file also has `face`, its index in `font.faces`.
+- A font source has `font: { family, sample, coverFace, faces }`. Each face is `{ fileName, mimeType, weight, style }`, and `coverFace` is an index, since storage keys stay on the device.
 - A text source has `text: { format, fileName }`, but not the body. The body is only in its `text` file.
-- `version` is 2 since text sources. Import still reads version 1.
+- `version` is 3 since font sources (2 added text sources). Import still reads versions 1 and 2.
 - Paths start inside the top folder, so renaming that folder after unzipping breaks nothing.
 - `missingFiles` lists the files that were gone while exporting.
 - No `storageKey` and no `deletedAt`. They only mean something inside this browser.

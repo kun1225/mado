@@ -6,6 +6,8 @@ import { WITH_FOLDER_SOURCES } from '#/features/collections/collection-types';
 import { withLibraryLock } from '#/features/storage/library-lock';
 import { getLibraryStore } from '#/features/storage/library-store';
 
+import { createFontSource } from './font-actions';
+import { groupFontFiles } from './font-source';
 import type { SiteSourceInput } from './site-source.type';
 import {
   compressMedia,
@@ -94,6 +96,10 @@ export async function createSource(input: NewSourceInput): Promise<Source> {
   } = newSourceSchema.parse(input);
   const kind = sourceKindSchema.parse(detectFileKind(file));
   if (kind === 'text') return createTextSource({ collectionId, file, name });
+  if (kind === 'font') {
+    const [group] = groupFontFiles([file]);
+    return (await createFontSource(group, collectionId)).source;
+  }
 
   const metadata = await readMediaMetadata(file, kind);
   const id = givenId ?? crypto.randomUUID();
@@ -235,17 +241,48 @@ export async function createWebsiteSource(
   return source;
 }
 
-/** Save each file on its own, so one bad file does not lose the others. */
+/**
+ * Save each file on its own, so one bad file does not lose the others.
+ * Font files dropped together become one source per family.
+ */
 export async function createSources(
   inputs: NewSourceInput[],
 ): Promise<{ sources: Source[]; error: unknown }> {
-  const results = await Promise.allSettled(inputs.map(createSource));
-  const sources = results
+  const isFont = (input: NewSourceInput) =>
+    detectFileKind(input.file) === 'font';
+  const results = await Promise.allSettled([
+    ...inputs
+      .filter((input) => !isFont(input))
+      .map((input) =>
+        createSource(input).then((source) => ({ source, error: undefined })),
+      ),
+    ...toFontGroups(inputs.filter(isFont)).map(({ group, collectionId }) =>
+      createFontSource(group, collectionId),
+    ),
+  ]);
+  const created = results
     .filter((result) => result.status === 'fulfilled')
     .map((result) => result.value);
   const failed = results.find((result) => result.status === 'rejected');
 
-  return { sources, error: failed?.reason };
+  return {
+    sources: created.map(({ source }) => source),
+    error: failed?.reason ?? created.find(({ error }) => error)?.error,
+  };
+}
+
+// *** toFontGroups ***
+// Grouped per collection too, so one family never spans two drops' targets.
+function toFontGroups(inputs: NewSourceInput[]) {
+  const collectionIds = [...new Set(inputs.map((input) => input.collectionId))];
+
+  return collectionIds.flatMap((collectionId) =>
+    groupFontFiles(
+      inputs
+        .filter((input) => input.collectionId === collectionId)
+        .map((input) => input.file),
+    ).map((group) => ({ group, collectionId })),
+  );
 }
 
 // Compression is heavy, so files wait in line one at a time.
@@ -493,9 +530,13 @@ export async function replaceSourceFile(
   const { file } = replaceSourceFileSchema.parse({ file: input });
   const fileKind = sourceKindSchema.parse(detectFileKind(file));
   if (fileKind === 'text') return replaceSourceText(id, file);
+  if (fileKind === 'font') {
+    throw new Error("Fonts can't replace a file. Add them as a new source.");
+  }
 
   const mediaKind = fileKind;
   const existing = await readSource(id);
+  if (existing.font) throw new Error('Add font files to a font instead.');
   // Fail early, before writing the file. The save checks again on fresh data.
   toReplacementKind(existing, mediaKind);
   const metadata = await readMediaMetadata(file, mediaKind);
@@ -726,7 +767,9 @@ export async function hardDeleteSource(id: string): Promise<Source> {
 
     // Delete the record first. A leftover file only wastes space, but a record
     // with no file shows a card that never loads.
-    if (existing.storageKey) await deleteMediaFile(existing.storageKey);
+    await Promise.all(
+      toStorageKeys(existing).map((key) => deleteMediaFile(key)),
+    );
 
     return existing;
   });
@@ -814,15 +857,22 @@ export async function hardDeleteSources(ids: string[]): Promise<Source[]> {
 
     // Keep going if one file fails, so the other files still get deleted.
     await Promise.all(
-      sources
-        .flatMap((source) => (source.storageKey ? [source.storageKey] : []))
-        .map((storageKey) =>
-          deleteMediaFile(storageKey).catch((error: unknown) => {
-            console.error(`Failed to delete media file: ${storageKey}`, error);
-          }),
-        ),
+      sources.flatMap(toStorageKeys).map((storageKey) =>
+        deleteMediaFile(storageKey).catch((error: unknown) => {
+          console.error(`Failed to delete media file: ${storageKey}`, error);
+        }),
+      ),
     );
 
     return sources;
   });
+}
+
+// *** toStorageKeys ***
+// A font keeps one file per style, and no main file.
+function toStorageKeys(source: Source): string[] {
+  return [
+    ...(source.storageKey ? [source.storageKey] : []),
+    ...(source.font?.faces.map((face) => face.storageKey) ?? []),
+  ];
 }
