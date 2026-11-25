@@ -11,6 +11,10 @@ export const LANDING_APP_HREF = '/library';
 // Link previews and Google need full URLs, not paths. Keep in step with public/robots.txt and public/sitemap.xml.
 export const LANDING_SITE_ORIGIN = 'https://mado-design.com';
 
+// Shared by the meta tags and the JSON-LD. Keep public/llms.txt in step.
+export const LANDING_DESCRIPTION =
+  'A quiet library for brand designers. Collect images, videos, sites and notes, sort them, and keep it all on your device. Free, no sign-up.';
+
 /** The header links. Each id is the id of a section on the page. */
 export const LANDING_NAV: LandingNavItem[] = [
   { id: 'features', label: 'Features' },

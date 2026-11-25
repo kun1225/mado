@@ -1,0 +1,26 @@
+# Mado
+
+> Mado is a free, local design library for brand designers. Collect images, videos, websites and notes, sort them into collections and folders, and keep it all on your own device. No sign-up needed.
+
+Mado runs in the web browser. Your files stay on your device and are never uploaded.
+
+## What you can do
+
+- Save images, videos, websites and notes. Drop, paste or drag them in.
+- Sort saves into collections, and folders inside them. Drag a card to move it.
+- Search your library by name.
+- Export the whole library as a zip, and import it back on any device.
+
+## FAQ
+
+- **Is Mado free?** Yes. The library is free and stays free. Later, cloud and AI extras may be paid, because they cost money each time you use them.
+- **Where are my files?** In your browser, on your device. Nothing is uploaded.
+- **Can I use it on more than one device?** Not yet. Cloud backup and sync are coming. For now, export your library on one device and import it on the other.
+- **What can I save?** Images, videos, websites and notes. Fonts and PDFs come later.
+- **What happens if I clear my browser data?** Your library is deleted with it. Export a backup from time to time.
+- **Do I need an account?** No. An account is optional, and only needed for cloud features later.
+
+## Links
+
+- [Mado](https://mado-design.com/): the landing page
+- [Open the library](https://mado-design.com/library): start using Mado, no account needed

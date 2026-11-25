@@ -3,7 +3,11 @@ import { createFileRoute } from '@tanstack/react-router';
 import Lenis from 'lenis';
 import { MotionConfig } from 'motion/react';
 
-import { LANDING_SITE_ORIGIN } from '#/features/landing/landing-content';
+import {
+  LANDING_DESCRIPTION,
+  LANDING_SITE_ORIGIN,
+} from '#/features/landing/landing-content';
+import { buildLandingJsonLd } from '#/features/landing/landing-structured-data';
 
 import { LandingFaq } from './-landing/landing-faq';
 import { LandingFeatures } from './-landing/landing-features';
@@ -15,8 +19,6 @@ import { LANDING_INTRO_SCRIPT } from './-landing/landing-intro';
 import { LandingSearch } from './-landing/landing-search';
 
 const TITLE = 'Mado — Your local design library';
-const DESCRIPTION =
-  'A quiet library for brand designers. Collect images, videos, sites and notes, sort them, and keep it all on your device. Free, no sign-up.';
 const OG_IMAGE = `${LANDING_SITE_ORIGIN}/og.png`;
 const OG_VIDEO = `${LANDING_SITE_ORIGIN}/og.mp4`;
 
@@ -24,12 +26,12 @@ export const Route = createFileRoute('/(app)/')({
   head: () => ({
     meta: [
       { title: TITLE },
-      { name: 'description', content: DESCRIPTION },
+      { name: 'description', content: LANDING_DESCRIPTION },
       { property: 'og:type', content: 'website' },
       { property: 'og:site_name', content: 'Mado' },
       { property: 'og:url', content: `${LANDING_SITE_ORIGIN}/` },
       { property: 'og:title', content: TITLE },
-      { property: 'og:description', content: DESCRIPTION },
+      { property: 'og:description', content: LANDING_DESCRIPTION },
       { property: 'og:image', content: OG_IMAGE },
       { property: 'og:image:width', content: '1200' },
       { property: 'og:image:height', content: '630' },
@@ -44,7 +46,7 @@ export const Route = createFileRoute('/(app)/')({
       { property: 'og:video:height', content: '630' },
       { name: 'twitter:card', content: 'summary_large_image' },
       { name: 'twitter:title', content: TITLE },
-      { name: 'twitter:description', content: DESCRIPTION },
+      { name: 'twitter:description', content: LANDING_DESCRIPTION },
       { name: 'twitter:image', content: OG_IMAGE },
     ],
     links: [
@@ -62,6 +64,7 @@ export const Route = createFileRoute('/(app)/')({
         href: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600&display=swap',
       },
     ],
+    scripts: [{ type: 'application/ld+json', children: buildLandingJsonLd() }],
   }),
   component: LandingPage,
 });
