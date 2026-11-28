@@ -1,6 +1,6 @@
 import { createAuth, readAuthConfig } from './auth/auth.js';
 import { createDatabase } from './database/database.js';
-import { feedback } from './feedback/feedback.model.js';
+import { createFeedbackStore } from './feedback/feedback-store.js';
 import { createApp } from './app.js';
 import type { WorkerContext, WorkerEnv } from './worker.type.js';
 
@@ -15,9 +15,7 @@ export default {
     const { db, pool } = createDatabase(config.databaseUrl);
     const app = createApp({
       auth: createAuth({ database: db, config }),
-      saveFeedback: async (entry) => {
-        await db.insert(feedback).values(entry);
-      },
+      feedbackStore: createFeedbackStore(db, config.secret),
       webOrigin: config.webOrigin,
       getClientIp: (c) => c.req.header('cf-connecting-ip'),
     });

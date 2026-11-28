@@ -3,7 +3,7 @@ import { getConnInfo } from '@hono/node-server/conninfo';
 
 import { createAuth, readAuthConfig } from './auth/auth.js';
 import { createDatabase } from './database/database.js';
-import { feedback } from './feedback/feedback.model.js';
+import { createFeedbackStore } from './feedback/feedback-store.js';
 import { createApp } from './app.js';
 
 const config = readAuthConfig();
@@ -13,9 +13,7 @@ const auth = createAuth({ database: db, config });
 const port = Number(process.env.PORT ?? 4000);
 const app = createApp({
   auth,
-  saveFeedback: async (entry) => {
-    await db.insert(feedback).values(entry);
-  },
+  feedbackStore: createFeedbackStore(db, config.secret),
   webOrigin: config.webOrigin,
   // No proxy trust: in production the Cloudflare Worker reads the client IP instead.
   getClientIp: (c) => getConnInfo(c).remote.address,

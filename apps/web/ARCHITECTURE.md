@@ -86,7 +86,7 @@ The root document links to the static `public/manifest.webmanifest` and app icon
 | `GET /api/auth/get-session`            | `auth/auth-session.ts` (server fn) | Session check for every `(app)` page; skipped when every sign-in flag is off        |
 | `better-auth` client                   | `auth/auth-client.ts`              | Google sign-in, sign-out (and email forms when turned on)                           |
 | `POST /api/v1/sites/preview`, `/image` | `sources/source-media.ts`          | Site metadata, embed mode, OG image (the browser can't fetch these because of CORS) |
-| `POST /api/v1/feedback`                | `feedback/feedback-actions.ts`     | Saves a feedback message (and an optional email) in Postgres                        |
+| `POST /api/v1/feedback`                | `feedback/feedback-actions.ts`     | Saves a feedback message and email in Postgres, at most 5 per IP an hour            |
 
 The API lives in `apps/api`. Everything else stays on the device.
 

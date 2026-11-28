@@ -6,7 +6,7 @@ import type { AppGetClientIp } from './app.type.js';
 import { createAuthRouter } from './auth/auth.route.js';
 import type { AuthInstance } from './auth/auth.type.js';
 import { createFeedbackRouter } from './feedback/feedback-route.js';
-import type { SaveFeedback } from './feedback/feedback.type.js';
+import type { FeedbackStore } from './feedback/feedback.type.js';
 import { createSitesRouter } from './sites/site-preview-route.js';
 
 // Matches the limit Express's JSON parser had, so big bodies stay rejected.
@@ -16,12 +16,12 @@ const MAX_BODY_BYTES = 100 * 1024;
 // The runtime decides the client IP: the Node socket locally, a header on Workers.
 export function createApp({
   auth,
-  saveFeedback,
+  feedbackStore,
   webOrigin = 'http://localhost:3100',
   getClientIp = () => undefined,
 }: {
   auth?: AuthInstance;
-  saveFeedback?: SaveFeedback;
+  feedbackStore?: FeedbackStore;
   webOrigin?: string;
   getClientIp?: AppGetClientIp;
 } = {}) {
@@ -34,10 +34,10 @@ export function createApp({
 
   app.use('/v1/*', bodyLimit({ maxSize: MAX_BODY_BYTES }));
   app.route('/v1/sites', createSitesRouter({ appOrigin: webOrigin }));
-  if (saveFeedback)
+  if (feedbackStore)
     app.route(
       '/v1/feedback',
-      createFeedbackRouter({ saveFeedback, getClientIp }),
+      createFeedbackRouter({ feedbackStore, getClientIp }),
     );
 
   return app;

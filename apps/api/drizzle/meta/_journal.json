@@ -15,6 +15,13 @@
       "when": 1793179534542,
       "tag": "0001_clammy_tiger_shark",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795570932746,
+      "tag": "0002_orange_pretty_boy",
+      "breakpoints": true
     }
   ]
 }
